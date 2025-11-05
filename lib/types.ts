@@ -154,3 +154,31 @@ export interface SavedHackathonAnalysis {
   audioBase64?: string | null;
   supportingMaterials?: ProjectSubmission["supportingMaterials"];
 }
+
+// Unified analysis types for dashboard
+export type AnalysisCategory = "idea" | "kiroween";
+
+export interface UnifiedAnalysisRecord {
+  id: string;
+  userId: string;
+  category: AnalysisCategory;
+  title: string;
+  createdAt: string;
+  finalScore: number;
+  summary: string;
+  audioBase64?: string | null;
+  // Original analysis data
+  originalData: SavedAnalysisRecord | SavedHackathonAnalysis;
+}
+
+export interface DashboardFilterState {
+  filter: "all" | "idea" | "kiroween";
+  searchQuery: string;
+  sortOption: "newest" | "oldest" | "az";
+}
+
+export interface AnalysisCounts {
+  total: number;
+  idea: number;
+  kiroween: number;
+}

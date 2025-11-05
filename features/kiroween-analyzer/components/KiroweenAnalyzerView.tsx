@@ -164,7 +164,7 @@ const KiroweenAnalyzerView: React.FC = () => {
 
   const handleBack = useCallback(() => {
     if (isLoggedIn) {
-      router.push("/kiroween-dashboard");
+      router.push("/dashboard");
     } else {
       router.push("/");
     }
@@ -238,7 +238,7 @@ const KiroweenAnalyzerView: React.FC = () => {
     if (!analysisToSave || !submission.description) return;
 
     if (!session) {
-      router.push(`/login?next=${encodeURIComponent("/kiroween-dashboard")}`);
+      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
       return;
     }
 
@@ -339,14 +339,15 @@ const KiroweenAnalyzerView: React.FC = () => {
         <header className="text-center mb-8 animate-fade-in relative">
           <button
             onClick={handleBack}
-            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200"
-            title={t("backToHome")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black rounded-md p-1"
+            aria-label={t("backToHome")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
               viewBox="0 0 20 20"
               fill="currentColor"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -371,19 +372,45 @@ const KiroweenAnalyzerView: React.FC = () => {
 
         <main className="w-full">
           {showInputForm && (
-            <div ref={submissionFormRef}>
+            <section
+              ref={submissionFormRef}
+              aria-labelledby="project-form-heading"
+            >
+              <h2 id="project-form-heading" className="sr-only">
+                {t("projectSubmissionForm")}
+              </h2>
               <ProjectSubmissionForm
                 submission={submission}
                 onSubmissionChange={setSubmission}
                 onAnalyze={handleAnalyze}
                 isLoading={busy}
               />
-            </div>
+            </section>
           )}
-          {error && <SpookyErrorMessage message={error} />}
-          {busy && <SpookyLoader message={busyMessage} />}
+          {error && (
+            <section aria-labelledby="error-heading" role="alert">
+              <h2 id="error-heading" className="sr-only">
+                {t("errorOccurred")}
+              </h2>
+              <SpookyErrorMessage message={error} />
+            </section>
+          )}
+          {busy && (
+            <section aria-labelledby="loading-heading" aria-live="polite">
+              <h2 id="loading-heading" className="sr-only">
+                {t("loading")}
+              </h2>
+              <SpookyLoader message={busyMessage} />
+            </section>
+          )}
           {analysisToDisplay && !busy && (
-            <div className={showInputForm ? "mt-8" : ""}>
+            <section
+              className={showInputForm ? "mt-8" : ""}
+              aria-labelledby="analysis-results-heading"
+            >
+              <h2 id="analysis-results-heading" className="sr-only">
+                {t("analysisResults")}
+              </h2>
               <HackathonAnalysisDisplay
                 analysis={analysisToDisplay}
                 onSave={handleSaveReport}
@@ -397,7 +424,7 @@ const KiroweenAnalyzerView: React.FC = () => {
                 }
                 addedSuggestions={addedSuggestions}
               />
-            </div>
+            </section>
           )}
         </main>
       </div>

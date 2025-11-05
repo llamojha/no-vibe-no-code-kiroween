@@ -187,5 +187,8 @@
   "delete": "Eliminar",
   "deleteEvaluation": "Eliminar Evaluación",
   "deleteEvaluationConfirmation": "¿Estás seguro de que quieres eliminar esta evaluación de hackathon? Esta acción no se puede deshacer.",
-  "cancel": "Cancelar"
+  "cancel": "Cancelar",
+  "projectSubmissionForm": "Formulario de Envío de Proyecto",
+  "errorOccurred": "Ocurrió un Error",
+  "analysisResults": "Resultados del Análisis"
 }

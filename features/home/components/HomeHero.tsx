@@ -4,13 +4,21 @@ import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import BackgroundAnimation from "@/features/home/components/BackgroundAnimation";
+import AnimationToggle from "@/features/home/components/AnimationToggle";
+import AnalyzerButton from "@/features/home/components/AnalyzerButton";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useAnimationPreference } from "@/features/home/hooks/useAnimationPreference";
 
 const HomeHero: React.FC = () => {
   const router = useRouter();
   const { t } = useLocale();
   const { session, isLoading, tier } = useAuth();
+  const {
+    mode,
+    isLoading: animationLoading,
+    setAnimationMode,
+  } = useAnimationPreference();
 
   const handleAnalyzeClick = useCallback(() => {
     if (isLoading) return; // avoid double routing while auth initializes
@@ -27,8 +35,13 @@ const HomeHero: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-transparent text-white overflow-hidden relative">
-      <BackgroundAnimation />
-      <header className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-6 lg:p-8 flex justify-end">
+      <BackgroundAnimation mode={mode} />
+      <header className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-6 lg:p-8 flex justify-between items-start">
+        <AnimationToggle
+          currentMode={mode}
+          onToggle={setAnimationMode}
+          isLoading={animationLoading}
+        />
         <LanguageToggle />
       </header>
       <main className="flex-grow flex flex-col items-center justify-center text-center p-4 relative z-10 pointer-events-none">
@@ -67,21 +80,29 @@ const HomeHero: React.FC = () => {
         </div>
 
         <div
-          className="z-10 mt-12 animate-slide-in-up flex flex-col items-center gap-4 pointer-events-auto"
+          className="z-10 mt-12 animate-slide-in-up flex flex-col items-center gap-8 pointer-events-auto"
           style={{ animationDelay: "600ms" }}
         >
-          <button
-            onClick={handleAnalyzeClick}
-            className="px-8 py-4 bg-secondary/80 text-white font-bold text-lg rounded-none shadow-lg shadow-secondary/30 hover:bg-secondary transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-          >
-            {t("homeCTA")}
-          </button>
-          <button
-            onClick={() => router.push("/kiroween-analyzer")}
-            className="px-8 py-4 bg-gradient-to-r from-orange-500/80 to-purple-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:from-orange-500 hover:to-purple-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-          >
-            {t("kiroweenCTA")}
-          </button>
+          {/* Equal-sized analyzer buttons */}
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-center w-full max-w-4xl">
+            <AnalyzerButton
+              title={t("homeCTA")}
+              description="Validate your startup idea with AI-powered analysis"
+              href="/analyzer"
+              icon="💡"
+              variant="primary"
+              onClick={handleAnalyzeClick}
+            />
+            <AnalyzerButton
+              title="Kiroween Analyzer"
+              description="Get spooky feedback on your hackathon project"
+              href="/kiroween-analyzer"
+              icon="🎃"
+              variant="secondary"
+            />
+          </div>
+
+          {/* Login button */}
           <button
             onClick={() => router.push("/login")}
             aria-label={t("loginButtonAriaLabel")}
