@@ -27,13 +27,39 @@ export async function POST(request: Request) {
     }
 
     // Validate required submission fields
+    const validationErrors: string[] = [];
+    const validCategories = new Set<ProjectSubmission["selectedCategory"]>([
+      "resurrection",
+      "frankenstein",
+      "skeleton-crew",
+      "costume-contest",
+    ]);
+
     if (
-      !submission.description
+      typeof submission.description !== "string" ||
+      submission.description.trim().length === 0
     ) {
+      validationErrors.push("Project description is required.");
+    }
+
+    if (
+      typeof submission.selectedCategory !== "string" ||
+      !validCategories.has(submission.selectedCategory)
+    ) {
+      validationErrors.push("A valid Kiroween category selection is required.");
+    }
+
+    if (
+      typeof submission.kiroUsage !== "string" ||
+      submission.kiroUsage.trim().length === 0
+    ) {
+      validationErrors.push("Details about how your project uses Kiro are required.");
+    }
+
+    if (validationErrors.length > 0) {
       return NextResponse.json(
         {
-          error:
-            "Project description is required.",
+          error: validationErrors.join(" "),
         },
         { status: 400 }
       );
