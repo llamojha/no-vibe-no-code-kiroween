@@ -1,0 +1,7 @@
+{
+  "name": "No Vibe No Code",
+  "description": "An AI-powered application that analyzes your idea, providing a detailed summary, competitor analysis, and a viability score based on key business metrics.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
