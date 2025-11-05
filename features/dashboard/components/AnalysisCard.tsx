@@ -135,7 +135,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
       router.push(
         `/kiroween-analyzer?savedId=${encodeURIComponent(
           analysis.id
-        )}&mode=view`
+        )}&mode=refine`
       );
     }
   };
