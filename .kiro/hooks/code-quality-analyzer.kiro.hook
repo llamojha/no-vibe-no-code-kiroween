@@ -1,0 +1,24 @@
+{
+  "enabled": false,
+  "name": "Code Quality Analyzer",
+  "description": "Monitors source code files for changes and provides AI-powered analysis for code improvements, including identifying code smells, suggesting design patterns, and recommending best practices to enhance readability, maintainability, and performance",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx",
+      "lib/**/*.ts",
+      "features/**/*.ts",
+      "features/**/*.tsx",
+      "app/**/*.ts",
+      "app/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the modified code files for potential improvements. Focus on:\n\n1. **Code Smells & Anti-patterns**: Identify any code smells, duplicated code, overly complex functions, or anti-patterns\n2. **Design Patterns**: Suggest appropriate design patterns that could improve the code structure\n3. **TypeScript Best Practices**: Ensure proper typing, interface usage, and TypeScript-specific improvements\n4. **Performance Optimizations**: Identify potential performance bottlenecks and suggest optimizations\n5. **Readability & Maintainability**: Recommend improvements for code clarity, naming conventions, and structure\n6. **Security Considerations**: Flag any potential security issues or vulnerabilities\n7. **Testing Opportunities**: Suggest areas where additional testing would be beneficial\n\nFor each suggestion, provide:\n- Clear explanation of the issue or improvement opportunity\n- Specific code examples showing the current state and proposed improvement\n- Rationale for why the change would be beneficial\n- Priority level (High/Medium/Low) based on impact\n\nFocus on actionable recommendations that maintain existing functionality while improving code quality. Consider the project's TypeScript/React/Next.js stack and feature-based architecture."
+  }
+}
