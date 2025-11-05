@@ -8,32 +8,43 @@ interface CriteriaScoringProps {
   criteriaAnalysis: CriteriaAnalysis;
 }
 
-const getCriteriaInfo = (t: (key: string) => string) =>
-  ({
-    [t("criteriaPotentialValue")]: {
-      emoji: "💎",
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/20",
-      borderColor: "border-blue-400/50",
-      description:
-        "Market uniqueness, UI intuitiveness, and scalability potential",
-    },
-    [t("criteriaImplementation")]: {
-      emoji: "🔧",
-      color: "text-green-400",
-      bgColor: "bg-green-500/20",
-      borderColor: "border-green-400/50",
-      description:
-        "Variety of Kiro features, depth of understanding, strategic integration",
-    },
-    [t("criteriaQualityDesign")]: {
-      emoji: "🎨",
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/20",
-      borderColor: "border-purple-400/50",
-      description: "Creativity, originality, and UI polish",
-    },
-  } as const);
+const getCriteriaInfo = (t: (key: string) => string) => {
+  const potential = {
+    emoji: "💎",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/20",
+    borderColor: "border-blue-400/50",
+    description: "Market uniqueness, UI intuitiveness, and scalability potential",
+  } as const;
+  const implementation = {
+    emoji: "🔧",
+    color: "text-green-400",
+    bgColor: "bg-green-500/20",
+    borderColor: "border-green-400/50",
+    description:
+      "Variety of Kiro features, depth of understanding, strategic integration",
+  } as const;
+  const quality = {
+    emoji: "🎨",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/20",
+    borderColor: "border-purple-400/50",
+    description: "Creativity, originality, and UI polish",
+  } as const;
+
+  // Map both canonical English names and localized labels to the same info
+  return {
+    // Potential Value
+    "Potential Value": potential,
+    [t("criteriaPotentialValue")]: potential,
+    // Implementation
+    Implementation: implementation,
+    [t("criteriaImplementation")]: implementation,
+    // Quality and Design
+    "Quality and Design": quality,
+    [t("criteriaQualityDesign")]: quality,
+  } as const;
+};
 
 const StarRating: React.FC<{ score: number; color: string }> = ({
   score,
@@ -108,90 +119,18 @@ const StarRating: React.FC<{ score: number; color: string }> = ({
   );
 };
 
-const FinalScoreDisplay: React.FC<{ score: number }> = ({ score }) => {
-  const percentage = (score / 5) * 100;
-  const textColorClass =
-    score >= 4
-      ? "text-green-400"
-      : score >= 2.5
-      ? "text-yellow-400"
-      : "text-red-400";
-  const strokeColorClass =
-    score >= 4
-      ? "stroke-green-400"
-      : score >= 2.5
-      ? "stroke-yellow-400"
-      : "stroke-red-400";
-
-  return (
-    <div className="relative flex items-center justify-center w-32 h-32 font-mono">
-      <div
-        className={`absolute text-4xl font-bold ${textColorClass}`}
-        style={{ textShadow: `0 0 15px currentColor` }}
-      >
-        {score.toFixed(1)}
-      </div>
-      <svg className="w-full h-full" viewBox="0 0 120 120">
-        {/* Background circle */}
-        <circle
-          cx="60"
-          cy="60"
-          r="50"
-          fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="4"
-        />
-
-        {/* Progress circle */}
-        <circle
-          cx="60"
-          cy="60"
-          r="50"
-          fill="none"
-          strokeWidth="6"
-          strokeDasharray={`${(percentage / 100) * 314.16} 314.16`}
-          strokeDashoffset="78.54"
-          className={strokeColorClass}
-          strokeLinecap="round"
-          style={{
-            transition: "stroke-dasharray 1s ease-out",
-            transform: "rotate(-90deg)",
-            transformOrigin: "60px 60px",
-          }}
-        />
-      </svg>
-    </div>
-  );
-};
+// FinalScoreDisplay removed; final score is shown in merged section in HackathonAnalysisDisplay
 
 const CriteriaScoring: React.FC<CriteriaScoringProps> = ({
   criteriaAnalysis,
 }) => {
   const { t } = useLocale();
-  const { scores, finalScore, finalScoreExplanation } = criteriaAnalysis;
+  const { scores } = criteriaAnalysis;
   const CRITERIA_INFO = getCriteriaInfo(t);
 
   return (
     <div className="space-y-8">
-      {/* Final Score Section */}
-      <div className="bg-gradient-to-r from-orange-500/20 to-purple-500/20 p-6 rounded-lg border-2 border-orange-400/50 shadow-lg">
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="flex-shrink-0">
-            <FinalScoreDisplay score={finalScore} />
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-2xl font-bold text-orange-300 mb-2 uppercase tracking-wider">
-              🏆 {t("finalScoreTitle")}
-            </h3>
-            <p className="text-lg text-slate-300 mb-3 leading-relaxed">
-              {finalScoreExplanation}
-            </p>
-            <div className="text-sm text-slate-400 font-mono">
-              {t("averageOfAllCriteria")}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Final Score removed from this section */}
 
       {/* Individual Criteria Scores */}
       <div className="space-y-6">
@@ -202,7 +141,13 @@ const CriteriaScoring: React.FC<CriteriaScoringProps> = ({
 
         {scores.map((criterion) => {
           const criteriaInfo =
-            CRITERIA_INFO[criterion.name as keyof typeof CRITERIA_INFO];
+            CRITERIA_INFO[criterion.name as keyof typeof CRITERIA_INFO] || {
+              emoji: "❓",
+              color: "text-slate-300",
+              bgColor: "bg-slate-700/30",
+              borderColor: "border-slate-600",
+              description: "Unknown criterion",
+            };
 
           return (
             <div

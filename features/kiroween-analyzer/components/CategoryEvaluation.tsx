@@ -27,13 +27,13 @@ const getCategoryInfo = (
     color: "text-purple-400",
   },
   "skeleton-crew": {
-    emoji: "💀",
+    emoji: "☠️",
     label: t("categorySkeletonCrew"),
     description: t("categorySkeletonCrewDescription"),
     color: "text-blue-400",
   },
   "costume-contest": {
-    emoji: "🎭",
+    emoji: "👗",
     label: t("categoryCostumeContest"),
     description: t("categoryCostumeContestDescription"),
     color: "text-orange-400",
@@ -44,21 +44,24 @@ const FitScoreGauge: React.FC<{ score: number; color: string }> = ({
   score,
   color,
 }) => {
-  const percentage = (score / 10) * 100;
+  // Convert 0-10 input score to 0-5 scale with 0.5 increments
+  const fiveScaleRaw = score / 2;
+  const fiveScale = Math.round(fiveScaleRaw / 0.5) * 0.5;
+  const percentage = (fiveScale / 5) * 100;
   const strokeColorClass =
-    score >= 8
+    fiveScale >= 4
       ? "stroke-green-400"
-      : score >= 6
+      : fiveScale >= 3.5
       ? "stroke-yellow-400"
-      : score >= 4
+      : fiveScale >= 2.5
       ? "stroke-orange-400"
       : "stroke-red-400";
   const textColorClass =
-    score >= 8
+    fiveScale >= 4
       ? "text-green-400"
-      : score >= 6
+      : fiveScale >= 3.5
       ? "text-yellow-400"
-      : score >= 4
+      : fiveScale >= 2.5
       ? "text-orange-400"
       : "text-red-400";
 
@@ -68,7 +71,7 @@ const FitScoreGauge: React.FC<{ score: number; color: string }> = ({
         className={`absolute text-2xl font-bold font-mono ${textColorClass}`}
         style={{ textShadow: `0 0 10px currentColor` }}
       >
-        {score.toFixed(1)}
+        {fiveScale.toFixed(1)}
       </div>
       <svg className="w-full h-full" viewBox="0 0 80 80">
         {/* Background circle */}
@@ -110,20 +113,72 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
   const { evaluations, bestMatch, bestMatchReason } = categoryAnalysis;
   const CATEGORY_INFO = getCategoryInfo(t);
 
+  // Normalize possibly free-form category strings to our canonical keys
+  const normalizeCategory = (
+    value: string | KiroweenCategory | undefined | null
+  ): KiroweenCategory | null => {
+    if (!value) return null;
+    const raw = String(value).trim().toLowerCase();
+    // Replace spaces/underscores with hyphens
+    const key = raw.replace(/\s+/g, "-").replace(/_/g, "-");
+    // Allow common variations
+    const aliases: Record<string, KiroweenCategory> = {
+      resurrection: "resurrection",
+      "the-resurrection": "resurrection",
+      frankenstein: "frankenstein",
+      "franken-stein": "frankenstein",
+      "skeleton-crew": "skeleton-crew",
+      skeleton: "skeleton-crew",
+      "skeleton crew": "skeleton-crew",
+      "costume-contest": "costume-contest",
+      costume: "costume-contest",
+      "costume contest": "costume-contest",
+    };
+    if (aliases[key]) return aliases[key];
+    // Direct match to known keys
+    const known: KiroweenCategory[] = [
+      "resurrection",
+      "frankenstein",
+      "skeleton-crew",
+      "costume-contest",
+    ];
+    return (known as string[]).includes(key) ? (key as KiroweenCategory) : null;
+  };
+
+  // Determine best match strictly by highest fitScore, normalizing category keys
+  const validBestMatch = (() => {
+    if (evaluations && evaluations.length > 0) {
+      const bestEvaluation = evaluations.reduce((acc, current) =>
+        current.fitScore > acc.fitScore ? current : acc
+      );
+      const normalized = normalizeCategory(bestEvaluation?.category);
+      if (normalized && CATEGORY_INFO[normalized]) {
+        return normalized;
+      }
+    }
+    const normalizedBest = normalizeCategory(bestMatch);
+    return normalizedBest || ("resurrection" as KiroweenCategory);
+  })();
+
+  const bestMatchInfo = CATEGORY_INFO[validBestMatch] || {
+    emoji: "🧟",
+    label: "Resurrection",
+    description: "Default category",
+    color: "text-green-400",
+  };
+
   return (
     <div className="space-y-6">
       {/* Best Match Highlight */}
       <div className="bg-gradient-to-r from-orange-500/20 to-purple-500/20 p-6 rounded-lg border-2 border-orange-400/50 shadow-lg">
         <div className="flex items-center mb-4">
-          <div className="text-3xl mr-3">{CATEGORY_INFO[bestMatch].emoji}</div>
+          <div className="text-3xl mr-3">{bestMatchInfo.emoji}</div>
           <div>
             <h3 className="text-xl font-bold text-orange-300 uppercase tracking-wider">
               🏆 {t("bestMatchingCategory")}
             </h3>
-            <p
-              className={`text-lg font-semibold ${CATEGORY_INFO[bestMatch].color}`}
-            >
-              {CATEGORY_INFO[bestMatch].label}
+            <p className={`text-lg font-semibold ${bestMatchInfo.color}`}>
+              {bestMatchInfo.label}
             </p>
           </div>
         </div>
@@ -135,8 +190,16 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
       {/* Category Evaluations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {evaluations.map((evaluation) => {
-          const categoryInfo = CATEGORY_INFO[evaluation.category];
-          const isBestMatch = evaluation.category === bestMatch;
+          const normalizedCategory = normalizeCategory(evaluation.category);
+          const categoryInfo =
+            (normalizedCategory && CATEGORY_INFO[normalizedCategory]) || {
+              emoji: "❓",
+              label: evaluation.category,
+              description: "Unknown category",
+              color: "text-gray-400",
+            };
+          const isBestMatch =
+            normalizedCategory !== null && normalizedCategory === validBestMatch;
 
           return (
             <div
@@ -185,7 +248,7 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
                   <p className="text-sm text-slate-400 uppercase tracking-wider font-semibold">
                     {t("categoryFitScore")}
                   </p>
-                  <p className="text-xs text-slate-500">{t("outOfTen")}</p>
+                  <p className="text-xs text-slate-500">{t("outOfFive")}</p>
                 </div>
                 <FitScoreGauge
                   score={evaluation.fitScore}
@@ -240,19 +303,19 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-            <span className="text-slate-400">8-10: {t("excellentFit")}</span>
+            <span className="text-slate-400">4-5: {t("excellentFit")}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
-            <span className="text-slate-400">6-7: {t("goodFit")}</span>
+            <span className="text-slate-400">3.5-4: {t("goodFit")}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-orange-400 rounded-full mr-2"></div>
-            <span className="text-slate-400">4-5: {t("fairFit")}</span>
+            <span className="text-slate-400">2.5-3: {t("fairFit")}</span>
           </div>
           <div className="flex items-center">
             <div className="w-3 h-3 bg-red-400 rounded-full mr-2"></div>
-            <span className="text-slate-400">1-3: {t("poorFit")}</span>
+            <span className="text-slate-400">0-2: {t("poorFit")}</span>
           </div>
         </div>
       </div>

@@ -160,7 +160,7 @@ const KiroweenAnalyzerView: React.FC = () => {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isLoading]);
+  }, [isLoading, loadingMessages]);
 
   const handleBack = useCallback(() => {
     if (isLoggedIn) {
@@ -173,16 +173,6 @@ const KiroweenAnalyzerView: React.FC = () => {
   const handleAnalyze = useCallback(async () => {
     if (!submission.description.trim()) {
       setError("Please provide a project description");
-      return;
-    }
-
-    if (!submission.selectedCategory) {
-      setError("Please select a category");
-      return;
-    }
-
-    if (!submission.kiroUsage.trim()) {
-      setError("Please explain how you used Kiro");
       return;
     }
 

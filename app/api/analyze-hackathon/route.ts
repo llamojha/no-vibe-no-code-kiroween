@@ -28,29 +28,13 @@ export async function POST(request: Request) {
 
     // Validate required submission fields
     if (
-      !submission.description ||
-      !submission.selectedCategory ||
-      !submission.kiroUsage
+      !submission.description
     ) {
       return NextResponse.json(
         {
           error:
-            "Project description, selected category, and Kiro usage are required.",
+            "Project description is required.",
         },
-        { status: 400 }
-      );
-    }
-
-    // Validate category
-    const validCategories = [
-      "resurrection",
-      "frankenstein",
-      "skeleton-crew",
-      "costume-contest",
-    ];
-    if (!validCategories.includes(submission.selectedCategory)) {
-      return NextResponse.json(
-        { error: "Invalid category selected." },
         { status: 400 }
       );
     }

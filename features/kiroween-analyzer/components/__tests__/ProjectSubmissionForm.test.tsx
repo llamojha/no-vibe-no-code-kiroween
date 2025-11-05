@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import ProjectSubmissionForm from "../ProjectSubmissionForm";
 import { ProjectSubmission } from "@/lib/types";
@@ -62,5 +62,98 @@ describe("ProjectSubmissionForm", () => {
       ...mockSubmission,
       description: "Test project description",
     });
+  });
+
+  it("updates Kiro usage field correctly", () => {
+    render(<ProjectSubmissionForm {...mockProps} />);
+
+    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
+    fireEvent.change(kiroUsageField, {
+      target: { value: "Used Kiro agents for automation" },
+    });
+
+    expect(mockProps.onSubmissionChange).toHaveBeenCalledWith({
+      ...mockSubmission,
+      kiroUsage: "Used Kiro agents for automation",
+    });
+  });
+
+  it("calls onAnalyze when form is valid and submitted", async () => {
+    const validSubmission = {
+      ...mockSubmission,
+      description: "Valid project description",
+      kiroUsage: "Valid Kiro usage explanation",
+    };
+
+    render(
+      <ProjectSubmissionForm {...mockProps} submission={validSubmission} />
+    );
+
+    const submitButton = screen.getByRole("button", {
+      name: /analyze my project/i,
+    });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockProps.onAnalyze).toHaveBeenCalled();
+    });
+  });
+
+  it("disables submit button when loading", () => {
+    render(<ProjectSubmissionForm {...mockProps} isLoading={true} />);
+
+    const submitButton = screen.getByRole("button", {
+      name: /analyzing/i,
+    });
+    expect(submitButton).toBeDisabled();
+  });
+
+  it("shows loading state correctly", () => {
+    render(<ProjectSubmissionForm {...mockProps} isLoading={true} />);
+
+    expect(screen.getByText(/analyzing/i)).toBeInTheDocument();
+  });
+
+  it("validates minimum description length", () => {
+    const shortSubmission = {
+      ...mockSubmission,
+      description: "Too short",
+      kiroUsage: "Valid Kiro usage",
+    };
+
+    render(
+      <ProjectSubmissionForm {...mockProps} submission={shortSubmission} />
+    );
+
+    const submitButton = screen.getByRole("button", {
+      name: /analyze my project/i,
+    });
+    fireEvent.click(submitButton);
+
+    expect(
+      screen.getByText(/project description must be at least/i)
+    ).toBeInTheDocument();
+  });
+
+  it("validates minimum Kiro usage length", () => {
+    const shortKiroSubmission = {
+      ...mockSubmission,
+      description:
+        "Valid project description that is long enough to pass validation",
+      kiroUsage: "Short",
+    };
+
+    render(
+      <ProjectSubmissionForm {...mockProps} submission={shortKiroSubmission} />
+    );
+
+    const submitButton = screen.getByRole("button", {
+      name: /analyze my project/i,
+    });
+    fireEvent.click(submitButton);
+
+    expect(
+      screen.getByText(/please provide more detail about how you used kiro/i)
+    ).toBeInTheDocument();
   });
 });

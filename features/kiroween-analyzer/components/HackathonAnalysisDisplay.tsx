@@ -8,6 +8,7 @@ import { copyShareableLinkToClipboard } from "../utils/shareableLinks";
 import CollapsibleSection from "@/features/analyzer/components/CollapsibleSection";
 import CategoryEvaluation from "./CategoryEvaluation";
 import CriteriaScoring from "./CriteriaScoring";
+import HackathonExportControl from "./HackathonExportControl";
 
 interface HackathonAnalysisDisplayProps {
   analysis: HackathonAnalysis;
@@ -52,6 +53,71 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
   };
 
   const iconClasses = "w-7 h-7 text-orange-400";
+
+  // Display the actual final score (0-5) from analysis
+  const computeFinalScore = () => {
+    // Use the actual final score value without snapping to increments
+    // Keep display formatting in the gauge component.
+    return analysis.finalScore ?? analysis.criteriaAnalysis?.finalScore ?? 0;
+  };
+
+  const finalScore = computeFinalScore();
+
+  const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
+    const percentage = (score / 5) * 100;
+    const strokeColorClass =
+      score >= 4
+        ? "stroke-green-400"
+        : score >= 3.5
+        ? "stroke-yellow-400"
+        : score >= 2.5
+        ? "stroke-orange-400"
+        : "stroke-red-400";
+    const textColorClass =
+      score >= 4
+        ? "text-green-400"
+        : score >= 3.5
+        ? "text-yellow-400"
+        : score >= 2.5
+        ? "text-orange-400"
+        : "text-red-400";
+    return (
+      <div className="relative flex items-center justify-center w-40 h-40">
+        <div
+          className={`absolute text-5xl font-bold font-mono ${textColorClass}`}
+          style={{ textShadow: `0 0 14px currentColor` }}
+        >
+          {score.toFixed(1)}
+        </div>
+        <svg className="w-full h-full" viewBox="0 0 120 120">
+          <circle
+            cx="60"
+            cy="60"
+            r="48"
+            fill="none"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="5"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="48"
+            fill="none"
+            strokeWidth="6"
+            strokeDasharray={`${(percentage / 100) * 301.59} 301.59`}
+            strokeDashoffset="75.4"
+            className={strokeColorClass}
+            strokeLinecap="round"
+            style={{
+              transition: "stroke-dasharray 1s ease-out",
+              transform: "rotate(-90deg)",
+              transformOrigin: "60px 60px",
+            }}
+          />
+        </svg>
+      </div>
+    );
+  };
 
   return (
     <div className="mt-8 space-y-8 animate-fade-in">
@@ -129,9 +195,9 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           </CollapsibleSection>
         )}
 
-      {/* Viability Summary Section */}
+      {/* Final Score & Viability Summary (merged with Detailed Summary) */}
       <CollapsibleSection
-        title={`🎯 ${t("competitivePotential")}`}
+        title={`🎯 ${t("finalScoreTitle")}`}
         animationDelay="100ms"
         defaultOpen={true}
         icon={
@@ -151,18 +217,33 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           </svg>
         }
       >
-        <div className="bg-gradient-to-r from-purple-500/20 to-orange-500/20 p-6 rounded-lg border border-orange-400/50">
-          <p className="text-lg text-slate-300 leading-relaxed">
-            {analysis.viabilitySummary}
-          </p>
+        <div className="bg-gradient-to-r from-purple-500/20 to-orange-500/20 p-8 rounded-lg border border-orange-400/50">
+          <div className="flex flex-col items-center justify-center mb-6">
+            <ScoreGauge score={finalScore} />
+            <div className="mt-3 text-center">
+              <p className="text-slate-400 text-sm uppercase tracking-wider">
+                {t("averageOfAllCriteria")}
+              </p>
+              <p className="text-slate-500 text-xs">{t("outOfFive")}</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <p className="text-lg text-slate-300 leading-relaxed">
+              {analysis.viabilitySummary}
+            </p>
+            <div className="bg-black/20 p-4 rounded-lg border border-slate-700">
+              <p className="text-base text-slate-400 whitespace-pre-wrap leading-relaxed">
+                {analysis.detailedSummary}
+              </p>
+            </div>
+          </div>
         </div>
       </CollapsibleSection>
 
-      {/* Category Analysis Section */}
+      {/* Category Evaluation Section (Detailed Breakdown renamed) */}
       <CollapsibleSection
-        title={`🏆 ${t("categoryEvaluationTitle")}`}
-        animationDelay="150ms"
-        defaultOpen={true}
+        title={`🎃 ${t("categoryEvaluationTitle")}`}
+        animationDelay="175ms"
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -187,7 +268,6 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       <CollapsibleSection
         title={`📊 ${t("criteriaScoreTitle")}`}
         animationDelay="200ms"
-        defaultOpen={true}
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -208,38 +288,12 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
         <CriteriaScoring criteriaAnalysis={analysis.criteriaAnalysis} />
       </CollapsibleSection>
 
-      {/* Detailed Summary Section */}
-      <CollapsibleSection
-        title={`📋 ${t("detailedSummaryTitle")}`}
-        animationDelay="250ms"
-        icon={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className={iconClasses}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-            />
-          </svg>
-        }
-      >
-        <div className="bg-black/20 p-6 rounded-lg border border-slate-700">
-          <p className="text-base text-slate-400 whitespace-pre-wrap leading-relaxed">
-            {analysis.detailedSummary}
-          </p>
-        </div>
-      </CollapsibleSection>
+      {/* Detailed Summary section removed (merged above) */}
 
       {/* Hackathon-Specific Advice Section */}
       <CollapsibleSection
         title={`🎃 ${t("hackathonSpecificAdvice")}`}
-        animationDelay="300ms"
+        animationDelay="325ms"
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -339,7 +393,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       {(analysis?.competitors || []).length > 0 && (
         <CollapsibleSection
           title={`👻 ${t("spookyCompetition")}`}
-          animationDelay="350ms"
+          animationDelay="375ms"
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -423,7 +477,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
         (analysis?.improvementSuggestions || []).length > 0 && (
           <CollapsibleSection
             title={`💡 ${t("improvementSuggestionsTitle")}`}
-            animationDelay="400ms"
+            animationDelay="425ms"
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -464,7 +518,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       {/* Next Steps Section */}
       <CollapsibleSection
         title={`🚀 ${t("nextStepsTitle")}`}
-        animationDelay="450ms"
+        animationDelay="475ms"
         icon={
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -499,11 +553,14 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
         </ol>
       </CollapsibleSection>
 
-      {/* Action Buttons: Save & Export */}
+      {/* Action Buttons: Save, Export & Share */}
       <div
         className="mt-8 flex flex-col sm:flex-row justify-end items-center gap-4 animate-slide-in-up"
-        style={{ animationDelay: "500ms" }}
+        style={{ animationDelay: "525ms" }}
       >
+        {/* Export Control - Always visible */}
+        <HackathonExportControl analysis={analysis} />
+
         {isLoggedIn &&
           (isSaved ? (
             <>

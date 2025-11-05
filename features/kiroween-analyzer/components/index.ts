@@ -5,3 +5,5 @@ export { default as CategoryEvaluation } from "./CategoryEvaluation";
 export { default as CriteriaScoring } from "./CriteriaScoring";
 export { default as HackathonAnalysisDisplay } from "./HackathonAnalysisDisplay";
 export { default as KiroweenAnalyzerView } from "./KiroweenAnalyzerView";
+export { default as KiroweenCategorySection } from "./KiroweenCategorySection";
+export { default as HackathonExportControl } from "./HackathonExportControl";

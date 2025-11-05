@@ -57,17 +57,17 @@ features/kiroween-analyzer/
 **Key Features**:
 
 - Project description textarea (required)
-- Category selection dropdown with descriptions
 - Kiro usage explanation field
 - Optional supporting materials (screenshots, demo links)
 - Halloween-themed styling with spooky animations
+
+**Note**: Category selection has been removed - the analyzer now evaluates compatibility with all four categories and displays star ratings in the results.
 
 **Interface**:
 
 ```typescript
 interface ProjectSubmission {
   description: string;
-  selectedCategory: KiroweenCategory;
   kiroUsage: string;
   supportingMaterials?: {
     screenshots?: string[];
@@ -85,21 +85,23 @@ type KiroweenCategory =
 
 ### 2. Category Evaluator
 
-**Purpose**: Assess project fit against all four Kiroween categories
+**Purpose**: Assess project fit against all four Kiroween categories with star ratings
 
 **Evaluation Logic**:
 
-- **Resurrection**: Analyzes if project revives obsolete technology with modern innovations
-- **Frankenstein**: Evaluates integration of seemingly incompatible technologies
-- **Skeleton Crew**: Assesses if project provides a flexible foundation with multiple use cases
-- **Costume Contest**: Reviews UI polish and spooky design elements
+- **Resurrection**: Analyzes if project revives obsolete technology with modern innovations (0-5 stars)
+- **Frankenstein**: Evaluates integration of seemingly incompatible technologies (0-5 stars)
+- **Skeleton Crew**: Assesses if project provides a flexible foundation with multiple use cases (0-5 stars)
+- **Costume Contest**: Reviews UI polish and spooky design elements (0-5 stars)
+
+Each category receives a compatibility score from 0 to 5 stars, displayed similar to the existing Rubric Score section but specifically for Kiroween categories.
 
 **Interface**:
 
 ```typescript
 interface CategoryEvaluation {
   category: KiroweenCategory;
-  fitScore: number; // 1-5 scale
+  fitScore: number; // 0-5 scale (star rating)
   explanation: string;
   improvementSuggestions: string[];
 }
@@ -214,7 +216,6 @@ interface SavedHackathonAnalysis {
   id: string;
   userId: string;
   projectDescription: string;
-  selectedCategory: KiroweenCategory;
   kiroUsage: string;
   analysis: HackathonAnalysis;
   createdAt: string;
@@ -228,7 +229,6 @@ interface SavedHackathonAnalysis {
 ### Validation Errors
 
 - **Empty project description**: Display inline error with suggestion
-- **Missing category selection**: Highlight required field
 - **Insufficient Kiro usage explanation**: Provide guidance on what to include
 
 ### API Errors
