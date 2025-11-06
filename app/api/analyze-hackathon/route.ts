@@ -26,14 +26,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate required submission fields
+    // Validate required submission fields (only description is required now)
     const validationErrors: string[] = [];
-    const validCategories = new Set<ProjectSubmission["selectedCategory"]>([
-      "resurrection",
-      "frankenstein",
-      "skeleton-crew",
-      "costume-contest",
-    ]);
 
     if (
       typeof submission.description !== "string" ||
@@ -42,19 +36,7 @@ export async function POST(request: Request) {
       validationErrors.push("Project description is required.");
     }
 
-    if (
-      typeof submission.selectedCategory !== "string" ||
-      !validCategories.has(submission.selectedCategory)
-    ) {
-      validationErrors.push("A valid Kiroween category selection is required.");
-    }
-
-    if (
-      typeof submission.kiroUsage !== "string" ||
-      submission.kiroUsage.trim().length === 0
-    ) {
-      validationErrors.push("Details about how your project uses Kiro are required.");
-    }
+    // selectedCategory and kiroUsage are optional for analysis
 
     if (validationErrors.length > 0) {
       return NextResponse.json(
