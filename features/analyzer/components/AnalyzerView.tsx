@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React, {
   useCallback,
@@ -6,53 +6,58 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import type { Analysis, SavedAnalysisRecord } from '@/lib/types';
-import { mapSavedAnalysesRow } from '@/lib/supabase/mappers';
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { Analysis, SavedAnalysisRecord } from "@/lib/types";
+import { mapSavedAnalysesRow } from "@/lib/supabase/mappers";
 import type {
   SavedAnalysesInsert,
   SavedAnalysesRow,
   SavedAnalysesUpdate,
-} from '@/lib/supabase/types';
-import { useLocale } from '@/features/locale/context/LocaleContext';
-import { useAuth } from '@/features/auth/context/AuthContext';
-import { requestAnalysis } from '@/features/analyzer/api/analyzeIdea';
-import IdeaInputForm from '@/features/analyzer/components/IdeaInputForm';
-import AnalysisDisplay from '@/features/analyzer/components/AnalysisDisplay';
-import Loader from '@/features/analyzer/components/Loader';
-import ErrorMessage from '@/features/analyzer/components/ErrorMessage';
-import LanguageToggle from '@/features/locale/components/LanguageToggle';
-import { capture } from '@/features/analytics/posthogClient';
+} from "@/lib/supabase/types";
+import { useLocale } from "@/features/locale/context/LocaleContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { requestAnalysis } from "@/features/analyzer/api/analyzeIdea";
+import {
+  saveAnalysis,
+  updateAnalysisAudio,
+  loadAnalysis,
+  clearAnalysisAudio,
+} from "@/features/analyzer/api/saveAnalysis";
+import IdeaInputForm from "@/features/analyzer/components/IdeaInputForm";
+import AnalysisDisplay from "@/features/analyzer/components/AnalysisDisplay";
+import Loader from "@/features/analyzer/components/Loader";
+import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
+import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import { capture } from "@/features/analytics/posthogClient";
 
-type LoaderMessages = [
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-];
+type LoaderMessages = [string, string, string, string, string, string];
 
 const AnalyzerView: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const savedId = searchParams.get('savedId');
-  const mode = searchParams.get('mode');
+  const savedId = searchParams.get("savedId");
+  const mode = searchParams.get("mode");
 
   const { locale, t } = useLocale();
-  const { session, supabase, isLoading: isAuthLoading } = useAuth();
+  const {
+    session,
+    supabase,
+    isLoading: isAuthLoading,
+    isLocalDevMode,
+  } = useAuth();
   const isLoggedIn = useMemo(() => !!session, [session]);
 
-  const [idea, setIdea] = useState<string>('');
+  const [idea, setIdea] = useState<string>("");
   const [newAnalysis, setNewAnalysis] = useState<Analysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [isReportSaved, setIsReportSaved] = useState<boolean>(false);
   const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const [addedSuggestions, setAddedSuggestions] = useState<number[]>([]);
-  const [savedAnalysisRecord, setSavedAnalysisRecord] = useState<SavedAnalysisRecord | null>(null);
+  const [savedAnalysisRecord, setSavedAnalysisRecord] =
+    useState<SavedAnalysisRecord | null>(null);
   const [isFetchingSaved, setIsFetchingSaved] = useState(false);
   const savedRecordId = savedAnalysisRecord?.id ?? null;
   const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
@@ -60,22 +65,24 @@ const AnalyzerView: React.FC = () => {
   const ideaInputRef = useRef<HTMLDivElement>(null);
 
   const showInputForm =
-    !savedAnalysisRecord || mode === 'refine' || newAnalysis !== null;
+    !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
 
   useEffect(() => {
     if (!savedId) {
       setSavedAnalysisRecord(null);
-      setIdea('');
+      setIdea("");
       setIsReportSaved(false);
       setGeneratedAudio(null);
       return;
     }
 
-    // Wait until auth is initialized before deciding unauthenticated
-    if (!supabase || isAuthLoading) return;
+    // Wait until auth is initialized before deciding unauthenticated (unless in local dev mode)
+    if (!isLocalDevMode && (!supabase || isAuthLoading)) return;
 
-    if (!session) {
-      const next = `/analyzer?savedId=${encodeURIComponent(savedId)}${mode ? `&mode=${mode}` : ''}`;
+    if (!isLocalDevMode && !session) {
+      const next = `/analyzer?savedId=${encodeURIComponent(savedId)}${
+        mode ? `&mode=${mode}` : ""
+      }`;
       router.replace(`/login?next=${encodeURIComponent(next)}`);
       return;
     }
@@ -83,27 +90,23 @@ const AnalyzerView: React.FC = () => {
     const fetchSavedAnalysis = async () => {
       setIsFetchingSaved(true);
       try {
-        const { data, error } = await supabase
-          .from('saved_analyses')
-          .select('*')
-          .eq('id', savedId)
-          .eq('user_id', session.user.id)
-          .returns<SavedAnalysesRow>()
-          .single();
+        // Use the new load function that handles both local dev mode and production
+        const { data: record, error } = await loadAnalysis(savedId);
 
-        if (error || !data) {
-          console.error('Failed to load saved analysis', error);
+        if (error || !record) {
+          console.error("Failed to load saved analysis", error);
           setSavedAnalysisRecord(null);
-          setIdea('');
+          setIdea("");
           setIsReportSaved(false);
           setGeneratedAudio(null);
-          if (error?.code !== 'PGRST116') {
-            setError('Unable to load the saved analysis. It may have been removed.');
+          if (error !== "Analysis not found") {
+            setError(
+              "Unable to load the saved analysis. It may have been removed."
+            );
           }
           return;
         }
 
-        const record = mapSavedAnalysesRow(data);
         setSavedAnalysisRecord(record);
         setIdea(record.idea);
         setIsReportSaved(true);
@@ -117,18 +120,18 @@ const AnalyzerView: React.FC = () => {
     };
 
     void fetchSavedAnalysis();
-  }, [mode, router, savedId, session, supabase, isAuthLoading]);
+  }, [mode, router, savedId, session, supabase, isAuthLoading, isLocalDevMode]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
     if (isLoading) {
       const messages: LoaderMessages = [
-        t('loaderMessage1'),
-        t('loaderMessage2'),
-        t('loaderMessage3'),
-        t('loaderMessage4'),
-        t('loaderMessage5'),
-        t('loaderMessage6'),
+        t("loaderMessage1"),
+        t("loaderMessage2"),
+        t("loaderMessage3"),
+        t("loaderMessage4"),
+        t("loaderMessage5"),
+        t("loaderMessage6"),
       ];
       let currentIndex = 0;
       setLoadingMessage(messages[currentIndex]);
@@ -145,15 +148,15 @@ const AnalyzerView: React.FC = () => {
 
   const handleBack = useCallback(() => {
     if (isLoggedIn) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
-      router.push('/');
+      router.push("/");
     }
   }, [isLoggedIn, router]);
 
   const handleAnalyze = useCallback(async () => {
     if (!idea.trim()) {
-      setError(t('enterIdeaError'));
+      setError(t("enterIdeaError"));
       return;
     }
 
@@ -161,25 +164,21 @@ const AnalyzerView: React.FC = () => {
       setGeneratedAudio(null);
     }
 
-    if (supabase && savedRecordId && savedRecordAudio) {
-      const clearPayload: SavedAnalysesUpdate = {
-        audio_base64: null,
-      };
-      const { error: clearError } = await supabase
-        .from('saved_analyses')
-        .update(clearPayload)
-        .eq('id', savedRecordId);
+    if (savedRecordId && savedRecordAudio) {
+      const { error: clearError } = await clearAnalysisAudio(savedRecordId);
       if (clearError) {
-        console.error('Failed to clear saved audio', clearError);
+        console.error("Failed to clear saved audio", clearError);
       } else {
         setSavedAnalysisRecord((previous) =>
-          previous && previous.id === savedRecordId ? { ...previous, audioBase64: null } : previous,
+          previous && previous.id === savedRecordId
+            ? { ...previous, audioBase64: null }
+            : previous
         );
       }
     }
 
     setIsLoading(true);
-    capture('analysis_started', { locale, has_saved_id: Boolean(savedId) });
+    capture("analysis_started", { locale, has_saved_id: Boolean(savedId) });
     setError(null);
     setNewAnalysis(null);
     setAddedSuggestions([]);
@@ -189,112 +188,119 @@ const AnalyzerView: React.FC = () => {
       const analysisResult = await requestAnalysis(idea, locale);
       setNewAnalysis(analysisResult);
       if (savedId) {
-        router.replace('/analyzer');
+        router.replace("/analyzer");
       }
     } catch (err) {
       console.error(err);
       setError(
         err instanceof Error
           ? err.message
-          : 'An unknown error occurred during analysis.',
+          : "An unknown error occurred during analysis."
       );
     } finally {
       setIsLoading(false);
     }
-  }, [generatedAudio, idea, locale, router, savedId, savedRecordAudio, savedRecordId, supabase, t]);
+  }, [
+    generatedAudio,
+    idea,
+    locale,
+    router,
+    savedId,
+    savedRecordAudio,
+    savedRecordId,
+    supabase,
+    t,
+  ]);
 
   const handleSaveReport = useCallback(async () => {
     const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
     if (!analysisToSave || !idea) return;
 
-    if (!supabase) {
-      setError('Supabase client is not ready. Check your configuration and try again.');
+    // Check if authentication is required (not in local dev mode)
+    if (!isLocalDevMode && !session) {
+      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
       return;
     }
 
-    if (!session) {
-      router.push(`/login?next=${encodeURIComponent('/dashboard')}`);
-      return;
-    }
-
-    const insertPayload: SavedAnalysesInsert = {
-      user_id: session.user.id,
+    // Use the new save function that handles both local dev mode and production
+    const { data: record, error: saveError } = await saveAnalysis({
       idea,
-      analysis: analysisToSave as unknown as SavedAnalysesInsert['analysis'],
-      audio_base64: generatedAudio,
-    };
+      analysis: analysisToSave,
+      audioBase64: generatedAudio || undefined,
+    });
 
-    const { data, error: saveError } = await supabase
-      .from('saved_analyses')
-      .insert(insertPayload)
-      .select()
-      .returns<SavedAnalysesRow>()
-      .single();
-
-    if (saveError || !data) {
-      console.error('Failed to save analysis', saveError);
-      setError('Failed to save your analysis. Please try again.');
+    if (saveError || !record) {
+      setError(saveError || "Failed to save your analysis. Please try again.");
       return;
     }
-
-    const record = mapSavedAnalysesRow(data);
 
     setSavedAnalysisRecord(record);
     setIsReportSaved(true);
     setNewAnalysis(null);
     setAddedSuggestions([]);
     setGeneratedAudio(record.audioBase64 ?? null);
-    capture('analysis_saved', { analysis_id: record.id, locale });
-    router.replace(`/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`);
-  }, [generatedAudio, idea, newAnalysis, router, savedAnalysisRecord, session, supabase]);
+    capture("analysis_saved", { analysis_id: record.id, locale });
+    router.replace(
+      `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
+    );
+  }, [
+    generatedAudio,
+    idea,
+    newAnalysis,
+    router,
+    savedAnalysisRecord,
+    session,
+    isLocalDevMode,
+    locale,
+  ]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
       setGeneratedAudio(audioBase64);
 
-      if (!supabase || !savedRecordId) {
+      if (!savedRecordId) {
         return;
       }
 
-      const updatePayload: SavedAnalysesUpdate = {
-        audio_base64: audioBase64,
-      };
-
-      const { error: updateError } = await supabase
-        .from('saved_analyses')
-        .update(updatePayload)
-        .eq('id', savedRecordId);
+      // Use the new update function that handles both local dev mode and production
+      const { error: updateError } = await updateAnalysisAudio({
+        analysisId: savedRecordId,
+        audioBase64: audioBase64,
+      });
 
       if (updateError) {
-        console.error('Failed to persist audio', updateError);
+        console.error("Failed to persist audio", updateError);
         return;
       }
 
       setSavedAnalysisRecord((previous) =>
         previous && previous.id === savedRecordId
           ? { ...previous, audioBase64: audioBase64 }
-          : previous,
+          : previous
       );
     },
-    [savedRecordId, supabase],
+    [savedRecordId]
   );
 
   const handleRefineSuggestion = useCallback(
     (suggestionText: string, suggestionTitle: string, index: number) => {
-      setIdea((prev) => `${prev.trim()}\n\n— ${suggestionTitle}: ${suggestionText}`);
+      setIdea(
+        (prev) => `${prev.trim()}\n\n— ${suggestionTitle}: ${suggestionText}`
+      );
       setAddedSuggestions((prev) => [...prev, index]);
       ideaInputRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
+        behavior: "smooth",
+        block: "center",
       });
     },
-    [],
+    []
   );
 
-  const analysisToDisplay = newAnalysis ?? savedAnalysisRecord?.analysis ?? null;
+  const analysisToDisplay =
+    newAnalysis ?? savedAnalysisRecord?.analysis ?? null;
 
   const busy = isLoading || isFetchingSaved;
-  const busyMessage = isLoading ? loadingMessage : t('loading');
+  const busyMessage = isLoading ? loadingMessage : t("loading");
 
   return (
     <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -303,13 +309,15 @@ const AnalyzerView: React.FC = () => {
           <button
             onClick={handleBack}
             className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-accent transition-colors duration-200"
-            title={t('backToHome')}
+            title={t("backToHome")}
+            aria-label={t("backToHome")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
               viewBox="0 0 20 20"
               fill="currentColor"
+              aria-hidden="true"
             >
               <path
                 fillRule="evenodd"
@@ -318,13 +326,13 @@ const AnalyzerView: React.FC = () => {
               />
             </svg>
             <span className="hidden sm:inline uppercase tracking-wider">
-              {t('backToHome')}
+              {t("backToHome")}
             </span>
           </button>
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">
-            {t('appTitle')}
+            {t("appTitle")}
           </h1>
-          <p className="mt-2 text-lg text-slate-400">{t('appSubtitle')}</p>
+          <p className="mt-2 text-lg text-slate-400">{t("appSubtitle")}</p>
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
             <LanguageToggle />
           </div>
@@ -344,7 +352,7 @@ const AnalyzerView: React.FC = () => {
           {error && <ErrorMessage message={error} />}
           {busy && <Loader message={busyMessage} />}
           {analysisToDisplay && !busy && (
-            <div className={showInputForm ? 'mt-8' : ''}>
+            <div className={showInputForm ? "mt-8" : ""}>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
                 onSave={handleSaveReport}
@@ -352,7 +360,9 @@ const AnalyzerView: React.FC = () => {
                 savedAudioBase64={generatedAudio}
                 onAudioGenerated={handleAudioGenerated}
                 onGoToDashboard={handleBack}
-                onRefineSuggestion={showInputForm ? handleRefineSuggestion : undefined}
+                onRefineSuggestion={
+                  showInputForm ? handleRefineSuggestion : undefined
+                }
                 addedSuggestions={addedSuggestions}
               />
             </div>

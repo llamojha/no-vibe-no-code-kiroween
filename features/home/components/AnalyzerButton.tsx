@@ -11,6 +11,7 @@ interface AnalyzerButtonProps {
   variant: "primary" | "secondary";
   onClick?: () => void;
   className?: string;
+  isVisible?: boolean;
 }
 
 const AnalyzerButton: React.FC<AnalyzerButtonProps> = ({
@@ -21,6 +22,7 @@ const AnalyzerButton: React.FC<AnalyzerButtonProps> = ({
   variant,
   onClick,
   className = "",
+  isVisible = true,
 }) => {
   const router = useRouter();
 
@@ -66,6 +68,11 @@ const AnalyzerButton: React.FC<AnalyzerButtonProps> = ({
       hover:border-orange-500
     `,
   };
+
+  // Don't render if not visible
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <button

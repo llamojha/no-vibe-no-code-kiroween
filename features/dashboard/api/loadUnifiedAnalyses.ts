@@ -13,6 +13,8 @@ import type {
   SavedHackathonAnalysis,
   AnalysisCounts,
 } from "@/lib/types";
+import { isEnabled } from "@/lib/featureFlags";
+import { localStorageService } from "@/lib/localStorage";
 
 /**
  * Transform a startup idea analysis to unified format
@@ -76,12 +78,61 @@ function transformHackathonAnalysis(
 
 /**
  * Load all analyses for the current user from both tables and transform to unified format
+ * Routes to local storage when in local dev mode
  */
 export async function loadUnifiedAnalyses(): Promise<{
   data: UnifiedAnalysisRecord[];
   counts: AnalysisCounts;
   error: string | null;
 }> {
+  // Check if we're in local dev mode
+  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+
+  if (isLocalDevMode) {
+    try {
+      // Load from local storage
+      const [startupAnalyses, hackathonAnalyses] = await Promise.all([
+        localStorageService.loadAnalyses(),
+        localStorageService.loadHackathonAnalyses(),
+      ]);
+
+      // Transform to unified format
+      const transformedStartupAnalyses = startupAnalyses.map(
+        transformStartupAnalysis
+      );
+      const transformedHackathonAnalyses = hackathonAnalyses.map(
+        transformHackathonAnalysis
+      );
+
+      // Combine and sort by creation date (newest first)
+      const allAnalyses = [
+        ...transformedStartupAnalyses,
+        ...transformedHackathonAnalyses,
+      ].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      // Calculate counts
+      const counts: AnalysisCounts = {
+        total: allAnalyses.length,
+        idea: transformedStartupAnalyses.length,
+        kiroween: transformedHackathonAnalyses.length,
+      };
+
+      return { data: allAnalyses, counts, error: null };
+    } catch (error) {
+      console.error("Failed to load analyses from local storage", error);
+      return {
+        data: [],
+        counts: { total: 0, idea: 0, kiroween: 0 },
+        error:
+          "Failed to load your analyses from local storage. Please try again.",
+      };
+    }
+  }
+
+  // Standard Supabase flow for production
   const supabase = browserSupabase();
 
   const {
@@ -157,7 +208,8 @@ export async function loadUnifiedAnalyses(): Promise<{
 }
 
 /**
- * Server-si version for initial page load
+ * Server-side version for initial page load
+ * Note: Local dev mode is handled client-side, so this always uses Supabase
  */
 export async function loadUnifiedAnalysesServer(
   userId: string,

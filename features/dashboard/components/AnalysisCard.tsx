@@ -3,6 +3,8 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import type { UnifiedAnalysisRecord } from "@/lib/types";
+import { isEnabled } from "@/lib/featureFlags";
+import { formatDateUTCEnUS } from "@/lib/date";
 
 interface AnalysisCardProps {
   analysis: UnifiedAnalysisRecord;
@@ -27,11 +29,22 @@ const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
       ? "stroke-yellow-400"
       : "stroke-red-400";
 
+  const scoreCategory =
+    score >= 4 ? "excellent" : score >= 2.5 ? "good" : "needs improvement";
+
   return (
     <div
       className={`relative flex-shrink-0 w-16 h-16 flex items-center justify-center font-mono ${scoreColorClass}`}
+      role="img"
+      aria-label={`Analysis score: ${score.toFixed(
+        1
+      )} out of 5, rated as ${scoreCategory}`}
     >
-      <svg className="absolute w-full h-full" viewBox="0 0 56 56">
+      <svg
+        className="absolute w-full h-full"
+        viewBox="0 0 56 56"
+        aria-hidden="true"
+      >
         <circle
           className="stroke-slate-700"
           strokeWidth="4"
@@ -53,7 +66,9 @@ const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
           style={{ transition: "stroke-dashoffset 0.5s ease-out" }}
         />
       </svg>
-      <span className="text-lg font-bold">{score.toFixed(1)}</span>
+      <span className="text-lg font-bold" aria-hidden="true">
+        {score.toFixed(1)}
+      </span>
     </div>
   );
 };
@@ -73,6 +88,7 @@ const CategoryBadge: React.FC<{ category: "idea" | "kiroween" }> = ({
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -87,6 +103,7 @@ const CategoryBadge: React.FC<{ category: "idea" | "kiroween" }> = ({
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
+      aria-hidden="true"
     >
       <path
         strokeLinecap="round"
@@ -98,19 +115,32 @@ const CategoryBadge: React.FC<{ category: "idea" | "kiroween" }> = ({
   );
 
   const label = isIdea ? "IDEA" : "KIROWEEN";
+  const fullLabel = isIdea
+    ? "Startup Idea Analysis"
+    : "Kiroween Project Analysis";
 
   return (
     <div
       className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold uppercase tracking-wider border rounded-none ${badgeClasses}`}
+      role="img"
+      aria-label={fullLabel}
     >
       {icon}
-      {label}
+      <span aria-hidden="true">{label}</span>
     </div>
   );
 };
 
 const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
   const router = useRouter();
+
+  // Feature flag evaluations
+  const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
+  const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
+
+  // Determine if this analysis type is enabled
+  const isAnalyzerEnabled =
+    analysis.category === "idea" ? showClassicAnalyzer : showKiroweenAnalyzer;
 
   const handleView = () => {
     if (analysis.category === "idea") {
@@ -127,6 +157,9 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
   };
 
   const handleEdit = () => {
+    // Only allow editing if the analyzer is enabled
+    if (!isAnalyzerEnabled) return;
+
     if (analysis.category === "idea") {
       router.push(
         `/analyzer?savedId=${encodeURIComponent(analysis.id)}&mode=refine`
@@ -147,6 +180,29 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
       <div className="flex-1">
         <div className="flex items-start gap-2 mb-2">
           <CategoryBadge category={analysis.category} />
+          {!isAnalyzerEnabled && (
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold uppercase tracking-wider border rounded-none bg-slate-800/20 border-slate-600 text-slate-500"
+              role="img"
+              aria-label="This analysis is read-only because the analyzer is disabled"
+            >
+              <svg
+                className="h-3 w-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+              <span aria-hidden="true">READ-ONLY</span>
+            </div>
+          )}
         </div>
 
         <h3 className="text-xl font-semibold text-slate-200 uppercase tracking-wider mb-1">
@@ -154,7 +210,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
         </h3>
 
         <p className="text-sm text-slate-500 font-mono mb-2">
-          {new Date(analysis.createdAt).toLocaleString()}
+          {formatDateUTCEnUS(analysis.createdAt)}
         </p>
 
         <p className="text-sm text-slate-400 line-clamp-2">
@@ -166,12 +222,14 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
         <button
           onClick={handleView}
           className="flex items-center gap-2 px-3 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm"
+          aria-label={`View analysis: ${analysis.title}`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-4 w-4"
             viewBox="0 0 20 20"
             fill="currentColor"
+            aria-hidden="true"
           >
             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
             <path
@@ -180,19 +238,33 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
               clipRule="evenodd"
             />
           </svg>
-          View
+          <span aria-hidden="true">View</span>
         </button>
 
         {analysis.category === "idea" && (
           <button
             onClick={handleEdit}
-            className="flex items-center gap-2 px-3 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-secondary/20 hover:text-secondary hover:border-secondary transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm"
+            disabled={!isAnalyzerEnabled}
+            className={`flex items-center gap-2 px-3 py-2 border rounded-none uppercase tracking-wider text-xs sm:text-sm transition-colors ${
+              isAnalyzerEnabled
+                ? "bg-primary/40 border-slate-700 text-slate-300 hover:bg-secondary/20 hover:text-secondary hover:border-secondary cursor-pointer"
+                : "bg-slate-800/40 border-slate-800 text-slate-600 cursor-not-allowed"
+            }`}
+            aria-label={
+              isAnalyzerEnabled
+                ? `Edit analysis: ${analysis.title}`
+                : `Analysis "${analysis.title}" is read-only because the analyzer is disabled`
+            }
+            aria-describedby={
+              !isAnalyzerEnabled ? "analyzer-disabled-help" : undefined
+            }
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-4 w-4"
               viewBox="0 0 20 20"
               fill="currentColor"
+              aria-hidden="true"
             >
               <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
               <path
@@ -201,19 +273,23 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
                 clipRule="evenodd"
               />
             </svg>
-            Edit
+            <span aria-hidden="true">
+              {isAnalyzerEnabled ? "Edit" : "Read-Only"}
+            </span>
           </button>
         )}
 
         <button
           onClick={() => onDelete(analysis)}
           className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-700 text-red-400 hover:bg-red-500/20 transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm"
+          aria-label={`Delete analysis: ${analysis.title}`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-4 w-4"
             viewBox="0 0 20 20"
             fill="currentColor"
+            aria-hidden="true"
           >
             <path
               fillRule="evenodd"
@@ -226,9 +302,17 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
               clipRule="evenodd"
             />
           </svg>
-          Delete
+          <span aria-hidden="true">Delete</span>
         </button>
       </div>
+
+      {/* Hidden helper text for screen readers */}
+      {!isAnalyzerEnabled && (
+        <div id="analyzer-disabled-help" className="sr-only">
+          The analyzer for this type of analysis is currently disabled, so
+          editing is not available.
+        </div>
+      )}
     </div>
   );
 };

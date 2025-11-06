@@ -14,6 +14,7 @@ import type {
   DashboardFilterState,
 } from "@/lib/types";
 import { capture } from "@/features/analytics/posthogClient";
+import { isEnabled } from "@/lib/featureFlags";
 
 type SortOption = "newest" | "oldest" | "az";
 
@@ -32,6 +33,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const { t } = useLocale();
   const { supabase, signOut } = useAuth();
 
+  // Feature flag evaluations
+  const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
+  const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
+
   const [analyses, setAnalyses] =
     useState<UnifiedAnalysisRecord[]>(initialAnalyses);
   const [counts, setCounts] = useState<AnalysisCounts>(initialCounts);
@@ -43,6 +48,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const [analysisToDelete, setAnalysisToDelete] =
     useState<UnifiedAnalysisRecord | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const cancelButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const refreshAnalyses = useCallback(async () => {
     setIsRefreshing(true);
@@ -127,6 +133,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
     setAnalysisToDelete(null);
   }, [analysisToDelete, supabase]);
 
+  // Focus management for delete dialog
+  useEffect(() => {
+    if (analysisToDelete && cancelButtonRef.current) {
+      cancelButtonRef.current.focus();
+    }
+  }, [analysisToDelete]);
+
   const handleSignOut = useCallback(async () => {
     await signOut();
     router.replace("/");
@@ -168,22 +181,34 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       </header>
 
       <main className="max-w-4xl mx-auto">
-        <div className="mb-12 animate-slide-in-up">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={() => router.push("/analyzer")}
-              className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+        {(showClassicAnalyzer || showKiroweenAnalyzer) && (
+          <div className="mb-12 animate-slide-in-up">
+            <div
+              className={`grid gap-4 ${
+                showClassicAnalyzer && showKiroweenAnalyzer
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 max-w-md mx-auto"
+              }`}
             >
-              Analyze Startup Idea
-            </button>
-            <button
-              onClick={() => router.push("/kiroween-analyzer")}
-              className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-            >
-              Analyze Kiroween Project
-            </button>
+              {showClassicAnalyzer && (
+                <button
+                  onClick={() => router.push("/analyzer")}
+                  className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+                >
+                  Analyze Startup Idea
+                </button>
+              )}
+              {showKiroweenAnalyzer && (
+                <button
+                  onClick={() => router.push("/kiroween-analyzer")}
+                  className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+                >
+                  Analyze Kiroween Project
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           className="animate-slide-in-up"
@@ -211,7 +236,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           {analyses.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-grow">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <label htmlFor="search-analyses" className="sr-only">
+                  Search your analyses
+                </label>
+                <span
+                  className="absolute inset-y-0 left-0 flex items-center pl-3"
+                  aria-hidden="true"
+                >
                   <svg
                     className="h-5 w-5 text-slate-500"
                     xmlns="http://www.w3.org/2000/svg"
@@ -228,28 +259,41 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   </svg>
                 </span>
                 <input
+                  id="search-analyses"
                   type="text"
                   placeholder="Search analyses..."
                   value={filterState.searchQuery}
                   onChange={(event) => handleSearchChange(event.target.value)}
+                  aria-describedby="search-help"
                   className="w-full pl-10 pr-4 py-2 bg-primary/50 border border-slate-700 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-slate-200 placeholder-slate-500 font-mono"
                 />
+                <div id="search-help" className="sr-only">
+                  Search through your analysis titles and summaries
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-sm text-slate-400 uppercase tracking-wider">
+                <label
+                  htmlFor="sort-analyses"
+                  className="text-sm text-slate-400 uppercase tracking-wider"
+                >
                   Sort
                 </label>
                 <select
+                  id="sort-analyses"
                   value={filterState.sortOption}
                   onChange={(event) =>
                     handleSortChange(event.target.value as SortOption)
                   }
+                  aria-describedby="sort-help"
                   className="bg-primary/50 border border-slate-700 text-slate-200 px-3 py-2 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-sm uppercase tracking-wider"
                 >
                   <option value="newest">Newest</option>
                   <option value="oldest">Oldest</option>
                   <option value="az">A-Z</option>
                 </select>
+                <div id="sort-help" className="sr-only">
+                  Change the order of your analyses
+                </div>
               </div>
             </div>
           )}
@@ -275,25 +319,37 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       </main>
 
       {analysisToDelete && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-description"
+        >
           <div className="bg-primary/90 border border-red-500 p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-red-400 uppercase tracking-wider">
+            <h3
+              id="delete-dialog-title"
+              className="text-xl font-bold text-red-400 uppercase tracking-wider"
+            >
               Delete Analysis
             </h3>
-            <p className="text-slate-300 mt-4">
-              Are you sure you want to delete this analysis? This action cannot
-              be undone.
+            <p id="delete-dialog-description" className="text-slate-300 mt-4">
+              Are you sure you want to delete "{analysisToDelete.title}"? This
+              action cannot be undone.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
+                ref={cancelButtonRef}
                 onClick={() => setAnalysisToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800/50 border border-slate-700 rounded-none hover:bg-slate-700/50 transition-colors uppercase tracking-wider"
+                aria-label="Cancel deletion"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-none hover:bg-red-500 transition-colors uppercase tracking-wider"
+                aria-label={`Delete analysis "${analysisToDelete.title}"`}
               >
                 Delete
               </button>
