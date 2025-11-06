@@ -3,6 +3,8 @@ import { Rajdhani } from 'next/font/google';
 import React from 'react';
 import './globals.css';
 import { Providers } from './providers';
+import { initFeatureFlags } from '@/lib/featureFlags.config';
+import { getAllFlagValues } from '@/lib/featureFlags';
 
 const rajdhani = Rajdhani({
   subsets: ['latin'],
@@ -93,9 +95,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Ensure flags are registered on the server and pass stable values to client
+  initFeatureFlags();
+  const flagValues = getAllFlagValues();
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={rajdhani.className}>
+        <script
+          // Inject stable flag values for client to adopt and avoid hydration mismatches
+          dangerouslySetInnerHTML={{
+            __html: `window.__FF__ = ${JSON.stringify(flagValues)};`,
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -10,8 +10,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1oC2K72G4jrgFUQiuL_s0gf
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
@@ -25,38 +24,75 @@ View your app in AI Studio: https://ai.studio/apps/drive/1oC2K72G4jrgFUQiuL_s0gf
 - Server-only flags: use `FF_<FLAG_NAME>`.
 - Client-exposed flags: use `NEXT_PUBLIC_FF_<FLAG_NAME>`.
 
-Usage:
+### Enhanced Feature Flags
 
-1) Define flags in `lib/featureFlags.config.ts` (example is commented):
+The application includes several enhanced feature flags for controlling UI elements and development workflows:
 
-`registerFlags({
-  NEW_CHECKOUT: defineBooleanFlag({
-    key: 'NEW_CHECKOUT',
-    description: 'Enable the new checkout flow',
-    default: false,
+#### Button Visibility Flags (Client-Exposed)
+
+- **`ENABLE_CLASSIC_ANALYZER`**: Controls visibility of the classic startup idea analyzer button on the home page
+
+  - Environment variable: `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER`
+  - Default: `true`
+
+- **`ENABLE_KIROWEEN_ANALYZER`**: Controls visibility of the Kiroween hackathon analyzer button on the home page
+  - Environment variable: `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER`
+  - Default: `true`
+
+#### Development Mode Flag (Server-Only)
+
+- **`LOCAL_DEV_MODE`**: Enables local development mode with mock authentication and local storage
+  - Environment variable: `FF_LOCAL_DEV_MODE`
+  - Default: `false`
+  - **Security Note**: This flag is server-only and should never be enabled in production
+
+### Usage
+
+1. Define flags in `lib/featureFlags.config.ts`:
+
+```typescript
+registerFlags({
+  ENABLE_CLASSIC_ANALYZER: defineBooleanFlag({
+    key: "ENABLE_CLASSIC_ANALYZER",
+    description: "Show the classic startup idea analyzer button on home page",
+    default: true,
     exposeToClient: true,
   }),
-})`
+});
+```
 
-2) Read flags from code:
+2. Read flags from code:
 
-`import { isEnabled, getValue } from '@/lib/featureFlags'
+```typescript
+import { isEnabled, getValue } from "@/lib/featureFlags";
 
-if (isEnabled('NEW_CHECKOUT')) {
-  // new flow
+if (isEnabled("ENABLE_CLASSIC_ANALYZER")) {
+  // Show classic analyzer button
 } else {
-  // old flow
+  // Hide classic analyzer button
 }
 
 // Non-boolean values (if defined):
-const maxItems = getValue<number>('MAX_ITEMS')`
+const maxItems = getValue<number>("MAX_ITEMS");
+```
 
-3) Set env vars locally in `.env.local`:
+3. Set env vars locally in `.env.local`:
 
-- `FF_NEW_CHECKOUT=true` (server-only)
-- `NEXT_PUBLIC_FF_NEW_CHECKOUT=true` (exposed to client)
+- `FF_LOCAL_DEV_MODE=false` (server-only)
+- `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER=true` (exposed to client)
+- `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER=true` (exposed to client)
 
-Notes:
+### Local Development Mode
+
+When `LOCAL_DEV_MODE` is enabled:
+
+- Authentication is bypassed with a mock user
+- Analysis data is stored in browser local storage instead of Supabase
+- Pre-populated mock analysis cards are available for testing
+- Ideal for rapid development and testing without database dependencies
+
+### Notes
 
 - Client-exposed flags are read from `NEXT_PUBLIC_FF_<FLAG>` and become part of the client bundle at build time.
 - Defaults apply when env vars are absent.
+- Flag validation runs automatically in development mode to ensure proper configuration.

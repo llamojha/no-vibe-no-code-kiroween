@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useCallback, useRef, useState } from 'react';
-import { useLocale } from '@/features/locale/context/LocaleContext';
-import { requestTranscription } from '@/features/analyzer/api/transcribeAudio';
+import React, { useCallback, useRef, useState } from "react";
+import { useLocale } from "@/features/locale/context/LocaleContext";
+import { requestTranscription } from "@/features/analyzer/api/transcribeAudio";
 
 interface IdeaInputFormProps {
   idea: string;
@@ -11,7 +11,7 @@ interface IdeaInputFormProps {
   isLoading: boolean;
 }
 
-type RecordingStatus = 'idle' | 'recording' | 'transcribing' | 'error';
+type RecordingStatus = "idle" | "recording" | "transcribing" | "error";
 
 const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
   idea,
@@ -21,23 +21,23 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
 }) => {
   const { t, locale } = useLocale();
   const [recordingStatus, setRecordingStatus] =
-    useState<RecordingStatus>('idle');
+    useState<RecordingStatus>("idle");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   const resetRecording = useCallback((stream?: MediaStream) => {
-    setRecordingStatus('idle');
+    setRecordingStatus("idle");
     audioChunksRef.current = [];
     stream?.getTracks().forEach((track) => track.stop());
   }, []);
 
   const handleMicClick = useCallback(async () => {
-    if (recordingStatus === 'recording') {
+    if (recordingStatus === "recording") {
       mediaRecorderRef.current?.stop();
       return;
     }
 
-    if (recordingStatus === 'transcribing') return;
+    if (recordingStatus === "transcribing") return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -48,27 +48,27 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        setRecordingStatus('transcribing');
+        setRecordingStatus("transcribing");
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: 'audio/webm',
+          type: "audio/webm",
         });
 
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
           try {
-            const base64Audio = (reader.result as string).split(',')[1];
+            const base64Audio = (reader.result as string).split(",")[1];
             const mimeType = audioBlob.type;
             const transcribedText = await requestTranscription(
               base64Audio,
               mimeType,
-              locale,
+              locale
             );
             onIdeaChange(transcribedText);
           } catch (error) {
-            console.error('Transcription error:', error);
-            setRecordingStatus('error');
-            setTimeout(() => setRecordingStatus('idle'), 3000);
+            console.error("Transcription error:", error);
+            setRecordingStatus("error");
+            setTimeout(() => setRecordingStatus("idle"), 3000);
           } finally {
             resetRecording(stream);
           }
@@ -76,11 +76,11 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
       };
 
       mediaRecorderRef.current.start();
-      setRecordingStatus('recording');
+      setRecordingStatus("recording");
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      setRecordingStatus('error');
-      setTimeout(() => setRecordingStatus('idle'), 3000);
+      console.error("Error accessing microphone:", error);
+      setRecordingStatus("error");
+      setTimeout(() => setRecordingStatus("idle"), 3000);
     }
   }, [locale, onIdeaChange, recordingStatus, resetRecording]);
 
@@ -89,7 +89,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
       event.preventDefault();
       onAnalyze();
     },
-    [onAnalyze],
+    [onAnalyze]
   );
 
   const getMicButton = () => {
@@ -97,7 +97,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
     let tooltip: string;
 
     switch (recordingStatus) {
-      case 'recording':
+      case "recording":
         icon = (
           <svg
             className="w-6 h-6 text-red-500 animate-pulse"
@@ -107,9 +107,9 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
             <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" />
           </svg>
         );
-        tooltip = t('stopRecordingTooltip');
+        tooltip = t("stopRecordingTooltip");
         break;
-      case 'transcribing':
+      case "transcribing":
         icon = (
           <div className="w-6 h-6 flex items-center justify-center">
             <svg
@@ -134,9 +134,9 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
             </svg>
           </div>
         );
-        tooltip = t('transcribingTooltip');
+        tooltip = t("transcribingTooltip");
         break;
-      case 'error':
+      case "error":
         icon = (
           <svg
             className="w-6 h-6 text-red-500"
@@ -150,7 +150,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
             />
           </svg>
         );
-        tooltip = 'Error';
+        tooltip = "Error";
         break;
       default:
         icon = (
@@ -169,7 +169,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
             />
           </svg>
         );
-        tooltip = t('recordIdeaTooltip');
+        tooltip = t("recordIdeaTooltip");
     }
 
     return (
@@ -177,8 +177,9 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
         type="button"
         onClick={handleMicClick}
         title={tooltip}
+        aria-label={tooltip}
         className="absolute bottom-3 right-4 p-2 rounded-md bg-primary/50 text-slate-400 hover:bg-accent/20 hover:text-accent focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-        disabled={isLoading || recordingStatus === 'transcribing'}
+        disabled={isLoading || recordingStatus === "transcribing"}
       >
         {icon}
       </button>
@@ -193,14 +194,14 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
           htmlFor="startup-idea"
           className="block text-lg font-semibold text-slate-300 mb-2 uppercase tracking-wider"
         >
-          {t('formLabel')}
+          {t("formLabel")}
         </label>
         <div className="relative">
           <textarea
             id="startup-idea"
             rows={5}
             className="w-full p-3 pr-16 bg-black/50 border border-slate-700 rounded-none focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 placeholder-slate-500 text-slate-100 font-mono"
-            placeholder={t('formPlaceholder')}
+            placeholder={t("formPlaceholder")}
             value={idea}
             onChange={(event) => onIdeaChange(event.target.value)}
             disabled={isLoading}
@@ -234,12 +235,12 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              {t('analyzingButton')}
+              {t("analyzingButton")}
             </>
           ) : (
             <>
               <span className="relative pointer-events-none group-hover:animate-glitch">
-                {t('analyzeButton')}
+                {t("analyzeButton")}
               </span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"

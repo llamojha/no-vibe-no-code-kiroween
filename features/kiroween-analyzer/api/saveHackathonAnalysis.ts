@@ -9,6 +9,9 @@ import type {
   ProjectSubmission,
   SavedHackathonAnalysis,
 } from "@/lib/types";
+import { isEnabled } from "@/lib/featureFlags";
+import { localStorageService } from "@/lib/localStorage";
+import { generateMockUser } from "@/lib/mockData";
 
 export interface SaveHackathonAnalysisParams {
   projectDescription: string;
@@ -22,6 +25,45 @@ export interface SaveHackathonAnalysisParams {
 export async function saveHackathonAnalysis(
   params: SaveHackathonAnalysisParams
 ): Promise<{ data: SavedHackathonAnalysis | null; error: string | null }> {
+  // Check if we're in local dev mode
+  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+
+  if (isLocalDevMode) {
+    try {
+      // Create a mock user for local dev mode
+      const mockUser = generateMockUser();
+
+      // Create a new analysis record for local storage
+      const analysisRecord: SavedHackathonAnalysis = {
+        id: crypto.randomUUID(),
+        userId: mockUser.id,
+        projectDescription: params.projectDescription,
+        selectedCategory: params.selectedCategory,
+        kiroUsage: params.kiroUsage,
+        analysis: params.analysis,
+        audioBase64: params.audioBase64 || null,
+        supportingMaterials: params.supportingMaterials || undefined,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Save to local storage
+      await localStorageService.saveHackathonAnalysis(analysisRecord);
+
+      return { data: analysisRecord, error: null };
+    } catch (error) {
+      console.error(
+        "Failed to save hackathon analysis to local storage",
+        error
+      );
+      return {
+        data: null,
+        error:
+          "Failed to save your analysis to local storage. Please try again.",
+      };
+    }
+  }
+
+  // Standard Supabase flow for production
   const supabase = browserSupabase();
 
   const {
@@ -32,30 +74,38 @@ export async function saveHackathonAnalysis(
     return { data: null, error: "Authentication required" };
   }
 
-  const insertPayload: SavedHackathonAnalysesInsert = {
-    user_id: session.user.id,
-    project_description: params.projectDescription,
-    selected_category: params.selectedCategory,
-    kiro_usage: params.kiroUsage,
-    analysis:
-      params.analysis as unknown as SavedHackathonAnalysesInsert["analysis"],
-    audio_base64: params.audioBase64 || null,
-    supporting_materials:
-      params.supportingMaterials as unknown as SavedHackathonAnalysesInsert["supporting_materials"],
-  };
+  try {
+    const insertPayload: SavedHackathonAnalysesInsert = {
+      user_id: session.user.id,
+      project_description: params.projectDescription,
+      selected_category: params.selectedCategory,
+      kiro_usage: params.kiroUsage,
+      analysis:
+        params.analysis as unknown as SavedHackathonAnalysesInsert["analysis"],
+      audio_base64: params.audioBase64 || null,
+      supporting_materials:
+        params.supportingMaterials as unknown as SavedHackathonAnalysesInsert["supporting_materials"],
+    };
 
-  const { data, error } = await supabase
-    .from("saved_hackathon_analyses")
-    .insert(insertPayload)
-    .select()
-    .returns<SavedHackathonAnalysesRow>()
-    .single();
+    const { data, error } = await supabase
+      .from("saved_hackathon_analyses")
+      .insert(insertPayload)
+      .select()
+      .returns<SavedHackathonAnalysesRow>()
+      .single();
 
-  if (error || !data) {
+    if (error || !data) {
+      console.error("Failed to save hackathon analysis", error);
+      throw new Error("Failed to save hackathon analysis to database");
+    }
+
+    const record = mapSavedHackathonAnalysesRow(data);
+    return { data: record, error: null };
+  } catch (error) {
     console.error("Failed to save hackathon analysis", error);
-    return { data: null, error: "Failed to save your analysis.ry again." };
+    return {
+      data: null,
+      error: "Failed to save your analysis. Please try again.",
+    };
   }
-
-  const record = mapSavedHackathonAnalysesRow(data);
-  return { data: record, error: null };
 }

@@ -9,6 +9,7 @@ import AnalyzerButton from "@/features/home/components/AnalyzerButton";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useAnimationPreference } from "@/features/home/hooks/useAnimationPreference";
+import { isEnabled } from "@/lib/featureFlags";
 
 const HomeHero: React.FC = () => {
   const router = useRouter();
@@ -19,6 +20,11 @@ const HomeHero: React.FC = () => {
     isLoading: animationLoading,
     setAnimationMode,
   } = useAnimationPreference();
+
+  // Feature flag evaluations
+  const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
+  const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
+  const hasAnyAnalyzer = showClassicAnalyzer || showKiroweenAnalyzer;
 
   const handleAnalyzeClick = useCallback(() => {
     if (isLoading) return; // avoid double routing while auth initializes
@@ -83,24 +89,41 @@ const HomeHero: React.FC = () => {
           className="z-10 mt-12 animate-slide-in-up flex flex-col items-center gap-8 pointer-events-auto"
           style={{ animationDelay: "600ms" }}
         >
-          {/* Equal-sized analyzer buttons */}
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-center w-full max-w-4xl">
-            <AnalyzerButton
-              title={t("homeCTA")}
-              description="Validate your startup idea with AI-powered analysis"
-              href="/analyzer"
-              icon="💡"
-              variant="primary"
-              onClick={handleAnalyzeClick}
-            />
-            <AnalyzerButton
-              title="Kiroween Analyzer"
-              description="Get spooky feedback on your hackathon project"
-              href="/kiroween-analyzer"
-              icon="🎃"
-              variant="secondary"
-            />
-          </div>
+          {/* Conditional analyzer buttons */}
+          {hasAnyAnalyzer ? (
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-center w-full max-w-4xl">
+              {showClassicAnalyzer && (
+                <AnalyzerButton
+                  title={t("homeCTA")}
+                  description="Validate your startup idea with AI-powered analysis"
+                  href="/analyzer"
+                  icon="💡"
+                  variant="primary"
+                  onClick={handleAnalyzeClick}
+                />
+              )}
+              {showKiroweenAnalyzer && (
+                <AnalyzerButton
+                  title="Kiroween Analyzer"
+                  description="Get spooky feedback on your hackathon project"
+                  href="/kiroween-analyzer"
+                  icon="🎃"
+                  variant="secondary"
+                />
+              )}
+            </div>
+          ) : (
+            <div className="bg-slate-900/80 border border-slate-700 p-8 text-center max-w-md">
+              <div className="text-slate-400 text-lg mb-2">⚠️</div>
+              <p className="text-slate-300 font-medium uppercase tracking-wider">
+                No Analyzers Available
+              </p>
+              <p className="text-slate-500 text-sm mt-2">
+                All analyzer features are currently disabled. Please check back
+                later.
+              </p>
+            </div>
+          )}
 
           {/* Login button */}
           <button

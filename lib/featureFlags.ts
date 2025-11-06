@@ -6,110 +6,145 @@
 // Define flags in one place by calling `registerFlags` at startup (e.g., in `app/providers.tsx` or a server init file).
 // You can then query flags via `isEnabled` (for boolean flags) or `getValue`.
 
-type FlagType = 'boolean' | 'string' | 'number' | 'json'
+type FlagType = "boolean" | "string" | "number" | "json";
 
 export interface FeatureFlagDefinition<T = unknown> {
   // Canonical uppercase key (e.g., 'NEW_CHECKOUT')
-  key: string
+  key: string;
   // Short description of the flag's purpose
-  description?: string
+  description?: string;
   // Default value when env var not set
-  default: T
+  default: T;
   // Whether to expose to client bundles via `NEXT_PUBLIC_FF_<KEY>`
-  exposeToClient?: boolean
+  exposeToClient?: boolean;
   // Flag value type for parsing; defaults to 'boolean'
-  type?: FlagType
+  type?: FlagType;
 }
 
-type AnyDef = FeatureFlagDefinition<unknown>
+type AnyDef = FeatureFlagDefinition<unknown>;
 
-const registry: Record<string, AnyDef> = {}
+const registry: Record<string, AnyDef> = {};
+let clientOverrides: Record<string, unknown> | null = null;
+
+// If server pre-injected values exist on the window, adopt them to ensure
+// SSR/CSR consistency. This runs on the client only.
+interface WindowWithFF extends Window {
+  __FF__?: Record<string, unknown>;
+}
+
+if (
+  typeof window !== "undefined" &&
+  (window as WindowWithFF).__FF__ &&
+  !clientOverrides
+) {
+  clientOverrides = (window as WindowWithFF).__FF__ as Record<string, unknown>;
+}
 
 export function registerFlags(defs: Record<string, AnyDef>) {
   for (const [k, def] of Object.entries(defs)) {
-    const key = def.key || k
-    const upper = key.toUpperCase()
+    const key = def.key || k;
+    const upper = key.toUpperCase();
     registry[upper] = {
-      type: 'boolean',
+      type: "boolean",
       exposeToClient: false,
       ...def,
       key: upper,
-    }
+    };
   }
 }
 
 export function getRegisteredFlags(): Readonly<Record<string, AnyDef>> {
-  return registry
+  return registry;
 }
 
 export function getServerEnvVarName(key: string) {
-  return `FF_${key.toUpperCase()}`
+  return `FF_${key.toUpperCase()}`;
 }
 
 export function getClientEnvVarName(key: string) {
-  return `NEXT_PUBLIC_FF_${key.toUpperCase()}`
+  return `NEXT_PUBLIC_FF_${key.toUpperCase()}`;
 }
 
 function parseValue(raw: string | undefined, def: AnyDef) {
-  const type: FlagType = def.type ?? 'boolean'
-  if (raw == null) return def.default
+  const type: FlagType = def.type ?? "boolean";
+  if (raw == null) return def.default;
 
   switch (type) {
-    case 'boolean': {
-      const val = raw.trim().toLowerCase()
-      return ['1', 'true', 'yes', 'on', 'y', 't'].includes(val)
+    case "boolean": {
+      const val = raw.trim().toLowerCase();
+      return ["1", "true", "yes", "on", "y", "t"].includes(val);
     }
-    case 'number': {
-      const n = Number(raw)
-      return Number.isFinite(n) ? n : def.default
+    case "number": {
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : def.default;
     }
-    case 'json': {
+    case "json": {
       try {
-        return JSON.parse(raw)
+        return JSON.parse(raw);
       } catch {
-        return def.default
+        return def.default;
       }
     }
-    case 'string':
+    case "string":
     default:
-      return raw
+      return raw;
   }
 }
 
 function readEnv(def: AnyDef) {
-  const serverName = getServerEnvVarName(def.key)
-  const clientName = getClientEnvVarName(def.key)
+  // Prefer client overrides when present (set by server in layout).
+  if (
+    typeof window !== "undefined" &&
+    clientOverrides &&
+    def.key in clientOverrides
+  ) {
+    return clientOverrides[def.key];
+  }
+  const serverName = getServerEnvVarName(def.key);
+  const clientName = getClientEnvVarName(def.key);
 
   // Prefer client var if defined and exposeToClient is true.
-  if (def.exposeToClient && typeof process !== 'undefined') {
-    const fromClient = process.env[clientName]
-    if (fromClient != null) return parseValue(fromClient, def)
+  if (def.exposeToClient && typeof process !== "undefined") {
+    const fromClient = process.env[clientName];
+    if (fromClient != null) return parseValue(fromClient, def);
   }
 
-  const fromServer = typeof process !== 'undefined' ? process.env[serverName] : undefined
-  return parseValue(fromServer, def)
+  const fromServer =
+    typeof process !== "undefined" ? process.env[serverName] : undefined;
+  return parseValue(fromServer, def);
 }
 
 export function getValue<T = unknown>(key: string): T {
-  const def = registry[key.toUpperCase()]
-  if (!def) throw new Error(`Unknown feature flag: ${key}`)
-  return readEnv(def) as T
+  const def = registry[key.toUpperCase()];
+  if (!def) throw new Error(`Unknown feature flag: ${key}`);
+  return readEnv(def) as T;
 }
 
 export function isEnabled(key: string): boolean {
-  const def = registry[key.toUpperCase()]
-  if (!def) throw new Error(`Unknown feature flag: ${key}`)
-  const value = readEnv(def)
-  if ((def.type ?? 'boolean') !== 'boolean') {
+  const def = registry[key.toUpperCase()];
+  if (!def) throw new Error(`Unknown feature flag: ${key}`);
+  const value = readEnv(def);
+  if ((def.type ?? "boolean") !== "boolean") {
     // Non-boolean flags are considered enabled if truthy
-    return Boolean(value)
+    return Boolean(value);
   }
-  return Boolean(value)
+  return Boolean(value);
+}
+
+// Returns current values for all registered flags (evaluated on server env)
+export function getAllFlagValues(): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const def of Object.values(registry)) {
+    out[def.key] = readEnv(def);
+  }
+  return out;
 }
 
 // Utility to quickly define a boolean flag with sensible defaults
-export function defineBooleanFlag(params: Omit<FeatureFlagDefinition<boolean>, 'type'>): FeatureFlagDefinition<boolean> {
-  return { ...params, type: 'boolean' }
+export function defineBooleanFlag(
+  params: Omit<FeatureFlagDefinition<boolean>, "type">
+): FeatureFlagDefinition<boolean> {
+  return { ...params, type: "boolean" };
 }
 
 // Example usage (do not enable by default). To add flags, import registerFlags and pass your definitions:

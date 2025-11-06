@@ -13,8 +13,6 @@ interface ProjectSubmissionFormProps {
 
 interface FormErrors {
   description?: string;
-  selectedCategory?: string;
-  kiroUsage?: string;
 }
 
 const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
@@ -26,35 +24,7 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
   const { t } = useLocale();
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const categoryOptions = useMemo(
-    () => [
-      {
-        id: "resurrection" as ProjectSubmission["selectedCategory"],
-        icon: "🧟",
-        label: t("categoryResurrection"),
-        description: t("categoryResurrectionDescription"),
-      },
-      {
-        id: "frankenstein" as ProjectSubmission["selectedCategory"],
-        icon: "🧪",
-        label: t("categoryFrankenstein"),
-        description: t("categoryFrankensteinDescription"),
-      },
-      {
-        id: "skeleton-crew" as ProjectSubmission["selectedCategory"],
-        icon: "💀",
-        label: t("categorySkeletonCrew"),
-        description: t("categorySkeletonCrewDescription"),
-      },
-      {
-        id: "costume-contest" as ProjectSubmission["selectedCategory"],
-        icon: "🎭",
-        label: t("categoryCostumeContest"),
-        description: t("categoryCostumeContestDescription"),
-      },
-    ],
-    [t]
-  );
+  // Category and Kiro usage have been removed from the form
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
@@ -63,16 +33,6 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
       newErrors.description = t("projectDescriptionRequired");
     } else if (submission.description.trim().length < 50) {
       newErrors.description = t("projectDescriptionMinLength");
-    }
-
-    if (!submission.selectedCategory) {
-      newErrors.selectedCategory = t("categorySelectionRequired");
-    }
-
-    if (!submission.kiroUsage.trim()) {
-      newErrors.kiroUsage = t("kiroUsageRequired");
-    } else if (submission.kiroUsage.trim().length < 20) {
-      newErrors.kiroUsage = t("kiroUsageMinLength");
     }
 
     setErrors(newErrors);
@@ -153,102 +113,12 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
           )}
         </div>
 
-        {/* Category Selection */}
-        <div className="mb-6">
-          <span className="block text-lg font-semibold text-orange-300 mb-3 uppercase tracking-wider">
-            🧛 {t("categorySelectionLabel")} *
-          </span>
-          <p className="text-slate-400 text-sm mb-4">
-            {t("categorySelectionPlaceholder")}
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {categoryOptions.map((option) => {
-              const isSelected = submission.selectedCategory === option.id;
-              return (
-                <label
-                  key={option.id}
-                  className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all duration-300 bg-black/60 backdrop-blur-sm flex flex-col gap-2 shadow-lg hover:shadow-orange-500/20 focus-within:outline-none focus-within:ring-2 focus-within:ring-orange-500/50 ${
-                    isSelected
-                      ? "border-orange-500/80 shadow-orange-500/20"
-                      : errors.selectedCategory
-                      ? "border-red-500/60"
-                      : "border-orange-500/30 hover:border-orange-400/60"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="kiroween-category"
-                    value={option.id}
-                    className="sr-only"
-                    checked={isSelected}
-                    onChange={() => updateSubmission({ selectedCategory: option.id })}
-                    disabled={isLoading}
-                  />
-                  <div className="flex items-start gap-3">
-                    <span className="text-3xl" aria-hidden="true">
-                      {option.icon}
-                    </span>
-                    <div>
-                      <p className="text-lg font-semibold text-slate-100">
-                        {option.label}
-                      </p>
-                      <p className="text-sm text-slate-400">{option.description}</p>
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <span className="absolute top-3 right-3 text-orange-400">
-                      ✨
-                    </span>
-                  )}
-                </label>
-              );
-            })}
-          </div>
-          {errors.selectedCategory && (
-            <p className="mt-2 text-red-400 text-sm flex items-center">
-              <span className="mr-1">⚠️</span>
-              {errors.selectedCategory}
-            </p>
-          )}
-        </div>
-
-        {/* Kiro Usage */}
-        <div className="mb-6">
-          <label
-            htmlFor="kiro-usage"
-            className="block text-lg font-semibold text-orange-300 mb-3 uppercase tracking-wider"
-          >
-            🛠️ {t("kiroUsageLabel")} *
-          </label>
-          <textarea
-            id="kiro-usage"
-            rows={5}
-            className={`w-full p-4 bg-black/70 border-2 rounded-lg focus:outline-none focus:ring-2 transition duration-300 placeholder-slate-500 text-slate-100 font-mono resize-none ${
-              errors.kiroUsage
-                ? "border-red-500 focus:ring-red-500/50"
-                : "border-orange-500/50 focus:ring-orange-500/50 focus:border-orange-400"
-            }`}
-            placeholder={t("kiroUsagePlaceholder")}
-            value={submission.kiroUsage}
-            onChange={(e) => updateSubmission({ kiroUsage: e.target.value })}
-            disabled={isLoading}
-          />
-          {errors.kiroUsage && (
-            <p className="mt-2 text-red-400 text-sm flex items-center">
-              <span className="mr-1">⚠️</span>
-              {errors.kiroUsage}
-            </p>
-          )}
-        </div>
+        {/* Category selection and Kiro usage removed per updated requirements */}
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={
-            isLoading ||
-            !submission.description.trim() ||
-            !submission.kiroUsage.trim()
-          }
+          disabled={isLoading || !submission.description.trim()}
           className="relative w-full flex justify-center items-center px-8 py-4 border-2 border-orange-500 text-lg font-bold rounded-lg text-white bg-gradient-to-r from-orange-600/20 to-red-600/20 hover:from-orange-500/30 hover:to-red-500/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-orange-500 disabled:bg-slate-700 disabled:border-slate-600 disabled:text-slate-500 disabled:cursor-not-allowed transition-all duration-300 uppercase tracking-widest group shadow-lg hover:shadow-orange-500/20"
         >
           {isLoading ? (

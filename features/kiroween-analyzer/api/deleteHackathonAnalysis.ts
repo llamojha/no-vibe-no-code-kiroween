@@ -1,8 +1,37 @@
 import { browserSupabase } from "@/lib/supabase/client";
+import { isEnabled } from "@/lib/featureFlags";
+import { localStorageService } from "@/lib/localStorage";
 
 export async function deleteHackathonAnalysis(
   analysisId: string
 ): Promise<{ error: string | null }> {
+  // Check if we're in local dev mode
+  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+
+  if (isLocalDevMode) {
+    try {
+      const success = await localStorageService.deleteHackathonAnalysis(
+        analysisId
+      );
+
+      if (!success) {
+        return { error: "Analysis not found in local storage" };
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error(
+        "Failed to delete hackathon analysis from local storage",
+        error
+      );
+      return {
+        error:
+          "Failed to delete analysis from local storage. Please try again.",
+      };
+    }
+  }
+
+  // Standard Supabase flow for production
   const supabase = browserSupabase();
 
   const {
@@ -13,16 +42,21 @@ export async function deleteHackathonAnalysis(
     return { error: "Authentication required" };
   }
 
-  const { error } = await supabase
-    .from("saved_hackathon_analyses")
-    .delete()
-    .eq("id", analysisId)
-    .eq("user_id", session.user.id);
+  try {
+    const { error } = await supabase
+      .from("saved_hackathon_analyses")
+      .delete()
+      .eq("id", analysisId)
+      .eq("user_id", session.user.id);
 
-  if (error) {
+    if (error) {
+      console.error("Failed to delete hackathon analysis", error);
+      throw new Error("Failed to delete hackathon analysis from database");
+    }
+
+    return { error: null };
+  } catch (error) {
     console.error("Failed to delete hackathon analysis", error);
     return { error: "Failed to delete analysis. Please try again." };
   }
-
-  return { error: null };
 }
