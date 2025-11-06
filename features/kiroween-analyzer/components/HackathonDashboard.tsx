@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import { formatDateUTCEnUS } from "@/lib/date";
 import { loadUserHackathonAnalyses, deleteHackathonAnalysis } from "../api";
 import {
   generateShareableLink,
@@ -312,7 +313,7 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
                       />
                     </div>
                     <p className="text-sm text-slate-500 font-mono">
-                      {new Date(analysis.createdAt).toLocaleString()}
+                      {formatDateUTCEnUS(analysis.createdAt)}
                     </p>
                     <p className="text-sm text-slate-400 mt-2 line-clamp-2">
                       {analysis.analysis.detailedSummary}

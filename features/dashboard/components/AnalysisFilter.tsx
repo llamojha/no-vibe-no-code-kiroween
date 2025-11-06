@@ -78,7 +78,11 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
   ];
 
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div
+      className="flex flex-wrap gap-2 mb-6"
+      role="group"
+      aria-label="Filter analyses by type"
+    >
       {filterOptions.map((option) => {
         const isActive = currentFilter === option.key;
         const baseClasses =
@@ -103,8 +107,12 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
             key={option.key}
             onClick={() => onFilterChange(option.key)}
             className={`${baseClasses} ${colorClasses}`}
+            aria-pressed={isActive}
+            aria-label={`${option.label} (${option.count} analyses)${
+              isActive ? ", currently selected" : ""
+            }`}
           >
-            {option.icon}
+            <span aria-hidden="true">{option.icon}</span>
             <span>{option.label}</span>
             <span
               className={`ml-1 px-2 py-1 text-xs rounded-full ${
@@ -112,6 +120,7 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
                   ? "bg-current/20 text-current"
                   : "bg-slate-600 text-slate-300"
               }`}
+              aria-hidden="true"
             >
               {option.count}
             </span>
