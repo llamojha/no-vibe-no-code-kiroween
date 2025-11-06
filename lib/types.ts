@@ -1,4 +1,4 @@
-export type UserTier = 'free' | 'paid' | 'admin';
+export type UserTier = "free" | "paid" | "admin";
 
 export interface ScoreCriterion {
   name: string;
@@ -74,4 +74,111 @@ export interface SavedAnalysis {
 
 export interface SavedAnalysisRecord extends SavedAnalysis {
   userId: string;
+}
+
+// Kiroween Hackathon Analyzer Types
+
+export type KiroweenCategory =
+  | "resurrection"
+  | "frankenstein"
+  | "skeleton-crew"
+  | "costume-contest";
+
+export interface ProjectSubmission {
+  description: string;
+  selectedCategory: KiroweenCategory;
+  kiroUsage: string;
+  supportingMaterials?: {
+    screenshots?: string[];
+    demoLink?: string;
+    additionalNotes?: string;
+  };
+}
+
+export interface CategoryEvaluation {
+  category: KiroweenCategory;
+  fitScore: number; // 1-10 scale
+  explanation: string;
+  improvementSuggestions: string[];
+}
+
+export interface CategoryAnalysis {
+  evaluations: CategoryEvaluation[];
+  bestMatch: KiroweenCategory;
+  bestMatchReason: string;
+}
+
+export interface CriteriaScore {
+  name: "Potential Value" | "Implementation" | "Quality and Design";
+  score: number; // 1-5 scale
+  justification: string;
+  subScores?: {
+    [key: string]: {
+      score: number;
+      explanation: string;
+    };
+  };
+}
+
+export interface CriteriaAnalysis {
+  scores: CriteriaScore[];
+  finalScore: number; // Average of all scores, rounded to 1 decimal
+  finalScoreExplanation: string;
+}
+
+export interface HackathonAnalysis
+  extends Omit<
+    Analysis,
+    | "founderQuestions"
+    | "swotAnalysis"
+    | "currentMarketTrends"
+    | "monetizationStrategies"
+  > {
+  categoryAnalysis: CategoryAnalysis;
+  criteriaAnalysis: CriteriaAnalysis;
+  hackathonSpecificAdvice: {
+    categoryOptimization: string[];
+    kiroIntegrationTips: string[];
+    competitionStrategy: string[];
+  };
+}
+
+export interface SavedHackathonAnalysis {
+  id: string;
+  userId: string;
+  projectDescription: string;
+  selectedCategory: KiroweenCategory;
+  kiroUsage: string;
+  analysis: HackathonAnalysis;
+  createdAt: string;
+  audioBase64?: string | null;
+  supportingMaterials?: ProjectSubmission["supportingMaterials"];
+}
+
+// Unified analysis types for dashboard
+export type AnalysisCategory = "idea" | "kiroween";
+
+export interface UnifiedAnalysisRecord {
+  id: string;
+  userId: string;
+  category: AnalysisCategory;
+  title: string;
+  createdAt: string;
+  finalScore: number;
+  summary: string;
+  audioBase64?: string | null;
+  // Original analysis data
+  originalData: SavedAnalysisRecord | SavedHackathonAnalysis;
+}
+
+export interface DashboardFilterState {
+  filter: "all" | "idea" | "kiroween";
+  searchQuery: string;
+  sortOption: "newest" | "oldest" | "az";
+}
+
+export interface AnalysisCounts {
+  total: number;
+  idea: number;
+  kiroween: number;
 }
