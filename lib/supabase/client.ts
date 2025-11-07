@@ -19,6 +19,7 @@ export const browserSupabase = (): SupabaseClient<Database> => {
   browserClient = createPagesBrowserClient<Database>({
     supabaseUrl: url,
     supabaseKey: anonKey,
-  });
+  }) as unknown as SupabaseClient<Database>;
+  
   return browserClient;
 };

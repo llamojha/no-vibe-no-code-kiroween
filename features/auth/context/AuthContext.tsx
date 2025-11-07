@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchUserTierForId = useCallback(
     async (client: SupabaseClient<Database>, userId: string) => {
-      const { data, error } = await client
+      const { data, error} = await client
         .from("profiles")
         .select("tier")
         .eq("id", userId)

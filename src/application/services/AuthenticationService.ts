@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Database, UserTier } from '@/lib/supabase/types';
 import { UserId } from '../../domain/value-objects/UserId';
 import { Email } from '../../domain/value-objects/Email';
+import { Locale } from '../../domain/value-objects/Locale';
 import { User } from '../../domain/entities/User';
 import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../use-cases/user';
 import { Result } from '../../shared/types/common';
@@ -71,12 +72,18 @@ export class AuthenticationService {
 
         // Create a mock user for local development with a valid UUID
         const mockUserId = UserId.fromString('a0000000-0000-4000-8000-000000000001');
-        const mockUser = User.create({
+        const mockUser = User.reconstruct({
           id: mockUserId,
           email: Email.create('developer@localhost.dev'),
-          tier: 'free' as UserTier,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          isActive: true,
+          preferences: {
+            defaultLocale: Locale.english(),
+            emailNotifications: true,
+            analysisReminders: true,
+            theme: 'auto'
+          }
         });
 
         return {

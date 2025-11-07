@@ -68,7 +68,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       }
 
       logger.info(LogCategory.DATABASE, 'Analysis saved successfully', {
-        analysisId: data.id,
+        analysisId: (data as AnalysisDAO).id,
         duration
       });
 

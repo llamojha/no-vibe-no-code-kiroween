@@ -3,7 +3,7 @@ import { SupabaseAnalysisRepository } from '../SupabaseAnalysisRepository';
 import { AnalysisMapper } from '../../mappers/AnalysisMapper';
 import { Analysis } from '../../../../../domain/entities/Analysis';
 import { AnalysisId, UserId, Score, Locale, Category } from '../../../../../domain/value-objects';
-import { DatabaseError, DatabaseQueryError, RecordNotFoundError } from '../../../errors';
+import { DatabaseError, DatabaseQueryError } from '../../../errors';
 
 interface MockQueryBuilder {
   insert: ReturnType<typeof vi.fn>;
@@ -30,9 +30,9 @@ interface MockQueryBuilder {
 // Helper function to create mock query builder
 const createMockQueryBuilder = (): MockQueryBuilder => {
   // Create a promise-like object that can be awaited
-  const state = { resolveValue: { data: null, error: null, count: null } };
+  const state = { resolveValue: { data: null, error: null, count: null } as { data: unknown; error: unknown; count: unknown } };
   
-  const builder: unknown = {
+  const builder: any = {
     // Chainable methods that return the builder
     insert: vi.fn(),
     update: vi.fn(),
@@ -60,7 +60,7 @@ const createMockQueryBuilder = (): MockQueryBuilder => {
     },
     
     // Helper method to set return value for both single() and direct await
-    mockReturnValueOnce: (value: unknown) => {
+    mockReturnValueOnce: (value: any) => {
       state.resolveValue = value;
       builder.single.mockResolvedValueOnce(value);
     }
@@ -89,12 +89,8 @@ const createMockQueryBuilder = (): MockQueryBuilder => {
   return builder as MockQueryBuilder;
 };
 
-interface MockSupabaseClient {
-  from: ReturnType<typeof vi.fn>;
-}
-
 // Mock Supabase client
-const mockSupabaseClient: MockSupabaseClient = {
+const mockSupabaseClient: any = {
   from: vi.fn()
 };
 
@@ -308,7 +304,7 @@ describe('SupabaseAnalysisRepository Integration Tests', () => {
       };
       
       // Reconstruct the analysis from DAO (this won't be completed)
-      const freshAnalysis = mapper.toDomain(freshAnalysisDAO as unknown);
+      const freshAnalysis = mapper.toDomain(freshAnalysisDAO as any);
       
       mockQueryBuilder.mockReturnValueOnce({
         data: freshAnalysisDAO,
@@ -386,7 +382,7 @@ describe('SupabaseAnalysisRepository Integration Tests', () => {
   describe('findByUserId', () => {
     it('should successfully find analyses by user ID', async () => {
       // Arrange
-      const analysesDAO = [testAnalysisDAO, { ...testAnalysisDAO, id: 'another-id' }];
+      const analysesDAO = [testAnalysisDAO, { ...(testAnalysisDAO as any), id: 'another-id' }];
       
       mockQueryBuilder.mockReturnValueOnce({
         data: analysesDAO,
@@ -495,7 +491,7 @@ describe('SupabaseAnalysisRepository Integration Tests', () => {
     it('should successfully return paginated results', async () => {
       // Arrange
       const analyses = Array(15).fill(null).map((_, i) => ({
-        ...testAnalysisDAO,
+        ...(testAnalysisDAO as unknown),
         id: `analysis-${i}`
       }));
 
