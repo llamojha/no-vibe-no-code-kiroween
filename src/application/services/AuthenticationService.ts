@@ -5,6 +5,7 @@ import { Email } from '../../domain/value-objects/Email';
 import { User } from '../../domain/entities/User';
 import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../use-cases/user';
 import { Result } from '../../shared/types/common';
+import { logger, LogCategory } from '@/lib/logger';
 
 /**
  * Authentication result interface
@@ -53,11 +54,20 @@ export class AuthenticationService {
    * Authenticate a request and get user information
    */
   async authenticateRequest(options: AuthenticationOptions = { allowFree: true }): Promise<AuthenticationResult> {
+    logger.debug(LogCategory.AUTH, 'Authenticating request', {
+      requirePaid: options.requirePaid,
+      requireAdmin: options.requireAdmin,
+      allowFree: options.allowFree
+    });
+
     try {
       // Check if local dev mode is enabled (check env var directly for server-side)
       const isLocalDevMode = process.env.FF_LOCAL_DEV_MODE === 'true';
       
       if (isLocalDevMode) {
+        logger.info(LogCategory.AUTH, 'Using local dev mode authentication', {
+          mode: 'local-dev'
+        });
 
         // Create a mock user for local development with a valid UUID
         const mockUserId = UserId.fromString('a0000000-0000-4000-8000-000000000001');
@@ -81,11 +91,17 @@ export class AuthenticationService {
       // Get session from Supabase
       const sessionResult = await this.getSession();
       if (!sessionResult.isAuthenticated) {
+        logger.warn(LogCategory.AUTH, 'No active session found');
         return {
           success: false,
           error: 'No active session found'
         };
       }
+
+      logger.debug(LogCategory.AUTH, 'Session found', {
+        userId: sessionResult.userId,
+        hasEmail: !!sessionResult.userEmail
+      });
 
       const userId = UserId.fromString(sessionResult.userId);
 

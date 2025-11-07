@@ -193,7 +193,7 @@ describe('GoogleAIAdapter Integration Tests', () => {
 
       const mockAIResponse = {
         text: JSON.stringify({
-          score: 150, // Invalid score > 100
+          score: 150, // Invalid score > 100 (will be clamped to 100)
           detailedSummary: 'Some summary',
           criteria: [],
           suggestions: []
@@ -205,12 +205,11 @@ describe('GoogleAIAdapter Integration Tests', () => {
       // Act
       const result = await adapter.analyzeIdea(idea, locale);
 
-      // Assert
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBeInstanceOf(AIServiceError);
-        expect(result.error.message).toBe('Invalid score value');
-        expect((result.error as AIServiceError).code).toBe('INVALID_SCORE');
+      // Assert - Now we accept and clamp invalid scores
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.score).toBe(100); // Clamped to max value
+        expect(result.data.detailedSummary).toBe('Some summary');
       }
     });
   });

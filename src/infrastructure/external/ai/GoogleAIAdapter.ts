@@ -514,25 +514,68 @@ Provide your evaluation in JSON format:`;
       );
     }
     
-    // Validate score value
-    if (typeof parsedObj.score !== 'number' || parsedObj.score < 0 || parsedObj.score > 100) {
+    // Validate and normalize score value
+    let score: number;
+    if (typeof parsedObj.score === 'number') {
+      score = parsedObj.score;
+    } else if (typeof parsedObj.score === 'string') {
+      // Try to parse string as number
+      score = parseFloat(parsedObj.score);
+      if (isNaN(score)) {
+        logger.error(LogCategory.AI, 'Score is not a valid number', {
+          scoreValue: parsedObj.score,
+          scoreType: typeof parsedObj.score
+        });
+        throw new AIServiceError(
+          'Invalid score value: not a number',
+          'INVALID_SCORE',
+          null,
+          'parse'
+        );
+      }
+    } else {
+      logger.error(LogCategory.AI, 'Score has invalid type', {
+        scoreValue: parsedObj.score,
+        scoreType: typeof parsedObj.score
+      });
       throw new AIServiceError(
-        'Invalid score value',
+        'Invalid score value: wrong type',
         'INVALID_SCORE',
         null,
         'parse'
       );
     }
+
+    // Validate score range
+    if (score < 0 || score > 100) {
+      logger.warn(LogCategory.AI, 'Score out of range, clamping', {
+        originalScore: score,
+        clampedScore: Math.max(0, Math.min(100, score))
+      });
+      score = Math.max(0, Math.min(100, score));
+    }
     
     // Normalize and return the response
     return {
-      score: parsedObj.score,
+      score,
       detailedSummary: typeof parsedObj.detailedSummary === 'string' ? parsedObj.detailedSummary : '',
       criteria: Array.isArray(parsedObj.criteria) ? parsedObj.criteria.map((c: unknown) => {
         const criterion = c as Record<string, unknown>;
+        
+        // Parse criterion score (can be number or string)
+        let criterionScore = 0;
+        if (typeof criterion.score === 'number') {
+          criterionScore = criterion.score;
+        } else if (typeof criterion.score === 'string') {
+          criterionScore = parseFloat(criterion.score);
+          if (isNaN(criterionScore)) {
+            criterionScore = 0;
+          }
+        }
+        
         return {
           name: typeof criterion.name === 'string' ? criterion.name : 'Unknown',
-          score: typeof criterion.score === 'number' ? Math.max(0, Math.min(100, criterion.score)) : 0,
+          score: Math.max(0, Math.min(100, criterionScore)),
           justification: typeof criterion.justification === 'string' ? criterion.justification : ''
         };
       }) : [],
