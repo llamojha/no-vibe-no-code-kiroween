@@ -181,12 +181,12 @@ export function generateValidationReport(checks: StartupChecks): string {
     
     if (result.errors.length > 0) {
       lines.push('  Errors:');
-      result.errors.forEach(error => lines.push(`    - ${error}`));
+      result.errors.forEach((error: string) => lines.push(`    - ${error}`));
     }
     
     if (result.warnings.length > 0) {
       lines.push('  Warnings:');
-      result.warnings.forEach(warning => lines.push(`    - ${warning}`));
+      result.warnings.forEach((warning: string) => lines.push(`    - ${warning}`));
     }
     
     lines.push('');

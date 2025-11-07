@@ -39,7 +39,7 @@ export class AnalysisMapper {
       id: analysis.id.value,
       user_id: analysis.userId.value,
       idea: analysis.idea,
-      analysis: analysisData,
+      analysis: analysisData as any, // Type assertion for Supabase Json type
       audio_base64: null, // Not implemented in current domain model
       created_at: analysis.createdAt.toISOString(),
     };
@@ -50,7 +50,7 @@ export class AnalysisMapper {
    */
   toDomain(dao: AnalysisDAO): Analysis {
     // Parse the analysis JSON data
-    const analysisData = dao.analysis as AnalysisDataDAO;
+    const analysisData = dao.analysis as unknown as AnalysisDataDAO;
     
     return Analysis.reconstruct({
       id: AnalysisId.reconstruct(dao.id),

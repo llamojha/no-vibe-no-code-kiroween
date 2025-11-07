@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     environment: {
       nodeEnv: process.env.NODE_ENV,
       nextjsVersion: process.env.npm_package_dependencies_next || 'unknown',
+      features: {} as Record<string, boolean>,
     },
     errors: [] as string[],
   };
@@ -53,12 +54,9 @@ export async function GET(request: NextRequest) {
       const kiroweenAnalyzerEnabled = featureFlagAdapter.isKiroweenAnalyzerEnabled();
       
       checks.integrations.featureFlags = 'ok';
-      checks.environment = {
-        ...checks.environment,
-        features: {
-          classicAnalyzer: classicAnalyzerEnabled,
-          kiroweenAnalyzer: kiroweenAnalyzerEnabled,
-        },
+      checks.environment.features = {
+        classicAnalyzer: classicAnalyzerEnabled,
+        kiroweenAnalyzer: kiroweenAnalyzerEnabled,
       };
     } catch (error) {
       checks.integrations.featureFlags = 'error';

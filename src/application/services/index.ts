@@ -3,20 +3,22 @@
  */
 
 // AI Analysis Service
-export { IAIAnalysisService, AIAnalysisResult } from './IAIAnalysisService';
-export { GoogleAIAnalysisService, GoogleAIConfig } from './GoogleAIAnalysisService';
+export type { IAIAnalysisService, AIAnalysisResult } from './IAIAnalysisService';
+export { GoogleAIAnalysisService } from './GoogleAIAnalysisService';
+export type { GoogleAIConfig } from './GoogleAIAnalysisService';
 
 // Audio Processing Service
-export { 
+export type { 
   IAudioProcessingService, 
   TranscriptionResult, 
   TextToSpeechResult, 
   AudioProcessingOptions 
 } from './IAudioProcessingService';
-export { AudioProcessingService, AudioProcessingConfig } from './AudioProcessingService';
+export { AudioProcessingService } from './AudioProcessingService';
+export type { AudioProcessingConfig } from './AudioProcessingService';
 
 // Notification Service
-export { 
+export type { 
   INotificationService, 
   NotificationData, 
   NotificationResult, 
@@ -25,4 +27,5 @@ export {
   NotificationChannel,
   NotificationPriority
 } from './INotificationService';
-export { NotificationService, NotificationConfig } from './NotificationService';
+export { NotificationService } from './NotificationService';
+export type { NotificationConfig } from './NotificationService';

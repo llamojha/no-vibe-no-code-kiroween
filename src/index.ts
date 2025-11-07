@@ -18,8 +18,18 @@ export * from './domain';
 // Application layer exports  
 export * from './application';
 
-// Infrastructure layer exports
-export * from './infrastructure';
+// Infrastructure layer exports (selective to avoid conflicts)
+export { 
+  NextJSBootstrap, 
+  withApplicationBootstrap, 
+  withServerActionBootstrap, 
+  handleHealthCheck, 
+  getControllers 
+} from './infrastructure/bootstrap';
+export * from './infrastructure/config';
+export * from './infrastructure/database';
+export * from './infrastructure/factories';
+// Note: Excluding other infrastructure modules to avoid export conflicts
 
 // Shared utilities and types
 export * from './shared';

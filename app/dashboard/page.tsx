@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   // Use the new hexagonal architecture through server action
   const result = await getDashboardDataAction();
   
-  let initialAnalyses = [];
+  let initialAnalyses: UnifiedAnalysisRecord[] = [];
   let initialCounts = { total: 0, idea: 0, kiroween: 0 };
   
   if (result.success && result.data) {

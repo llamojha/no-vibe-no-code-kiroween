@@ -2,7 +2,7 @@ import { QueryHandler } from '../../types/base/Query';
 import { GetAnalysesByUserQuery, GetAnalysesByUserResult } from '../../types/queries/AnalysisQueries';
 import { IAnalysisRepository } from '../../../domain/repositories';
 import { UserId } from '../../../domain/value-objects';
-import { Result, success, failure } from '../../../shared/types/common';
+import { Result, success, failure, createPaginatedResult } from '../../../shared/types/common';
 import { ValidationError } from '../../../shared/types/errors';
 
 /**
@@ -22,8 +22,10 @@ export class ListAnalysesHandler implements QueryHandler<GetAnalysesByUserQuery,
       // Execute repository query
       const result = await this.analysisRepository.findByUserIdPaginated(
         query.userId,
-        query.pagination.page,
-        query.pagination.limit
+        {
+          page: query.pagination.page,
+          limit: query.pagination.limit
+        }
       );
 
       if (!result.success) {
@@ -31,8 +33,15 @@ export class ListAnalysesHandler implements QueryHandler<GetAnalysesByUserQuery,
       }
 
       // Convert repository result to query result
+      const paginatedResult = createPaginatedResult(
+        result.data.analyses,
+        result.data.total,
+        query.pagination.page,
+        query.pagination.limit
+      );
+      
       const queryResult: GetAnalysesByUserResult = {
-        analyses: result.data
+        analyses: paginatedResult
       };
 
       return success(queryResult);

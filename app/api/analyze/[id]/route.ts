@@ -1,26 +1,28 @@
 import { NextRequest } from 'next/server';
-import { getControllers, createAPIRouteHandler } from '@/src/infrastructure/bootstrap/nextjs';
+import { getControllers, withApplicationBootstrap } from '@/src/infrastructure/bootstrap/nextjs';
 
 export const runtime = 'nodejs';
 
-// Create handlers using the new hexagonal architecture
-const handlers = createAPIRouteHandler({
-  GET: async (request: NextRequest, { params }: { params: { id: string } }) => {
+// GET handler for retrieving a specific analysis
+export const GET = withApplicationBootstrap(
+  async (request: NextRequest, { params }: { params: { id: string } }) => {
     const { analysisController } = await getControllers();
     return analysisController.getAnalysis(request, { params });
-  },
+  }
+);
 
-  PUT: async (request: NextRequest, { params }: { params: { id: string } }) => {
+// PUT handler for updating a specific analysis
+export const PUT = withApplicationBootstrap(
+  async (request: NextRequest, { params }: { params: { id: string } }) => {
     const { analysisController } = await getControllers();
     return analysisController.updateAnalysis(request, { params });
-  },
+  }
+);
 
-  DELETE: async (request: NextRequest, { params }: { params: { id: string } }) => {
+// DELETE handler for deleting a specific analysis
+export const DELETE = withApplicationBootstrap(
+  async (request: NextRequest, { params }: { params: { id: string } }) => {
     const { analysisController } = await getControllers();
     return analysisController.deleteAnalysis(request, { params });
   }
-});
-
-export const GET = handlers.GET;
-export const PUT = handlers.PUT;
-export const DELETE = handlers.DELETE;
+);

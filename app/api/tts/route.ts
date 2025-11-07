@@ -3,13 +3,14 @@ import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { Locale } from '@/src/domain/value-objects';
 import type { SupportedLocale } from '@/features/locale/translations';
 import { authenticateRequestPaidOrAdmin } from '@/src/infrastructure/web/middleware/AuthMiddleware';
+import { serverSupabase } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
     // Use the new authentication middleware
-    const authResult = await authenticateRequestPaidOrAdmin(request as NextRequest);
+    const authResult = await authenticateRequestPaidOrAdmin();
     if (!authResult.success) {
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
     }
 
     // Use the new hexagonal architecture
-    const serviceFactory = ServiceFactory.getInstance();
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
     const ttsAdapter = serviceFactory.createTextToSpeechAdapter();
     const domainLocale = Locale.fromString(locale);
 

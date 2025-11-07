@@ -57,6 +57,24 @@ export class NextJSBootstrap {
   static isInitialized(): boolean {
     return NextJSBootstrap.initialized;
   }
+
+  /**
+   * Reset application state (for development only)
+   */
+  static resetForDevelopment(): void {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('resetForDevelopment can only be used in development');
+    }
+    NextJSBootstrap.initialized = false;
+    NextJSBootstrap.initializationPromise = null;
+  }
+
+  /**
+   * Check if initialization is in progress
+   */
+  static hasInitializationPromise(): boolean {
+    return !!NextJSBootstrap.initializationPromise;
+  }
 }
 
 /**
@@ -155,13 +173,7 @@ export const devUtils = {
    * Reset application state (useful for development)
    */
   async resetApplication(): Promise<void> {
-    if (process.env.NODE_ENV !== 'development') {
-      throw new Error('resetApplication can only be used in development');
-    }
-
-    NextJSBootstrap.initialized = false;
-    NextJSBootstrap.initializationPromise = null;
-    
+    NextJSBootstrap.resetForDevelopment();
     console.log('🔄 Application state reset for development');
   },
 
@@ -170,8 +182,8 @@ export const devUtils = {
    */
   getStatus() {
     return {
-      initialized: NextJSBootstrap.initialized,
-      hasInitializationPromise: !!NextJSBootstrap.initializationPromise,
+      initialized: NextJSBootstrap.isInitialized(),
+      hasInitializationPromise: NextJSBootstrap.hasInitializationPromise(),
     };
   },
 };

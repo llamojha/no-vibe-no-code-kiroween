@@ -29,37 +29,31 @@ export class SearchAnalysesHandler implements QueryHandler<SearchAnalysesQuery, 
         isCompleted: query.criteria.isCompleted,
         createdAfter: query.criteria.createdAfter,
         createdBefore: query.criteria.createdBefore,
-        ideaContains: query.criteria.ideaContains,
-        searchTerm: query.searchTerm,
-        sortBy: query.sortBy,
-        sortOrder: query.sortOrder
+        ideaContains: query.criteria.ideaContains
+      };
+
+      // Convert sort options
+      const sortOptions = {
+        field: query.sortBy === 'score' ? 'score' as const : 'createdAt' as const,
+        direction: query.sortOrder === 'desc' ? 'desc' as const : 'asc' as const
+      };
+
+      // Convert pagination
+      const paginationParams = {
+        page: query.pagination.page,
+        limit: query.pagination.limit
       };
 
       // Execute repository search
-      const result = await this.analysisRepository.search(searchCriteria);
+      const result = await this.analysisRepository.search(searchCriteria, sortOptions, paginationParams);
 
       if (!result.success) {
         return failure(result.error);
       }
 
-      // Apply pagination to results
-      const startIndex = (query.pagination.page - 1) * query.pagination.limit;
-      const endIndex = startIndex + query.pagination.limit;
-      const paginatedItems = result.data.slice(startIndex, endIndex);
-
-      const paginatedResult = {
-        items: paginatedItems,
-        total: result.data.length,
-        page: query.pagination.page,
-        limit: query.pagination.limit,
-        totalPages: Math.ceil(result.data.length / query.pagination.limit),
-        hasNext: endIndex < result.data.length,
-        hasPrevious: query.pagination.page > 1
-      };
-
-      // Convert repository result to query result
+      // Repository already returns paginated result
       const queryResult: SearchAnalysesResult = {
-        analyses: paginatedResult
+        analyses: result.data
       };
 
       return success(queryResult);

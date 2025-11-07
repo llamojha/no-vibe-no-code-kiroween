@@ -5,7 +5,6 @@ import Loader from "@/features/analyzer/components/Loader";
 import { isCurrentUserPaid, isAuthenticated } from "@/src/infrastructure/web/helpers/serverAuth";
 import { isEnabled } from "@/lib/featureFlags";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
-import { createAnalysisAction } from "@/app/actions/analysis";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +17,7 @@ export default async function AnalyzerPage() {
     // In local dev mode, bypass authentication and tier checks
     return (
       <Suspense fallback={<Loader message="Loading analyzer..." />}>
-        <AnalyzerView createAnalysisAction={createAnalysisAction} />
+        <AnalyzerView />
       </Suspense>
     );
   }
@@ -37,7 +36,7 @@ export default async function AnalyzerPage() {
 
   return (
     <Suspense fallback={<Loader message="Loading analyzer..." />}>
-      <AnalyzerView createAnalysisAction={createAnalysisAction} />
+      <AnalyzerView />
     </Suspense>
   );
 }
