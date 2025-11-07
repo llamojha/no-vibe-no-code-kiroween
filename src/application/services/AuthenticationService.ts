@@ -54,6 +54,30 @@ export class AuthenticationService {
    */
   async authenticateRequest(options: AuthenticationOptions = { allowFree: true }): Promise<AuthenticationResult> {
     try {
+      // Check if local dev mode is enabled (check env var directly for server-side)
+      const isLocalDevMode = process.env.FF_LOCAL_DEV_MODE === 'true';
+      
+      if (isLocalDevMode) {
+
+        // Create a mock user for local development with a valid UUID
+        const mockUserId = UserId.fromString('a0000000-0000-4000-8000-000000000001');
+        const mockUser = User.create({
+          id: mockUserId,
+          email: Email.create('developer@localhost.dev'),
+          tier: 'free' as UserTier,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        return {
+          success: true,
+          user: mockUser,
+          userId: mockUserId.value,
+          userEmail: 'developer@localhost.dev',
+          userTier: 'free' as UserTier
+        };
+      }
+
       // Get session from Supabase
       const sessionResult = await this.getSession();
       if (!sessionResult.isAuthenticated) {

@@ -108,3 +108,15 @@ Este documento define los requisitos para corregir los errores y problemas ident
 2. THE System SHALL asegurar que todos los métodos HTTP necesarios estén implementados en controllers
 3. WHEN se recibe una petición OPTIONS, THE System SHALL responder con headers CORS apropiados
 4. THE System SHALL mantener consistencia en la implementación de métodos entre controllers
+
+### Requirement 8: Corregir Internacionalización de UI
+
+**User Story:** Como usuario, quiero que todos los elementos de la interfaz cambien de idioma cuando selecciono español, para tener una experiencia completamente localizada.
+
+#### Acceptance Criteria
+
+1. WHEN el usuario cambia el locale a español, THE System SHALL traducir todos los botones a español
+2. WHEN el usuario cambia el locale a español, THE System SHALL traducir todos los labels de formularios a español
+3. WHEN el usuario cambia el locale a español, THE System SHALL traducir todos los mensajes de la interfaz a español
+4. THE System SHALL usar el hook useTranslation correctamente en todos los componentes de UI
+5. THE System SHALL asegurar que todas las claves de traducción existan en ambos archivos de locale (en.json y es.json)

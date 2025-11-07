@@ -55,15 +55,17 @@ const renderTextWithLinks = (text: string) => {
 
 
 const FinalScoreGauge: React.FC<{ score: number }> = ({ score }) => {
-  const percentage = (score / 5) * 100;
+  // Handle undefined or invalid score
+  const validScore = typeof score === 'number' && !isNaN(score) ? score : 0;
+  const percentage = (validScore / 5) * 100;
 
-  const textColorClass = score >= 4 ? 'text-green-400' : score >= 2.5 ? 'text-yellow-400' : 'text-red-400';
-  const strokeColorClass = score >= 4 ? 'stroke-green-400' : score >= 2.5 ? 'stroke-yellow-400' : 'stroke-red-400';
+  const textColorClass = validScore >= 4 ? 'text-green-400' : validScore >= 2.5 ? 'text-yellow-400' : 'text-red-400';
+  const strokeColorClass = validScore >= 4 ? 'stroke-green-400' : validScore >= 2.5 ? 'stroke-yellow-400' : 'stroke-red-400';
 
   return (
     <div className="relative flex items-center justify-center w-48 h-48 font-mono">
        <div className={`absolute text-6xl font-bold ${textColorClass}`} style={{ textShadow: `0 0 15px currentColor` }}>
-        {score.toFixed(1)}
+        {validScore === 0 ? '—' : validScore.toFixed(1)}
       </div>
        <svg className="w-full h-full" viewBox="0 0 120 120">
         {/* BG Lines */}

@@ -21,11 +21,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
-  appleWebApp: {
-    capable: true,
-    title: 'No Vibe No Code',
-    statusBarStyle: 'black-translucent',
-  },
+
   keywords: [
     'AI product management',
     'PRD generator',

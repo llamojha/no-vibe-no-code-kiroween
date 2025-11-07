@@ -561,6 +561,104 @@ export const createMockGoogleAI = () => ({
 });
 ```
 
+### 5. UI Internationalization Fixes
+
+#### 5.1 Problema de Traducción de Componentes
+
+**Problema:** Cuando el usuario cambia el locale a español, algunos elementos de la UI (botones, labels, mensajes) permanecen en inglés.
+
+**Causa Raíz:** Componentes que no están usando el hook `useTranslation` o que tienen texto hardcodeado en lugar de usar claves de traducción.
+
+**Solución:**
+
+1. **Identificar componentes sin traducción:**
+```bash
+# Buscar componentes con texto hardcodeado
+grep -r "button.*>" features/ app/ --include="*.tsx" | grep -v "useTranslation"
+```
+
+2. **Patrón correcto de uso:**
+```typescript
+// Antes (texto hardcodeado):
+export function AnalyzeButton() {
+  return <button>Analyze Idea</button>;
+}
+
+// Después (usando traducción):
+import { useTranslation } from '@/features/locale/context/LocaleContext';
+
+export function AnalyzeButton() {
+  const { t } = useTranslation();
+  return <button>{t('analyzer.analyzeButton')}</button>;
+}
+```
+
+3. **Verificar claves de traducción:**
+```typescript
+// Asegurar que las claves existan en ambos archivos:
+// locales/en.json
+{
+  "analyzer": {
+    "analyzeButton": "Analyze Idea",
+    "submitButton": "Submit",
+    "cancelButton": "Cancel"
+  }
+}
+
+// locales/es.json
+{
+  "analyzer": {
+    "analyzeButton": "Analizar Idea",
+    "submitButton": "Enviar",
+    "cancelButton": "Cancelar"
+  }
+}
+```
+
+4. **Componentes comunes a revisar:**
+   - Botones de acción (Submit, Cancel, Analyze, etc.)
+   - Labels de formularios
+   - Mensajes de error y éxito
+   - Tooltips y placeholders
+   - Títulos y descripciones
+
+5. **Estrategia de búsqueda:**
+```typescript
+// Buscar patrones comunes de texto hardcodeado:
+// - <button>Text</button>
+// - <label>Text</label>
+// - placeholder="Text"
+// - title="Text"
+// - aria-label="Text"
+
+// Reemplazar con:
+// - <button>{t('key')}</button>
+// - <label>{t('key')}</label>
+// - placeholder={t('key')}
+// - title={t('key')}
+// - aria-label={t('key')}
+```
+
+6. **Validación:**
+```typescript
+// Crear script de validación para verificar que todas las claves
+// en en.json tengan su equivalente en es.json
+const validateTranslations = () => {
+  const enKeys = Object.keys(flatten(enTranslations));
+  const esKeys = Object.keys(flatten(esTranslations));
+  
+  const missingInEs = enKeys.filter(key => !esKeys.includes(key));
+  const missingInEn = esKeys.filter(key => !enKeys.includes(key));
+  
+  if (missingInEs.length > 0) {
+    console.error('Missing in es.json:', missingInEs);
+  }
+  if (missingInEn.length > 0) {
+    console.error('Missing in en.json:', missingInEn);
+  }
+};
+```
+
 ## Implementation Order
 
 1. **Fase 1: Configuración y Setup**
@@ -589,6 +687,12 @@ export const createMockGoogleAI = () => ({
    - Eliminar uso de `any`
    - Limpiar imports no utilizados
    - Agregar prefijo `_` a parámetros no usados
+
+7. **Fase 7: UI Internationalization**
+   - Identificar componentes con texto hardcodeado
+   - Agregar useTranslation a componentes
+   - Agregar claves de traducción faltantes
+   - Validar completitud de traducciones
 
 ## Performance Considerations
 
