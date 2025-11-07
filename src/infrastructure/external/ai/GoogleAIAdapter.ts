@@ -1,6 +1,7 @@
 import { GoogleGenAI, Modality } from '@google/genai';
 import { Locale } from '../../../domain/value-objects';
 import { Result, success, failure } from '../../../shared/types/common';
+import { logger, LogCategory } from '@/lib/logger';
 
 /**
  * Configuration for Google AI services
@@ -57,10 +58,22 @@ export class GoogleAIAdapter {
    * Analyze a startup idea using Google Gemini AI
    */
   async analyzeIdea(idea: string, locale: Locale): Promise<Result<AIAnalysisResult, Error>> {
+    logger.info(LogCategory.AI, 'Starting idea analysis with Gemini', {
+      ideaLength: idea.length,
+      locale: locale.value,
+      model: 'gemini-2.5-pro'
+    });
+
+    const startTime = Date.now();
+
     return this.withRetry(async () => {
       try {
         const prompt = this.buildAnalysisPrompt(idea, locale);
         
+        logger.debug(LogCategory.AI, 'Sending request to Gemini API', {
+          promptLength: prompt.length
+        });
+
         const response = await this.client.models.generateContent({
           model: 'gemini-2.5-pro',
           contents: prompt,
@@ -70,16 +83,46 @@ export class GoogleAIAdapter {
           },
         });
 
+        const duration = Date.now() - startTime;
+
+        if (duration > 10000) {
+          logger.warn(LogCategory.AI, 'Slow AI response detected', {
+            duration,
+            model: 'gemini-2.5-pro'
+          });
+        }
+
         const rawText = response.text?.trim();
         if (!rawText) {
+          logger.error(LogCategory.AI, 'Empty response from Gemini AI', {
+            duration
+          });
           return failure(new AIServiceError('Empty response from Gemini AI', 'EMPTY_RESPONSE', null, 'analyze'));
         }
+
+        logger.debug(LogCategory.AI, 'Received response from Gemini', {
+          responseLength: rawText.length,
+          duration
+        });
 
         // Parse with specific error handling
         try {
           const analysisResult = this.parseAnalysisResponse(rawText);
+          
+          logger.info(LogCategory.AI, 'Idea analysis completed successfully', {
+            score: analysisResult.score,
+            criteriaCount: analysisResult.criteria.length,
+            suggestionsCount: analysisResult.suggestions.length,
+            duration: Date.now() - startTime
+          });
+
           return success(analysisResult);
         } catch (parseError) {
+          logger.error(LogCategory.AI, 'Failed to parse AI response', {
+            error: parseError instanceof Error ? parseError.message : String(parseError),
+            responsePreview: rawText.substring(0, 200)
+          });
+
           if (parseError instanceof AIServiceError) {
             return failure(parseError);
           }
@@ -96,6 +139,10 @@ export class GoogleAIAdapter {
         
         // Detect rate limit errors
         if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('429')) {
+          logger.error(LogCategory.AI, 'API rate limit exceeded', {
+            duration: Date.now() - startTime,
+            error: errorMessage
+          });
           return failure(new AIServiceError(
             'API rate limit exceeded',
             'RATE_LIMIT',
@@ -106,6 +153,10 @@ export class GoogleAIAdapter {
         
         // Detect timeout errors
         if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ECONNABORTED')) {
+          logger.error(LogCategory.AI, 'Request timeout', {
+            duration: Date.now() - startTime,
+            error: errorMessage
+          });
           return failure(new AIServiceError(
             'Request timeout',
             'TIMEOUT',
@@ -115,6 +166,10 @@ export class GoogleAIAdapter {
         }
         
         // Generic error
+        logger.error(LogCategory.AI, 'Failed to analyze idea with Google AI', {
+          duration: Date.now() - startTime,
+          error: errorMessage
+        });
         return failure(new AIServiceError(
           'Failed to analyze idea with Google AI',
           'UNKNOWN_ERROR',

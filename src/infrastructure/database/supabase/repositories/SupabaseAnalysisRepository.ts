@@ -11,6 +11,7 @@ import { Database } from '../../types';
 import { DatabaseError, DatabaseQueryError, RecordNotFoundError } from '../../errors';
 import { AnalysisMapper } from '../mappers/AnalysisMapper';
 import { AnalysisDAO } from '../../types/dao';
+import { logger, LogCategory } from '@/lib/logger';
 
 /**
  * Supabase implementation of the Analysis repository
@@ -27,6 +28,13 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
   // Command operations (write)
 
   async save(analysis: Analysis): Promise<Result<Analysis, Error>> {
+    logger.debug(LogCategory.DATABASE, 'Saving analysis to database', {
+      analysisId: analysis.id.value,
+      userId: analysis.userId.value
+    });
+
+    const startTime = Date.now();
+
     try {
       const dao = this.mapper.toDAO(analysis);
       
@@ -36,17 +44,41 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         .select()
         .single();
 
+      const duration = Date.now() - startTime;
+
+      if (duration > 1000) {
+        logger.warn(LogCategory.DATABASE, 'Slow database insert', {
+          duration,
+          table: this.tableName
+        });
+      }
+
       if (error) {
+        logger.error(LogCategory.DATABASE, 'Failed to save analysis', {
+          error: error.message,
+          code: error.code,
+          duration
+        });
         return failure(new DatabaseQueryError('Failed to save analysis', error, 'INSERT'));
       }
 
       if (!data) {
+        logger.error(LogCategory.DATABASE, 'No data returned from insert', { duration });
         return failure(new DatabaseQueryError('No data returned from insert', null, 'INSERT'));
       }
+
+      logger.info(LogCategory.DATABASE, 'Analysis saved successfully', {
+        analysisId: data.id,
+        duration
+      });
 
       const savedAnalysis = this.mapper.toDomain(data as AnalysisDAO);
       return success(savedAnalysis);
     } catch (error) {
+      logger.error(LogCategory.DATABASE, 'Unexpected error saving analysis', {
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - startTime
+      });
       return failure(new DatabaseQueryError('Unexpected error saving analysis', error, 'INSERT'));
     }
   }

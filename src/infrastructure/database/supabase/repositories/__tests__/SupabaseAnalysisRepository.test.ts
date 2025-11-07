@@ -30,9 +30,9 @@ interface MockQueryBuilder {
 // Helper function to create mock query builder
 const createMockQueryBuilder = (): MockQueryBuilder => {
   // Create a promise-like object that can be awaited
-  let resolveValue = { data: null, error: null, count: null };
+  const state = { resolveValue: { data: null, error: null, count: null } };
   
-  const builder: any = {
+  const builder: unknown = {
     // Chainable methods that return the builder
     insert: vi.fn(),
     update: vi.fn(),
@@ -56,12 +56,12 @@ const createMockQueryBuilder = (): MockQueryBuilder => {
     
     // Make the builder itself thenable (promise-like)
     then: function<T>(onfulfilled?: ((value: unknown) => T | PromiseLike<T>) | null, onrejected?: ((reason: unknown) => T | PromiseLike<T>) | null) {
-      return Promise.resolve(resolveValue).then(onfulfilled, onrejected);
+      return Promise.resolve(state.resolveValue).then(onfulfilled, onrejected);
     },
     
     // Helper method to set return value for both single() and direct await
     mockReturnValueOnce: (value: unknown) => {
-      resolveValue = value;
+      state.resolveValue = value;
       builder.single.mockResolvedValueOnce(value);
     }
   };
@@ -84,7 +84,7 @@ const createMockQueryBuilder = (): MockQueryBuilder => {
   builder.contains.mockReturnValue(builder);
   
   // Make single() return a promise with the resolve value by default
-  builder.single.mockResolvedValue(resolveValue);
+  builder.single.mockResolvedValue(state.resolveValue);
   
   return builder as MockQueryBuilder;
 };
@@ -127,19 +127,25 @@ describe('SupabaseAnalysisRepository Integration Tests', () => {
       suggestions: ['Consider mobile app development', 'Explore enterprise partnerships']
     });
 
-    // Create corresponding DAO
+    // Create corresponding DAO with proper structure
     testAnalysisDAO = {
       id: testAnalysis.id.value,
       idea: testAnalysis.idea,
       user_id: testAnalysis.userId.value,
-      score: testAnalysis.score.value,
-      locale: testAnalysis.locale.value,
-      category_type: testAnalysis.category?.type || null,
-      category_value: testAnalysis.category?.value || null,
-      feedback: testAnalysis.feedback,
-      suggestions: testAnalysis.suggestions,
-      created_at: testAnalysis.createdAt.toISOString(),
-      updated_at: testAnalysis.updatedAt.toISOString()
+      analysis: {
+        score: testAnalysis.score.value,
+        locale: testAnalysis.locale.value,
+        detailedSummary: testAnalysis.feedback || 'Test detailed summary',
+        viabilitySummary: 'Test viability summary',
+        finalScoreExplanation: 'Test explanation',
+        strengths: ['Strength 1', 'Strength 2'],
+        weaknesses: ['Weakness 1'],
+        improvementSuggestions: testAnalysis.suggestions || [],
+        scoringRubric: [],
+        foundersChecklist: []
+      },
+      audio_base64: null,
+      created_at: testAnalysis.createdAt.toISOString()
     };
 
     // Setup default mock behavior

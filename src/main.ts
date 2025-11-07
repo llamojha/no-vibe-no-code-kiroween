@@ -17,6 +17,7 @@ import {
   generateValidationReport,
   isValidationPassed
 } from './infrastructure/bootstrap/validation';
+import { logger } from '@/lib/logger';
 
 /**
  * Application bootstrap class
@@ -46,6 +47,9 @@ export class Application {
     }
 
     try {
+      // Initialize logger (only in dev mode)
+      logger.initialize();
+      
       console.log('🚀 Initializing No Vibe No Code application...');
 
       // Step 1: Perform comprehensive startup validation

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApplication, getServiceFactory, healthCheck } from '../../main';
 import { ServiceFactory } from '../factories/ServiceFactory';
+import { logger } from '@/lib/logger';
 
 /**
  * Next.js application bootstrap
@@ -30,6 +31,9 @@ export class NextJSBootstrap {
 
     NextJSBootstrap.initializationPromise = (async () => {
       try {
+        // Initialize logger first
+        logger.initialize();
+        
         await initializeApplication();
         NextJSBootstrap.initialized = true;
         console.log('✅ Next.js application bootstrap complete');
