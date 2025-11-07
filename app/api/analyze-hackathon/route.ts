@@ -1,54 +1,20 @@
-import { NextResponse } from "next/server";
-import { analyzeHackathonProject } from "@/lib/server/ai/analyzeHackathonProject";
-import type { SupportedLocale } from "@/features/locale/translations";
-import type { ProjectSubmission } from "@/lib/types";
+import { NextRequest, NextResponse } from "next/server";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
 import { serverSupabase } from "@/lib/supabase/server";
-import { requirePaidOrAdmin } from "@/lib/auth/access";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Get Supabase client and create service factory
     const supabase = serverSupabase();
-    const access = await requirePaidOrAdmin(supabase);
-    if (!access.allowed) return access.response;
-
-    const body = await request.json();
-    const { submission, locale } = body as {
-      submission?: ProjectSubmission;
-      locale?: SupportedLocale;
-    };
-
-    if (!submission || !locale) {
-      return NextResponse.json(
-        { error: "Project submission and locale are required." },
-        { status: 400 }
-      );
-    }
-
-    // Validate required submission fields (only description is required now)
-    const validationErrors: string[] = [];
-
-    if (
-      typeof submission.description !== "string" ||
-      submission.description.trim().length === 0
-    ) {
-      validationErrors.push("Project description is required.");
-    }
-
-    // selectedCategory and kiroUsage are optional for analysis
-
-    if (validationErrors.length > 0) {
-      return NextResponse.json(
-        {
-          error: validationErrors.join(" "),
-        },
-        { status: 400 }
-      );
-    }
-
-    const analysis = await analyzeHackathonProject(submission, locale);
-    return NextResponse.json(analysis);
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    
+    // Create hackathon controller
+    const hackathonController = serviceFactory.createHackathonController();
+    
+    // Delegate to controller
+    return await hackathonController.analyzeHackathonProject(request);
   } catch (error) {
     console.error("Hackathon Analyze API error", error);
     const message =

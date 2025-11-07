@@ -7,7 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage",
+    "validate-architecture": "node scripts/validate-architecture.js",
+    "prebuild": "npm run validate-architecture"
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
@@ -16,18 +21,21 @@
     "next": "^14.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "three": "^0.181.0"
+    "three": "^0.181.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.21",
     "@types/three": "^0.164.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.4",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "^2.1.9"
   }
 }

@@ -2,11 +2,27 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# No Vibe No Code
+
+AI-powered product management platform that transforms raw startup ideas into execution-ready documentation and GitHub backlogs.
 
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1oC2K72G4jrgFUQiuL_s0gfVa-07buTm7
+
+## Architecture
+
+The application follows **hexagonal architecture** (Ports and Adapters pattern) with clear separation between:
+
+- **Domain Layer** (`src/domain/`): Pure business logic with strongly-typed entities and value objects
+- **Application Layer** (`src/application/`): Use cases and application services
+- **Infrastructure Layer** (`src/infrastructure/`): External adapters (database, AI services, web)
+- **Shared Layer** (`src/shared/`): Common utilities and types
+
+For detailed architecture documentation, see:
+- [Domain Layer Documentation](src/domain/README.md)
+- [Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)
+- [Architecture Design Specification](.kiro/specs/hexagonal-architecture-refactor/design.md)
 
 ## Run Locally
 

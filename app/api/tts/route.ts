@@ -1,16 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { generateSpeech } from '@/lib/server/ai/textToSpeech';
 import type { SupportedLocale } from '@/features/locale/translations';
-import { serverSupabase } from '@/lib/supabase/server';
-import { requirePaidOrAdmin } from '@/lib/auth/access';
+import { authenticateRequestPaidOrAdmin } from '@/src/infrastructure/web/middleware/AuthMiddleware';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    const supabase = serverSupabase();
-    const access = await requirePaidOrAdmin(supabase);
-    if (!access.allowed) return access.response;
+    // Use the new authentication middleware
+    const authResult = await authenticateRequestPaidOrAdmin(request as NextRequest);
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
 
     const body = await request.json();
     const { text, locale } = body as {

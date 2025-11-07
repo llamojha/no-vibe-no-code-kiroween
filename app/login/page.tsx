@@ -1,16 +1,14 @@
 import { redirect } from 'next/navigation';
 import LoginForm from '@/features/auth/components/LoginForm';
-import { serverSupabase } from '@/lib/supabase/server';
+import { isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LoginPage() {
-  const supabase = serverSupabase();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Use the new authentication helper
+  const authenticated = await isAuthenticated();
 
-  if (session) {
+  if (authenticated) {
     redirect('/dashboard');
   }
 

@@ -5,7 +5,8 @@ export async function analyzeHackathonProject(
   submission: ProjectSubmission,
   locale: SupportedLocale
 ): Promise<HackathonAnalysis> {
-  const response = await fetch("/api/analyze-hackathon", {
+  // Use the new v2 API endpoint with hexagonal architecture
+  const response = await fetch("/api/v2/hackathon/analyze", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -21,5 +22,12 @@ export async function analyzeHackathonProject(
     throw new Error(errorData.error || "Failed to analyze hackathon project");
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Transform the response from the new architecture format to the expected format
+  if (result.analysis) {
+    return result.analysis;
+  }
+  
+  return result;
 }
