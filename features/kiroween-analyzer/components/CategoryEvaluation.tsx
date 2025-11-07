@@ -110,6 +110,16 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
   categoryAnalysis,
 }) => {
   const { t } = useLocale();
+  
+  // Handle undefined categoryAnalysis
+  if (!categoryAnalysis) {
+    return (
+      <div className="bg-black/40 p-6 rounded-lg border border-slate-700">
+        <p className="text-slate-400 text-center">{t("noCategoryAnalysisAvailable") || "No category analysis available"}</p>
+      </div>
+    );
+  }
+  
   const { evaluations, bestMatch, bestMatchReason } = categoryAnalysis;
   const CATEGORY_INFO = getCategoryInfo(t);
 

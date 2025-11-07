@@ -313,7 +313,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       >
         <div className="space-y-6">
           {/* Category Optimization */}
-          {analysis.hackathonSpecificAdvice.categoryOptimization.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.categoryOptimization?.length > 0 && (
             <div className="bg-purple-500/20 p-4 rounded-lg border border-purple-400/50">
               <h4 className="font-bold text-lg text-purple-300 mb-3 flex items-center">
                 <span className="mr-2">🏆</span>
@@ -338,7 +338,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           )}
 
           {/* Kiro Integration Tips */}
-          {analysis.hackathonSpecificAdvice.kiroIntegrationTips.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.kiroIntegrationTips?.length > 0 && (
             <div className="bg-green-500/20 p-4 rounded-lg border border-green-400/50">
               <h4 className="font-bold text-lg text-green-300 mb-3 flex items-center">
                 <span className="mr-2">🤖</span>
@@ -363,7 +363,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           )}
 
           {/* Competition Strategy */}
-          {analysis.hackathonSpecificAdvice.competitionStrategy.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.competitionStrategy?.length > 0 && (
             <div className="bg-orange-500/20 p-4 rounded-lg border border-orange-400/50">
               <h4 className="font-bold text-lg text-orange-300 mb-3 flex items-center">
                 <span className="mr-2">⚡</span>

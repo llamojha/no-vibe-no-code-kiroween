@@ -208,8 +208,10 @@ export class GoogleAIAdapter {
         }
 
         try {
-          const analysisResult = this.parseAnalysisResponse(rawText);
-          return success(analysisResult);
+          const basicAnalysis = this.parseAnalysisResponse(rawText);
+          // Transform basic analysis into full HackathonAnalysis structure
+          const enrichedData = this.enrichHackathonAnalysis(basicAnalysis, category);
+          return success(enrichedData as unknown as AIAnalysisResult);
         } catch (parseError) {
           if (parseError instanceof AIServiceError) {
             return failure(parseError);
@@ -423,6 +425,94 @@ Provide your evaluation in JSON format:`;
       { parts: [{ text: systemPrompt }] },
       { parts: [{ text: `${analysisPrompt}\n\n\`\`\`json\n${JSON.stringify(jsonStructure, null, 2)}\n\`\`\`` }] }
     ];
+  }
+
+  /**
+   * Enrich basic AI analysis with HackathonAnalysis structure
+   */
+  private enrichHackathonAnalysis(basicAnalysis: AIAnalysisResult, selectedCategory: string): Record<string, unknown> {
+    // Convert 0-100 score to 0-5 scale
+    const finalScore = basicAnalysis.score ? (basicAnalysis.score / 100) * 5 : 2.5;
+    
+    // Transform criteria from 0-100 to 0-5 scale and create criteriaAnalysis
+    const criteriaScores = (basicAnalysis.criteria || []).map((c) => ({
+      name: c.name === 'Innovation' ? 'Potential Value' : 
+            c.name === 'Kiro Usage' ? 'Implementation' : 
+            c.name === 'Feasibility' ? 'Quality and Design' : c.name,
+      score: c.score ? (c.score / 100) * 5 : 2.5,
+      justification: c.justification || 'No justification provided',
+      subScores: {}
+    }));
+    
+    const criteriaAnalysis = {
+      scores: criteriaScores,
+      finalScore: finalScore,
+      finalScoreExplanation: basicAnalysis.detailedSummary || 'Analysis complete'
+    };
+    
+    // Create category analysis with all 4 categories
+    const categories = ['resurrection', 'frankenstein', 'skeleton-crew', 'costume-contest'];
+    const categoryEvaluations = categories.map(cat => ({
+      category: cat,
+      fitScore: cat === selectedCategory ? 8 : 5,
+      explanation: cat === selectedCategory 
+        ? `This project was submitted for the ${cat} category.`
+        : `This project could potentially fit the ${cat} category with modifications.`,
+      improvementSuggestions: basicAnalysis.suggestions?.slice(0, 2) || []
+    }));
+    
+    const categoryAnalysis = {
+      evaluations: categoryEvaluations,
+      bestMatch: selectedCategory,
+      bestMatchReason: `Project submitted for ${selectedCategory} category`
+    };
+    
+    // Create hackathon-specific advice from suggestions
+    const suggestions = basicAnalysis.suggestions || [];
+    const hackathonSpecificAdvice = {
+      categoryOptimization: suggestions.slice(0, 2),
+      kiroIntegrationTips: suggestions.slice(2, 4),
+      competitionStrategy: suggestions.slice(4, 6)
+    };
+    
+    // Transform suggestions into structured format
+    const improvementSuggestions = suggestions.map((s, i) => ({
+      title: `Improvement ${i + 1}`,
+      description: s
+    }));
+    
+    // Create next steps
+    const nextSteps = [
+      {
+        title: 'Refine Implementation',
+        description: 'Review and implement the suggested improvements'
+      },
+      {
+        title: 'Test Thoroughly',
+        description: 'Ensure all features work as expected'
+      },
+      {
+        title: 'Polish UI/UX',
+        description: 'Enhance the user interface and experience'
+      }
+    ];
+    
+    // Return enriched analysis as generic object
+    return {
+      score: basicAnalysis.score,
+      detailedSummary: basicAnalysis.detailedSummary,
+      criteria: basicAnalysis.criteria,
+      suggestions: basicAnalysis.suggestions,
+      finalScore,
+      viabilitySummary: basicAnalysis.detailedSummary?.substring(0, 200) || 'Project evaluated',
+      categoryAnalysis,
+      criteriaAnalysis,
+      hackathonSpecificAdvice,
+      improvementSuggestions,
+      nextSteps,
+      competitors: [],
+      scoringRubric: basicAnalysis.criteria
+    };
   }
 
   /**

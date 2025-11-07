@@ -24,10 +24,21 @@ export async function analyzeHackathonProject(
 
   const result = await response.json();
   
-  // Transform the response from the new architecture format to the expected format
+  // Handle the Result<T, E> pattern from the backend
+  if (result.success === false) {
+    throw new Error(result.error?.message || 'Analysis failed');
+  }
+  
+  // Extract data from the success response
+  if (result.success && result.data) {
+    return result.data as HackathonAnalysis;
+  }
+  
+  // Legacy format support
   if (result.analysis) {
     return result.analysis;
   }
   
-  return result;
+  // Direct format
+  return result as HackathonAnalysis;
 }
