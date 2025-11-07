@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { CreateHackathonAnalysisCommand } from '@/src/application/types/commands';
+import { CreateHackathonAnalysisCommand } from '@/src/application/types/commands/HackathonCommands';
 import { AnalysisId, UserId } from '@/src/domain/value-objects';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { HackathonAnalysisResponseDTO } from '@/src/infrastructure/web/dto/HackathonDTO';
@@ -53,16 +53,20 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
     const validatedData = CreateHackathonAnalysisSchema.parse(rawData);
 
     // Create command
+    const projectData = {
+      projectName: 'Hackathon Project', // Default name since not provided in form
+      description: validatedData.projectDescription,
+      kiroUsage: 'Used for hackathon development', // Default usage
+      teamSize: validatedData.teamSize,
+      timeSpent: parseInt(validatedData.timeframe) || 24 // Convert string to number
+    };
+    
     const command = new CreateHackathonAnalysisCommand(
-      validatedData.projectDescription,
-      validatedData.teamSize,
-      validatedData.timeframe,
-      validatedData.techStack,
-      userId, // Can be null for anonymous users
-      Locale.fromString(validatedData.locale)
+      projectData,
+      userId || UserId.generate() // Generate anonymous user ID if null
     );
 
-    // Execute use case
+    // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const hackathonController = serviceFactory.createHackathonController();
@@ -70,17 +74,21 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
     // Create a mock request for the controller
     const mockRequest = {
       json: async () => ({
-        projectDescription: command.projectDescription,
-        teamSize: command.teamSize,
-        timeframe: command.timeframe,
-        techStack: command.techStack,
-        locale: command.locale.value
+        projectDescription: validatedData.projectDescription,
+        teamSize: validatedData.teamSize,
+        timeframe: validatedData.timeframe,
+        techStack: validatedData.techStack,
+        locale: validatedData.locale
+      }),
+      headers: new Headers({
+        'authorization': authenticated ? `Bearer ${supabase.auth.getSession()}` : ''
       })
     } as any;
     
-    const result = await hackathonController.analyzeHackathonProject(mockRequest);
+    const response = await hackathonController.analyzeHackathonProject(mockRequest);
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200 || response.status === 201) {
       // Revalidate relevant pages
       if (authenticated) {
         revalidatePath('/dashboard');
@@ -89,12 +97,12 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
 
       return {
         success: true,
-        data: result.data,
+        data: responseData,
       };
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Hackathon analysis failed',
       };
     }
   } catch (error) {
@@ -103,7 +111,7 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => e.message).join(', '),
+        error: error.issues.map(e => e.message).join(', '),
       };
     }
 
@@ -140,7 +148,7 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
 
     const validatedData = DeleteHackathonAnalysisSchema.parse(rawData);
 
-    // Execute use case
+    // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const dashboardController = serviceFactory.createDashboardController();
@@ -148,11 +156,19 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     // Create a mock request for the controller
     const mockRequest = {
       json: async () => ({
-      analysisId: HackathonAnalysisId.fromString(validatedData.analysisId),
-      userId: userId,
+        analysisId: validatedData.analysisId
+      }),
+      headers: new Headers({
+        'authorization': `Bearer ${supabase.auth.getSession()}`
+      })
+    } as any;
+    
+    const response = await dashboardController.deleteUserAnalysis(mockRequest, { 
+      params: { id: validatedData.analysisId } 
     });
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200 || response.status === 204) {
       // Revalidate relevant pages
       revalidatePath('/dashboard');
 
@@ -162,7 +178,7 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Failed to delete hackathon analysis',
       };
     }
   } catch (error) {
@@ -171,7 +187,7 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => e.message).join(', '),
+        error: error.issues.map(e => e.message).join(', '),
       };
     }
 
@@ -199,26 +215,32 @@ export async function getHackathonAnalysisAction(analysisId: string): Promise<{
       };
     }
 
-    // Execute use case
+    // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const dashboardController = serviceFactory.createDashboardController();
     
     // Create a mock request for the controller
     const mockRequest = {
-      json: async () => ({
-      analysisId: HackathonAnalysisId.fromString(analysisId),
+      headers: new Headers({
+        'authorization': `Bearer ${supabase.auth.getSession()}`
+      })
+    } as any;
+    
+    const response = await dashboardController.getUserAnalysis(mockRequest, { 
+      params: { id: analysisId } 
     });
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200) {
       return {
         success: true,
-        data: result.data,
+        data: responseData,
       };
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Hackathon analysis not found',
       };
     }
   } catch (error) {

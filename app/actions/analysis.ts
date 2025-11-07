@@ -6,12 +6,11 @@ import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { CreateAnalysisCommand } from '@/src/application/types/commands';
 import { AnalysisId, UserId } from '@/src/domain/value-objects';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { AnalysisResponseDTO } from '@/src/infrastructure/web/dto/AnalysisDTO';
 import { UseCaseFactory } from '@/src/infrastructure/factories';
-import { UseCaseFactory } from '@/src/infrastructure/factories';
+import { CreateAnalysisCommand } from '@/src/application/types/commands/AnalysisCommands';
 
 // Input validation schemas
 const CreateAnalysisSchema = z.object({
@@ -58,7 +57,7 @@ export async function createAnalysisAction(formData: FormData): Promise<{
       Locale.create(validatedData.locale)
     );
 
-    // Execute use case
+    // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const analysisController = serviceFactory.createAnalysisController();
@@ -68,24 +67,28 @@ export async function createAnalysisAction(formData: FormData): Promise<{
       json: async () => ({
         idea: command.idea,
         locale: command.locale.value
+      }),
+      headers: new Headers({
+        'authorization': `Bearer ${supabase.auth.getSession()}`
       })
     } as any;
     
-    const result = await analysisController.createAnalysis(mockRequest);
+    const response = await analysisController.createAnalysis(mockRequest);
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200 || response.status === 201) {
       // Revalidate relevant pages
       revalidatePath('/dashboard');
       revalidatePath('/analyzer');
 
       return {
         success: true,
-        data: result.data,
+        data: responseData,
       };
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Analysis failed',
       };
     }
   } catch (error) {
@@ -94,7 +97,7 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => e.message).join(', '),
+        error: error.issues.map(e => e.message).join(', '),
       };
     }
 
@@ -131,16 +134,27 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
 
     const validatedData = DeleteAnalysisSchema.parse(rawData);
 
-    // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const deleteAnalysisHandler = useCaseFactory.createDeleteAnalysisHandler();
+    // Execute through controller and parse response
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const analysisController = serviceFactory.createAnalysisController();
     
-    const result = await deleteAnalysisHandler.handle({
-      analysisId: AnalysisId.fromString(validatedData.analysisId),
-      userId: userId,
+    // Create a mock request for the controller
+    const mockRequest = {
+      json: async () => ({
+        analysisId: validatedData.analysisId
+      }),
+      headers: new Headers({
+        'authorization': `Bearer ${supabase.auth.getSession()}`
+      })
+    } as any;
+    
+    const response = await analysisController.deleteAnalysis(mockRequest, { 
+      params: { id: validatedData.analysisId } 
     });
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200 || response.status === 204) {
       // Revalidate relevant pages
       revalidatePath('/dashboard');
 
@@ -150,7 +164,7 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Failed to delete analysis',
       };
     }
   } catch (error) {
@@ -159,7 +173,7 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors.map(e => e.message).join(', '),
+        error: error.issues.map(e => e.message).join(', '),
       };
     }
 
@@ -198,24 +212,32 @@ export async function getAnalysisAction(analysisId: string): Promise<{
       };
     }
 
-    // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const getAnalysisHandler = useCaseFactory.createGetAnalysisHandler();
+    // Execute through controller and parse response
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const analysisController = serviceFactory.createAnalysisController();
     
-    const result = await getAnalysisHandler.handle({
-      analysisId: AnalysisId.fromString(analysisId),
-      userId: userId,
+    // Create a mock request for the controller
+    const mockRequest = {
+      headers: new Headers({
+        'authorization': `Bearer ${supabase.auth.getSession()}`
+      })
+    } as any;
+    
+    const response = await analysisController.getAnalysis(mockRequest, { 
+      params: { id: analysisId } 
     });
+    const responseData = await response.json();
 
-    if (result.isSuccess) {
+    if (response.status === 200) {
       return {
         success: true,
-        data: result.data,
+        data: responseData,
       };
     } else {
       return {
         success: false,
-        error: result.error.message,
+        error: responseData.error || 'Analysis not found',
       };
     }
   } catch (error) {
