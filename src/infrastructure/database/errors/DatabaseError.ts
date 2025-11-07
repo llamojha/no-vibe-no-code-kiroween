@@ -10,7 +10,7 @@ export abstract class DatabaseError extends Error {
   
   constructor(
     message: string,
-    public readonly originalError?: any,
+    public readonly originalError?: unknown,
     public readonly operation?: string
   ) {
     super(message);
@@ -24,7 +24,7 @@ export abstract class DatabaseError extends Error {
 export class DatabaseConnectionError extends DatabaseError {
   readonly code = 'DATABASE_CONNECTION_ERROR';
   
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError, 'connection');
   }
 }
@@ -37,7 +37,7 @@ export class DatabaseQueryError extends DatabaseError {
   
   constructor(
     message: string,
-    originalError?: any,
+    originalError?: unknown,
     public readonly query?: string
   ) {
     super(message, originalError, 'query');
@@ -53,7 +53,7 @@ export class RecordNotFoundError extends DatabaseError {
   constructor(
     resource: string,
     identifier: string,
-    originalError?: any
+    originalError?: unknown
   ) {
     super(`${resource} with identifier '${identifier}' not found`, originalError, 'find');
   }
@@ -68,7 +68,7 @@ export class UniqueConstraintError extends DatabaseError {
   constructor(
     field: string,
     value: string,
-    originalError?: any
+    originalError?: unknown
   ) {
     super(`Unique constraint violation: ${field} '${value}' already exists`, originalError, 'insert');
   }
@@ -83,7 +83,7 @@ export class DatabaseValidationError extends DatabaseError {
   constructor(
     message: string,
     public readonly validationErrors: string[],
-    originalError?: any
+    originalError?: unknown
   ) {
     super(message, originalError, 'validation');
   }
@@ -95,7 +95,7 @@ export class DatabaseValidationError extends DatabaseError {
 export class TransactionError extends DatabaseError {
   readonly code = 'TRANSACTION_ERROR';
   
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, originalError, 'transaction');
   }
 }

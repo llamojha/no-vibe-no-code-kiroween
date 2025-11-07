@@ -8,8 +8,8 @@ export const runtime = 'nodejs';
  * TODO: Implement with complete hexagonal architecture
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params: _params }: { params: { id: string } }
 ) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented.' },
@@ -23,8 +23,8 @@ export async function GET(
  * TODO: Implement with complete hexagonal architecture
  */
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params: _params }: { params: { id: string } }
 ) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented.' },
@@ -38,8 +38,8 @@ export async function PUT(
  * TODO: Implement with complete hexagonal architecture
  */
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params: _params }: { params: { id: string } }
 ) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented.' },

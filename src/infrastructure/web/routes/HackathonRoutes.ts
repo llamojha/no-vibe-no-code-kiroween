@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { HackathonController } from '../controllers/HackathonController';
+import { serverSupabase } from '@/lib/supabase/server';
 import { ServiceFactory } from '../../factories/ServiceFactory';
 import { handleApiError } from '../middleware/ErrorMiddleware';
 
@@ -14,7 +14,7 @@ import { handleApiError } from '../middleware/ErrorMiddleware';
  */
 export async function analyzeHackathonProjectRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createHackathonController();
     return await controller.analyzeHackathonProject(request);
   } catch (error) {
@@ -28,7 +28,7 @@ export async function analyzeHackathonProjectRoute(request: NextRequest): Promis
  */
 export async function getHackathonLeaderboardRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createHackathonController();
     return await controller.getLeaderboard(request);
   } catch (error) {
@@ -42,7 +42,7 @@ export async function getHackathonLeaderboardRoute(request: NextRequest): Promis
  */
 export async function searchHackathonAnalysesRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createHackathonController();
     return await controller.searchHackathonAnalyses(request);
   } catch (error) {
@@ -59,10 +59,11 @@ export async function updateHackathonAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createHackathonController();
     return await controller.updateHackathonAnalysis(request, { params });
   } catch (error) {
     return handleApiError(error, `/api/hackathon/${params.id}`);
   }
 }
+

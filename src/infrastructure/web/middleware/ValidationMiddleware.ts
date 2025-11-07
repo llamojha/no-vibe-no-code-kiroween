@@ -4,7 +4,7 @@ import { z, ZodSchema, ZodError } from 'zod';
 /**
  * Validation result interface
  */
-export interface ValidationResult<T = any> {
+export interface ValidationResult<T = unknown> {
   success: boolean;
   data?: T;
   errors?: string[];
@@ -33,7 +33,7 @@ export async function validateRequest<T>(
     } else {
       return {
         success: false,
-        errors: result.error.errors.map(err => err.message),
+        errors: result.error.issues.map(err => err.message),
         fieldErrors: formatZodErrors(result.error)
       };
     }
@@ -61,16 +61,16 @@ export function validateQueryParams<T>(
 ): ValidationResult<T> {
   try {
     const url = new URL(request.url);
-    const params: Record<string, any> = {};
+    const params: Record<string, string | string[] | number> = {};
     
     // Convert URLSearchParams to object
     url.searchParams.forEach((value, key) => {
       // Handle array parameters (e.g., ?tags=a&tags=b)
       if (params[key]) {
         if (Array.isArray(params[key])) {
-          params[key].push(value);
+          (params[key] as string[]).push(value);
         } else {
-          params[key] = [params[key], value];
+          params[key] = [params[key] as string, value];
         }
       } else {
         params[key] = value;
@@ -95,11 +95,11 @@ export function validateQueryParams<T>(
     } else {
       return {
         success: false,
-        errors: result.error.errors.map(err => err.message),
+        errors: result.error.issues.map(err => err.message),
         fieldErrors: formatZodErrors(result.error)
       };
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       errors: ['Failed to parse query parameters']
@@ -125,11 +125,11 @@ export function validatePathParams<T>(
     } else {
       return {
         success: false,
-        errors: result.error.errors.map(err => err.message),
+        errors: result.error.issues.map(err => err.message),
         fieldErrors: formatZodErrors(result.error)
       };
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       errors: ['Failed to validate path parameters']
@@ -162,11 +162,11 @@ export function validateHeaders<T>(
     } else {
       return {
         success: false,
-        errors: result.error.errors.map(err => err.message),
+        errors: result.error.issues.map(err => err.message),
         fieldErrors: formatZodErrors(result.error)
       };
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       errors: ['Failed to validate request headers']
@@ -180,7 +180,7 @@ export function validateHeaders<T>(
 function formatZodErrors(error: ZodError): Record<string, string[]> {
   const fieldErrors: Record<string, string[]> = {};
   
-  error.errors.forEach(err => {
+  error.issues.forEach(err => {
     const path = err.path.join('.');
     if (!fieldErrors[path]) {
       fieldErrors[path] = [];
@@ -229,7 +229,7 @@ export const CommonValidationSchemas = {
 /**
  * Sanitize input data to prevent XSS and other attacks
  */
-export function sanitizeInput(data: any): any {
+export function sanitizeInput(data: unknown): unknown {
   if (typeof data === 'string') {
     return data
       .replace(/[<>]/g, '') // Remove potential HTML tags
@@ -241,9 +241,9 @@ export function sanitizeInput(data: any): any {
   }
   
   if (typeof data === 'object' && data !== null) {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     Object.keys(data).forEach(key => {
-      sanitized[key] = sanitizeInput(data[key]);
+      sanitized[key] = sanitizeInput((data as Record<string, unknown>)[key]);
     });
     return sanitized;
   }

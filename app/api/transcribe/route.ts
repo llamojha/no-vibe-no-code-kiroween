@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { Locale } from '@/src/domain/value-objects';
 import type { SupportedLocale } from '@/features/locale/translations';

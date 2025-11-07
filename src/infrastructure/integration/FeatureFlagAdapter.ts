@@ -35,7 +35,7 @@ export class FeatureFlagAdapter {
     this.ensureInitialized();
     try {
       return isEnabled(flagKey);
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Feature flag '${flagKey}' not found, defaulting to false`);
       return false;
     }
@@ -48,7 +48,7 @@ export class FeatureFlagAdapter {
     this.ensureInitialized();
     try {
       return getValue<T>(flagKey);
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Feature flag '${flagKey}' not found, returning undefined`);
       return undefined as T;
     }

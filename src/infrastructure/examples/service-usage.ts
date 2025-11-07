@@ -4,7 +4,7 @@
  */
 
 import { initializeApplication, getServiceFactory } from '../../main';
-import { NextJSBootstrap, getControllers } from '../bootstrap';
+import { getControllers } from '../bootstrap';
 
 /**
  * Example: Initialize application and get services

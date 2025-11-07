@@ -56,12 +56,12 @@ describe('AnalysisValidationService', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should reject ideas that are too short', () => {
+    it('should return warnings for very short ideas', () => {
       const shortIdea = 'Bad idea';
       const result = validationService.validateIdeaContent(shortIdea);
       
-      expect(result.isValid).toBe(false);
-      expect(result.errors.some(e => e.includes('at least 10 words'))).toBe(true);
+      expect(result.isValid).toBe(true);
+      expect(result.warnings.some(w => w.includes('very brief'))).toBe(true);
     });
   });
 

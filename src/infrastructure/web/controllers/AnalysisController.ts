@@ -13,7 +13,7 @@ import { UpdateAnalysisCommand, DeleteAnalysisCommand } from '@/src/application/
 import { GetAnalysisByIdQuery, GetAnalysesByUserQuery, SearchAnalysesQuery } from '@/src/application/types/queries';
 import { CreateAnalysisDTO, UpdateAnalysisDTO, AnalysisResponseDTO } from '../dto/AnalysisDTO';
 import { CreateAnalysisSchema, UpdateAnalysisSchema } from '../dto/AnalysisDTO';
-import { AnalysisId, UserId, Locale } from '@/src/domain/value-objects';
+import { AnalysisId, UserId, Locale, Category } from '@/src/domain/value-objects';
 import { handleApiError } from '../middleware/ErrorMiddleware';
 import { validateRequest } from '../middleware/ValidationMiddleware';
 import { authenticateRequest } from '../middleware/AuthMiddleware';
@@ -88,22 +88,26 @@ export class AnalysisController {
       // Execute query
       const result = await this.getAnalysisHandler.handle(query);
 
-      if (result.isSuccess && result.data) {
-        const responseDTO: AnalysisResponseDTO = {
-          id: result.data.id,
-          idea: result.data.idea,
-          score: result.data.score,
-          detailedSummary: result.data.detailedSummary,
-          criteria: result.data.criteria,
-          createdAt: result.data.createdAt,
-          locale: result.data.locale
-        };
-        return NextResponse.json(responseDTO);
-      } else if (result.isSuccess && !result.data) {
-        return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
-      } else {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+      if (!result.success) {
+        return NextResponse.json({ error: result.error?.message || 'Failed to retrieve analysis' }, { status: 400 });
       }
+
+      if (!result.data || !result.data.analysis) {
+        return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
+      }
+
+      const analysis = result.data.analysis;
+      const responseDTO: AnalysisResponseDTO = {
+        id: analysis.id.value,
+        idea: analysis.idea,
+        score: analysis.score.value,
+        detailedSummary: analysis.feedback || '',
+        criteria: [], // TODO: Map from analysis data when available
+        createdAt: analysis.createdAt.toISOString(),
+        locale: analysis.locale.value,
+        category: analysis.category?.value
+      };
+      return NextResponse.json(responseDTO);
     } catch (error) {
       return handleApiError(error);
     }
@@ -135,25 +139,26 @@ export class AnalysisController {
       // Execute query
       const result = await this.listAnalysesHandler.handle(query);
 
-      if (result.isSuccess) {
-        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.map(analysis => ({
-          id: analysis.id,
+      if (result.success) {
+        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.items.map(analysis => ({
+          id: analysis.id.value,
           idea: analysis.idea,
-          score: analysis.score,
-          detailedSummary: analysis.detailedSummary,
-          criteria: analysis.criteria,
-          createdAt: analysis.createdAt,
-          locale: analysis.locale
+          score: analysis.score.value,
+          detailedSummary: analysis.feedback || '',
+          criteria: [],
+          createdAt: analysis.createdAt.toISOString(),
+          locale: analysis.locale.value,
+          category: analysis.category?.value
         }));
 
         return NextResponse.json({
           analyses: responseDTOs,
-          total: result.data.total,
+          total: result.data.analyses.total,
           page,
           limit
         });
       } else {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+        return NextResponse.json({ error: result.error.message }, { status: 400 });
       }
     } catch (error) {
       return handleApiError(error);
@@ -184,29 +189,37 @@ export class AnalysisController {
       const dto = validationResult.data as UpdateAnalysisDTO;
 
       // Convert DTO to command
+      const updates: { feedback?: string; category?: Category } = {};
+      if (dto.idea) {
+        updates.feedback = dto.idea; // Map idea to feedback for now
+      }
+      if (dto.category) {
+        updates.category = Category.createGeneral(dto.category);
+      }
+
       const command = new UpdateAnalysisCommand(
-        params.id,
-        authResult.userId,
-        dto.idea,
-        dto.locale
+        AnalysisId.fromString(params.id),
+        updates
       );
 
       // Execute command
       const result = await this.updateAnalysisHandler.handle(command);
 
-      if (result.isSuccess) {
+      if (result.success) {
+        const analysis = result.data.analysis;
         const responseDTO: AnalysisResponseDTO = {
-          id: result.data.id,
-          idea: result.data.idea,
-          score: result.data.score,
-          detailedSummary: result.data.detailedSummary,
-          criteria: result.data.criteria,
-          createdAt: result.data.createdAt,
-          locale: result.data.locale
+          id: analysis.id.value,
+          idea: analysis.idea,
+          score: analysis.score.value,
+          detailedSummary: analysis.feedback || '',
+          criteria: [],
+          createdAt: analysis.createdAt.toISOString(),
+          locale: analysis.locale.value,
+          category: analysis.category?.value
         };
         return NextResponse.json(responseDTO);
       } else {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+        return NextResponse.json({ error: result.error.message }, { status: 400 });
       }
     } catch (error) {
       return handleApiError(error);
@@ -226,15 +239,18 @@ export class AnalysisController {
       }
 
       // Convert to command
-      const command = new DeleteAnalysisCommand(params.id, authResult.userId);
+      const command = new DeleteAnalysisCommand(
+        AnalysisId.fromString(params.id),
+        UserId.fromString(authResult.userId)
+      );
 
       // Execute command
       const result = await this.deleteAnalysisHandler.handle(command);
 
-      if (result.isSuccess) {
+      if (result.success) {
         return NextResponse.json({ message: 'Analysis deleted successfully' });
       } else {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+        return NextResponse.json({ error: result.error.message }, { status: 400 });
       }
     } catch (error) {
       return handleApiError(error);
@@ -272,29 +288,46 @@ export class AnalysisController {
       // Execute query
       const result = await this.searchAnalysesHandler.handle(query);
 
-      if (result.isSuccess) {
-        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.map(analysis => ({
-          id: analysis.id,
+      if (result.success) {
+        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.items.map(analysis => ({
+          id: analysis.id.value,
           idea: analysis.idea,
-          score: analysis.score,
-          detailedSummary: analysis.detailedSummary,
-          criteria: analysis.criteria,
-          createdAt: analysis.createdAt,
-          locale: analysis.locale
+          score: analysis.score.value,
+          detailedSummary: analysis.feedback || '',
+          criteria: [],
+          createdAt: analysis.createdAt.toISOString(),
+          locale: analysis.locale.value,
+          category: analysis.category?.value
         }));
 
         return NextResponse.json({
           analyses: responseDTOs,
-          total: result.data.total,
+          total: result.data.analyses.total,
           page,
           limit,
           searchTerm
         });
       } else {
-        return NextResponse.json({ error: result.error }, { status: 400 });
+        return NextResponse.json({ error: result.error.message }, { status: 400 });
       }
     } catch (error) {
       return handleApiError(error);
     }
+  }
+
+  /**
+   * Handle OPTIONS preflight requests for CORS
+   * OPTIONS /api/analyze
+   */
+  async handleOptions(_request: NextRequest): Promise<NextResponse> {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
   }
 }

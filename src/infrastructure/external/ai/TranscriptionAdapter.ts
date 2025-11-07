@@ -29,7 +29,7 @@ export interface TranscriptionResult {
 export class TranscriptionError extends Error {
   constructor(
     message: string,
-    public readonly originalError?: any,
+    public readonly originalError?: unknown,
     public readonly audioSize?: number,
     public readonly mimeType?: string
   ) {
@@ -297,9 +297,9 @@ export class TranscriptionAdapter {
   }
 
   /**
-   * Post-process transcription for idea analysis
+   * Post-process transcription for idea analysis (locale parameter unused in current implementation)
    */
-  private postProcessIdeaTranscription(text: string, locale: Locale): string {
+  private postProcessIdeaTranscription(text: string, __locale: Locale): string {
     let processed = text.trim();
 
     // Remove common transcription artifacts

@@ -7,7 +7,7 @@ import {
   UserSortOptions 
 } from '../../../../domain/repositories/IUserRepository';
 import { Result, PaginatedResult, PaginationParams, success, failure, createPaginatedResult } from '../../../../shared/types/common';
-import { Database, UserDAO } from '../../types';
+import { Database } from '../../types';
 import { DatabaseError, DatabaseQueryError, RecordNotFoundError, UniqueConstraintError } from '../../errors';
 import { UserMapper } from '../mappers/UserMapper';
 
@@ -42,10 +42,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to save user', error, 'INSERT'));
       }
 
-      const savedUser = this.mapper.toDomain(data);
+      const savedUser = this.mapper.toDomain(data as any);
       return success(savedUser);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error saving user', error));
+      return failure(new DatabaseQueryError('Unexpected error saving user', error));
     }
   }
 
@@ -68,10 +68,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new RecordNotFoundError('User', user.id.value));
       }
 
-      const updatedUser = this.mapper.toDomain(data);
+      const updatedUser = this.mapper.toDomain(data as any);
       return success(updatedUser);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error updating user', error));
+      return failure(new DatabaseQueryError('Unexpected error updating user', error));
     }
   }
 
@@ -88,7 +88,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deleting user', error));
+      return failure(new DatabaseQueryError('Unexpected error deleting user', error));
     }
   }
 
@@ -107,7 +107,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error activating user', error));
+      return failure(new DatabaseQueryError('Unexpected error activating user', error));
     }
   }
 
@@ -126,7 +126,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deactivating user', error));
+      return failure(new DatabaseQueryError('Unexpected error deactivating user', error));
     }
   }
 
@@ -146,7 +146,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error updating last login', error));
+      return failure(new DatabaseQueryError('Unexpected error updating last login', error));
     }
   }
 
@@ -168,7 +168,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(data.length);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deactivating inactive users', error));
+      return failure(new DatabaseQueryError('Unexpected error deactivating inactive users', error));
     }
   }
 
@@ -185,10 +185,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to save multiple users', error, 'INSERT'));
       }
 
-      const savedUsers = data.map(dao => this.mapper.toDomain(dao));
+      const savedUsers = data.map(dao => this.mapper.toDomain(dao as any));
       return success(savedUsers);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error saving multiple users', error));
+      return failure(new DatabaseQueryError('Unexpected error saving multiple users', error));
     }
   }
 
@@ -207,7 +207,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deleting multiple users', error));
+      return failure(new DatabaseQueryError('Unexpected error deleting multiple users', error));
     }
   }
 
@@ -228,10 +228,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find user by ID', error, 'SELECT'));
       }
 
-      const user = this.mapper.toDomain(data);
+      const user = this.mapper.toDomain(data as any);
       return success(user);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding user by ID', error));
+      return failure(new DatabaseQueryError('Unexpected error finding user by ID', error));
     }
   }
 
@@ -252,7 +252,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(!!data);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error checking user existence', error));
+      return failure(new DatabaseQueryError('Unexpected error checking user existence', error));
     }
   }
 
@@ -268,7 +268,7 @@ export class SupabaseUserRepository implements IUserRepository {
 
       return success(count || 0);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error counting users', error));
+      return failure(new DatabaseQueryError('Unexpected error counting users', error));
     }
   }
 
@@ -286,12 +286,12 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find all users', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       const paginatedResult = createPaginatedResult(users, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding all users', error));
+      return failure(new DatabaseQueryError('Unexpected error finding all users', error));
     }
   }
 
@@ -308,10 +308,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find users by IDs', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       return success(users);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users by IDs', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users by IDs', error));
     }
   }
 
@@ -332,10 +332,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find users with criteria', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       return success(users);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users with criteria', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users with criteria', error));
     }
   }
 
@@ -364,25 +364,25 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find users with criteria and pagination', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       const paginatedResult = createPaginatedResult(users, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users with criteria and pagination', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users with criteria and pagination', error));
     }
   }
 
   // User-specific query methods
 
-  async findByEmail(_email: Email): Promise<Result<User | null, Error>> {
+  async findByEmail(__email: Email): Promise<Result<User | null, Error>> {
     try {
       // Note: In the current schema, we don't have an email field in profiles
       // This would typically query a separate user_emails table or auth.users
       // For now, we'll return null as this feature isn't implemented in the current schema
       return success(null);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding user by email', error));
+      return failure(new DatabaseQueryError('Unexpected error finding user by email', error));
     }
   }
 
@@ -395,7 +395,7 @@ export class SupabaseUserRepository implements IUserRepository {
       const emptyResult = createPaginatedResult([], 0, params.page, params.limit);
       return success(emptyResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users by email domain', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users by email domain', error));
     }
   }
 
@@ -405,7 +405,7 @@ export class SupabaseUserRepository implements IUserRepository {
       // In a real implementation, this would filter by an is_active field
       return this.findAll(params);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding active users', error));
+      return failure(new DatabaseQueryError('Unexpected error finding active users', error));
     }
   }
 
@@ -416,7 +416,7 @@ export class SupabaseUserRepository implements IUserRepository {
       const emptyResult = createPaginatedResult([], 0, params.page, params.limit);
       return success(emptyResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding inactive users', error));
+      return failure(new DatabaseQueryError('Unexpected error finding inactive users', error));
     }
   }
 
@@ -440,12 +440,12 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to find new users', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       const paginatedResult = createPaginatedResult(users, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding new users', error));
+      return failure(new DatabaseQueryError('Unexpected error finding new users', error));
     }
   }
 
@@ -458,7 +458,7 @@ export class SupabaseUserRepository implements IUserRepository {
       // In a real implementation, this would use last_login_at or similar
       return this.findNewUsers(days, params);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users with recent activity', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users with recent activity', error));
     }
   }
 
@@ -492,12 +492,12 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new DatabaseQueryError('Failed to search users', error, 'SELECT'));
       }
 
-      const users = data.map(dao => this.mapper.toDomain(dao));
+      const users = data.map(dao => this.mapper.toDomain(dao as any));
       const paginatedResult = createPaginatedResult(users, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error searching users', error));
+      return failure(new DatabaseQueryError('Unexpected error searching users', error));
     }
   }
 
@@ -510,7 +510,7 @@ export class SupabaseUserRepository implements IUserRepository {
       const emptyResult = createPaginatedResult([], 0, params.page, params.limit);
       return success(emptyResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users by locale', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users by locale', error));
     }
   }
 
@@ -527,7 +527,7 @@ export class SupabaseUserRepository implements IUserRepository {
     try {
       const { data: users, error } = await this.client
         .from(this.tableName)
-        .select('*');
+        .select('*') as { data: any[], error: any };
 
       if (error) {
         return failure(new DatabaseQueryError('Failed to get user stats', error, 'SELECT'));
@@ -562,7 +562,7 @@ export class SupabaseUserRepository implements IUserRepository {
         emailDomainDistribution: {}, // Not implemented in current schema
       });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error getting user stats', error));
+      return failure(new DatabaseQueryError('Unexpected error getting user stats', error));
     }
   }
 
@@ -575,7 +575,7 @@ export class SupabaseUserRepository implements IUserRepository {
       const emptyResult = createPaginatedResult([], 0, params.page, params.limit);
       return success(emptyResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding inactive users', error));
+      return failure(new DatabaseQueryError('Unexpected error finding inactive users', error));
     }
   }
 
@@ -587,16 +587,16 @@ export class SupabaseUserRepository implements IUserRepository {
       const emptyResult = createPaginatedResult([], 0, params.page, params.limit);
       return success(emptyResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users with incomplete profiles', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users with incomplete profiles', error));
     }
   }
 
-  async isEmailTaken(_email: Email): Promise<Result<boolean, Error>> {
+  async isEmailTaken(__email: Email): Promise<Result<boolean, Error>> {
     try {
       // Not implemented in current schema
       return success(false);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error checking if email is taken', error));
+      return failure(new DatabaseQueryError('Unexpected error checking if email is taken', error));
     }
   }
 
@@ -608,7 +608,7 @@ export class SupabaseUserRepository implements IUserRepository {
       // In our simplified schema, we'll return all users
       return this.findAll(params);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding users for notifications', error));
+      return failure(new DatabaseQueryError('Unexpected error finding users for notifications', error));
     }
   }
 }

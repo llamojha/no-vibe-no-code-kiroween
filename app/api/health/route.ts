@@ -7,7 +7,7 @@ import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
  * Health check endpoint for the hexagonal architecture
  * Validates that all layers and integrations are working properly
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const checks = {
     timestamp: new Date().toISOString(),
     status: 'healthy',

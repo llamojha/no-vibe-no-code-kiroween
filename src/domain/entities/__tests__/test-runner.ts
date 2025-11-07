@@ -5,13 +5,12 @@
 
 import { Analysis, CreateAnalysisProps } from '../Analysis';
 import { User, CreateUserProps } from '../User';
-import { AnalysisId } from '../../value-objects/AnalysisId';
 import { UserId } from '../../value-objects/UserId';
 import { Score } from '../../value-objects/Score';
 import { Locale } from '../../value-objects/Locale';
 import { Category } from '../../value-objects/Category';
 import { Email } from '../../value-objects/Email';
-import { BusinessRuleViolationError, InvariantViolationError } from '../../../shared/types/errors';
+import { InvariantViolationError } from '../../../shared/types/errors';
 
 interface TestResult {
   name: string;
@@ -45,14 +44,14 @@ class TestRunner {
     }
   }
 
-  expect(actual: any) {
+  expect(actual: unknown) {
     return {
-      toBe: (expected: any) => {
+      toBe: (expected: unknown) => {
         if (actual !== expected) {
           throw new Error(`Expected ${expected}, but got ${actual}`);
         }
       },
-      toEqual: (expected: any) => {
+      toEqual: (expected: unknown) => {
         if (JSON.stringify(actual) !== JSON.stringify(expected)) {
           throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`);
         }
@@ -62,12 +61,12 @@ class TestRunner {
           throw new Error('Expected value to be defined');
         }
       },
-      toBeInstanceOf: (expectedClass: any) => {
+      toBeInstanceOf: (expectedClass: new (...args: unknown[]) => unknown) => {
         if (!(actual instanceof expectedClass)) {
           throw new Error(`Expected instance of ${expectedClass.name}, but got ${actual?.constructor?.name}`);
         }
       },
-      toThrow: (expectedError?: any) => {
+      toThrow: (expectedError?: new (...args: unknown[]) => Error) => {
         if (typeof actual !== 'function') {
           throw new Error('Expected a function that throws');
         }
@@ -80,13 +79,13 @@ class TestRunner {
           }
         }
       },
-      toContain: (expected: any) => {
+      toContain: (expected: unknown) => {
         if (Array.isArray(actual)) {
           if (!actual.includes(expected)) {
             throw new Error(`Expected array to contain ${expected}`);
           }
         } else if (typeof actual === 'string') {
-          if (!actual.includes(expected)) {
+          if (!actual.includes(expected as string)) {
             throw new Error(`Expected string to contain ${expected}`);
           }
         } else {
@@ -96,7 +95,7 @@ class TestRunner {
     };
   }
 
-  expectThrows(fn: () => void, expectedError?: any): void {
+  expectThrows(fn: () => void, expectedError?: new (...args: unknown[]) => Error): void {
     try {
       fn();
       throw new Error('Expected function to throw, but it did not');

@@ -55,7 +55,7 @@ export class CreateAnalysisHandler implements CommandHandler<CreateAnalysisComma
         return failure(new ValidationError('Invalid command data'));
       }
 
-      const commandData = data as any;
+      const commandData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!commandData.idea || typeof commandData.idea !== 'string') {
@@ -73,7 +73,9 @@ export class CreateAnalysisHandler implements CommandHandler<CreateAnalysisComma
       // Create value objects
       const userId = UserId.fromString(commandData.userId);
       const locale = Locale.create(commandData.locale);
-      const category = commandData.category ? Category.createGeneral(commandData.category) : undefined;
+      const category = commandData.category && typeof commandData.category === 'string' 
+        ? Category.createGeneral(commandData.category) 
+        : undefined;
 
       // Create command
       const command = new CreateAnalysisCommand(
@@ -81,7 +83,7 @@ export class CreateAnalysisHandler implements CommandHandler<CreateAnalysisComma
         userId,
         locale,
         category,
-        commandData.correlationId
+        typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );
 
       return success(command);

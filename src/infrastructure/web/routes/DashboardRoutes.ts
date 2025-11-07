@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DashboardController } from '../controllers/DashboardController';
+import { serverSupabase } from '@/lib/supabase/server';
 import { ServiceFactory } from '../../factories/ServiceFactory';
 import { handleApiError } from '../middleware/ErrorMiddleware';
 
@@ -14,7 +14,7 @@ import { handleApiError } from '../middleware/ErrorMiddleware';
  */
 export async function getDashboardRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createDashboardController();
     return await controller.getDashboard(request);
   } catch (error) {
@@ -28,7 +28,7 @@ export async function getDashboardRoute(request: NextRequest): Promise<NextRespo
  */
 export async function getUserAnalysesRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createDashboardController();
     return await controller.getUserAnalyses(request);
   } catch (error) {
@@ -45,7 +45,7 @@ export async function deleteUserAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createDashboardController();
     return await controller.deleteUserAnalysis(request, { params });
   } catch (error) {
@@ -62,10 +62,11 @@ export async function getUserAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createDashboardController();
     return await controller.getUserAnalysis(request, { params });
   } catch (error) {
     return handleApiError(error, `/api/dashboard/analyses/${params.id}`);
   }
 }
+

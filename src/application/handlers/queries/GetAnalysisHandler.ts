@@ -54,7 +54,7 @@ export class GetAnalysisHandler implements QueryHandler<GetAnalysisByIdQuery, Ge
         return failure(new ValidationError('Invalid query data'));
       }
 
-      const queryData = data as any;
+      const queryData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!queryData.analysisId || typeof queryData.analysisId !== 'string') {
@@ -63,13 +63,15 @@ export class GetAnalysisHandler implements QueryHandler<GetAnalysisByIdQuery, Ge
 
       // Create value objects
       const analysisId = AnalysisId.fromString(queryData.analysisId);
-      const userId = queryData.userId ? UserId.fromString(queryData.userId) : undefined;
+      const userId = queryData.userId && typeof queryData.userId === 'string' 
+        ? UserId.fromString(queryData.userId) 
+        : undefined;
 
       // Create query
       const query = new GetAnalysisByIdQuery(
         analysisId,
         userId,
-        queryData.correlationId
+        typeof queryData.correlationId === 'string' ? queryData.correlationId : undefined
       );
 
       return success(query);

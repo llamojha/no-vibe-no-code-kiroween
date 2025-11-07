@@ -4,6 +4,7 @@ import { AnalyzeHackathonProjectUseCase } from '../../use-cases/AnalyzeHackathon
 import { UserId, Locale } from '../../../domain/value-objects';
 import { Result, success, failure } from '../../../shared/types/common';
 import { ValidationError } from '../../../shared/types/errors';
+import { HackathonProjectMetadata } from '../../../domain/services/HackathonAnalysisService';
 
 /**
  * Handler for CreateHackathonAnalysisCommand
@@ -57,7 +58,7 @@ export class CreateHackathonAnalysisHandler implements CommandHandler<CreateHack
         return failure(new ValidationError('Invalid command data'));
       }
 
-      const commandData = data as any;
+      const commandData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!commandData.projectData || typeof commandData.projectData !== 'object') {
@@ -69,7 +70,7 @@ export class CreateHackathonAnalysisHandler implements CommandHandler<CreateHack
       }
 
       // Validate project data
-      const projectData = commandData.projectData;
+      const projectData = commandData.projectData as Record<string, unknown>;
 
       if (!projectData.projectName || typeof projectData.projectName !== 'string') {
         return failure(new ValidationError('Project name is required'));
@@ -90,11 +91,24 @@ export class CreateHackathonAnalysisHandler implements CommandHandler<CreateHack
       // Create value objects
       const userId = UserId.fromString(commandData.userId);
 
+      // Construct metadata object
+      const metadata: HackathonProjectMetadata = {
+        projectName: projectData.projectName as string,
+        description: projectData.description as string,
+        kiroUsage: projectData.kiroUsage as string,
+        teamSize: projectData.teamSize as number,
+        githubUrl: typeof projectData.githubUrl === 'string' ? projectData.githubUrl : undefined,
+        demoUrl: typeof projectData.demoUrl === 'string' ? projectData.demoUrl : undefined,
+        videoUrl: typeof projectData.videoUrl === 'string' ? projectData.videoUrl : undefined,
+        screenshots: Array.isArray(projectData.screenshots) ? projectData.screenshots as string[] : undefined,
+        timeSpent: typeof projectData.timeSpent === 'number' ? projectData.timeSpent : undefined
+      };
+
       // Create command
       const command = new CreateHackathonAnalysisCommand(
-        projectData,
+        metadata,
         userId,
-        commandData.correlationId
+        typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );
 
       return success(command);

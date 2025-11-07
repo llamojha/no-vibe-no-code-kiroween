@@ -12,7 +12,7 @@ import { UserMapper } from '../database/supabase/mappers/UserMapper';
  */
 export class RepositoryFactory {
   private static instance: RepositoryFactory;
-  private repositories: Map<string, any> = new Map();
+  private repositories: Map<string, IAnalysisRepository | IUserRepository> = new Map();
 
   private constructor(
     private readonly supabaseClient: SupabaseClient
@@ -37,7 +37,11 @@ export class RepositoryFactory {
       this.repositories.set(cacheKey, repository);
     }
 
-    return this.repositories.get(cacheKey);
+    const repository = this.repositories.get(cacheKey);
+    if (!repository) {
+      throw new Error('Failed to create AnalysisRepository');
+    }
+    return repository as IAnalysisRepository;
   }
 
   /**
@@ -52,7 +56,11 @@ export class RepositoryFactory {
       this.repositories.set(cacheKey, repository);
     }
 
-    return this.repositories.get(cacheKey);
+    const repository = this.repositories.get(cacheKey);
+    if (!repository) {
+      throw new Error('Failed to create UserRepository');
+    }
+    return repository as IUserRepository;
   }
 
   /**

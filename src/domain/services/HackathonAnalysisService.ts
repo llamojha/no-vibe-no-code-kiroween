@@ -338,30 +338,62 @@ export class HackathonAnalysisService {
     let creativityLevel = 50;
     const keywordMatches: string[] = [];
 
+    // Check for explicit category mention (strong signal)
+    const explicitCategoryMention = combinedText.includes(category.value);
+    const categoryBonus = explicitCategoryMention ? 25 : 0;
+
     switch (category.value) {
       case 'resurrection':
         const resurrectionKeywords = ['legacy', 'old', 'revive', 'modernize', 'update', 'refresh', 'outdated'];
-        keywordMatches.push(...resurrectionKeywords.filter(kw => combinedText.includes(kw)));
-        conceptAlignment = Math.min(50 + (keywordMatches.length * 15), 95);
+        // Count keyword occurrences with regex for better matching
+        resurrectionKeywords.forEach(kw => {
+          const regex = new RegExp(`\\b${kw}\\w*\\b`, 'gi');
+          const matches = combinedText.match(regex);
+          if (matches) {
+            keywordMatches.push(...matches);
+          }
+        });
+        conceptAlignment = Math.min(50 + (keywordMatches.length * 10) + categoryBonus, 95);
         break;
 
       case 'frankenstein':
-        const frankensteinKeywords = ['combine', 'merge', 'integrate', 'hybrid', 'mix', 'blend', 'fusion'];
-        keywordMatches.push(...frankensteinKeywords.filter(kw => combinedText.includes(kw)));
-        conceptAlignment = Math.min(50 + (keywordMatches.length * 15), 95);
+        const frankensteinKeywords = ['combine', 'combines', 'combining', 'merge', 'integrate', 'hybrid', 'mix', 'blend', 'fusion', 'mashup'];
+        // Count keyword occurrences with regex for better matching
+        frankensteinKeywords.forEach(kw => {
+          const regex = new RegExp(`\\b${kw}\\w*\\b`, 'gi');
+          const matches = combinedText.match(regex);
+          if (matches) {
+            keywordMatches.push(...matches);
+          }
+        });
+        conceptAlignment = Math.min(50 + (keywordMatches.length * 10) + categoryBonus, 95);
         implementationComplexity += 10; // Combining things is complex
         break;
 
       case 'skeleton-crew':
         const skeletonKeywords = ['framework', 'foundation', 'structure', 'base', 'core', 'platform'];
-        keywordMatches.push(...skeletonKeywords.filter(kw => combinedText.includes(kw)));
-        conceptAlignment = Math.min(50 + (keywordMatches.length * 15), 95);
+        // Count keyword occurrences with regex for better matching
+        skeletonKeywords.forEach(kw => {
+          const regex = new RegExp(`\\b${kw}\\w*\\b`, 'gi');
+          const matches = combinedText.match(regex);
+          if (matches) {
+            keywordMatches.push(...matches);
+          }
+        });
+        conceptAlignment = Math.min(50 + (keywordMatches.length * 10) + categoryBonus, 95);
         break;
 
       case 'costume-contest':
         const costumeKeywords = ['ui', 'design', 'visual', 'interface', 'appearance', 'style', 'beautiful'];
-        keywordMatches.push(...costumeKeywords.filter(kw => combinedText.includes(kw)));
-        conceptAlignment = Math.min(50 + (keywordMatches.length * 15), 95);
+        // Count keyword occurrences with regex for better matching
+        costumeKeywords.forEach(kw => {
+          const regex = new RegExp(`\\b${kw}\\w*\\b`, 'gi');
+          const matches = combinedText.match(regex);
+          if (matches) {
+            keywordMatches.push(...matches);
+          }
+        });
+        conceptAlignment = Math.min(50 + (keywordMatches.length * 10) + categoryBonus, 95);
         creativityLevel += 15; // Design-focused projects need creativity
         break;
     }

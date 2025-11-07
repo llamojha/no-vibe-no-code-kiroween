@@ -60,7 +60,7 @@ export class ListAnalysesHandler implements QueryHandler<GetAnalysesByUserQuery,
         return failure(new ValidationError('Invalid query data'));
       }
 
-      const queryData = data as any;
+      const queryData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!queryData.userId || typeof queryData.userId !== 'string') {
@@ -72,8 +72,9 @@ export class ListAnalysesHandler implements QueryHandler<GetAnalysesByUserQuery,
       }
 
       // Validate pagination
-      const page = queryData.pagination.page;
-      const limit = queryData.pagination.limit;
+      const paginationData = queryData.pagination as Record<string, unknown>;
+      const page = paginationData.page;
+      const limit = paginationData.limit;
 
       if (!page || typeof page !== 'number' || page < 1) {
         return failure(new ValidationError('Page must be a positive number'));
@@ -89,8 +90,8 @@ export class ListAnalysesHandler implements QueryHandler<GetAnalysesByUserQuery,
       // Create query
       const query = new GetAnalysesByUserQuery(
         userId,
-        { page, limit },
-        queryData.correlationId
+        { page: page as number, limit: limit as number },
+        typeof queryData.correlationId === 'string' ? queryData.correlationId : undefined
       );
 
       return success(query);

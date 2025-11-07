@@ -56,7 +56,7 @@ export class UpdateHackathonAnalysisHandler implements CommandHandler<UpdateHack
         return failure(new ValidationError('Invalid command data'));
       }
 
-      const commandData = data as any;
+      const commandData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!commandData.analysisId || typeof commandData.analysisId !== 'string') {
@@ -80,7 +80,7 @@ export class UpdateHackathonAnalysisHandler implements CommandHandler<UpdateHack
         analysisId,
         commandData.updates,
         userId,
-        commandData.correlationId
+        typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );
 
       return success(command);

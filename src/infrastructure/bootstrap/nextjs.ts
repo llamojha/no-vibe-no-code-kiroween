@@ -80,7 +80,7 @@ export class NextJSBootstrap {
 /**
  * Middleware for API routes to ensure application is initialized
  */
-export function withApplicationBootstrap<T extends any[]>(
+export function withApplicationBootstrap<T extends unknown[]>(
   handler: (...args: T) => Promise<NextResponse>
 ) {
   return async (...args: T): Promise<NextResponse> => {
@@ -100,7 +100,7 @@ export function withApplicationBootstrap<T extends any[]>(
 /**
  * Server action wrapper to ensure application is initialized
  */
-export function withServerActionBootstrap<T extends any[], R>(
+export function withServerActionBootstrap<T extends unknown[], R>(
   action: (...args: T) => Promise<R>
 ) {
   return async (...args: T): Promise<R> => {
@@ -141,7 +141,7 @@ export function createAPIRouteHandler(handlers: {
   DELETE?: (request: NextRequest) => Promise<NextResponse>;
   PATCH?: (request: NextRequest) => Promise<NextResponse>;
 }) {
-  const wrappedHandlers: any = {};
+  const wrappedHandlers: Record<string, (request: NextRequest) => Promise<NextResponse>> = {};
 
   for (const [method, handler] of Object.entries(handlers)) {
     if (handler) {

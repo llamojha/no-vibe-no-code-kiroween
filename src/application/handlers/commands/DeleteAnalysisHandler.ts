@@ -55,7 +55,7 @@ export class DeleteAnalysisHandler implements CommandHandler<DeleteAnalysisComma
         return failure(new ValidationError('Invalid command data'));
       }
 
-      const commandData = data as any;
+      const commandData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!commandData.analysisId || typeof commandData.analysisId !== 'string') {
@@ -74,7 +74,7 @@ export class DeleteAnalysisHandler implements CommandHandler<DeleteAnalysisComma
       const command = new DeleteAnalysisCommand(
         analysisId,
         userId,
-        commandData.correlationId
+        typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );
 
       return success(command);

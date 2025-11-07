@@ -1,7 +1,7 @@
 import { CommandHandler } from '../../types/base/Command';
 import { UpdateAnalysisCommand, UpdateAnalysisResult } from '../../types/commands/AnalysisCommands';
 import { SaveAnalysisUseCase } from '../../use-cases/SaveAnalysisUseCase';
-import { AnalysisId, UserId, Score, Category } from '../../../domain/value-objects';
+import { AnalysisId, Score, Category } from '../../../domain/value-objects';
 import { Result, success, failure } from '../../../shared/types/common';
 import { ValidationError } from '../../../shared/types/errors';
 
@@ -20,7 +20,7 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
   async handle(command: UpdateAnalysisCommand): Promise<Result<UpdateAnalysisResult, Error>> {
     try {
       // Convert command updates to use case format
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
 
       if (command.updates.score !== undefined) {
         updates.score = command.updates.score;
@@ -69,7 +69,7 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
         return failure(new ValidationError('Invalid command data'));
       }
 
-      const commandData = data as any;
+      const commandData = data as Record<string, unknown>;
 
       // Validate required fields
       if (!commandData.analysisId || typeof commandData.analysisId !== 'string') {
@@ -83,25 +83,26 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
       // Create value objects
       const analysisId = AnalysisId.fromString(commandData.analysisId);
       
-      const updates: any = {};
+      const updatesData = commandData.updates as Record<string, unknown>;
+      const updates: Record<string, unknown> = {};
       
-      if (commandData.updates.score !== undefined) {
-        updates.score = Score.create(commandData.updates.score);
+      if (updatesData.score !== undefined) {
+        updates.score = Score.create(updatesData.score as number);
       }
 
-      if (commandData.updates.feedback !== undefined) {
-        updates.feedback = commandData.updates.feedback;
+      if (updatesData.feedback !== undefined) {
+        updates.feedback = updatesData.feedback;
       }
 
-      if (commandData.updates.category !== undefined) {
-        updates.category = Category.createGeneral(commandData.updates.category);
+      if (updatesData.category !== undefined && typeof updatesData.category === 'string') {
+        updates.category = Category.createGeneral(updatesData.category);
       }
 
       // Create command
       const command = new UpdateAnalysisCommand(
         analysisId,
         updates,
-        commandData.correlationId
+        typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );
 
       return success(command);

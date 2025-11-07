@@ -271,8 +271,9 @@ export class ServiceFactory {
   }
 
   private createSearchHackathonAnalysesHandler(): SearchHackathonAnalysesHandler {
-    const hackathonRepository = this.repositoryFactory.createAnalysisRepository(); // Assuming hackathon uses same repo
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hackathonRepository = this.repositoryFactory.createAnalysisRepository();
+    // Cast to IHackathonAnalysisRepository - hackathon-specific repository not yet implemented
+    // Using type assertion since SupabaseAnalysisRepository doesn't fully implement IHackathonAnalysisRepository yet
     return new SearchHackathonAnalysesHandler(hackathonRepository as any);
   }
 

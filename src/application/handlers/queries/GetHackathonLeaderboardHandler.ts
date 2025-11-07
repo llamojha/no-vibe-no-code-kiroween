@@ -1,7 +1,7 @@
 import { QueryHandler } from '../../types/base/Query';
 import { GetHackathonLeaderboardQuery, GetHackathonLeaderboardResult } from '../../types/queries/HackathonQueries';
 import { GetHackathonLeaderboardUseCase } from '../../use-cases/GetHackathonLeaderboardUseCase';
-import { Category, UserId } from '../../../domain/value-objects';
+import { Category } from '../../../domain/value-objects';
 import { Result, success, failure } from '../../../shared/types/common';
 import { ValidationError } from '../../../shared/types/errors';
 
@@ -54,7 +54,7 @@ export class GetHackathonLeaderboardHandler implements QueryHandler<GetHackathon
         return failure(new ValidationError('Invalid query data'));
       }
 
-      const queryData = data as any;
+      const queryData = data as Record<string, unknown>;
 
       // Validate optional fields
       let category: Category | undefined;
@@ -77,7 +77,7 @@ export class GetHackathonLeaderboardHandler implements QueryHandler<GetHackathon
       const query = new GetHackathonLeaderboardQuery(
         category,
         limit,
-        queryData.correlationId
+        typeof queryData.correlationId === 'string' ? queryData.correlationId : undefined
       );
 
       return success(query);

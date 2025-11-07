@@ -31,7 +31,8 @@ export interface AIAnalysisResult {
 export class AIServiceError extends Error {
   constructor(
     message: string,
-    public readonly originalError?: any,
+    public readonly code: string,
+    public readonly originalError?: unknown,
     public readonly operation?: string
   ) {
     super(message);
@@ -56,32 +57,72 @@ export class GoogleAIAdapter {
    * Analyze a startup idea using Google Gemini AI
    */
   async analyzeIdea(idea: string, locale: Locale): Promise<Result<AIAnalysisResult, Error>> {
-    try {
-      const prompt = this.buildAnalysisPrompt(idea, locale);
-      
-      const response = await this.client.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          temperature: 0.3,
-        },
-      });
+    return this.withRetry(async () => {
+      try {
+        const prompt = this.buildAnalysisPrompt(idea, locale);
+        
+        const response = await this.client.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }],
+            temperature: 0.3,
+          },
+        });
 
-      const rawText = response.text?.trim();
-      if (!rawText) {
-        return failure(new AIServiceError('Empty response from Gemini AI', null, 'analyze'));
+        const rawText = response.text?.trim();
+        if (!rawText) {
+          return failure(new AIServiceError('Empty response from Gemini AI', 'EMPTY_RESPONSE', null, 'analyze'));
+        }
+
+        // Parse with specific error handling
+        try {
+          const analysisResult = this.parseAnalysisResponse(rawText);
+          return success(analysisResult);
+        } catch (parseError) {
+          if (parseError instanceof AIServiceError) {
+            return failure(parseError);
+          }
+          return failure(new AIServiceError(
+            'Failed to parse AI response',
+            'PARSE_ERROR',
+            parseError,
+            'analyze'
+          ));
+        }
+      } catch (error: unknown) {
+        // Handle specific error types
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Detect rate limit errors
+        if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('429')) {
+          return failure(new AIServiceError(
+            'API rate limit exceeded',
+            'RATE_LIMIT',
+            error,
+            'analyze'
+          ));
+        }
+        
+        // Detect timeout errors
+        if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ECONNABORTED')) {
+          return failure(new AIServiceError(
+            'Request timeout',
+            'TIMEOUT',
+            error,
+            'analyze'
+          ));
+        }
+        
+        // Generic error
+        return failure(new AIServiceError(
+          'Failed to analyze idea with Google AI',
+          'UNKNOWN_ERROR',
+          error,
+          'analyze'
+        ));
       }
-
-      const analysisResult = this.parseAnalysisResponse(rawText);
-      return success(analysisResult);
-    } catch (error) {
-      return failure(new AIServiceError(
-        'Failed to analyze idea with Google AI',
-        error,
-        'analyze'
-      ));
-    }
+    });
   }
 
   /**
@@ -93,32 +134,67 @@ export class GoogleAIAdapter {
     category: string,
     locale: Locale
   ): Promise<Result<AIAnalysisResult, Error>> {
-    try {
-      const prompt = this.buildHackathonAnalysisPrompt(projectDescription, kiroUsage, category, locale);
-      
-      const response = await this.client.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          temperature: 0.3,
-        },
-      });
+    return this.withRetry(async () => {
+      try {
+        const prompt = this.buildHackathonAnalysisPrompt(projectDescription, kiroUsage, category, locale);
+        
+        const response = await this.client.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }],
+            temperature: 0.3,
+          },
+        });
 
-      const rawText = response.text?.trim();
-      if (!rawText) {
-        return failure(new AIServiceError('Empty response from Gemini AI', null, 'analyzeHackathon'));
+        const rawText = response.text?.trim();
+        if (!rawText) {
+          return failure(new AIServiceError('Empty response from Gemini AI', 'EMPTY_RESPONSE', null, 'analyzeHackathon'));
+        }
+
+        try {
+          const analysisResult = this.parseAnalysisResponse(rawText);
+          return success(analysisResult);
+        } catch (parseError) {
+          if (parseError instanceof AIServiceError) {
+            return failure(parseError);
+          }
+          return failure(new AIServiceError(
+            'Failed to parse AI response',
+            'PARSE_ERROR',
+            parseError,
+            'analyzeHackathon'
+          ));
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        if (errorMessage.includes('rate limit') || errorMessage.includes('quota') || errorMessage.includes('429')) {
+          return failure(new AIServiceError(
+            'API rate limit exceeded',
+            'RATE_LIMIT',
+            error,
+            'analyzeHackathon'
+          ));
+        }
+        
+        if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT') || errorMessage.includes('ECONNABORTED')) {
+          return failure(new AIServiceError(
+            'Request timeout',
+            'TIMEOUT',
+            error,
+            'analyzeHackathon'
+          ));
+        }
+        
+        return failure(new AIServiceError(
+          'Failed to analyze hackathon project with Google AI',
+          'UNKNOWN_ERROR',
+          error,
+          'analyzeHackathon'
+        ));
       }
-
-      const analysisResult = this.parseAnalysisResponse(rawText);
-      return success(analysisResult);
-    } catch (error) {
-      return failure(new AIServiceError(
-        'Failed to analyze hackathon project with Google AI',
-        error,
-        'analyzeHackathon'
-      ));
-    }
+    });
   }
 
   /**
@@ -148,13 +224,14 @@ export class GoogleAIAdapter {
 
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!base64Audio) {
-        return failure(new AIServiceError('Audio generation returned no data', null, 'tts'));
+        return failure(new AIServiceError('Audio generation returned no data', 'EMPTY_RESPONSE', null, 'tts'));
       }
 
       return success(base64Audio);
     } catch (error) {
       return failure(new AIServiceError(
         'Failed to generate speech with Google AI',
+        'UNKNOWN_ERROR',
         error,
         'tts'
       ));
@@ -188,13 +265,14 @@ export class GoogleAIAdapter {
 
       const transcription = response.text?.trim();
       if (!transcription) {
-        return failure(new AIServiceError('Transcription returned no text', null, 'transcribe'));
+        return failure(new AIServiceError('Transcription returned no text', 'EMPTY_RESPONSE', null, 'transcribe'));
       }
 
       return success(transcription);
     } catch (error) {
       return failure(new AIServiceError(
         'Failed to transcribe audio with Google AI',
+        'UNKNOWN_ERROR',
         error,
         'transcribe'
       ));
@@ -204,7 +282,7 @@ export class GoogleAIAdapter {
   /**
    * Build analysis prompt for startup ideas
    */
-  private buildAnalysisPrompt(idea: string, locale: Locale): any {
+  private buildAnalysisPrompt(idea: string, locale: Locale): Array<{ parts: Array<{ text: string }> }> {
     const isSpanish = locale.value === 'es';
     
     const systemPrompt = isSpanish
@@ -242,7 +320,7 @@ export class GoogleAIAdapter {
     kiroUsage: string,
     category: string,
     locale: Locale
-  ): any {
+  ): Array<{ parts: Array<{ text: string }> }> {
     const isSpanish = locale.value === 'es';
     
     const systemPrompt = isSpanish
@@ -293,9 +371,50 @@ Provide your evaluation in JSON format:`;
   }
 
   /**
+   * Retry mechanism for transient failures
+   */
+  private async withRetry<T>(
+    operation: () => Promise<Result<T, Error>>,
+    maxRetries: number = this.config.maxRetries || 3
+  ): Promise<Result<T, Error>> {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const result = await operation();
+      
+      // If successful, return immediately
+      if (result.success) {
+        return result;
+      }
+      
+      // Check if error is retryable
+      const error = result.error;
+      const isRetryable = error instanceof AIServiceError && 
+        (error.code === 'TIMEOUT' || error.code === 'RATE_LIMIT' || error.code === 'UNKNOWN_ERROR');
+      
+      // If not retryable or last attempt, return the error
+      if (!isRetryable || attempt === maxRetries) {
+        return result;
+      }
+      
+      lastError = error;
+      
+      // Exponential backoff: wait 1s, 2s, 4s
+      const delay = Math.pow(2, attempt) * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    
+    // This should never be reached, but TypeScript needs it
+    return failure(lastError || new Error('Unknown error during retry'));
+  }
+
+  /**
    * Parse AI response and extract analysis result
    */
   private parseAnalysisResponse(rawText: string): AIAnalysisResult {
+    let parsed: unknown;
+    
+    // Try to parse JSON
     try {
       // Extract JSON from markdown code blocks
       const markdownMatch = rawText.match(/```(json)?\s*([\s\S]*?)\s*```/);
@@ -308,26 +427,62 @@ Provide your evaluation in JSON format:`;
         jsonText = jsonText.substring(firstBrace, lastBrace + 1);
       }
 
-      const parsed = JSON.parse(jsonText);
-      
-      // Validate and normalize the response
-      return {
-        score: typeof parsed.score === 'number' ? Math.max(0, Math.min(100, parsed.score)) : 0,
-        detailedSummary: typeof parsed.detailedSummary === 'string' ? parsed.detailedSummary : '',
-        criteria: Array.isArray(parsed.criteria) ? parsed.criteria.map(c => ({
-          name: typeof c.name === 'string' ? c.name : 'Unknown',
-          score: typeof c.score === 'number' ? Math.max(0, Math.min(100, c.score)) : 0,
-          justification: typeof c.justification === 'string' ? c.justification : ''
-        })) : [],
-        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.filter(s => typeof s === 'string') : []
-      };
+      parsed = JSON.parse(jsonText);
     } catch (error) {
       throw new AIServiceError(
-        "Failed to parse AI response. The model returned an invalid format.",
+        'Failed to parse AI response',
+        'PARSE_ERROR',
         error,
         'parse'
       );
     }
+    
+    // Type guard to check if parsed is an object
+    if (typeof parsed !== 'object' || parsed === null) {
+      throw new AIServiceError(
+        'Invalid AI response format',
+        'INVALID_FORMAT',
+        null,
+        'parse'
+      );
+    }
+
+    const parsedObj = parsed as Record<string, unknown>;
+    
+    // Validate required fields
+    if (!parsedObj.score || !parsedObj.detailedSummary || !parsedObj.criteria || !parsedObj.suggestions) {
+      throw new AIServiceError(
+        'Invalid AI response format',
+        'INVALID_FORMAT',
+        null,
+        'parse'
+      );
+    }
+    
+    // Validate score value
+    if (typeof parsedObj.score !== 'number' || parsedObj.score < 0 || parsedObj.score > 100) {
+      throw new AIServiceError(
+        'Invalid score value',
+        'INVALID_SCORE',
+        null,
+        'parse'
+      );
+    }
+    
+    // Normalize and return the response
+    return {
+      score: parsedObj.score,
+      detailedSummary: typeof parsedObj.detailedSummary === 'string' ? parsedObj.detailedSummary : '',
+      criteria: Array.isArray(parsedObj.criteria) ? parsedObj.criteria.map((c: unknown) => {
+        const criterion = c as Record<string, unknown>;
+        return {
+          name: typeof criterion.name === 'string' ? criterion.name : 'Unknown',
+          score: typeof criterion.score === 'number' ? Math.max(0, Math.min(100, criterion.score)) : 0,
+          justification: typeof criterion.justification === 'string' ? criterion.justification : ''
+        };
+      }) : [],
+      suggestions: Array.isArray(parsedObj.suggestions) ? parsedObj.suggestions.filter(s => typeof s === 'string') : []
+    };
   }
 
   /**

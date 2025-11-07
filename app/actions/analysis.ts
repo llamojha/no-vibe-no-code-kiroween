@@ -6,11 +6,16 @@ import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { AnalysisId, UserId } from '@/src/domain/value-objects';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { AnalysisResponseDTO } from '@/src/infrastructure/web/dto/AnalysisDTO';
-import { UseCaseFactory } from '@/src/infrastructure/factories';
 import { CreateAnalysisCommand } from '@/src/application/types/commands/AnalysisCommands';
+
+// Type for mock request used in server actions
+type MockRequest = {
+  json?: () => Promise<Record<string, unknown>>;
+  headers: Headers;
+  url?: string;
+};
 
 // Input validation schemas
 const CreateAnalysisSchema = z.object({
@@ -63,7 +68,7 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     const analysisController = serviceFactory.createAnalysisController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       json: async () => ({
         idea: command.idea,
         locale: command.locale.value
@@ -71,9 +76,9 @@ export async function createAnalysisAction(formData: FormData): Promise<{
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await analysisController.createAnalysis(mockRequest);
+    const response = await analysisController.createAnalysis(mockRequest as any);
     const responseData = await response.json();
 
     if (response.status === 200 || response.status === 201) {
@@ -140,16 +145,16 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     const analysisController = serviceFactory.createAnalysisController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       json: async () => ({
         analysisId: validatedData.analysisId
       }),
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await analysisController.deleteAnalysis(mockRequest, { 
+    const response = await analysisController.deleteAnalysis(mockRequest as any, { 
       params: { id: validatedData.analysisId } 
     });
     const responseData = await response.json();
@@ -218,13 +223,13 @@ export async function getAnalysisAction(analysisId: string): Promise<{
     const analysisController = serviceFactory.createAnalysisController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await analysisController.getAnalysis(mockRequest, { 
+    const response = await analysisController.getAnalysis(mockRequest as any, { 
       params: { id: analysisId } 
     });
     const responseData = await response.json();

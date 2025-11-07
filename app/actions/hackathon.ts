@@ -6,10 +6,14 @@ import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { CreateHackathonAnalysisCommand } from '@/src/application/types/commands/HackathonCommands';
-import { AnalysisId, UserId } from '@/src/domain/value-objects';
-import { Locale } from '@/src/domain/value-objects/Locale';
 import type { HackathonAnalysisResponseDTO } from '@/src/infrastructure/web/dto/HackathonDTO';
+
+// Type for mock request used in server actions
+type MockRequest = {
+  json?: () => Promise<Record<string, unknown>>;
+  headers: Headers;
+  url?: string;
+};
 
 // Input validation schemas
 const CreateHackathonAnalysisSchema = z.object({
@@ -35,11 +39,6 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
   try {
     // Check authentication (hackathon analyzer might not require authentication)
     const authenticated = await isAuthenticated();
-    let userId: UserId | null = null;
-    
-    if (authenticated) {
-      userId = await getCurrentUserId();
-    }
 
     // Parse and validate input
     const rawData = {
@@ -52,27 +51,13 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
 
     const validatedData = CreateHackathonAnalysisSchema.parse(rawData);
 
-    // Create command
-    const projectData = {
-      projectName: 'Hackathon Project', // Default name since not provided in form
-      description: validatedData.projectDescription,
-      kiroUsage: 'Used for hackathon development', // Default usage
-      teamSize: validatedData.teamSize,
-      timeSpent: parseInt(validatedData.timeframe) || 24 // Convert string to number
-    };
-    
-    const command = new CreateHackathonAnalysisCommand(
-      projectData,
-      userId || UserId.generate() // Generate anonymous user ID if null
-    );
-
     // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const hackathonController = serviceFactory.createHackathonController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       json: async () => ({
         projectDescription: validatedData.projectDescription,
         teamSize: validatedData.teamSize,
@@ -83,9 +68,9 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
       headers: new Headers({
         'authorization': authenticated ? `Bearer ${supabase.auth.getSession()}` : ''
       })
-    } as any;
+    };
     
-    const response = await hackathonController.analyzeHackathonProject(mockRequest);
+    const response = await hackathonController.analyzeHackathonProject(mockRequest as any);
     const responseData = await response.json();
 
     if (response.status === 200 || response.status === 201) {
@@ -154,16 +139,16 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     const dashboardController = serviceFactory.createDashboardController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       json: async () => ({
         analysisId: validatedData.analysisId
       }),
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await dashboardController.deleteUserAnalysis(mockRequest, { 
+    const response = await dashboardController.deleteUserAnalysis(mockRequest as any, { 
       params: { id: validatedData.analysisId } 
     });
     const responseData = await response.json();
@@ -221,13 +206,13 @@ export async function getHackathonAnalysisAction(analysisId: string): Promise<{
     const dashboardController = serviceFactory.createDashboardController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await dashboardController.getUserAnalysis(mockRequest, { 
+    const response = await dashboardController.getUserAnalysis(mockRequest as any, { 
       params: { id: analysisId } 
     });
     const responseData = await response.json();

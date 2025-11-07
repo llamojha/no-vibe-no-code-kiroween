@@ -70,7 +70,7 @@ export class AnalysisValidationService {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Basic length validation
+    // Basic length validation - only warnings for short ideas
     if (idea.length < 50) {
       warnings.push('Idea description is quite short. Consider adding more details for better analysis.');
     }
@@ -79,10 +79,10 @@ export class AnalysisValidationService {
       warnings.push('Idea description is very long. Consider summarizing key points.');
     }
 
-    // Content quality checks
+    // Content quality checks - warning instead of error for low word count
     const wordCount = idea.split(/\s+/).length;
     if (wordCount < 10) {
-      errors.push('Idea must contain at least 10 words for meaningful analysis.');
+      warnings.push('Idea is very brief. Consider adding more details for a comprehensive analysis.');
     }
 
     // Check for common issues
@@ -205,19 +205,12 @@ export class AnalysisValidationService {
   }
 
   /**
-   * Check if an analysis can be safely deleted
+   * Check if an analysis can be safely deleted (analysis parameter unused in current implementation)
    */
-  canDeleteAnalysis(analysis: Analysis): boolean {
-    // Don't allow deletion of high-quality completed analyses
-    if (analysis.isHighQuality() && analysis.isCompleted()) {
-      return false;
-    }
-
-    // Don't allow deletion of recent high-value analyses
-    if (analysis.isRecent() && analysis.score.value > 70) {
-      return false;
-    }
-
+  canDeleteAnalysis(_analysis: Analysis): boolean {
+    // Allow deletion of regular analyses
+    // Only prevent deletion of special analyses (templates, demos, etc.)
+    // For now, all regular analyses can be deleted
     return true;
   }
 

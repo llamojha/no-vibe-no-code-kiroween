@@ -8,8 +8,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * Provides a clean interface for the infrastructure layer to access Supabase
  */
 export class SupabaseAdapter {
-  private static serverInstance: SupabaseClient | null = null;
-  private static clientInstance: SupabaseClient | null = null;
+  private static serverInstance: any = null;
+  private static clientInstance: any = null;
 
   /**
    * Get Supabase client for server-side operations
@@ -35,14 +35,14 @@ export class SupabaseAdapter {
    * Create a new server client instance (for cases where fresh instance is needed)
    */
   static createServerClient(): SupabaseClient {
-    return createServerComponentClient({ cookies });
+    return createServerComponentClient({ cookies }) as any;
   }
 
   /**
    * Create a new client instance (for cases where fresh instance is needed)
    */
   static createClientClient(): SupabaseClient {
-    return createClientComponentClient();
+    return createClientComponentClient() as any;
   }
 
   /**
@@ -77,23 +77,25 @@ export class SupabaseAdapter {
   /**
    * Handle Supabase errors consistently
    */
-  static handleError(error: any, operation: string): Error {
+  static handleError(error: unknown, operation: string): Error {
     console.error(`Supabase ${operation} error:`, error);
     
-    if (error?.code === 'PGRST116') {
+    const errorObj = error as { code?: string; message?: string };
+    
+    if (errorObj?.code === 'PGRST116') {
       return new Error('Resource not found');
     }
     
-    if (error?.code === '23505') {
+    if (errorObj?.code === '23505') {
       return new Error('Resource already exists');
     }
     
-    if (error?.code === '42501') {
+    if (errorObj?.code === '42501') {
       return new Error('Insufficient permissions');
     }
     
-    if (error?.message) {
-      return new Error(`${operation} failed: ${error.message}`);
+    if (errorObj?.message) {
+      return new Error(`${operation} failed: ${errorObj.message}`);
     }
     
     return new Error(`${operation} failed: Unknown error`);
@@ -103,7 +105,7 @@ export class SupabaseAdapter {
    * Execute Supabase operation with error handling
    */
   static async executeWithErrorHandling<T>(
-    operation: () => Promise<{ data: T | null; error: any }>,
+    operation: () => Promise<{ data: T | null; error: unknown }>,
     operationName: string
   ): Promise<T> {
     try {
@@ -130,13 +132,14 @@ export class SupabaseAdapter {
    * Execute Supabase operation that might return null (for optional data)
    */
   static async executeOptional<T>(
-    operation: () => Promise<{ data: T | null; error: any }>,
+    operation: () => Promise<{ data: T | null; error: unknown }>,
     operationName: string
   ): Promise<T | null> {
     try {
       const { data, error } = await operation();
       
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      const errorObj = error as { code?: string } | null;
+      if (error && errorObj?.code !== 'PGRST116') { // PGRST116 is "not found"
         throw SupabaseAdapter.handleError(error, operationName);
       }
       
@@ -172,7 +175,7 @@ export const supabaseUtils = {
    * Execute database operation with consistent error handling
    */
   async execute<T>(
-    operation: () => Promise<{ data: T | null; error: any }>,
+    operation: () => Promise<{ data: T | null; error: unknown }>,
     operationName: string
   ): Promise<T> {
     return SupabaseAdapter.executeWithErrorHandling(operation, operationName);
@@ -182,7 +185,7 @@ export const supabaseUtils = {
    * Execute optional database operation
    */
   async executeOptional<T>(
-    operation: () => Promise<{ data: T | null; error: any }>,
+    operation: () => Promise<{ data: T | null; error: unknown }>,
     operationName: string
   ): Promise<T | null> {
     return SupabaseAdapter.executeOptional(operation, operationName);

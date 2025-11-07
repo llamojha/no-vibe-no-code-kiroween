@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
  * POST /api/v2/analyze
  * TODO: Implement with complete hexagonal architecture
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented. Use /api/analyze instead.' },
     { status: 501 }
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
  * GET /api/v2/analyze
  * TODO: Implement with complete hexagonal architecture
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented. Use /api/analyze instead.' },
     { status: 501 }

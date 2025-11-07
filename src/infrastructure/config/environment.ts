@@ -44,7 +44,7 @@ export function getAppConfig(): AppConfig {
   };
 
   const missingVars = Object.entries(requiredEnvVars)
-    .filter(([_, value]) => !value)
+    .filter(([__key, value]) => !value)
     .map(([key]) => key);
 
   if (missingVars.length > 0) {

@@ -158,18 +158,18 @@ export class UserMapper {
   }
 
   /**
-   * Map user tier from domain to database representation
+   * Map user tier from domain to database representation (unused in current implementation)
    */
-  private mapTierToDatabase(_user: User): 'free' | 'paid' | 'admin' {
+  private mapTierToDatabase(__user: User): 'free' | 'paid' | 'admin' {
     // Simplified logic - in a real implementation, this would be based on user properties
     // For now, we'll default to 'free'
     return 'free';
   }
 
   /**
-   * Map user tier from database to domain representation
+   * Map user tier from database to domain representation (unused in current implementation)
    */
-  private mapTierFromDatabase(_tier: 'free' | 'paid' | 'admin'): UserPreferences {
+  private mapTierFromDatabase(__tier: 'free' | 'paid' | 'admin'): UserPreferences {
     // Simplified logic - tier doesn't directly map to preferences in current domain model
     // In a real implementation, tier might affect default preferences
     return {

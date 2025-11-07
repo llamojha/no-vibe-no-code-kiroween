@@ -50,7 +50,7 @@ export class HackathonAnalysisMapper {
       project_description: projectDescription,
       selected_category: selectedCategory as any, // Type assertion for the specific enum
       kiro_usage: kiroUsage,
-      analysis: analysisData,
+      analysis: analysisData as any,
       audio_base64: null, // Not implemented in current domain model
       supporting_materials: null, // Would be populated with actual materials
       created_at: analysis.createdAt.toISOString(),
@@ -62,7 +62,7 @@ export class HackathonAnalysisMapper {
    */
   toDomain(dao: HackathonAnalysisDAO): Analysis {
     // Parse the analysis JSON data
-    const analysisData = dao.analysis as HackathonAnalysisDataDAO;
+    const analysisData = dao.analysis as any as HackathonAnalysisDataDAO;
     
     return Analysis.reconstruct({
       id: AnalysisId.reconstruct(dao.id),
@@ -70,7 +70,7 @@ export class HackathonAnalysisMapper {
       userId: UserId.reconstruct(dao.user_id),
       score: Score.reconstruct(analysisData.score || 0),
       locale: Locale.fromString(analysisData.locale || 'en'),
-      category: analysisData.category ? Category.fromString(analysisData.category) : undefined,
+      category: analysisData.category ? Category.createHackathon(analysisData.category) : undefined,
       feedback: analysisData.detailedSummary,
       suggestions: [], // Simplified - would parse suggestions from data
       createdAt: new Date(dao.created_at || Date.now()),
@@ -194,15 +194,15 @@ export class HackathonAnalysisMapper {
   mapCategoryToDomain(category: string): Category {
     switch (category) {
       case 'resurrection':
-        return Category.fromString('resurrection');
+        return Category.createHackathon('resurrection');
       case 'frankenstein':
-        return Category.fromString('frankenstein');
+        return Category.createHackathon('frankenstein');
       case 'skeleton-crew':
-        return Category.fromString('skeleton-crew');
+        return Category.createHackathon('skeleton-crew');
       case 'costume-contest':
-        return Category.fromString('costume-contest');
+        return Category.createHackathon('costume-contest');
       default:
-        return Category.fromString('general');
+        return Category.createGeneral('general');
     }
   }
 
@@ -317,7 +317,7 @@ export class HackathonAnalysisMapper {
     hasVideo: boolean;
     createdAt: string;
   } {
-    const analysisData = dao.analysis as HackathonAnalysisDataDAO;
+    const analysisData = dao.analysis as any as HackathonAnalysisDataDAO;
     const supportingMaterials = dao.supporting_materials as SupportingMaterialsDAO | null;
 
     return {

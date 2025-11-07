@@ -61,9 +61,9 @@ export class SessionService {
   }
 
   /**
-   * Get user tier from the authentication service
+   * Get user tier from the authentication service (userId parameter unused in current implementation)
    */
-  private async getUserTier(userId: UserId): Promise<UserTier | null> {
+  private async getUserTier(_userId: UserId): Promise<UserTier | null> {
     try {
       // Use the authentication service to get tier information
       const authResult = await this.authenticationService.authenticateRequest({ allowFree: true });

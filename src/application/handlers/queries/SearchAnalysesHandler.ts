@@ -72,15 +72,16 @@ export class SearchAnalysesHandler implements QueryHandler<SearchAnalysesQuery, 
         return failure(new ValidationError('Invalid query data'));
       }
 
-      const queryData = data as any;
+      const queryData = data as Record<string, unknown>;
 
       // Validate pagination
       if (!queryData.pagination || typeof queryData.pagination !== 'object') {
         return failure(new ValidationError('Pagination is required'));
       }
 
-      const page = queryData.pagination.page;
-      const limit = queryData.pagination.limit;
+      const paginationData = queryData.pagination as Record<string, unknown>;
+      const page = paginationData.page;
+      const limit = paginationData.limit;
 
       if (!page || typeof page !== 'number' || page < 1) {
         return failure(new ValidationError('Page must be a positive number'));
@@ -91,54 +92,56 @@ export class SearchAnalysesHandler implements QueryHandler<SearchAnalysesQuery, 
       }
 
       // Validate and convert criteria
-      const criteria: any = {};
+      const criteria: Record<string, unknown> = {};
 
       if (queryData.criteria) {
-        if (queryData.criteria.userId) {
-          criteria.userId = UserId.fromString(queryData.criteria.userId);
+        const criteriaData = queryData.criteria as Record<string, unknown>;
+        
+        if (criteriaData.userId && typeof criteriaData.userId === 'string') {
+          criteria.userId = UserId.fromString(criteriaData.userId);
         }
 
-        if (queryData.criteria.category) {
-          criteria.category = Category.createGeneral(queryData.criteria.category);
+        if (criteriaData.category && typeof criteriaData.category === 'string') {
+          criteria.category = Category.createGeneral(criteriaData.category);
         }
 
-        if (queryData.criteria.locale) {
-          criteria.locale = Locale.create(queryData.criteria.locale);
+        if (criteriaData.locale && typeof criteriaData.locale === 'string') {
+          criteria.locale = Locale.create(criteriaData.locale);
         }
 
-        if (queryData.criteria.minScore !== undefined) {
-          criteria.minScore = Score.create(queryData.criteria.minScore);
+        if (criteriaData.minScore !== undefined && typeof criteriaData.minScore === 'number') {
+          criteria.minScore = Score.create(criteriaData.minScore);
         }
 
-        if (queryData.criteria.maxScore !== undefined) {
-          criteria.maxScore = Score.create(queryData.criteria.maxScore);
+        if (criteriaData.maxScore !== undefined && typeof criteriaData.maxScore === 'number') {
+          criteria.maxScore = Score.create(criteriaData.maxScore);
         }
 
-        if (queryData.criteria.isCompleted !== undefined) {
-          criteria.isCompleted = Boolean(queryData.criteria.isCompleted);
+        if (criteriaData.isCompleted !== undefined) {
+          criteria.isCompleted = Boolean(criteriaData.isCompleted);
         }
 
-        if (queryData.criteria.createdAfter) {
-          criteria.createdAfter = new Date(queryData.criteria.createdAfter);
+        if (criteriaData.createdAfter) {
+          criteria.createdAfter = new Date(criteriaData.createdAfter as string);
         }
 
-        if (queryData.criteria.createdBefore) {
-          criteria.createdBefore = new Date(queryData.criteria.createdBefore);
+        if (criteriaData.createdBefore) {
+          criteria.createdBefore = new Date(criteriaData.createdBefore as string);
         }
 
-        if (queryData.criteria.ideaContains) {
-          criteria.ideaContains = String(queryData.criteria.ideaContains);
+        if (criteriaData.ideaContains) {
+          criteria.ideaContains = String(criteriaData.ideaContains);
         }
       }
 
       // Create query
       const query = new SearchAnalysesQuery(
-        { page, limit },
+        { page: page as number, limit: limit as number },
         criteria,
-        queryData.searchTerm,
-        queryData.sortBy,
-        queryData.sortOrder,
-        queryData.correlationId
+        typeof queryData.searchTerm === 'string' ? queryData.searchTerm : undefined,
+        typeof queryData.sortBy === 'string' ? queryData.sortBy as 'score' | 'createdAt' | 'updatedAt' : undefined,
+        typeof queryData.sortOrder === 'string' ? queryData.sortOrder as 'asc' | 'desc' : undefined,
+        typeof queryData.correlationId === 'string' ? queryData.correlationId : undefined
       );
 
       return success(query);

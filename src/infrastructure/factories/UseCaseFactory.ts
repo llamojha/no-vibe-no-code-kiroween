@@ -131,7 +131,6 @@ export class UseCaseFactory {
     if (!this.useCases.has(cacheKey)) {
       // Note: This needs IHackathonAnalysisRepository and HackathonAnalysisService
       // For now, using regular repository until hackathon-specific ones are implemented
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const useCase = new AnalyzeHackathonProjectUseCase(
         this.analysisRepository as any, // Cast to IHackathonAnalysisRepository
         {} as any, // HackathonAnalysisService placeholder
@@ -150,10 +149,9 @@ export class UseCaseFactory {
     const cacheKey = 'saveHackathonAnalysisUseCase';
     
     if (!this.useCases.has(cacheKey)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const useCase = new SaveHackathonAnalysisUseCase(
         this.analysisRepository as any, // Cast to IHackathonAnalysisRepository
-        {} as unknown // HackathonAnalysisService placeholder
+        {} as any // HackathonAnalysisService placeholder
       );
       this.useCases.set(cacheKey, useCase);
     }
@@ -200,9 +198,8 @@ export class UseCaseFactory {
     const cacheKey = 'getHackathonLeaderboardUseCase';
     
     if (!this.useCases.has(cacheKey)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const useCase = new GetHackathonLeaderboardUseCase(
-        this.analysisRepository as unknown // Cast to IHackathonAnalysisRepository
+        this.analysisRepository as any // Cast to IHackathonAnalysisRepository
       );
       this.useCases.set(cacheKey, useCase);
     }

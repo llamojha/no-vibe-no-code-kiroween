@@ -28,7 +28,7 @@ export const ProjectSubmissionSchema = z.object({
     .max(10000, 'Project description cannot exceed 10000 characters')
     .trim(),
   selectedCategory: z.enum(['resurrection', 'frankenstein', 'skeleton-crew', 'costume-contest'], {
-    errorMap: () => ({ message: 'Invalid category selected' })
+    message: 'Invalid category selected'
   }),
   kiroUsage: z.string()
     .min(20, 'Kiro usage description must be at least 20 characters')
@@ -55,7 +55,7 @@ export interface CreateHackathonProjectDTO {
 export const CreateHackathonProjectSchema = z.object({
   submission: ProjectSubmissionSchema,
   locale: z.enum(['en', 'es'], {
-    errorMap: () => ({ message: 'Locale must be either "en" or "es"' })
+    message: 'Locale must be either "en" or "es"'
   })
 });
 

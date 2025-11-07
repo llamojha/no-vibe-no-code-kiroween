@@ -5,7 +5,6 @@ import { GetAnalysisUseCase } from '../../../use-cases/GetAnalysisUseCase';
 import { Analysis } from '../../../../domain/entities/Analysis';
 import { AnalysisId, UserId, Locale, Score } from '../../../../domain/value-objects';
 import { success, failure } from '../../../../shared/types/common';
-import { ValidationError } from '../../../../shared/types/errors';
 
 describe('GetAnalysisHandler', () => {
   let handler: GetAnalysisHandler;

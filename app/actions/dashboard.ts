@@ -4,8 +4,14 @@ import { redirect } from 'next/navigation';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { UserId } from '@/src/domain/value-objects/UserId';
 import type { UnifiedAnalysisRecord, AnalysisCounts } from '@/lib/types';
+
+// Type for mock request used in server actions
+type MockRequest = {
+  json?: () => Promise<Record<string, unknown>>;
+  headers: Headers;
+  url?: string;
+};
 
 /**
  * Server action to get dashboard data (analyses and stats)
@@ -41,13 +47,13 @@ export async function getDashboardDataAction(): Promise<{
     const dashboardController = serviceFactory.createDashboardController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await dashboardController.getDashboard(mockRequest);
+    const response = await dashboardController.getDashboard(mockRequest as any);
     const responseData = await response.json();
 
     if (response.status === 200) {
@@ -99,23 +105,20 @@ export async function getUserAnalysesAction(
       redirect('/login');
     }
 
-    // Calculate offset
-    const offset = (page - 1) * limit;
-
     // Execute through controller and parse response
     const supabase = serverSupabase();
     const serviceFactory = ServiceFactory.getInstance(supabase);
     const dashboardController = serviceFactory.createDashboardController();
     
     // Create a mock request for the controller
-    const mockRequest = {
+    const mockRequest: MockRequest = {
       url: `http://localhost:3000/api/v2/dashboard/analyses?page=${page}&limit=${limit}${category ? `&category=${category}` : ''}`,
       headers: new Headers({
         'authorization': `Bearer ${supabase.auth.getSession()}`
       })
-    } as any;
+    };
     
-    const response = await dashboardController.getUserAnalyses(mockRequest);
+    const response = await dashboardController.getUserAnalyses(mockRequest as any);
     const responseData = await response.json();
 
     if (response.status === 200) {

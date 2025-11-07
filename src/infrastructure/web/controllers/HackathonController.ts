@@ -98,7 +98,12 @@ export class HackathonController {
       );
     }
 
-    const analysis = await googleAI.analyzeHackathonProject(submission.description, Locale.fromString(locale));
+    const analysis = await googleAI.analyzeHackathonProject(
+      submission.description,
+      submission.kiroUsage || '',
+      submission.selectedCategory || 'costume-contest',
+      Locale.fromString(locale)
+    );
     return NextResponse.json(analysis);
   }
 
@@ -181,5 +186,21 @@ export class HackathonController {
     } catch (error) {
       return handleApiError(error);
     }
+  }
+
+  /**
+   * Handle OPTIONS preflight requests for CORS
+   * OPTIONS /api/hackathon/*
+   */
+  async handleOptions(_request: NextRequest): Promise<NextResponse> {
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
   }
 }

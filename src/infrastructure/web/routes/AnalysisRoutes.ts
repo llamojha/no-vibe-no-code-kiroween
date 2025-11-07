@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AnalysisController } from '../controllers/AnalysisController';
 import { ServiceFactory } from '../../factories/ServiceFactory';
 import { handleApiError } from '../middleware/ErrorMiddleware';
+import { serverSupabase } from '@/lib/supabase/server';
 
 /**
  * Analysis route handlers for Next.js API routes
@@ -14,7 +14,7 @@ import { handleApiError } from '../middleware/ErrorMiddleware';
  */
 export async function createAnalysisRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.createAnalysis(request);
   } catch (error) {
@@ -31,7 +31,7 @@ export async function getAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.getAnalysis(request, { params });
   } catch (error) {
@@ -45,7 +45,7 @@ export async function getAnalysisRoute(
  */
 export async function listAnalysesRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.listAnalyses(request);
   } catch (error) {
@@ -62,7 +62,7 @@ export async function updateAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.updateAnalysis(request, { params });
   } catch (error) {
@@ -79,7 +79,7 @@ export async function deleteAnalysisRoute(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.deleteAnalysis(request, { params });
   } catch (error) {
@@ -93,7 +93,7 @@ export async function deleteAnalysisRoute(
  */
 export async function searchAnalysesRoute(request: NextRequest): Promise<NextResponse> {
   try {
-    const serviceFactory = ServiceFactory.getInstance();
+    const serviceFactory = ServiceFactory.getInstance(serverSupabase());
     const controller = serviceFactory.createAnalysisController();
     return await controller.searchAnalyses(request);
   } catch (error) {

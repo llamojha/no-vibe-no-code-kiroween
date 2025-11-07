@@ -7,10 +7,21 @@ import { Score } from '../../value-objects/Score';
 import { Locale } from '../../value-objects/Locale';
 import { Category } from '../../value-objects/Category';
 
+interface TestMetadata {
+  projectName: string;
+  description: string;
+  kiroUsage: string;
+  githubUrl?: string;
+  demoUrl?: string;
+  screenshots?: string[];
+  teamSize: number;
+  timeSpent?: number;
+}
+
 describe('HackathonAnalysisService', () => {
   let hackathonService: HackathonAnalysisService;
   let testAnalysis: Analysis;
-  let testMetadata: any;
+  let testMetadata: TestMetadata;
 
   beforeEach(() => {
     hackathonService = new HackathonAnalysisService();

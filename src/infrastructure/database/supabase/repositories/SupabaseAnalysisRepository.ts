@@ -1,15 +1,16 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Analysis } from '../../../../domain/entities';
-import { AnalysisId, UserId, Category, Locale, Score } from '../../../../domain/value-objects';
+import { AnalysisId, UserId, Category, Score } from '../../../../domain/value-objects';
 import { 
   IAnalysisRepository, 
   AnalysisSearchCriteria, 
   AnalysisSortOptions 
 } from '../../../../domain/repositories/IAnalysisRepository';
 import { Result, PaginatedResult, PaginationParams, success, failure, createPaginatedResult } from '../../../../shared/types/common';
-import { Database, AnalysisDAO } from '../../types';
+import { Database } from '../../types';
 import { DatabaseError, DatabaseQueryError, RecordNotFoundError } from '../../errors';
 import { AnalysisMapper } from '../mappers/AnalysisMapper';
+import { AnalysisDAO } from '../../types/dao';
 
 /**
  * Supabase implementation of the Analysis repository
@@ -39,10 +40,14 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to save analysis', error, 'INSERT'));
       }
 
-      const savedAnalysis = this.mapper.toDomain(data);
+      if (!data) {
+        return failure(new DatabaseQueryError('No data returned from insert', null, 'INSERT'));
+      }
+
+      const savedAnalysis = this.mapper.toDomain(data as AnalysisDAO);
       return success(savedAnalysis);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error saving analysis', error));
+      return failure(new DatabaseQueryError('Unexpected error saving analysis', error, 'INSERT'));
     }
   }
 
@@ -65,10 +70,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new RecordNotFoundError('Analysis', analysis.id.value));
       }
 
-      const updatedAnalysis = this.mapper.toDomain(data);
+      const updatedAnalysis = this.mapper.toDomain(data as AnalysisDAO);
       return success(updatedAnalysis);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error updating analysis', error));
+      return failure(new DatabaseQueryError('Unexpected error updating analysis', error));
     }
   }
 
@@ -85,7 +90,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deleting analysis', error));
+      return failure(new DatabaseQueryError('Unexpected error deleting analysis', error));
     }
   }
 
@@ -102,7 +107,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deleting user analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error deleting user analyses', error));
     }
   }
 
@@ -125,7 +130,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       await Promise.all(promises);
       return success(undefined);
     } catch (error) {
-      return failure(error instanceof Error ? error : new DatabaseError('Unexpected error updating scores', error));
+      return failure(error instanceof Error ? error : new DatabaseQueryError('Unexpected error updating scores', error));
     }
   }
 
@@ -142,10 +147,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to save multiple analyses', error, 'INSERT'));
       }
 
-      const savedAnalyses = data.map(dao => this.mapper.toDomain(dao));
+      const savedAnalyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success(savedAnalyses);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error saving multiple analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error saving multiple analyses', error));
     }
   }
 
@@ -164,7 +169,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success(undefined);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error deleting multiple analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error deleting multiple analyses', error));
     }
   }
 
@@ -185,10 +190,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analysis by ID', error, 'SELECT'));
       }
 
-      const analysis = this.mapper.toDomain(data);
+      const analysis = this.mapper.toDomain(data as AnalysisDAO);
       return success(analysis);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analysis by ID', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analysis by ID', error));
     }
   }
 
@@ -209,7 +214,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success(!!data);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error checking analysis existence', error));
+      return failure(new DatabaseQueryError('Unexpected error checking analysis existence', error));
     }
   }
 
@@ -225,7 +230,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success(count || 0);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error counting analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error counting analyses', error));
     }
   }
 
@@ -243,12 +248,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find all analyses', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding all analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error finding all analyses', error));
     }
   }
 
@@ -265,10 +270,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses by IDs', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success(analyses);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses by IDs', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses by IDs', error));
     }
   }
 
@@ -289,10 +294,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses with criteria', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success(analyses);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses with criteria', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses with criteria', error));
     }
   }
 
@@ -321,12 +326,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses with criteria and pagination', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses with criteria and pagination', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses with criteria and pagination', error));
     }
   }
 
@@ -352,10 +357,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses by user ID', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success(analyses);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses by user ID', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses by user ID', error));
     }
   }
 
@@ -404,10 +409,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses by user ID with pagination', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success({ analyses, total: count || 0 });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses by user ID with pagination', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses by user ID with pagination', error));
     }
   }
 
@@ -460,10 +465,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to search analyses by user', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success({ analyses, total: count || 0 });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error searching analyses by user', error));
+      return failure(new DatabaseQueryError('Unexpected error searching analyses by user', error));
     }
   }
 
@@ -511,7 +516,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         kiroween: kiroweenCount || 0
       });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error getting analysis counts by user', error));
+      return failure(new DatabaseQueryError('Unexpected error getting analysis counts by user', error));
     }
   }
 
@@ -536,7 +541,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       const scores = data
         .map(row => row.score)
-        .filter(score => typeof score === 'number' && score > 0);
+        .filter(score => typeof score === 'number' && score > 0) as number[];
 
       if (scores.length === 0) {
         return success({ average: 0, highest: 0, lowest: 0 });
@@ -548,7 +553,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
       return success({ average, highest, lowest });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error getting score stats by user', error));
+      return failure(new DatabaseQueryError('Unexpected error getting score stats by user', error));
     }
   }
 
@@ -571,12 +576,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses by category', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses by category', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses by category', error));
     }
   }
 
@@ -596,12 +601,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find high quality analyses', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding high quality analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error finding high quality analyses', error));
     }
   }
 
@@ -625,12 +630,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find recent analyses', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding recent analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error finding recent analyses', error));
     }
   }
 
@@ -681,12 +686,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to search analyses', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error searching analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error searching analyses', error));
     }
   }
 
@@ -710,12 +715,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses by user and category', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses by user and category', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses by user and category', error));
     }
   }
 
@@ -758,7 +763,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         categoryCounts,
       });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error getting user analysis stats', error));
+      return failure(new DatabaseQueryError('Unexpected error getting user analysis stats', error));
     }
   }
 
@@ -799,7 +804,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         recentCount,
       });
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error getting global stats', error));
+      return failure(new DatabaseQueryError('Unexpected error getting global stats', error));
     }
   }
 
@@ -819,10 +824,10 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find similar analyses', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       return success(analyses);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding similar analyses', error));
+      return failure(new DatabaseQueryError('Unexpected error finding similar analyses', error));
     }
   }
 
@@ -846,12 +851,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         return failure(new DatabaseQueryError('Failed to find analyses needing attention', error, 'SELECT'));
       }
 
-      const analyses = data.map(dao => this.mapper.toDomain(dao));
+      const analyses = data.map(dao => this.mapper.toDomain(dao as AnalysisDAO));
       const paginatedResult = createPaginatedResult(analyses, count || 0, params.page, params.limit);
       
       return success(paginatedResult);
     } catch (error) {
-      return failure(new DatabaseError('Unexpected error finding analyses needing attention', error));
+      return failure(new DatabaseQueryError('Unexpected error finding analyses needing attention', error));
     }
   }
 }

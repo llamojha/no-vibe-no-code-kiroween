@@ -18,7 +18,7 @@ export const CreateAnalysisSchema = z.object({
     .max(5000, 'Idea cannot exceed 5000 characters')
     .trim(),
   locale: z.enum(['en', 'es'], {
-    errorMap: () => ({ message: 'Locale must be either "en" or "es"' })
+    message: 'Locale must be either "en" or "es"'
   }),
   category: z.string().optional()
 });
@@ -42,7 +42,7 @@ export const UpdateAnalysisSchema = z.object({
     .trim()
     .optional(),
   locale: z.enum(['en', 'es'], {
-    errorMap: () => ({ message: 'Locale must be either "en" or "es"' })
+    message: 'Locale must be either "en" or "es"'
   }).optional(),
   category: z.string().optional()
 });
@@ -168,7 +168,7 @@ export interface BulkAnalysisOperationDTO {
 export const BulkAnalysisOperationSchema = z.object({
   analysisIds: z.array(z.string().min(1, 'Analysis ID cannot be empty')).min(1, 'At least one analysis ID is required'),
   operation: z.enum(['delete', 'archive', 'export'], {
-    errorMap: () => ({ message: 'Operation must be one of: delete, archive, export' })
+    message: 'Operation must be one of: delete, archive, export'
   })
 });
 
@@ -186,7 +186,7 @@ export interface AnalysisExportDTO {
  */
 export const AnalysisExportSchema = z.object({
   format: z.enum(['json', 'csv', 'pdf'], {
-    errorMap: () => ({ message: 'Format must be one of: json, csv, pdf' })
+    message: 'Format must be one of: json, csv, pdf'
   }),
   analysisIds: z.array(z.string().min(1)).optional(),
   includeDetails: z.boolean().optional()

@@ -17,7 +17,7 @@ export interface PostHogConfig {
 export interface AnalyticsEvent {
   event: string;
   userId?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp?: Date;
 }
 
@@ -31,7 +31,7 @@ export interface UserProperties {
   tier?: string;
   locale?: string;
   createdAt?: Date;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface UserProperties {
 export class AnalyticsError extends Error {
   constructor(
     message: string,
-    public readonly originalError?: any,
+    public readonly originalError?: unknown,
     public readonly operation?: string
   ) {
     super(message);
@@ -240,7 +240,7 @@ export class PostHogAdapter {
   async trackPageView(
     userId: string,
     page: string,
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   ): Promise<Result<void, Error>> {
     return this.trackEvent({
       event: '$pageview',

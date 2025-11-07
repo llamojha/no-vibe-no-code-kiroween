@@ -68,15 +68,16 @@ export class SearchHackathonAnalysesHandler implements QueryHandler<SearchHackat
         return failure(new ValidationError('Invalid query data'));
       }
 
-      const queryData = data as any;
+      const queryData = data as Record<string, unknown>;
 
       // Validate pagination
       if (!queryData.pagination || typeof queryData.pagination !== 'object') {
         return failure(new ValidationError('Pagination is required'));
       }
 
-      const page = queryData.pagination.page;
-      const limit = queryData.pagination.limit;
+      const paginationData = queryData.pagination as Record<string, unknown>;
+      const page = paginationData.page;
+      const limit = paginationData.limit;
 
       if (!page || typeof page !== 'number' || page < 1) {
         return failure(new ValidationError('Page must be a positive number'));
@@ -87,62 +88,64 @@ export class SearchHackathonAnalysesHandler implements QueryHandler<SearchHackat
       }
 
       // Validate and convert criteria
-      const criteria: any = {};
+      const criteria: Record<string, unknown> = {};
 
       if (queryData.criteria) {
-        if (queryData.criteria.userId) {
-          criteria.userId = UserId.fromString(queryData.criteria.userId);
+        const criteriaData = queryData.criteria as Record<string, unknown>;
+        
+        if (criteriaData.userId && typeof criteriaData.userId === 'string') {
+          criteria.userId = UserId.fromString(criteriaData.userId);
         }
 
-        if (queryData.criteria.category) {
-          criteria.category = Category.createHackathon(queryData.criteria.category);
+        if (criteriaData.category && typeof criteriaData.category === 'string') {
+          criteria.category = Category.createHackathon(criteriaData.category);
         }
 
-        if (queryData.criteria.minScore !== undefined) {
-          criteria.minScore = Score.create(queryData.criteria.minScore);
+        if (criteriaData.minScore !== undefined && typeof criteriaData.minScore === 'number') {
+          criteria.minScore = Score.create(criteriaData.minScore);
         }
 
-        if (queryData.criteria.maxScore !== undefined) {
-          criteria.maxScore = Score.create(queryData.criteria.maxScore);
+        if (criteriaData.maxScore !== undefined && typeof criteriaData.maxScore === 'number') {
+          criteria.maxScore = Score.create(criteriaData.maxScore);
         }
 
-        if (queryData.criteria.hasGithubUrl !== undefined) {
-          criteria.hasGithubUrl = Boolean(queryData.criteria.hasGithubUrl);
+        if (criteriaData.hasGithubUrl !== undefined) {
+          criteria.hasGithubUrl = Boolean(criteriaData.hasGithubUrl);
         }
 
-        if (queryData.criteria.hasDemoUrl !== undefined) {
-          criteria.hasDemoUrl = Boolean(queryData.criteria.hasDemoUrl);
+        if (criteriaData.hasDemoUrl !== undefined) {
+          criteria.hasDemoUrl = Boolean(criteriaData.hasDemoUrl);
         }
 
-        if (queryData.criteria.hasVideo !== undefined) {
-          criteria.hasVideo = Boolean(queryData.criteria.hasVideo);
+        if (criteriaData.hasVideo !== undefined) {
+          criteria.hasVideo = Boolean(criteriaData.hasVideo);
         }
 
-        if (queryData.criteria.teamSize !== undefined) {
-          criteria.teamSize = Number(queryData.criteria.teamSize);
+        if (criteriaData.teamSize !== undefined) {
+          criteria.teamSize = Number(criteriaData.teamSize);
         }
 
-        if (queryData.criteria.projectNameContains) {
-          criteria.projectNameContains = String(queryData.criteria.projectNameContains);
+        if (criteriaData.projectNameContains) {
+          criteria.projectNameContains = String(criteriaData.projectNameContains);
         }
 
-        if (queryData.criteria.submittedAfter) {
-          criteria.submittedAfter = new Date(queryData.criteria.submittedAfter);
+        if (criteriaData.submittedAfter) {
+          criteria.submittedAfter = new Date(criteriaData.submittedAfter as string);
         }
 
-        if (queryData.criteria.submittedBefore) {
-          criteria.submittedBefore = new Date(queryData.criteria.submittedBefore);
+        if (criteriaData.submittedBefore) {
+          criteria.submittedBefore = new Date(criteriaData.submittedBefore as string);
         }
       }
 
       // Create query
       const query = new SearchHackathonAnalysesQuery(
-        { page, limit },
+        { page: page as number, limit: limit as number },
         criteria,
-        queryData.searchTerm,
-        queryData.sortBy,
-        queryData.sortOrder,
-        queryData.correlationId
+        typeof queryData.searchTerm === 'string' ? queryData.searchTerm : undefined,
+        typeof queryData.sortBy === 'string' ? queryData.sortBy as 'score' | 'createdAt' | 'updatedAt' | 'projectName' : undefined,
+        typeof queryData.sortOrder === 'string' ? queryData.sortOrder as 'asc' | 'desc' : undefined,
+        typeof queryData.correlationId === 'string' ? queryData.correlationId : undefined
       );
 
       return success(query);

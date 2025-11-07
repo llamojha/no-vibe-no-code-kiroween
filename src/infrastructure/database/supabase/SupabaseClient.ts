@@ -1,25 +1,24 @@
 import { createClient, SupabaseClient as BaseSupabaseClient } from '@supabase/supabase-js';
-import { createBrowserSupabaseClient, createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserSupabaseClient, createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import type { Database } from './types/database';
+import type { Database } from '../types';
 
 /**
  * Supabase client wrapper for hexagonal architecture
  * Provides both server-side and client-side Supabase clients
  */
 export class SupabaseClient {
-  private static serverInstance: BaseSupabaseClient<Database> | null = null;
-  private static browserInstance: BaseSupabaseClient<Database> | null = null;
+  private static serverInstance: any = null;
+  private static browserInstance: any = null;
 
   /**
    * Get server-side Supabase client for use in API routes and server components
    */
-  static getServerClient(): BaseSupabaseClient<Database> {
+  static getServerClient(): any {
     if (!SupabaseClient.serverInstance) {
-      const cookieStore = cookies();
-      SupabaseClient.serverInstance = createServerSupabaseClient<Database>({
-        cookies: () => cookieStore,
-      });
+      SupabaseClient.serverInstance = createServerComponentClient({
+        cookies,
+      }) as any;
     }
     return SupabaseClient.serverInstance;
   }
@@ -27,7 +26,7 @@ export class SupabaseClient {
   /**
    * Get browser-side Supabase client for use in client components
    */
-  static getBrowserClient(): BaseSupabaseClient<Database> {
+  static getBrowserClient(): unknown {
     if (!SupabaseClient.browserInstance) {
       SupabaseClient.browserInstance = createBrowserSupabaseClient<Database>();
     }

@@ -26,7 +26,7 @@ export interface TTSResult {
 export class TTSError extends Error {
   constructor(
     message: string,
-    public readonly originalError?: any,
+    public readonly originalError?: unknown,
     public readonly textLength?: number
   ) {
     super(message);

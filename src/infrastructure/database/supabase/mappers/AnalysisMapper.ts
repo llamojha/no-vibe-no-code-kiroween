@@ -1,5 +1,5 @@
 import { Analysis } from '../../../../domain/entities';
-import { AnalysisId, UserId, Score, Locale, Category } from '../../../../domain/value-objects';
+import { AnalysisId, UserId, Score, Locale } from '../../../../domain/value-objects';
 import { AnalysisDAO, AnalysisDataDAO } from '../../types/dao';
 import { SavedAnalysesRow, SavedAnalysesInsert, SavedAnalysesUpdate } from '../../types/database';
 
@@ -52,6 +52,11 @@ export class AnalysisMapper {
     // Parse the analysis JSON data
     const analysisData = dao.analysis as unknown as AnalysisDataDAO;
     
+    // Convert empty strings to undefined for optional fields
+    const feedback = analysisData.detailedSummary && analysisData.detailedSummary.trim() !== '' 
+      ? analysisData.detailedSummary 
+      : undefined;
+    
     return Analysis.reconstruct({
       id: AnalysisId.reconstruct(dao.id),
       idea: dao.idea,
@@ -59,7 +64,7 @@ export class AnalysisMapper {
       score: Score.reconstruct(analysisData.score || 0),
       locale: Locale.fromString(analysisData.locale || 'en'),
       category: analysisData.locale ? undefined : undefined, // Simplified - would parse category from data
-      feedback: analysisData.detailedSummary,
+      feedback,
       suggestions: [], // Simplified - would parse suggestions from data
       createdAt: new Date(dao.created_at || Date.now()),
       updatedAt: new Date(dao.created_at || Date.now()), // Simplified - using created_at as updated_at
@@ -187,7 +192,7 @@ export class AnalysisMapper {
   /**
    * Safely parse analysis JSON data with fallbacks
    */
-  private parseAnalysisData(analysis: any): AnalysisDataDAO {
+  private parseAnalysisData(analysis: unknown): AnalysisDataDAO {
     if (!analysis || typeof analysis !== 'object') {
       return {
         score: 0,
@@ -197,11 +202,13 @@ export class AnalysisMapper {
       };
     }
 
+    const analysisObj = analysis as Record<string, unknown>;
+
     return {
-      score: typeof analysis.score === 'number' ? analysis.score : 0,
-      detailedSummary: typeof analysis.detailedSummary === 'string' ? analysis.detailedSummary : '',
-      criteria: Array.isArray(analysis.criteria) ? analysis.criteria : [],
-      locale: typeof analysis.locale === 'string' ? analysis.locale : 'en',
+      score: typeof analysisObj.score === 'number' ? analysisObj.score : 0,
+      detailedSummary: typeof analysisObj.detailedSummary === 'string' ? analysisObj.detailedSummary : '',
+      criteria: Array.isArray(analysisObj.criteria) ? analysisObj.criteria : [],
+      locale: typeof analysisObj.locale === 'string' ? analysisObj.locale : 'en',
     };
   }
 

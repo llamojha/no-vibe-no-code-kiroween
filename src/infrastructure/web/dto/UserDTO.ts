@@ -184,7 +184,7 @@ export interface UserActivityDTO {
   type: 'analysis_created' | 'hackathon_submitted' | 'profile_updated' | 'login';
   description: string;
   timestamp: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

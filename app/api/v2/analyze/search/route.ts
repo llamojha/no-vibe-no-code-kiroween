@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
  * GET /api/v2/analyze/search
  * TODO: Implement with complete hexagonal architecture
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json(
     { error: 'V2 API not yet implemented.' },
     { status: 501 }

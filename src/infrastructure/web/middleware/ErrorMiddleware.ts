@@ -7,7 +7,7 @@ import { ZodError } from 'zod';
 export interface ApiErrorResponse {
   error: string;
   message?: string;
-  details?: any;
+  details?: Record<string, unknown> | unknown[];
   code?: string;
   timestamp?: string;
   path?: string;
@@ -21,7 +21,7 @@ export class ApiError extends Error {
     message: string,
     public statusCode: number = 500,
     public code?: string,
-    public details?: any
+    public details?: Record<string, unknown> | unknown[]
   ) {
     super(message);
     this.name = 'ApiError';
@@ -29,7 +29,7 @@ export class ApiError extends Error {
 }
 
 export class ValidationError extends ApiError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: Record<string, unknown> | unknown[]) {
     super(message, 400, 'VALIDATION_ERROR', details);
     this.name = 'ValidationError';
   }
@@ -71,7 +71,7 @@ export class RateLimitError extends ApiError {
 }
 
 export class ExternalServiceError extends ApiError {
-  constructor(message: string, service: string, originalError?: any) {
+  constructor(message: string, service: string, originalError?: unknown) {
     super(message, 502, 'EXTERNAL_SERVICE_ERROR', { service, originalError });
     this.name = 'ExternalServiceError';
   }
@@ -81,21 +81,21 @@ export class ExternalServiceError extends ApiError {
  * Domain-specific error classes
  */
 export class DomainError extends ApiError {
-  constructor(message: string, code: string, details?: any) {
+  constructor(message: string, code: string, details?: Record<string, unknown> | unknown[]) {
     super(message, 422, code, details);
     this.name = 'DomainError';
   }
 }
 
 export class BusinessRuleViolationError extends DomainError {
-  constructor(message: string, rule: string, details?: any) {
+  constructor(message: string, rule: string, details?: Record<string, unknown>) {
     super(message, 'BUSINESS_RULE_VIOLATION', { rule, ...details });
     this.name = 'BusinessRuleViolationError';
   }
 }
 
 export class InvariantViolationError extends DomainError {
-  constructor(message: string, invariant: string, details?: any) {
+  constructor(message: string, invariant: string, details?: Record<string, unknown>) {
     super(message, 'INVARIANT_VIOLATION', { invariant, ...details });
     this.name = 'InvariantViolationError';
   }
@@ -105,21 +105,21 @@ export class InvariantViolationError extends DomainError {
  * Infrastructure-specific error classes
  */
 export class DatabaseError extends ApiError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, 500, 'DATABASE_ERROR', { originalError });
     this.name = 'DatabaseError';
   }
 }
 
 export class CacheError extends ApiError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, 500, 'CACHE_ERROR', { originalError });
     this.name = 'CacheError';
   }
 }
 
 export class FileSystemError extends ApiError {
-  constructor(message: string, originalError?: any) {
+  constructor(message: string, originalError?: unknown) {
     super(message, 500, 'FILESYSTEM_ERROR', { originalError });
     this.name = 'FileSystemError';
   }
@@ -146,7 +146,7 @@ export function handleApiError(error: unknown, path?: string): NextResponse {
       error: 'Validation failed',
       message: 'Request validation failed',
       details: {
-        issues: error.errors.map(err => ({
+        issues: error.issues.map(err => ({
           path: err.path.join('.'),
           message: err.message,
           code: err.code
@@ -277,7 +277,7 @@ export function createErrorResponse(
   message: string,
   statusCode: number = 500,
   code?: string,
-  details?: any,
+  details?: Record<string, unknown> | unknown[],
   path?: string
 ): NextResponse {
   const errorResponse: ApiErrorResponse = {
