@@ -288,8 +288,9 @@ describe('AnalyzeIdeaUseCase', () => {
         penaltyPoints: 0
       };
 
+      const shortIdea = 'Short idea that meets minimum length requirements for testing';
       const mockAnalysis = Analysis.create({
-        idea: 'Short', // Short idea to trigger more suggestions
+        idea: shortIdea,
         userId: validInput.userId,
         score: Score.create(30),
         locale: validInput.locale,
@@ -303,7 +304,7 @@ describe('AnalyzeIdeaUseCase', () => {
       // Act
       const result = await useCase.execute({
         ...validInput,
-        idea: 'Short'
+        idea: shortIdea
       });
 
       // Assert

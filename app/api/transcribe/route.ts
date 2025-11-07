@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { transcribeAudio } from '@/lib/server/ai/transcribeAudio';
+import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
+import { Locale } from '@/src/domain/value-objects';
 import type { SupportedLocale } from '@/features/locale/translations';
 import { authenticateRequestPaidOrAdmin } from '@/src/infrastructure/web/middleware/AuthMiddleware';
 
@@ -27,8 +28,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const transcription = await transcribeAudio(audio, mimeType, locale);
-    return NextResponse.json({ transcription });
+    // Use the new hexagonal architecture
+    const serviceFactory = ServiceFactory.getInstance();
+    const transcriptionAdapter = serviceFactory.createTranscriptionAdapter();
+    const domainLocale = Locale.fromString(locale);
+
+    const result = await transcriptionAdapter.transcribeIdeaAudio(audio, mimeType, domainLocale);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ 
+      transcription: result.data.text,
+      confidence: result.data.confidence,
+      wordCount: result.data.wordCount,
+      duration: result.data.duration
+    });
   } catch (error) {
     console.error('Transcription API error', error);
     const message =

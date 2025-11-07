@@ -3,13 +3,15 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { UseCaseFactory } from '@/src/infrastructure/factories/UseCaseFactory';
+import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
+import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 import { CreateAnalysisCommand } from '@/src/application/types/commands';
-import { AnalysisId } from '@/src/domain/entities/analysis/AnalysisId';
-import { UserId } from '@/src/domain/entities/user/UserId';
+import { AnalysisId, UserId } from '@/src/domain/value-objects';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { AnalysisResponseDTO } from '@/src/infrastructure/web/dto/AnalysisDTO';
+import { UseCaseFactory } from '@/src/infrastructure/factories';
+import { UseCaseFactory } from '@/src/infrastructure/factories';
 
 // Input validation schemas
 const CreateAnalysisSchema = z.object({
@@ -53,14 +55,23 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     const command = new CreateAnalysisCommand(
       validatedData.idea,
       userId,
-      Locale.fromString(validatedData.locale)
+      Locale.create(validatedData.locale)
     );
 
     // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const createAnalysisHandler = useCaseFactory.createCreateAnalysisHandler();
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const analysisController = serviceFactory.createAnalysisController();
     
-    const result = await createAnalysisHandler.handle(command);
+    // Create a mock request for the controller
+    const mockRequest = {
+      json: async () => ({
+        idea: command.idea,
+        locale: command.locale.value
+      })
+    } as any;
+    
+    const result = await analysisController.createAnalysis(mockRequest);
 
     if (result.isSuccess) {
       // Revalidate relevant pages

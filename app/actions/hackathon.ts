@@ -3,11 +3,11 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { UseCaseFactory } from '@/src/infrastructure/factories/UseCaseFactory';
+import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
+import { serverSupabase } from '@/lib/supabase/server';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 import { CreateHackathonAnalysisCommand } from '@/src/application/types/commands';
-import { HackathonAnalysisId } from '@/src/domain/entities/hackathon/HackathonAnalysisId';
-import { UserId } from '@/src/domain/entities/user/UserId';
+import { AnalysisId, UserId } from '@/src/domain/value-objects';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { HackathonAnalysisResponseDTO } from '@/src/infrastructure/web/dto/HackathonDTO';
 
@@ -63,10 +63,22 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
     );
 
     // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const createHackathonAnalysisHandler = useCaseFactory.createCreateHackathonAnalysisHandler();
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const hackathonController = serviceFactory.createHackathonController();
     
-    const result = await createHackathonAnalysisHandler.handle(command);
+    // Create a mock request for the controller
+    const mockRequest = {
+      json: async () => ({
+        projectDescription: command.projectDescription,
+        teamSize: command.teamSize,
+        timeframe: command.timeframe,
+        techStack: command.techStack,
+        locale: command.locale.value
+      })
+    } as any;
+    
+    const result = await hackathonController.analyzeHackathonProject(mockRequest);
 
     if (result.isSuccess) {
       // Revalidate relevant pages
@@ -129,10 +141,13 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     const validatedData = DeleteHackathonAnalysisSchema.parse(rawData);
 
     // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const deleteHackathonAnalysisHandler = useCaseFactory.createDeleteHackathonAnalysisHandler();
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const dashboardController = serviceFactory.createDashboardController();
     
-    const result = await deleteHackathonAnalysisHandler.handle({
+    // Create a mock request for the controller
+    const mockRequest = {
+      json: async () => ({
       analysisId: HackathonAnalysisId.fromString(validatedData.analysisId),
       userId: userId,
     });
@@ -185,10 +200,13 @@ export async function getHackathonAnalysisAction(analysisId: string): Promise<{
     }
 
     // Execute use case
-    const useCaseFactory = UseCaseFactory.getInstance();
-    const getHackathonAnalysisHandler = useCaseFactory.createGetHackathonAnalysisHandler();
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const dashboardController = serviceFactory.createDashboardController();
     
-    const result = await getHackathonAnalysisHandler.handle({
+    // Create a mock request for the controller
+    const mockRequest = {
+      json: async () => ({
       analysisId: HackathonAnalysisId.fromString(analysisId),
     });
 

@@ -126,43 +126,12 @@ describe('AuthenticationService', () => {
     });
   });
 
-  describe('getCurrentUserId', () => {
-    it('should return UserId when authenticated', async () => {
+  describe('authenticateRequest', () => {
+    it('should successfully authenticate with valid session and existing user', async () => {
+      const validUserId = UserId.generate();
       const mockSession = {
         user: {
-          id: 'test-user-id',
-          email: 'test@example.com'
-        }
-      };
-
-      mockSupabaseClient.auth.getSession.mockResolvedValue({
-        data: { session: mockSession },
-        error: null
-      });
-
-      const result = await authService.getCurrentUserId();
-
-      expect(result).toBeInstanceOf(UserId);
-      expect(result?.value).toBe('test-user-id');
-    });
-
-    it('should return null when not authenticated', async () => {
-      mockSupabaseClient.auth.getSession.mockResolvedValue({
-        data: { session: null },
-        error: null
-      });
-
-      const result = await authService.getCurrentUserId();
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('getCurrentUser', () => {
-    it('should return user when authenticated and user exists', async () => {
-      const mockSession = {
-        user: {
-          id: 'test-user-id',
+          id: validUserId.value,
           email: 'test@example.com'
         }
       };
@@ -176,31 +145,36 @@ describe('AuthenticationService', () => {
         error: null
       });
 
-      mockUserRepository.findById.mockResolvedValue({
+      getUserByIdUseCase.execute = vi.fn().mockResolvedValue({
         success: true,
         data: mockUser
       });
 
-      const result = await authService.getCurrentUser();
+      const result = await authService.authenticateRequest();
 
-      expect(result).toBe(mockUser);
+      expect(result.success).toBe(true);
+      expect(result.user).toBe(mockUser);
+      expect(result.userId).toBe(validUserId.value);
+      expect(result.userEmail).toBe('test@example.com');
     });
 
-    it('should return null when not authenticated', async () => {
+    it('should fail when no session exists', async () => {
       mockSupabaseClient.auth.getSession.mockResolvedValue({
         data: { session: null },
         error: null
       });
 
-      const result = await authService.getCurrentUser();
+      const result = await authService.authenticateRequest();
 
-      expect(result).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('No active session found');
     });
 
-    it('should return null when user not found in repository', async () => {
+    it('should fail when user retrieval fails', async () => {
+      const validUserId = UserId.generate();
       const mockSession = {
         user: {
-          id: 'test-user-id',
+          id: validUserId.value,
           email: 'test@example.com'
         }
       };
@@ -210,14 +184,15 @@ describe('AuthenticationService', () => {
         error: null
       });
 
-      mockUserRepository.findById.mockResolvedValue({
-        success: true,
-        data: null
+      getUserByIdUseCase.execute = vi.fn().mockResolvedValue({
+        success: false,
+        error: new Error('Database error')
       });
 
-      const result = await authService.getCurrentUser();
+      const result = await authService.authenticateRequest();
 
-      expect(result).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to retrieve user information');
     });
   });
 });

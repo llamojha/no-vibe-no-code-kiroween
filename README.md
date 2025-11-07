@@ -19,10 +19,15 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **Infrastructure Layer** (`src/infrastructure/`): External adapters (database, AI services, web)
 - **Shared Layer** (`src/shared/`): Common utilities and types
 
-For detailed architecture documentation, see:
-- [Domain Layer Documentation](src/domain/README.md)
-- [Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)
-- [Architecture Design Specification](.kiro/specs/hexagonal-architecture-refactor/design.md)
+### Documentation
+
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
+- **[API Documentation](docs/API.md)**: Complete API reference
+- **[Domain Layer](src/domain/README.md)**: Domain layer documentation
+- **[Application Layer](src/application/README.md)**: Application layer documentation
+- **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
+- **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
 
 ## Run Locally
 

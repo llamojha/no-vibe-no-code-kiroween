@@ -10,6 +10,8 @@ import {
 import { HackathonLeaderboardResponseDTO } from '../dto/HackathonDTO';
 import { handleApiError } from '../middleware/ErrorMiddleware';
 import { authenticateRequest } from '../middleware/AuthMiddleware';
+import { GoogleAIAdapter } from '../../external/ai/GoogleAIAdapter';
+import { Locale } from '@/src/domain/value-objects';
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -42,8 +44,8 @@ export class HackathonController {
    * This maintains the existing functionality while we transition to full hexagonal architecture
    */
   private async legacyAnalyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
-    // Import the legacy function dynamically to avoid circular dependencies
-    const { analyzeHackathonProject } = await import('@/lib/server/ai/analyzeHackathonProject');
+    // Use the new GoogleAI adapter instead of legacy function
+    const googleAI = GoogleAIAdapter.create();
 
     // Use the new authentication middleware
     const authResult = await authenticateRequest(request, { 
@@ -96,7 +98,7 @@ export class HackathonController {
       );
     }
 
-    const analysis = await analyzeHackathonProject(submission, locale);
+    const analysis = await googleAI.analyzeHackathonProject(submission.description, Locale.fromString(locale));
     return NextResponse.json(analysis);
   }
 

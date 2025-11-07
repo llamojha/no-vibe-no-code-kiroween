@@ -166,9 +166,8 @@ export async function POST(request: NextRequest) {
     // Test domain layer
     try {
       // Import key domain classes to ensure they're loadable
-      const { Analysis } = await import('@/src/domain/entities/analysis/Analysis');
-      const { AnalysisId } = await import('@/src/domain/entities/analysis/AnalysisId');
-      const { UserId } = await import('@/src/domain/entities/user/UserId');
+      const { Analysis } = await import('@/src/domain/entities/Analysis');
+      const { AnalysisId, UserId } = await import('@/src/domain/value-objects');
       
       if (!Analysis || !AnalysisId || !UserId) {
         detailedChecks.architecture.domain.entities = 'error';
@@ -181,7 +180,7 @@ export async function POST(request: NextRequest) {
 
     // Test application layer
     try {
-      const { AnalyzeIdeaUseCase } = await import('@/src/application/use-cases/analysis/AnalyzeIdeaUseCase');
+      const { AnalyzeIdeaUseCase } = await import('@/src/application/use-cases/AnalyzeIdeaUseCase');
       const { CreateAnalysisHandler } = await import('@/src/application/handlers/commands');
       
       if (!AnalyzeIdeaUseCase || !CreateAnalysisHandler) {

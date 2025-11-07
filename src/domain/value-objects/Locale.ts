@@ -27,6 +27,14 @@ export class Locale {
   }
 
   /**
+   * Create a Locale from a string value (alias for create)
+   * @deprecated Use create() instead
+   */
+  static fromString(value: string): Locale {
+    return Locale.create(value);
+  }
+
+  /**
    * Create Locale for reconstruction from persistence
    */
   static reconstruct(value: 'en' | 'es'): Locale {

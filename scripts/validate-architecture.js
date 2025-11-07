@@ -31,11 +31,11 @@ const requiredDirectories = [
 
 const requiredFiles = [
   'src/main.ts',
-  'src/domain/entities/analysis/Analysis.ts',
-  'src/domain/entities/analysis/AnalysisId.ts',
-  'src/domain/entities/user/User.ts',
-  'src/domain/entities/user/UserId.ts',
-  'src/application/use-cases/analysis/AnalyzeIdeaUseCase.ts',
+  'src/domain/entities/Analysis.ts',
+  'src/domain/entities/User.ts',
+  'src/domain/value-objects/AnalysisId.ts',
+  'src/domain/value-objects/UserId.ts',
+  'src/application/use-cases/AnalyzeIdeaUseCase.ts',
   'src/infrastructure/database/supabase/repositories/SupabaseAnalysisRepository.ts',
   'src/infrastructure/factories/ServiceFactory.ts',
   'src/infrastructure/factories/UseCaseFactory.ts',

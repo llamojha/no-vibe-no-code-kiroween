@@ -13,10 +13,11 @@ import { UpdateAnalysisCommand, DeleteAnalysisCommand } from '@/src/application/
 import { GetAnalysisByIdQuery, GetAnalysesByUserQuery, SearchAnalysesQuery } from '@/src/application/types/queries';
 import { CreateAnalysisDTO, UpdateAnalysisDTO, AnalysisResponseDTO } from '../dto/AnalysisDTO';
 import { CreateAnalysisSchema, UpdateAnalysisSchema } from '../dto/AnalysisDTO';
-import { AnalysisId, UserId } from '@/src/domain/value-objects';
+import { AnalysisId, UserId, Locale } from '@/src/domain/value-objects';
 import { handleApiError } from '../middleware/ErrorMiddleware';
 import { validateRequest } from '../middleware/ValidationMiddleware';
 import { authenticateRequest } from '../middleware/AuthMiddleware';
+import { GoogleAIAdapter } from '../../external/ai/GoogleAIAdapter';
 
 /**
  * Controller for analysis-related API endpoints
@@ -55,10 +56,9 @@ export class AnalysisController {
 
       const dto = validationResult.data as CreateAnalysisDTO;
 
-      // TEMPORARY: Use existing AI analysis service for backward compatibility
-      // TODO: Replace with proper hexagonal architecture implementation
-      const { analyzeStartupIdea } = await import('@/lib/server/ai/analyzeStartupIdea');
-      const analysis = await analyzeStartupIdea(dto.idea, dto.locale as 'en' | 'es');
+      // Use the new hexagonal architecture AI service
+      const googleAI = GoogleAIAdapter.create();
+      const analysis = await googleAI.analyzeIdea(dto.idea, Locale.fromString(dto.locale));
 
       // Return the analysis in the expected format for backward compatibility
       return NextResponse.json(analysis, { status: 200 });

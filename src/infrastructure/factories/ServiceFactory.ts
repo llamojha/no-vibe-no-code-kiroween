@@ -39,6 +39,11 @@ import { SupabaseAdapter } from '../integration/SupabaseAdapter';
 import { FeatureFlagAdapter } from '../integration/FeatureFlagAdapter';
 import { LocaleAdapter } from '../integration/LocaleAdapter';
 
+// Import external service adapters
+import { TextToSpeechAdapter } from '../external/ai/TextToSpeechAdapter';
+import { TranscriptionAdapter } from '../external/ai/TranscriptionAdapter';
+import { GoogleAIAdapter } from '../external/ai/GoogleAIAdapter';
+
 // Import use cases
 import { GetUserAnalysesUseCase, GetDashboardStatsUseCase } from '../../application/use-cases';
 import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../../application/use-cases/user';
@@ -370,6 +375,59 @@ export class ServiceFactory {
       executeOptional: SupabaseAdapter.executeOptional,
       handleError: SupabaseAdapter.handleError,
     };
+  }
+
+  /**
+   * Create TextToSpeechAdapter with all dependencies
+   */
+  createTextToSpeechAdapter(): TextToSpeechAdapter {
+    const cacheKey = 'textToSpeechAdapter';
+    
+    if (!this.services.has(cacheKey)) {
+      const googleAI = this.createGoogleAIAdapter();
+      const ttsAdapter = new TextToSpeechAdapter(googleAI, {
+        maxTextLength: 15000,
+        timeout: 30000,
+      });
+
+      this.services.set(cacheKey, ttsAdapter);
+    }
+
+    return this.services.get(cacheKey) as TextToSpeechAdapter;
+  }
+
+  /**
+   * Create TranscriptionAdapter with all dependencies
+   */
+  createTranscriptionAdapter(): TranscriptionAdapter {
+    const cacheKey = 'transcriptionAdapter';
+    
+    if (!this.services.has(cacheKey)) {
+      const googleAI = this.createGoogleAIAdapter();
+      const transcriptionAdapter = new TranscriptionAdapter(googleAI, {
+        maxAudioSize: 10 * 1024 * 1024, // 10MB
+        timeout: 60000,
+        confidenceThreshold: 0.7,
+      });
+
+      this.services.set(cacheKey, transcriptionAdapter);
+    }
+
+    return this.services.get(cacheKey) as TranscriptionAdapter;
+  }
+
+  /**
+   * Create GoogleAIAdapter with configuration
+   */
+  private createGoogleAIAdapter(): GoogleAIAdapter {
+    const cacheKey = 'googleAIAdapter';
+    
+    if (!this.services.has(cacheKey)) {
+      const googleAI = GoogleAIAdapter.create();
+      this.services.set(cacheKey, googleAI);
+    }
+
+    return this.services.get(cacheKey) as GoogleAIAdapter;
   }
 
   /**
