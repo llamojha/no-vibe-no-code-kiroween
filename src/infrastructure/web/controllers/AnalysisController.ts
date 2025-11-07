@@ -58,10 +58,21 @@ export class AnalysisController {
 
       // Use the new hexagonal architecture AI service
       const googleAI = GoogleAIAdapter.create();
-      const analysis = await googleAI.analyzeIdea(dto.idea, Locale.fromString(dto.locale));
+      const analysisResult = await googleAI.analyzeIdea(dto.idea, Locale.fromString(dto.locale));
 
-      // Return the analysis in the expected format for backward compatibility
-      return NextResponse.json(analysis, { status: 200 });
+      // Handle the Result<T, E> pattern
+      if (!analysisResult.success) {
+        return NextResponse.json(
+          { 
+            error: analysisResult.error?.message || 'Analysis failed',
+            code: analysisResult.error instanceof Error ? (analysisResult.error as any).code : 'UNKNOWN_ERROR'
+          }, 
+          { status: 500 }
+        );
+      }
+
+      // Return the analysis data in the expected format for backward compatibility
+      return NextResponse.json(analysisResult, { status: 200 });
     } catch (error) {
       return handleApiError(error);
     }
