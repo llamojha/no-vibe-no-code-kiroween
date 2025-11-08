@@ -23,6 +23,13 @@ const config: Config = {
         "halloween-green": "#10b981",
         "spooky-dark": "#1a0a1a",
       },
+      backgroundSize: {
+        "size-200": "200% 200%",
+      },
+      backgroundPosition: {
+        "pos-0": "0% 0%",
+        "pos-100": "100% 100%",
+      },
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out forwards",
         "slide-in-up": "slideInUp 0.5s ease-in-out forwards",

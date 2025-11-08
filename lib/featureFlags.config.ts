@@ -24,5 +24,11 @@ export function initFeatureFlags() {
       default: false,
       exposeToClient: false,
     }),
+    ENABLE_SHARE_LINKS: defineBooleanFlag({
+      key: "ENABLE_SHARE_LINKS",
+      description: "Enable share link buttons and functionality",
+      default: false,
+      exposeToClient: true,
+    }),
   });
 }

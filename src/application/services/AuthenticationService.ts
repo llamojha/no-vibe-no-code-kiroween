@@ -1,12 +1,16 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { Database, UserTier } from '@/lib/supabase/types';
-import { UserId } from '../../domain/value-objects/UserId';
-import { Email } from '../../domain/value-objects/Email';
-import { Locale } from '../../domain/value-objects/Locale';
-import { User } from '../../domain/entities/User';
-import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../use-cases/user';
-import { Result } from '../../shared/types/common';
-import { logger, LogCategory } from '@/lib/logger';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Database, UserTier } from "@/lib/supabase/types";
+import { UserId } from "../../domain/value-objects/UserId";
+import { Email } from "../../domain/value-objects/Email";
+import { Locale } from "../../domain/value-objects/Locale";
+import { User } from "../../domain/entities/User";
+import {
+  GetUserByIdUseCase,
+  CreateUserUseCase,
+  UpdateUserLastLoginUseCase,
+} from "../use-cases/user";
+import { Result } from "../../shared/types/common";
+import { logger, LogCategory } from "@/lib/logger";
 
 /**
  * Authentication result interface
@@ -32,11 +36,18 @@ export interface AuthenticationOptions {
 
 /**
  * Session information from Supabase
+ *
+ * @property userId - The user's unique identifier
+ * @property userEmail - The user's email address (optional)
+ * @property isAuthenticated - Whether the user has an active session
+ * @property isVerified - Whether the user's token has been verified with the auth server
+ *                        This is true when getUser() successfully validates the token
  */
 export interface SessionInfo {
   userId: string;
   userEmail?: string;
   isAuthenticated: boolean;
+  isVerified: boolean;
 }
 
 /**
@@ -54,27 +65,31 @@ export class AuthenticationService {
   /**
    * Authenticate a request and get user information
    */
-  async authenticateRequest(options: AuthenticationOptions = { allowFree: true }): Promise<AuthenticationResult> {
-    logger.debug(LogCategory.AUTH, 'Authenticating request', {
+  async authenticateRequest(
+    options: AuthenticationOptions = { allowFree: true }
+  ): Promise<AuthenticationResult> {
+    logger.debug(LogCategory.AUTH, "Authenticating request", {
       requirePaid: options.requirePaid,
       requireAdmin: options.requireAdmin,
-      allowFree: options.allowFree
+      allowFree: options.allowFree,
     });
 
     try {
       // Check if local dev mode is enabled (check env var directly for server-side)
-      const isLocalDevMode = process.env.FF_LOCAL_DEV_MODE === 'true';
-      
+      const isLocalDevMode = process.env.FF_LOCAL_DEV_MODE === "true";
+
       if (isLocalDevMode) {
-        logger.info(LogCategory.AUTH, 'Using local dev mode authentication', {
-          mode: 'local-dev'
+        logger.info(LogCategory.AUTH, "Using local dev mode authentication", {
+          mode: "local-dev",
         });
 
         // Create a mock user for local development with a valid UUID
-        const mockUserId = UserId.fromString('a0000000-0000-4000-8000-000000000001');
+        const mockUserId = UserId.fromString(
+          "a0000000-0000-4000-8000-000000000001"
+        );
         const mockUser = User.reconstruct({
           id: mockUserId,
-          email: Email.create('developer@localhost.dev'),
+          email: Email.create("developer@localhost.dev"),
           createdAt: new Date(),
           updatedAt: new Date(),
           isActive: true,
@@ -82,32 +97,32 @@ export class AuthenticationService {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
 
         return {
           success: true,
           user: mockUser,
           userId: mockUserId.value,
-          userEmail: 'developer@localhost.dev',
-          userTier: 'free' as UserTier
+          userEmail: "developer@localhost.dev",
+          userTier: "free" as UserTier,
         };
       }
 
       // Get session from Supabase
       const sessionResult = await this.getSession();
       if (!sessionResult.isAuthenticated) {
-        logger.warn(LogCategory.AUTH, 'No active session found');
+        logger.warn(LogCategory.AUTH, "No active session found");
         return {
           success: false,
-          error: 'No active session found'
+          error: "No active session found",
         };
       }
 
-      logger.debug(LogCategory.AUTH, 'Session found', {
+      logger.debug(LogCategory.AUTH, "Session found", {
         userId: sessionResult.userId,
-        hasEmail: !!sessionResult.userEmail
+        hasEmail: !!sessionResult.userEmail,
       });
 
       const userId = UserId.fromString(sessionResult.userId);
@@ -117,7 +132,7 @@ export class AuthenticationService {
       if (!userResult.success) {
         return {
           success: false,
-          error: 'Failed to retrieve user information'
+          error: "Failed to retrieve user information",
         };
       }
 
@@ -125,11 +140,13 @@ export class AuthenticationService {
 
       // If user doesn't exist in our domain, create them
       if (!user && sessionResult.userEmail) {
-        const createUserResult = await this.createUserFromSession(sessionResult);
+        const createUserResult = await this.createUserFromSession(
+          sessionResult
+        );
         if (!createUserResult.success) {
           return {
             success: false,
-            error: 'Failed to create user profile'
+            error: "Failed to create user profile",
           };
         }
         user = createUserResult.data;
@@ -138,7 +155,7 @@ export class AuthenticationService {
       if (!user) {
         return {
           success: false,
-          error: 'User not found and could not be created'
+          error: "User not found and could not be created",
         };
       }
 
@@ -159,7 +176,7 @@ export class AuthenticationService {
           user,
           userId: sessionResult.userId,
           userEmail: sessionResult.userEmail,
-          userTier: tierCheckResult.userTier
+          userTier: tierCheckResult.userTier,
         };
       }
 
@@ -168,12 +185,12 @@ export class AuthenticationService {
         success: true,
         user,
         userId: sessionResult.userId,
-        userEmail: sessionResult.userEmail
+        userEmail: sessionResult.userEmail,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed'
+        error: error instanceof Error ? error.message : "Authentication failed",
       };
     }
   }
@@ -185,36 +202,103 @@ export class AuthenticationService {
     return this.authenticateRequest({
       requirePaid: true,
       allowFree: false,
-      updateLastLogin: true
+      updateLastLogin: true,
     });
   }
 
   /**
    * Get session information from Supabase
+   * Uses getUser() for secure authentication validation
    */
   async getSession(): Promise<SessionInfo> {
     try {
+      // First, validate user authenticity with getUser() - this verifies the token with the auth server
+      const {
+        data: { user },
+        error: userError,
+      } = await this.supabaseClient.auth.getUser();
+
+      if (userError) {
+        logger.warn(LogCategory.AUTH, "User authentication failed", {
+          error: userError.message,
+          code: userError.status,
+        });
+        return {
+          userId: "",
+          isAuthenticated: false,
+          isVerified: false,
+        };
+      }
+
+      if (!user) {
+        logger.debug(LogCategory.AUTH, "No authenticated user found");
+        return {
+          userId: "",
+          isAuthenticated: false,
+          isVerified: false,
+        };
+      }
+
+      // User is verified, now get session for additional data
       const {
         data: { session },
         error: sessionError,
       } = await this.supabaseClient.auth.getSession();
 
-      if (sessionError || !session || !session.user) {
+      if (sessionError) {
+        logger.warn(
+          LogCategory.AUTH,
+          "Session retrieval failed after user verification",
+          {
+            error: sessionError.message,
+          }
+        );
+        // User is verified but session retrieval failed - still return authenticated
         return {
-          userId: '',
-          isAuthenticated: false
+          userId: user.id,
+          userEmail: user.email,
+          isAuthenticated: true,
+          isVerified: true,
         };
       }
 
+      if (!session) {
+        logger.warn(
+          LogCategory.AUTH,
+          "No session found after user verification"
+        );
+        // User is verified but no session - still return authenticated
+        return {
+          userId: user.id,
+          userEmail: user.email,
+          isAuthenticated: true,
+          isVerified: true,
+        };
+      }
+
+      logger.debug(
+        LogCategory.AUTH,
+        "User authenticated and session retrieved",
+        {
+          userId: user.id,
+          hasEmail: !!user.email,
+        }
+      );
+
       return {
-        userId: session.user.id,
-        userEmail: session.user.email,
-        isAuthenticated: true
+        userId: user.id,
+        userEmail: user.email,
+        isAuthenticated: true,
+        isVerified: true,
       };
-    } catch {
+    } catch (error) {
+      logger.error(LogCategory.AUTH, "Unexpected error during authentication", {
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
       return {
-        userId: '',
-        isAuthenticated: false
+        userId: "",
+        isAuthenticated: false,
+        isVerified: false,
       };
     }
   }
@@ -223,55 +307,55 @@ export class AuthenticationService {
    * Check user tier requirements
    */
   private async checkUserTier(
-    userId: UserId, 
+    userId: UserId,
     options: AuthenticationOptions
   ): Promise<AuthenticationResult & { userTier?: UserTier }> {
     try {
       const { data: profile, error: profileError } = await this.supabaseClient
-        .from('profiles')
-        .select('tier')
-        .eq('id', userId.value)
+        .from("profiles")
+        .select("tier")
+        .eq("id", userId.value)
         .maybeSingle();
 
       if (profileError) {
         return {
           success: false,
-          error: 'Unable to verify user profile'
+          error: "Unable to verify user profile",
         };
       }
 
-      const userTier: UserTier = (profile?.tier ?? 'free') as UserTier;
+      const userTier: UserTier = (profile?.tier ?? "free") as UserTier;
 
       // Check tier requirements
-      if (options.requireAdmin && userTier !== 'admin') {
+      if (options.requireAdmin && userTier !== "admin") {
         return {
           success: false,
-          error: 'Admin access required'
+          error: "Admin access required",
         };
       }
 
-      if (options.requirePaid && userTier !== 'paid' && userTier !== 'admin') {
+      if (options.requirePaid && userTier !== "paid" && userTier !== "admin") {
         return {
           success: false,
-          error: 'Paid subscription required'
+          error: "Paid subscription required",
         };
       }
 
-      if (!options.allowFree && userTier === 'free') {
+      if (!options.allowFree && userTier === "free") {
         return {
           success: false,
-          error: 'Free tier access not allowed for this operation'
+          error: "Free tier access not allowed for this operation",
         };
       }
 
       return {
         success: true,
-        userTier
+        userTier,
       };
     } catch {
       return {
         success: false,
-        error: 'Failed to check user tier'
+        error: "Failed to check user tier",
       };
     }
   }
@@ -279,16 +363,24 @@ export class AuthenticationService {
   /**
    * Create a user in our domain from Supabase session information
    */
-  private async createUserFromSession(sessionInfo: SessionInfo): Promise<Result<User, Error>> {
+  private async createUserFromSession(
+    sessionInfo: SessionInfo
+  ): Promise<Result<User, Error>> {
     if (!sessionInfo.userEmail) {
-      return { success: false, error: new Error('Cannot create user without email') };
+      return {
+        success: false,
+        error: new Error("Cannot create user without email"),
+      };
     }
 
     try {
       const email = Email.create(sessionInfo.userEmail);
       return await this.createUserUseCase.execute({ email });
     } catch (err) {
-      return { success: false, error: err instanceof Error ? err : new Error('Failed to create user') };
+      return {
+        success: false,
+        error: err instanceof Error ? err : new Error("Failed to create user"),
+      };
     }
   }
 

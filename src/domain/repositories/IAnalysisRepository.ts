@@ -1,7 +1,11 @@
-import { Analysis } from '../entities';
-import { AnalysisId, UserId, Category, Locale, Score } from '../value-objects';
-import { ICommandRepository, IQueryRepository } from './base/IRepository';
-import { Result, PaginatedResult, PaginationParams } from '../../shared/types/common';
+import { Analysis } from "../entities";
+import { AnalysisId, UserId, Category, Locale, Score } from "../value-objects";
+import { ICommandRepository, IQueryRepository } from "./base/IRepository";
+import {
+  Result,
+  PaginatedResult,
+  PaginationParams,
+} from "../../shared/types/common";
 
 /**
  * Search criteria for analysis queries
@@ -22,14 +26,15 @@ export interface AnalysisSearchCriteria {
  * Sorting options for analysis queries
  */
 export interface AnalysisSortOptions {
-  field: 'createdAt' | 'updatedAt' | 'score';
-  direction: 'asc' | 'desc';
+  field: "createdAt" | "updatedAt" | "score";
+  direction: "asc" | "desc";
 }
 
 /**
  * Command repository interface for Analysis write operations
  */
-export interface IAnalysisCommandRepository extends ICommandRepository<Analysis, AnalysisId> {
+export interface IAnalysisCommandRepository
+  extends ICommandRepository<Analysis, AnalysisId> {
   /**
    * Save a new analysis with validation
    */
@@ -37,13 +42,23 @@ export interface IAnalysisCommandRepository extends ICommandRepository<Analysis,
 
   /**
    * Update an existing analysis
+   * @param analysis - The analysis to update
+   * @param requestingUserId - Optional ID of the user making the request (for authorization)
    */
-  update(analysis: Analysis): Promise<Result<Analysis, Error>>;
+  update(
+    analysis: Analysis,
+    requestingUserId?: UserId
+  ): Promise<Result<Analysis, Error>>;
 
   /**
    * Delete an analysis by ID
+   * @param id - The ID of the analysis to delete
+   * @param requestingUserId - Optional ID of the user making the request (for authorization)
    */
-  delete(id: AnalysisId): Promise<Result<void, Error>>;
+  delete(
+    id: AnalysisId,
+    requestingUserId?: UserId
+  ): Promise<Result<void, Error>>;
 
   /**
    * Delete all analyses for a specific user
@@ -53,18 +68,30 @@ export interface IAnalysisCommandRepository extends ICommandRepository<Analysis,
   /**
    * Bulk update scores for multiple analyses
    */
-  updateScores(updates: Array<{ id: AnalysisId; score: Score }>): Promise<Result<void, Error>>;
+  updateScores(
+    updates: Array<{ id: AnalysisId; score: Score }>
+  ): Promise<Result<void, Error>>;
 }
 
 /**
  * Query repository interface for Analysis read operations
  */
-export interface IAnalysisQueryRepository extends IQueryRepository<Analysis, AnalysisId> {
+export interface IAnalysisQueryRepository
+  extends IQueryRepository<Analysis, AnalysisId> {
+  /**
+   * Find analysis by ID with optional authorization context
+   * @param id - Analysis ID to look up
+   * @param requestingUserId - Optional user ID for ownership/authorization checks
+   */
+  findById(
+    id: AnalysisId,
+    requestingUserId?: UserId
+  ): Promise<Result<Analysis | null, Error>>;
   /**
    * Find analyses by user ID with pagination
    */
   findByUserId(
-    userId: UserId, 
+    userId: UserId,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>>;
 
@@ -81,8 +108,8 @@ export interface IAnalysisQueryRepository extends IQueryRepository<Analysis, Ana
     options: {
       page: number;
       limit: number;
-      sortBy?: 'newest' | 'oldest' | 'score' | 'title';
-      category?: 'idea' | 'kiroween' | 'all';
+      sortBy?: "newest" | "oldest" | "score" | "title";
+      category?: "idea" | "kiroween" | "all";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>>;
 
@@ -95,47 +122,59 @@ export interface IAnalysisQueryRepository extends IQueryRepository<Analysis, Ana
     options: {
       page: number;
       limit: number;
-      sortBy?: 'newest' | 'oldest' | 'score' | 'title';
-      category?: 'idea' | 'kiroween' | 'all';
+      sortBy?: "newest" | "oldest" | "score" | "title";
+      category?: "idea" | "kiroween" | "all";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>>;
 
   /**
    * Get analysis counts by category for a user
    */
-  getAnalysisCountsByUser(userId: UserId): Promise<Result<{
-    total: number;
-    idea: number;
-    kiroween: number;
-  }, Error>>;
+  getAnalysisCountsByUser(userId: UserId): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        kiroween: number;
+      },
+      Error
+    >
+  >;
 
   /**
    * Get score statistics for a user
    */
-  getScoreStatsByUser(userId: UserId): Promise<Result<{
-    average: number;
-    highest: number;
-    lowest: number;
-  }, Error>>;
+  getScoreStatsByUser(userId: UserId): Promise<
+    Result<
+      {
+        average: number;
+        highest: number;
+        lowest: number;
+      },
+      Error
+    >
+  >;
 
   /**
    * Find analyses by category with pagination
    */
   findByCategory(
-    category: Category, 
+    category: Category,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>>;
 
   /**
    * Find high-quality analyses (score >= 80)
    */
-  findHighQuality(params: PaginationParams): Promise<Result<PaginatedResult<Analysis>, Error>>;
+  findHighQuality(
+    params: PaginationParams
+  ): Promise<Result<PaginatedResult<Analysis>, Error>>;
 
   /**
    * Find recent analyses (created within specified days)
    */
   findRecent(
-    days: number, 
+    days: number,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>>;
 
@@ -160,23 +199,33 @@ export interface IAnalysisQueryRepository extends IQueryRepository<Analysis, Ana
   /**
    * Get analysis statistics for a user
    */
-  getUserAnalysisStats(userId: UserId): Promise<Result<{
-    totalCount: number;
-    completedCount: number;
-    averageScore: number;
-    highQualityCount: number;
-    categoryCounts: Record<string, number>;
-  }, Error>>;
+  getUserAnalysisStats(userId: UserId): Promise<
+    Result<
+      {
+        totalCount: number;
+        completedCount: number;
+        averageScore: number;
+        highQualityCount: number;
+        categoryCounts: Record<string, number>;
+      },
+      Error
+    >
+  >;
 
   /**
    * Get global analysis statistics
    */
-  getGlobalStats(): Promise<Result<{
-    totalCount: number;
-    averageScore: number;
-    topCategories: Array<{ category: string; count: number }>;
-    recentCount: number;
-  }, Error>>;
+  getGlobalStats(): Promise<
+    Result<
+      {
+        totalCount: number;
+        averageScore: number;
+        topCategories: Array<{ category: string; count: number }>;
+        recentCount: number;
+      },
+      Error
+    >
+  >;
 
   /**
    * Find similar analyses based on idea content
@@ -193,12 +242,47 @@ export interface IAnalysisQueryRepository extends IQueryRepository<Analysis, Ana
     userId: UserId,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>>;
+
+  /**
+   * Optimized query for dashboard display
+   * Returns only minimal data needed for dashboard cards to reduce data transfer
+   */
+  findByUserIdForDashboard(
+    userId: UserId,
+    options: {
+      page: number;
+      limit: number;
+      sortBy?: "newest" | "oldest" | "score" | "title";
+      category?: "idea" | "kiroween" | "all";
+    }
+  ): Promise<
+    Result<
+      {
+        analyses: Array<{
+          id: string;
+          title: string;
+          createdAt: string;
+          score: number;
+          category: string;
+          summary: string;
+        }>;
+        total: number;
+      },
+      Error
+    >
+  >;
 }
 
 /**
  * Combined Analysis repository interface
  * Provides both command and query operations
  */
-export interface IAnalysisRepository extends IAnalysisCommandRepository, IAnalysisQueryRepository {
-  // Inherits all methods from both command and query repositories
+export interface IAnalysisRepository
+  extends IAnalysisCommandRepository,
+    IAnalysisQueryRepository {
+  // Ensure unified overload is available on the combined interface
+  findById(
+    id: AnalysisId,
+    requestingUserId?: UserId
+  ): Promise<Result<Analysis | null, Error>>;
 }

@@ -1,8 +1,11 @@
-import { Analysis } from '../../domain/entities';
-import { AnalysisId, UserId } from '../../domain/value-objects';
-import { IAnalysisRepository } from '../../domain/repositories';
-import { Result, success, failure } from '../../shared/types/common';
-import { EntityNotFoundError, BusinessRuleViolationError } from '../../shared/types/errors';
+import { Analysis } from "../../domain/entities";
+import { AnalysisId, UserId } from "../../domain/value-objects";
+import { IAnalysisRepository } from "../../domain/repositories";
+import { Result, success, failure } from "../../shared/types/common";
+import {
+  EntityNotFoundError,
+  BusinessRuleViolationError,
+} from "../../shared/types/errors";
 
 /**
  * Input for getting an analysis
@@ -24,7 +27,7 @@ export interface GetAnalysisOutput {
     canDelete: boolean;
     ageInDays: number;
     isRecent: boolean;
-    qualityLevel: 'high' | 'medium' | 'low';
+    qualityLevel: "high" | "medium" | "low";
   };
   relatedAnalyses?: Analysis[];
 }
@@ -34,36 +37,45 @@ export interface GetAnalysisOutput {
  * Handles access control and metadata enrichment
  */
 export class GetAnalysisUseCase {
-  constructor(
-    private readonly analysisRepository: IAnalysisRepository
-  ) {}
+  constructor(private readonly analysisRepository: IAnalysisRepository) {}
 
   /**
    * Execute the get analysis process
    */
-  async execute(input: GetAnalysisInput): Promise<Result<GetAnalysisOutput, Error>> {
+  async execute(
+    input: GetAnalysisInput
+  ): Promise<Result<GetAnalysisOutput, Error>> {
     try {
       // Step 1: Retrieve the analysis
-      const analysisResult = await this.analysisRepository.findById(input.analysisId);
-      
+      const analysisResult = await this.analysisRepository.findById(
+        input.analysisId,
+        input.userId
+      );
+
       if (!analysisResult.success) {
         return failure(analysisResult.error);
       }
 
       if (!analysisResult.data) {
-        return failure(new EntityNotFoundError('Analysis', input.analysisId.value));
+        return failure(
+          new EntityNotFoundError("Analysis", input.analysisId.value)
+        );
       }
 
       const analysis = analysisResult.data;
 
       // Step 2: Check access permissions
-      const isOwner = input.userId ? analysis.belongsToUser(input.userId) : false;
-      
+      const isOwner = input.userId
+        ? analysis.belongsToUser(input.userId)
+        : false;
+
       // If private data is requested but user is not owner, restrict access
       if (input.includePrivateData && !isOwner) {
-        return failure(new BusinessRuleViolationError(
-          'Access denied: Cannot view private analysis data'
-        ));
+        return failure(
+          new BusinessRuleViolationError(
+            "Access denied: Cannot view private analysis data"
+          )
+        );
       }
 
       // Step 3: Calculate metadata
@@ -73,13 +85,16 @@ export class GetAnalysisUseCase {
         canDelete: isOwner && this.canDeleteAnalysis(analysis),
         ageInDays: analysis.getAgeInDays(),
         isRecent: analysis.isRecent(),
-        qualityLevel: this.getQualityLevel(analysis)
+        qualityLevel: this.getQualityLevel(analysis),
       };
 
       // Step 4: Get related analyses if user is owner
       let relatedAnalyses: Analysis[] | undefined;
       if (isOwner) {
-        const similarResult = await this.analysisRepository.findSimilar(analysis, 3);
+        const similarResult = await this.analysisRepository.findSimilar(
+          analysis,
+          3
+        );
         if (similarResult.success) {
           relatedAnalyses = similarResult.data;
         }
@@ -89,13 +104,16 @@ export class GetAnalysisUseCase {
       const output: GetAnalysisOutput = {
         analysis,
         metadata,
-        relatedAnalyses
+        relatedAnalyses,
       };
 
       return success(output);
-
     } catch (error) {
-      return failure(error instanceof Error ? error : new Error('Unknown error during retrieval'));
+      return failure(
+        error instanceof Error
+          ? error
+          : new Error("Unknown error during retrieval")
+      );
     }
   }
 
@@ -130,13 +148,13 @@ export class GetAnalysisUseCase {
   /**
    * Determine quality level based on score and completeness
    */
-  private getQualityLevel(analysis: Analysis): 'high' | 'medium' | 'low' {
+  private getQualityLevel(analysis: Analysis): "high" | "medium" | "low" {
     if (analysis.isHighQuality()) {
-      return 'high';
+      return "high";
     } else if (analysis.score.value >= 50) {
-      return 'medium';
+      return "medium";
     } else {
-      return 'low';
+      return "low";
     }
   }
 }

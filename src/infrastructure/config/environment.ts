@@ -101,7 +101,9 @@ export function getFeatureConfig(): FeatureConfig {
  * Check if running in development mode
  */
 export function isDevelopment(): boolean {
-  return getAppConfig().environment === 'development';
+  // Use the dedicated feature flag for local development mode
+  // Controlled via server env var `FF_LOCAL_DEV_MODE`
+  return getFeatureConfig().localDevMode === true;
 }
 
 /**

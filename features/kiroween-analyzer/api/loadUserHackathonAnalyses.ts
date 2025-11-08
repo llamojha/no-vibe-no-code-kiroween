@@ -38,11 +38,13 @@ export async function loadUserHackathonAnalyses(): Promise<{
   // Standard Supabase flow for production
   const supabase = browserSupabase();
 
+  // Use getUser() for secure authentication validation
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return { data: [], error: "Authentication required" };
   }
 
@@ -50,7 +52,7 @@ export async function loadUserHackathonAnalyses(): Promise<{
     const { data, error } = await supabase
       .from("saved_hackathon_analyses")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .returns<SavedHackathonAnalysesRow[]>();
 

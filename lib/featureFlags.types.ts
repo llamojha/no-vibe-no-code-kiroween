@@ -12,6 +12,8 @@ export interface EnhancedFeatureFlags {
   ENABLE_KIROWEEN_ANALYZER: FeatureFlagDefinition<boolean>;
   /** Enable local development mode with mock auth and local storage */
   LOCAL_DEV_MODE: FeatureFlagDefinition<boolean>;
+  /** Enable share link buttons and functionality */
+  ENABLE_SHARE_LINKS: FeatureFlagDefinition<boolean>;
 }
 
 /**
@@ -21,6 +23,7 @@ export const ENHANCED_FEATURE_FLAG_KEYS = {
   ENABLE_CLASSIC_ANALYZER: "ENABLE_CLASSIC_ANALYZER",
   ENABLE_KIROWEEN_ANALYZER: "ENABLE_KIROWEEN_ANALYZER",
   LOCAL_DEV_MODE: "LOCAL_DEV_MODE",
+  ENABLE_SHARE_LINKS: "ENABLE_SHARE_LINKS",
 } as const;
 
 /**

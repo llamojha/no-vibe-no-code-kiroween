@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * DTO for creating a new analysis
  */
 export interface CreateAnalysisDTO {
   idea: string;
-  locale: 'en' | 'es';
+  locale: "en" | "es";
   category?: string;
 }
 
@@ -13,14 +13,15 @@ export interface CreateAnalysisDTO {
  * Zod validation schema for CreateAnalysisDTO
  */
 export const CreateAnalysisSchema = z.object({
-  idea: z.string()
-    .min(10, 'Idea must be at least 10 characters')
-    .max(5000, 'Idea cannot exceed 5000 characters')
+  idea: z
+    .string()
+    .min(10, "Idea must be at least 10 characters")
+    .max(5000, "Idea cannot exceed 5000 characters")
     .trim(),
-  locale: z.enum(['en', 'es'], {
-    message: 'Locale must be either "en" or "es"'
+  locale: z.enum(["en", "es"], {
+    message: 'Locale must be either "en" or "es"',
   }),
-  category: z.string().optional()
+  category: z.string().optional(),
 });
 
 /**
@@ -28,7 +29,7 @@ export const CreateAnalysisSchema = z.object({
  */
 export interface UpdateAnalysisDTO {
   idea?: string;
-  locale?: 'en' | 'es';
+  locale?: "en" | "es";
   category?: string;
 }
 
@@ -36,15 +37,18 @@ export interface UpdateAnalysisDTO {
  * Zod validation schema for UpdateAnalysisDTO
  */
 export const UpdateAnalysisSchema = z.object({
-  idea: z.string()
-    .min(10, 'Idea must be at least 10 characters')
-    .max(5000, 'Idea cannot exceed 5000 characters')
+  idea: z
+    .string()
+    .min(10, "Idea must be at least 10 characters")
+    .max(5000, "Idea cannot exceed 5000 characters")
     .trim()
     .optional(),
-  locale: z.enum(['en', 'es'], {
-    message: 'Locale must be either "en" or "es"'
-  }).optional(),
-  category: z.string().optional()
+  locale: z
+    .enum(["en", "es"], {
+      message: 'Locale must be either "en" or "es"',
+    })
+    .optional(),
+  category: z.string().optional(),
 });
 
 /**
@@ -130,7 +134,7 @@ export interface PaginatedAnalysisDTO {
 export interface AnalysisSearchDTO {
   searchTerm?: string;
   category?: string;
-  locale?: 'en' | 'es';
+  locale?: "en" | "es";
   minScore?: number;
   maxScore?: number;
   createdAfter?: string;
@@ -145,13 +149,13 @@ export interface AnalysisSearchDTO {
 export const AnalysisSearchSchema = z.object({
   searchTerm: z.string().optional(),
   category: z.string().optional(),
-  locale: z.enum(['en', 'es']).optional(),
+  locale: z.enum(["en", "es"]).optional(),
   minScore: z.number().min(0).max(100).optional(),
   maxScore: z.number().min(0).max(100).optional(),
   createdAfter: z.string().datetime().optional(),
   createdBefore: z.string().datetime().optional(),
   page: z.number().min(1).optional(),
-  limit: z.number().min(1).max(100).optional()
+  limit: z.number().min(1).max(100).optional(),
 });
 
 /**
@@ -159,24 +163,26 @@ export const AnalysisSearchSchema = z.object({
  */
 export interface BulkAnalysisOperationDTO {
   analysisIds: string[];
-  operation: 'delete' | 'archive' | 'export';
+  operation: "delete" | "archive" | "export";
 }
 
 /**
  * Zod validation schema for BulkAnalysisOperationDTO
  */
 export const BulkAnalysisOperationSchema = z.object({
-  analysisIds: z.array(z.string().min(1, 'Analysis ID cannot be empty')).min(1, 'At least one analysis ID is required'),
-  operation: z.enum(['delete', 'archive', 'export'], {
-    message: 'Operation must be one of: delete, archive, export'
-  })
+  analysisIds: z
+    .array(z.string().min(1, "Analysis ID cannot be empty"))
+    .min(1, "At least one analysis ID is required"),
+  operation: z.enum(["delete", "archive", "export"], {
+    message: "Operation must be one of: delete, archive, export",
+  }),
 });
 
 /**
  * DTO for analysis export
  */
 export interface AnalysisExportDTO {
-  format: 'json' | 'csv' | 'pdf';
+  format: "json" | "csv" | "pdf";
   analysisIds?: string[];
   includeDetails?: boolean;
 }
@@ -185,9 +191,22 @@ export interface AnalysisExportDTO {
  * Zod validation schema for AnalysisExportDTO
  */
 export const AnalysisExportSchema = z.object({
-  format: z.enum(['json', 'csv', 'pdf'], {
-    message: 'Format must be one of: json, csv, pdf'
+  format: z.enum(["json", "csv", "pdf"], {
+    message: "Format must be one of: json, csv, pdf",
   }),
   analysisIds: z.array(z.string().min(1)).optional(),
-  includeDetails: z.boolean().optional()
+  includeDetails: z.boolean().optional(),
 });
+
+/**
+ * Optimized DTO for dashboard card display
+ * Contains only the fields needed for dashboard cards to reduce data transfer
+ */
+export interface DashboardAnalysisDTO {
+  id: string;
+  title: string;
+  createdAt: string;
+  score: number;
+  category: string;
+  summary: string;
+}

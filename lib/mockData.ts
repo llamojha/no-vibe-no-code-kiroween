@@ -482,9 +482,6 @@ export function generateMockHackathonAnalyses(): SavedHackathonAnalysis[] {
       userId: mockUser.id,
       projectDescription:
         "AI-powered code review assistant that automatically detects bugs, suggests improvements, and learns from team coding patterns using machine learning",
-      selectedCategory: "frankenstein" as KiroweenCategory,
-      kiroUsage:
-        "Used Kiro to generate the initial project structure, implement the ML model training pipeline, and create the VS Code extension interface. Kiro helped debug integration issues and optimize the code analysis algorithms.",
       createdAt: new Date(
         baseDate.getTime() + 1 * 24 * 60 * 60 * 1000
       ).toISOString(), // 1 day later
@@ -693,9 +690,6 @@ export function generateMockHackathonAnalyses(): SavedHackathonAnalysis[] {
       userId: mockUser.id,
       projectDescription:
         "Spooky Halloween costume recommendation engine that uses computer vision to analyze your face shape, body type, and existing wardrobe to suggest perfect costume ideas",
-      selectedCategory: "costume-contest" as KiroweenCategory,
-      kiroUsage:
-        "Leveraged Kiro to build the computer vision pipeline for face and body analysis, generate the recommendation algorithm, and create the mobile app interface. Kiro helped with image processing optimization and UI/UX design decisions.",
       createdAt: new Date(
         baseDate.getTime() + 3 * 24 * 60 * 60 * 1000
       ).toISOString(), // 3 days later
@@ -969,7 +963,9 @@ export function getMockDataStats() {
         ...hackathonAnalyses.map((a) => a.analysis.finalScore)
       ),
     },
-    categories: hackathonAnalyses.map((a) => a.selectedCategory),
+    categories: hackathonAnalyses.map(
+      (a) => a.analysis.categoryAnalysis.bestMatch
+    ),
     mockUser: generateMockUser(),
   };
 }

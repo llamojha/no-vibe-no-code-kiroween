@@ -3,12 +3,12 @@
  * Comprehensive checks for application readiness
  */
 
-import { 
+import {
   validateConfiguration,
   checkDatabaseConnection,
   checkAIServiceConnection,
   isDevelopment,
-  isProduction 
+  isProduction
 } from '../config';
 
 export interface ValidationResult {
@@ -70,7 +70,7 @@ async function validateDatabaseCheck(): Promise<ValidationResult> {
 
   try {
     const isConnected = await checkDatabaseConnection();
-    
+
     if (!isConnected) {
       if (isProduction()) {
         result.isValid = false;
@@ -99,7 +99,7 @@ async function validateAIServiceCheck(): Promise<ValidationResult> {
 
   try {
     const isConnected = await checkAIServiceConnection();
-    
+
     if (!isConnected) {
       if (isProduction()) {
         result.isValid = false;
@@ -129,7 +129,7 @@ async function validateEnvironmentCheck(): Promise<ValidationResult> {
   // Check Node.js version
   const nodeVersion = process.version;
   const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
-  
+
   if (majorVersion < 18) {
     result.errors.push(`Node.js version ${nodeVersion} is not supported. Minimum version is 18.x`);
     result.isValid = false;
@@ -143,7 +143,7 @@ async function validateEnvironmentCheck(): Promise<ValidationResult> {
   ];
 
   const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
+
   if (missingEnvVars.length > 0) {
     result.errors.push(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
     result.isValid = false;
@@ -151,7 +151,7 @@ async function validateEnvironmentCheck(): Promise<ValidationResult> {
 
   // Development-specific checks
   if (isDevelopment()) {
-    if (!process.env.NODE_ENV) {
+    if (!process.env.NODE_ENV || process.env.FF_LOCAL_DEV_MODE) {
       result.warnings.push('NODE_ENV not set, defaulting to development');
     }
   }
@@ -171,30 +171,30 @@ async function validateEnvironmentCheck(): Promise<ValidationResult> {
  */
 export function generateValidationReport(checks: StartupChecks): string {
   const lines: string[] = [];
-  
+
   lines.push('🔍 Startup Validation Report');
   lines.push('=' .repeat(50));
-  
+
   for (const [checkName, result] of Object.entries(checks)) {
     const status = result.isValid ? '✅' : '❌';
     lines.push(`${status} ${checkName.charAt(0).toUpperCase() + checkName.slice(1)}`);
-    
+
     if (result.errors.length > 0) {
       lines.push('  Errors:');
       result.errors.forEach((error: string) => lines.push(`    - ${error}`));
     }
-    
+
     if (result.warnings.length > 0) {
       lines.push('  Warnings:');
       result.warnings.forEach((warning: string) => lines.push(`    - ${warning}`));
     }
-    
+
     lines.push('');
   }
-  
+
   const overallStatus = Object.values(checks).every(check => check.isValid);
   lines.push(`Overall Status: ${overallStatus ? '✅ PASSED' : '❌ FAILED'}`);
-  
+
   return lines.join('\n');
 }
 

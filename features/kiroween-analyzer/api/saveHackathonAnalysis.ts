@@ -15,8 +15,6 @@ import { generateMockUser } from "@/lib/mockData";
 
 export interface SaveHackathonAnalysisParams {
   projectDescription: string;
-  selectedCategory: ProjectSubmission["selectedCategory"];
-  kiroUsage: string;
   analysis: HackathonAnalysis;
   supportingMaterials?: ProjectSubmission["supportingMaterials"];
   audioBase64?: string;
@@ -38,8 +36,6 @@ export async function saveHackathonAnalysis(
         id: crypto.randomUUID(),
         userId: mockUser.id,
         projectDescription: params.projectDescription,
-        selectedCategory: params.selectedCategory,
-        kiroUsage: params.kiroUsage,
         analysis: params.analysis,
         audioBase64: params.audioBase64 || null,
         supportingMaterials: params.supportingMaterials || undefined,
@@ -66,20 +62,23 @@ export async function saveHackathonAnalysis(
   // Standard Supabase flow for production
   const supabase = browserSupabase();
 
+  // Use getUser() for secure authentication validation
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return { data: null, error: "Authentication required" };
   }
 
   try {
     const insertPayload: SavedHackathonAnalysesInsert = {
-      user_id: session.user.id,
+      user_id: user.id,
       project_description: params.projectDescription,
-      selected_category: params.selectedCategory,
-      kiro_usage: params.kiroUsage,
+      // Provide default values for deprecated database columns (to be removed in future migration)
+      selected_category: "resurrection",
+      kiro_usage: "",
       analysis:
         params.analysis as unknown as SavedHackathonAnalysesInsert["analysis"],
       audio_base64: params.audioBase64 || null,

@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { 
+import { NextRequest, NextResponse } from "next/server";
+import {
   CreateHackathonAnalysisHandler,
-  UpdateHackathonAnalysisHandler 
-} from '@/src/application/handlers/commands';
-import { 
+  UpdateHackathonAnalysisHandler,
+} from "@/src/application/handlers/commands";
+import {
   GetHackathonLeaderboardHandler,
-  SearchHackathonAnalysesHandler 
-} from '@/src/application/handlers/queries';
-import { HackathonLeaderboardResponseDTO } from '../dto/HackathonDTO';
-import { handleApiError } from '../middleware/ErrorMiddleware';
-import { authenticateRequest } from '../middleware/AuthMiddleware';
-import { GoogleAIAdapter } from '../../external/ai/GoogleAIAdapter';
-import { Locale } from '@/src/domain/value-objects';
+  SearchHackathonAnalysesHandler,
+} from "@/src/application/handlers/queries";
+import { HackathonLeaderboardResponseDTO } from "../dto/HackathonDTO";
+import { handleApiError } from "../middleware/ErrorMiddleware";
+import { authenticateRequest } from "../middleware/AuthMiddleware";
+import { GoogleAIAdapter } from "../../external/ai/GoogleAIAdapter";
+import { Locale } from "@/src/domain/value-objects";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -43,16 +43,18 @@ export class HackathonController {
    * Legacy implementation for backward compatibility
    * This maintains the existing functionality while we transition to full hexagonal architecture
    */
-  private async legacyAnalyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
+  private async legacyAnalyzeHackathonProject(
+    request: NextRequest
+  ): Promise<NextResponse> {
     // Use the new GoogleAI adapter instead of legacy function
     const googleAI = GoogleAIAdapter.create();
 
     // Use the new authentication middleware
-    const authResult = await authenticateRequest(request, { 
-      requirePaid: true, 
-      allowFree: false 
+    const authResult = await authenticateRequest(request, {
+      requirePaid: true,
+      allowFree: false,
     });
-    
+
     if (!authResult.success) {
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
@@ -61,15 +63,13 @@ export class HackathonController {
     const { submission, locale } = body as {
       submission?: {
         description: string;
-        selectedCategory: 'resurrection' | 'frankenstein' | 'skeleton-crew' | 'costume-contest';
-        kiroUsage: string;
         supportingMaterials?: {
           screenshots?: string[];
           demoLink?: string;
           additionalNotes?: string;
         };
       };
-      locale?: 'en' | 'es';
+      locale?: "en" | "es";
     };
 
     if (!submission || !locale) {
@@ -98,10 +98,10 @@ export class HackathonController {
       );
     }
 
+    // Use default category since it's no longer part of submission
     const analysis = await googleAI.analyzeHackathonProject(
       submission.description,
-      submission.kiroUsage || '',
-      submission.selectedCategory || 'costume-contest',
+      "costume-contest",
       Locale.fromString(locale)
     );
     return NextResponse.json(analysis);
@@ -116,12 +116,17 @@ export class HackathonController {
       // For now, return a placeholder response
       // TODO: Implement with hexagonal architecture handlers
       const url = new URL(request.url);
-      const category = url.searchParams.get('category') || undefined;
+      const category = url.searchParams.get("category") || undefined;
 
       const responseDTO: HackathonLeaderboardResponseDTO = {
         entries: [],
-        category: category as 'resurrection' | 'frankenstein' | 'skeleton-crew' | 'costume-contest' | undefined,
-        total: 0
+        category: category as
+          | "resurrection"
+          | "frankenstein"
+          | "skeleton-crew"
+          | "costume-contest"
+          | undefined,
+        total: 0,
       };
 
       return NextResponse.json(responseDTO);
@@ -144,10 +149,10 @@ export class HackathonController {
 
       // Parse query parameters
       const url = new URL(request.url);
-      const searchTerm = url.searchParams.get('q') || '';
-      const category = url.searchParams.get('category') || undefined;
-      const page = parseInt(url.searchParams.get('page') || '1');
-      const limit = parseInt(url.searchParams.get('limit') || '10');
+      const searchTerm = url.searchParams.get("q") || "";
+      const category = url.searchParams.get("category") || undefined;
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "10");
 
       // For now, return empty results
       // TODO: Implement with hexagonal architecture handlers
@@ -157,7 +162,7 @@ export class HackathonController {
         page,
         limit,
         searchTerm,
-        category
+        category,
       });
     } catch (error) {
       return handleApiError(error);
@@ -169,7 +174,10 @@ export class HackathonController {
    * PUT /api/hackathon/[id]
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async updateHackathonAnalysis(request: NextRequest, _params: { params: { id: string } }): Promise<NextResponse> {
+  async updateHackathonAnalysis(
+    request: NextRequest,
+    _params: { params: { id: string } }
+  ): Promise<NextResponse> {
     try {
       // Authenticate request
       const authResult = await authenticateRequest(request);
@@ -180,7 +188,9 @@ export class HackathonController {
       // For now, return not implemented
       // TODO: Implement with hexagonal architecture handlers
       return NextResponse.json(
-        { error: 'Update functionality not yet implemented in new architecture' },
+        {
+          error: "Update functionality not yet implemented in new architecture",
+        },
         { status: 501 }
       );
     } catch (error) {
@@ -196,10 +206,10 @@ export class HackathonController {
     return new NextResponse(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
       },
     });
   }
