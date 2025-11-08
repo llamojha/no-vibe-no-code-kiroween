@@ -211,6 +211,27 @@ export class AnalysisController {
 
       const dto = validationResult.data as UpdateAnalysisDTO;
 
+      /**
+       * NOTE [Audio Updates Disabled]
+       * The refactored PUT /api/analyze/[id] currently only maps `idea` -> updates.feedback
+       * and `category`, and ignores an `audioBase64` payload that the client sends via
+       * features/analyzer/api/updateAnalysisAudio and clearAnalysisAudio.
+       * As a result, audio updates return 200 but are not persisted (previously stored in
+       * Supabase column `audio_base64`). This breaks save/delete audio flows and loads will
+       * always show `audioBase64: null`.
+       *
+       * To re‑enable audio persistence here:
+       * 1) Accept optional `audioBase64: string | null` in the request body (extend
+       *    UpdateAnalysisDTO/UpdateAnalysisSchema or read the raw JSON for this field).
+       * 2) Forward it to the application layer (extend UpdateAnalysisCommand and
+       *    SaveAnalysisUseCase updates to include `audioBase64`, or add a dedicated
+       *    UpdateAnalysisAudioCommand/UseCase).
+       * 3) Wire repository/mappers to persist `audio_base64` (SavedAnalysesUpdate.audio_base64)
+       *    and include it in GET responses so subsequent loads reflect the change.
+       * 4) Alternatively, expose a focused endpoint: PUT /api/analyze/[id]/audio that only
+       *    updates audio and leaves other fields untouched.
+       */
+      
       // Convert DTO to command
       const updates: { feedback?: string; category?: Category } = {};
       if (dto.idea) {
