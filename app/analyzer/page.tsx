@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { redirect } from "next/navigation";
 import AnalyzerView from "@/features/analyzer/components/AnalyzerView";
 import Loader from "@/features/analyzer/components/Loader";
-import { serverSupabase } from "@/lib/supabase/server";
+import { isCurrentUserPaid, isAuthenticated } from "@/src/infrastructure/web/helpers/serverAuth";
 import { isEnabled } from "@/lib/featureFlags";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
 
@@ -23,30 +23,14 @@ export default async function AnalyzerPage() {
   }
 
   // Regular authentication and authorization flow for production
-  const supabase = serverSupabase();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
+  const authenticated = await isAuthenticated();
+  if (!authenticated) {
     redirect("/login");
   }
 
-  const userId = session.user.id;
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("tier")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (error) {
-    // On error, fail closed to a safe page
-    redirect("/dashboard");
-  }
-
-  const tier = profile?.tier ?? "free";
-  const allowed = tier === "paid" || tier === "admin";
-  if (!allowed) {
+  // Check if user has paid access using the new authentication helpers
+  const hasPaidAccess = await isCurrentUserPaid();
+  if (!hasPaidAccess) {
     redirect("/dashboard");
   }
 

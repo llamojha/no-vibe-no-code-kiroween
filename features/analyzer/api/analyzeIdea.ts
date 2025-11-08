@@ -16,5 +16,18 @@ export const requestAnalysis = async (
     throw new Error(error.error ?? 'Failed to analyze idea.');
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Handle the Result<T, E> pattern from the backend
+  if (result.success === false) {
+    throw new Error(result.error?.message || result.error || 'Analysis failed');
+  }
+  
+  // Extract data from the success response
+  if (result.success && result.data) {
+    return result.data as Analysis;
+  }
+  
+  // Legacy format support - direct return
+  return result as Analysis;
 };

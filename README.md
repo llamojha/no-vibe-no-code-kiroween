@@ -2,11 +2,55 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# No Vibe No Code
+
+AI-powered product management platform that transforms raw startup ideas into execution-ready documentation and GitHub backlogs.
 
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/1oC2K72G4jrgFUQiuL_s0gfVa-07buTm7
+
+## Architecture
+
+The application follows **hexagonal architecture** (Ports and Adapters pattern) with clear separation between:
+
+- **Domain Layer** (`src/domain/`): Pure business logic with strongly-typed entities and value objects
+- **Application Layer** (`src/application/`): Use cases and application services
+- **Infrastructure Layer** (`src/infrastructure/`): External adapters (database, AI services, web)
+- **Shared Layer** (`src/shared/`): Common utilities and types
+
+### Documentation
+
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
+- **[API Documentation](docs/API.md)**: Complete API reference
+- **[Domain Layer](src/domain/README.md)**: Domain layer documentation
+- **[Application Layer](src/application/README.md)**: Application layer documentation
+- **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
+- **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
+
+## Security
+
+### Critical: Supabase Client Management
+
+⚠️ **NEVER cache Supabase server clients in a static variable or singleton pattern.**
+
+In Next.js server-side operations, each HTTP request has its own cookie store containing user-specific session tokens. Caching the Supabase client globally causes:
+
+- **Session Leaks**: User B can access User A's data and permissions
+- **Stale Tokens**: Refresh tokens don't update when cookies change
+- **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
+
+**Correct Usage:**
+```typescript
+// ✅ Server-side: Always create fresh client
+const supabase = SupabaseAdapter.getServerClient(); // New client per request
+
+// ✅ Client-side: Singleton is safe
+const supabase = SupabaseAdapter.getClientClient(); // Browser context is isolated
+```
+
+See [Architecture Documentation](docs/ARCHITECTURE.md#critical-security-supabase-client-management) for detailed explanation and examples.
 
 ## Run Locally
 

@@ -110,6 +110,16 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
   categoryAnalysis,
 }) => {
   const { t } = useLocale();
+  
+  // Handle undefined categoryAnalysis
+  if (!categoryAnalysis) {
+    return (
+      <div className="bg-black/40 p-6 rounded-lg border border-slate-700">
+        <p className="text-slate-400 text-center">{t("noCategoryAnalysisAvailable") || "No category analysis available"}</p>
+      </div>
+    );
+  }
+  
   const { evaluations, bestMatch, bestMatchReason } = categoryAnalysis;
   const CATEGORY_INFO = getCategoryInfo(t);
 
@@ -145,10 +155,34 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
     return (known as string[]).includes(key) ? (key as KiroweenCategory) : null;
   };
 
+  // Ensure we always have all four categories represented
+  const ALL_CATEGORIES: KiroweenCategory[] = [
+    'resurrection',
+    'frankenstein',
+    'skeleton-crew',
+    'costume-contest',
+  ];
+
+  const normalizedEvaluations = Array.isArray(evaluations) ? evaluations : [];
+  const evalByCategory = new Map<KiroweenCategory, typeof normalizedEvaluations[number]>();
+  for (const ev of normalizedEvaluations) {
+    const norm = normalizeCategory(ev.category);
+    if (norm) evalByCategory.set(norm, ev);
+  }
+
+  const fullEvaluations = ALL_CATEGORIES.map((cat) =>
+    evalByCategory.get(cat) || {
+      category: cat,
+      fitScore: 0,
+      explanation: t('notEvaluated') || 'Not evaluated',
+      improvementSuggestions: [],
+    }
+  );
+
   // Determine best match strictly by highest fitScore, normalizing category keys
   const validBestMatch = (() => {
-    if (evaluations && evaluations.length > 0) {
-      const bestEvaluation = evaluations.reduce((acc, current) =>
+    if (fullEvaluations && fullEvaluations.length > 0) {
+      const bestEvaluation = fullEvaluations.reduce((acc, current) =>
         current.fitScore > acc.fitScore ? current : acc
       );
       const normalized = normalizeCategory(bestEvaluation?.category);
@@ -189,7 +223,7 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
 
       {/* Category Evaluations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {evaluations.map((evaluation) => {
+        {fullEvaluations.map((evaluation) => {
           const normalizedCategory = normalizeCategory(evaluation.category);
           const categoryInfo =
             (normalizedCategory && CATEGORY_INFO[normalizedCategory]) || {

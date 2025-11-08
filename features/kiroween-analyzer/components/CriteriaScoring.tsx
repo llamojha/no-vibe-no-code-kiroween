@@ -125,6 +125,16 @@ const CriteriaScoring: React.FC<CriteriaScoringProps> = ({
   criteriaAnalysis,
 }) => {
   const { t } = useLocale();
+  
+  // Handle undefined criteriaAnalysis
+  if (!criteriaAnalysis) {
+    return (
+      <div className="bg-black/40 p-6 rounded-lg border border-slate-700">
+        <p className="text-slate-400 text-center">{t("noCriteriaAnalysisAvailable") || "No criteria analysis available"}</p>
+      </div>
+    );
+  }
+  
   const { scores } = criteriaAnalysis;
   const CRITERIA_INFO = getCriteriaInfo(t);
 

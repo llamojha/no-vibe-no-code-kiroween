@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { AnalysisCounts } from "@/lib/types";
 
 interface AnalysisFilterProps {
@@ -14,10 +15,12 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
   onFilterChange,
   counts,
 }) => {
+  const { t } = useLocale();
+  
   const filterOptions = [
     {
       key: "all" as const,
-      label: "All Analyses",
+      label: t('allAnalyses'),
       count: counts.total,
       icon: (
         <svg
@@ -37,7 +40,7 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
     },
     {
       key: "idea" as const,
-      label: "Startup Ideas",
+      label: t('startupIdeas'),
       count: counts.idea,
       icon: (
         <svg
@@ -57,7 +60,7 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
     },
     {
       key: "kiroween" as const,
-      label: "Kiroween Projects",
+      label: t('kiroweenProjects'),
       count: counts.kiroween,
       icon: (
         <svg
@@ -81,7 +84,7 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
     <div
       className="flex flex-wrap gap-2 mb-6"
       role="group"
-      aria-label="Filter analyses by type"
+      aria-label={t('filterAnalysesLabel')}
     >
       {filterOptions.map((option) => {
         const isActive = currentFilter === option.key;
@@ -108,9 +111,7 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
             onClick={() => onFilterChange(option.key)}
             className={`${baseClasses} ${colorClasses}`}
             aria-pressed={isActive}
-            aria-label={`${option.label} (${option.count} analyses)${
-              isActive ? ", currently selected" : ""
-            }`}
+            aria-label={t('filterOptionLabel', { label: option.label, count: option.count }) + (isActive ? t('currentlySelected') : '')}
           >
             <span aria-hidden="true">{option.icon}</span>
             <span>{option.label}</span>

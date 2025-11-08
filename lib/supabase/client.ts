@@ -1,4 +1,4 @@
-import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -16,9 +16,10 @@ export const browserSupabase = (): SupabaseClient<Database> => {
     throw new Error('Supabase environment variables are not set');
   }
 
-  browserClient = createBrowserSupabaseClient({
+  browserClient = createPagesBrowserClient<Database>({
     supabaseUrl: url,
     supabaseKey: anonKey,
   }) as unknown as SupabaseClient<Database>;
+  
   return browserClient;
 };

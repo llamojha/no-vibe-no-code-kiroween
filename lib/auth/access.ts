@@ -6,9 +6,16 @@ type Allowed = { allowed: true; userId: string; tier: UserTier }
 type Denied = { allowed: false; response: NextResponse }
 export type AccessResult = Allowed | Denied
 
+/**
+ * @deprecated This function is deprecated. Use the new AuthMiddleware from the hexagonal architecture instead.
+ * Import: import { authenticateRequest } from '@/src/infrastructure/web/middleware/AuthMiddleware'
+ * Usage: const authResult = await authenticateRequest(request, { requirePaid: true, allowFree: false });
+ */
 export async function requirePaidOrAdmin(
   supabase: SupabaseClient<Database>,
 ): Promise<AccessResult> {
+  console.warn('requirePaidOrAdmin is deprecated. Use AuthMiddleware from hexagonal architecture instead.');
+  
   const {
     data: { session },
     error: sessionError,

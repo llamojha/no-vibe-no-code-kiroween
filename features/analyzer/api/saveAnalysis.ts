@@ -50,38 +50,36 @@ export async function saveAnalysis(
     }
   }
 
-  // Standard Supabase flow for production
-  const supabase = browserSupabase();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return { data: null, error: "Authentication required" };
-  }
-
+  // Use new hexagonal architecture API endpoints
   try {
-    const insertPayload: SavedAnalysesInsert = {
-      user_id: session.user.id,
-      idea: params.idea,
-      analysis: params.analysis as unknown as SavedAnalysesInsert["analysis"],
-      audio_base64: params.audioBase64 || null,
-    };
+    const response = await fetch('/api/analyze/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idea: params.idea,
+        analysis: params.analysis,
+        audioBase64: params.audioBase64,
+        locale: 'en' // Default locale, could be passed as parameter
+      }),
+    });
 
-    const { data, error } = await supabase
-      .from("saved_analyses")
-      .insert(insertPayload)
-      .select()
-      .returns<SavedAnalysesRow>()
-      .single();
-
-    if (error || !data) {
-      console.error("Failed to save analysis", error);
-      throw new Error("Failed to save analysis to database");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error ?? 'Failed to save analysis.');
     }
 
-    const record = mapSavedAnalysesRow(data);
+    const result = await response.json();
+    
+    // Convert the response to the expected format
+    const record: SavedAnalysisRecord = {
+      id: result.id,
+      userId: result.userId || 'unknown', // Fallback for compatibility
+      idea: params.idea,
+      analysis: params.analysis,
+      audioBase64: params.audioBase64 || null,
+      createdAt: result.createdAt || new Date().toISOString(),
+    };
+
     return { data: record, error: null };
   } catch (error) {
     console.error("Failed to save analysis", error);
@@ -130,27 +128,19 @@ export async function updateAnalysisAudio(
     }
   }
 
-  // Standard Supabase flow for production
-  const supabase = browserSupabase();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return { error: "Authentication required" };
-  }
-
+  // Use new hexagonal architecture API endpoints
   try {
-    const { error } = await supabase
-      .from("saved_analyses")
-      .update({ audio_base64: params.audioBase64 })
-      .eq("id", params.analysisId)
-      .eq("user_id", session.user.id); // Ensure user can only update their own analyses
+    const response = await fetch(`/api/analyze/${params.analysisId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioBase64: params.audioBase64,
+      }),
+    });
 
-    if (error) {
-      console.error("Failed to update analysis audio", error);
-      throw new Error("Failed to update analysis audio in database");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error ?? 'Failed to update analysis audio.');
     }
 
     return { error: null };
@@ -183,38 +173,47 @@ export async function loadAnalysis(
     }
   }
 
-  // Standard Supabase flow for production
-  const supabase = browserSupabase();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return { data: null, error: "Authentication required" };
-  }
-
+  // Use new hexagonal architecture API endpoints
   try {
-    const { data, error } = await supabase
-      .from("saved_analyses")
-      .select("*")
-      .eq("id", analysisId)
-      .eq("user_id", session.user.id)
-      .returns<SavedAnalysesRow>()
-      .single();
+    const response = await fetch(`/api/analyze/${analysisId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-    if (error || !data) {
-      console.error("Failed to load analysis", error);
-      if (error?.code === "PGRST116") {
+    if (!response.ok) {
+      if (response.status === 404) {
         return { data: null, error: "Analysis not found" };
       }
-      return {
-        data: null,
-        error: "Failed to load analysis. Please try again.",
-      };
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error ?? 'Failed to load analysis.');
     }
 
-    const record = mapSavedAnalysesRow(data);
+    const result = await response.json();
+    
+    // Convert the response to the expected format
+    const record: SavedAnalysisRecord = {
+      id: result.id,
+      userId: result.userId || 'unknown', // Fallback for compatibility
+      idea: result.idea,
+      analysis: result.analysis || {
+        detailedSummary: result.detailedSummary,
+        finalScore: result.score,
+        // Add other required fields with defaults
+        founderQuestions: [],
+        swotAnalysis: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
+        currentMarketTrends: [],
+        scoringRubric: result.criteria || [],
+        competitors: [],
+        monetizationStrategies: [],
+        improvementSuggestions: [],
+        nextSteps: [],
+        finalScoreExplanation: '',
+        viabilitySummary: result.detailedSummary
+      },
+      audioBase64: result.audioBase64 || null,
+      createdAt: result.createdAt,
+    };
+
     return { data: record, error: null };
   } catch (error) {
     console.error("Failed to load analysis", error);
@@ -257,27 +256,19 @@ export async function clearAnalysisAudio(
     }
   }
 
-  // Standard Supabase flow for production
-  const supabase = browserSupabase();
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) {
-    return { error: "Authentication required" };
-  }
-
+  // Use new hexagonal architecture API endpoints
   try {
-    const { error } = await supabase
-      .from("saved_analyses")
-      .update({ audio_base64: null })
-      .eq("id", analysisId)
-      .eq("user_id", session.user.id); // Ensure user can only update their own analyses
+    const response = await fetch(`/api/analyze/${analysisId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioBase64: null,
+      }),
+    });
 
-    if (error) {
-      console.error("Failed to clear analysis audio", error);
-      throw new Error("Failed to clear analysis audio in database");
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error ?? 'Failed to clear analysis audio.');
     }
 
     return { error: null };

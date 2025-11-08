@@ -12,6 +12,15 @@ const RadarChart: React.FC<RadarChartProps> = ({ data }) => {
     const { t } = useLocale();
     const [hoveredCriterion, setHoveredCriterion] = useState<ScoreCriterion | null>(null);
 
+    // Handle case when data is undefined or null
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-64 text-slate-400 font-mono">
+                No data available for radar chart
+            </div>
+        );
+    }
+
     const size = 400;
     const center = size / 2;
     const levels = 5;

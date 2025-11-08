@@ -1,36 +1,65 @@
-import { NextResponse } from 'next/server';
-import { analyzeStartupIdea } from '@/lib/server/ai/analyzeStartupIdea';
-import type { SupportedLocale } from '@/features/locale/translations';
-import { serverSupabase } from '@/lib/supabase/server';
-import { requirePaidOrAdmin } from '@/lib/auth/access';
+import { NextRequest } from 'next/server';
+import { getControllers, createAPIRouteHandler } from '@/src/infrastructure/bootstrap/nextjs';
+import { logger, LogCategory } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
-export async function POST(request: Request) {
-  try {
-    const supabase = serverSupabase();
-    const access = await requirePaidOrAdmin(supabase);
-    if (!access.allowed) return access.response;
+// Create handlers using the new hexagonal architecture
+const handlers = createAPIRouteHandler({
+  POST: async (request: NextRequest) => {
+    const startTime = Date.now();
+    logger.info(LogCategory.API, 'POST /api/analyze - Creating new analysis', {
+      method: 'POST',
+      path: '/api/analyze'
+    });
 
-    const body = await request.json();
-    const { idea, locale } = body as {
-      idea?: string;
-      locale?: SupportedLocale;
-    };
+    try {
+      const { analysisController } = await getControllers();
+      const response = await analysisController.createAnalysis(request);
+      
+      const duration = Date.now() - startTime;
+      logger.info(LogCategory.API, 'POST /api/analyze - Completed', {
+        statusCode: response.status,
+        duration
+      });
 
-    if (!idea || !locale) {
-      return NextResponse.json(
-        { error: 'Idea and locale are required.' },
-        { status: 400 },
-      );
+      return response;
+    } catch (error) {
+      logger.error(LogCategory.API, 'POST /api/analyze - Failed', {
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - startTime
+      });
+      throw error;
     }
+  },
 
-    const analysis = await analyzeStartupIdea(idea, locale);
-    return NextResponse.json(analysis);
-  } catch (error) {
-    console.error('Analyze API error', error);
-    const message =
-      error instanceof Error ? error.message : 'Failed to analyze idea.';
-    return NextResponse.json({ error: message }, { status: 500 });
+  GET: async (request: NextRequest) => {
+    const startTime = Date.now();
+    logger.info(LogCategory.API, 'GET /api/analyze - Listing analyses', {
+      method: 'GET',
+      path: '/api/analyze'
+    });
+
+    try {
+      const { analysisController } = await getControllers();
+      const response = await analysisController.listAnalyses(request);
+      
+      const duration = Date.now() - startTime;
+      logger.info(LogCategory.API, 'GET /api/analyze - Completed', {
+        statusCode: response.status,
+        duration
+      });
+
+      return response;
+    } catch (error) {
+      logger.error(LogCategory.API, 'GET /api/analyze - Failed', {
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - startTime
+      });
+      throw error;
+    }
   }
-}
+});
+
+export const POST = handlers.POST;
+export const GET = handlers.GET;
