@@ -6,12 +6,7 @@
  * user associations and timestamps.
  */
 
-import {
-  SavedAnalysisRecord,
-  SavedHackathonAnalysis,
-  KiroweenCategory,
-  UserTier,
-} from "./types";
+import { SavedAnalysisRecord, SavedHackathonAnalysis, UserTier } from "./types";
 
 // Mock user for local development
 export interface LocalDevUser {

@@ -74,8 +74,16 @@ const TTSPlayer: React.FC<TTSPlayerProps> = ({
 
   const ensureAudioContext = useCallback(async () => {
     if (!audioContextRef.current) {
-      const Ctx =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
+      type AudioWindow = Window & {
+        AudioContext?: typeof AudioContext;
+        webkitAudioContext?: typeof AudioContext;
+      };
+      const w = window as AudioWindow;
+      const Ctx = w.AudioContext || w.webkitAudioContext;
+      if (!Ctx) {
+        console.error("AudioContext not supported in this browser");
+        return;
+      }
       try {
         audioContextRef.current = new Ctx();
       } catch (e) {
@@ -130,7 +138,7 @@ const TTSPlayer: React.FC<TTSPlayerProps> = ({
 
       // First try browser-native decode (handles WAV/MP3/OGG); fall back to raw PCM
       const bytes = decodeBase64(base64Audio);
-      let buffer =
+      const buffer =
         (await tryDecodeWithAudioContext(bytes, audioContextRef.current)) ??
         (await decodePcmToAudioBuffer(
           bytes,
@@ -240,12 +248,18 @@ const TTSPlayer: React.FC<TTSPlayerProps> = ({
   const renderContent = () => {
     if (status === "generating") {
       return (
-        <div className="flex items-center text-slate-300 h-12 uppercase tracking-wider text-accent">
+        <div
+          className="flex items-center text-slate-300 h-12 uppercase tracking-wider text-accent"
+          role="status"
+          aria-live="polite"
+          aria-label={t("generatingAudio")}
+        >
           <svg
             className="animate-spin -ml-1 mr-3 h-5 w-5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <circle
               className="opacity-25"
@@ -343,7 +357,22 @@ const TTSPlayer: React.FC<TTSPlayerProps> = ({
   };
 
   return (
-    <div className="flex justify-center items-center gap-4 mb-6 animate-slide-in-up p-4 bg-primary/50 rounded-none shadow-lg border border-slate-700">
+    <div
+      className="flex justify-center items-center gap-4 mb-6 animate-slide-in-up p-4 bg-primary/50 rounded-none shadow-lg border border-slate-700"
+      role="region"
+      aria-label={t("audioPlayer") || "Audio player controls"}
+    >
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {status === "playing" && (t("playingAudio") || "Playing audio")}
+        {status === "paused" && (t("audioPaused") || "Audio paused")}
+        {status === "generating" && t("generatingAudio")}
+        {status === "error" && (t("audioError") || "Error generating audio")}
+      </div>
       {renderContent()}
     </div>
   );

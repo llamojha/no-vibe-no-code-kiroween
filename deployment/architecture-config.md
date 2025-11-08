@@ -56,7 +56,7 @@ GEMINI_API_KEY=your_gemini_api_key
 # Feature Flags (Server-side)
 FF_ENABLE_CLASSIC_ANALYZER=true
 FF_ENABLE_KIROWEEN_ANALYZER=true
-FF_LOCAL_DEV_MODE=false
+# Local development mode derives from NODE_ENV; no FF_LOCAL_DEV_MODE
 
 # Feature Flags (Client-side)
 NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER=true

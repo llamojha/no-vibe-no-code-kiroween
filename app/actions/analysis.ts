@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import type { NextRequest } from "next/server";
 import { SupabaseAdapter } from "@/src/infrastructure/integration/SupabaseAdapter";
 import {
   getCurrentUserId,
@@ -103,7 +104,7 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     };
 
     const response = await analysisController.createAnalysis(
-      mockRequest as any
+      mockRequest as unknown as NextRequest
     );
     const responseData = await response.json();
 
@@ -199,7 +200,7 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     };
 
     const response = await analysisController.deleteAnalysis(
-      mockRequest as any,
+      mockRequest as unknown as NextRequest,
       {
         params: { id: validatedData.analysisId },
       }
@@ -294,9 +295,12 @@ export async function getAnalysisAction(analysisId: string): Promise<{
       }),
     };
 
-    const response = await analysisController.getAnalysis(mockRequest as any, {
-      params: { id: analysisId },
-    });
+    const response = await analysisController.getAnalysis(
+      mockRequest as unknown as NextRequest,
+      {
+        params: { id: analysisId },
+      }
+    );
     const responseData = await response.json();
 
     if (response.status === 200) {

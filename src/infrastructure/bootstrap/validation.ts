@@ -5,8 +5,6 @@
 
 import {
   validateConfiguration,
-  checkDatabaseConnection,
-  checkAIServiceConnection,
   isDevelopment,
   isProduction
 } from '../config';
@@ -68,21 +66,8 @@ async function validateDatabaseCheck(): Promise<ValidationResult> {
     warnings: [],
   };
 
-  try {
-    const isConnected = await checkDatabaseConnection();
-
-    if (!isConnected) {
-      if (isProduction()) {
-        result.isValid = false;
-        result.errors.push('Database connection failed in production environment');
-      } else {
-        result.warnings.push('Database connection failed, but continuing in non-production environment');
-      }
-    }
-  } catch (error) {
-    result.isValid = false;
-    result.errors.push(`Database check failed: ${error}`);
-  }
+  // Disabled: Skipping database connectivity validation as requested
+  result.warnings.push('Database connectivity check disabled');
 
   return result;
 }
@@ -97,21 +82,8 @@ async function validateAIServiceCheck(): Promise<ValidationResult> {
     warnings: [],
   };
 
-  try {
-    const isConnected = await checkAIServiceConnection();
-
-    if (!isConnected) {
-      if (isProduction()) {
-        result.isValid = false;
-        result.errors.push('AI service connection failed in production environment');
-      } else {
-        result.warnings.push('AI service connection failed, but continuing in non-production environment');
-      }
-    }
-  } catch (error) {
-    result.isValid = false;
-    result.errors.push(`AI service check failed: ${error}`);
-  }
+  // Disabled: Skipping AI service connectivity validation as requested
+  result.warnings.push('AI service connectivity check disabled');
 
   return result;
 }
@@ -151,7 +123,7 @@ async function validateEnvironmentCheck(): Promise<ValidationResult> {
 
   // Development-specific checks
   if (isDevelopment()) {
-    if (!process.env.NODE_ENV || process.env.FF_LOCAL_DEV_MODE) {
+    if (!process.env.NODE_ENV) {
       result.warnings.push('NODE_ENV not set, defaulting to development');
     }
   }

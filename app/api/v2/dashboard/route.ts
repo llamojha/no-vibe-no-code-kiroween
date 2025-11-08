@@ -5,6 +5,7 @@ import { handleApiError } from '@/src/infrastructure/web/middleware/ErrorMiddlew
 import { authenticateRequest } from '@/src/infrastructure/web/middleware/AuthMiddleware';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * Get user dashboard

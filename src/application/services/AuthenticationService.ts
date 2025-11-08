@@ -75,8 +75,8 @@ export class AuthenticationService {
     });
 
     try {
-      // Check if local dev mode is enabled (check env var directly for server-side)
-      const isLocalDevMode = process.env.FF_LOCAL_DEV_MODE === "true";
+      // Use NODE_ENV for local development mode
+      const isLocalDevMode = (process.env.NODE_ENV || "development") === "development";
 
       if (isLocalDevMode) {
         logger.info(LogCategory.AUTH, "Using local dev mode authentication", {

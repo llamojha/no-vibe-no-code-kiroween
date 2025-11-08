@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import type { NextRequest } from "next/server";
 import { SupabaseAdapter } from "@/src/infrastructure/integration/SupabaseAdapter";
 import {
   getCurrentUserId,
@@ -74,7 +75,9 @@ export async function getDashboardDataAction(): Promise<{
       }),
     };
 
-    const response = await dashboardController.getDashboard(mockRequest as any);
+    const response = await dashboardController.getDashboard(
+      mockRequest as unknown as NextRequest
+    );
     const responseData = await response.json();
 
     if (response.status === 200) {
@@ -160,7 +163,7 @@ export async function getUserAnalysesAction(
     };
 
     const response = await dashboardController.getUserAnalyses(
-      mockRequest as any
+      mockRequest as unknown as NextRequest
     );
     const responseData = await response.json();
 

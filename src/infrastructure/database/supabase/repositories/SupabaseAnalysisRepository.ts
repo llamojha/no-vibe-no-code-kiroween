@@ -21,11 +21,7 @@ import {
 } from "../../../../shared/types/common";
 import { AuthorizationError } from "../../../../shared/types/errors";
 import { Database } from "../../types";
-import {
-  DatabaseError,
-  DatabaseQueryError,
-  RecordNotFoundError,
-} from "../../errors";
+import { DatabaseQueryError, RecordNotFoundError } from "../../errors";
 import { AnalysisMapper } from "../mappers/AnalysisMapper";
 import { AnalysisDAO } from "../../types/dao";
 import { logger, LogCategory } from "@/lib/logger";

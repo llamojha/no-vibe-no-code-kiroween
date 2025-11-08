@@ -16,12 +16,7 @@ import {
 } from "../../../../shared/types/common";
 import { AuthorizationError } from "../../../../shared/types/errors";
 import { Database } from "../../types";
-import {
-  DatabaseError,
-  DatabaseQueryError,
-  RecordNotFoundError,
-  UniqueConstraintError,
-} from "../../errors";
+import { DatabaseQueryError, RecordNotFoundError, UniqueConstraintError } from "../../errors";
 import { UserMapper } from "../mappers/UserMapper";
 import { logger, LogCategory } from "@/lib/logger";
 

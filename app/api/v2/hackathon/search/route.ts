@@ -3,6 +3,7 @@ import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { serverSupabase } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * Search hackathon analyses

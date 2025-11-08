@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import type { NextRequest } from "next/server";
 import { SupabaseAdapter } from "@/src/infrastructure/integration/SupabaseAdapter";
 import {
   getCurrentUserId,
@@ -104,7 +105,7 @@ export async function createHackathonAnalysisAction(
     };
 
     const response = await hackathonController.analyzeHackathonProject(
-      mockRequest as any
+      mockRequest as unknown as NextRequest
     );
     const responseData = await response.json();
 
@@ -204,7 +205,7 @@ export async function deleteHackathonAnalysisAction(
     };
 
     const response = await dashboardController.deleteUserAnalysis(
-      mockRequest as any,
+      mockRequest as unknown as NextRequest,
       {
         params: { id: validatedData.analysisId },
       }
@@ -289,7 +290,7 @@ export async function getHackathonAnalysisAction(analysisId: string): Promise<{
     };
 
     const response = await dashboardController.getUserAnalysis(
-      mockRequest as any,
+      mockRequest as unknown as NextRequest,
       {
         params: { id: analysisId },
       }
