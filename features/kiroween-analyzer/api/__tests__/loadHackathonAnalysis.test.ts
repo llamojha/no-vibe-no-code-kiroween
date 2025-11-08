@@ -22,8 +22,6 @@ jest.mock("@/lib/supabase/mappers", () => ({
     id: row.id,
     userId: row.user_id,
     projectDescription: row.project_description,
-    selectedCategory: row.selected_category,
-    kiroUsage: row.kiro_usage,
     analysis: row.analysis,
     createdAt: row.created_at,
     audioBase64: row.audio_base64,
@@ -37,7 +35,7 @@ describe("loadHackathonAnalysis", () => {
     user_id: "user-123",
     project_description: "Test project",
     selected_category: "resurrection",
-    kiro_usage: "Using Kiro for automation",
+    kiro_usage: "",
     analysis: {
       finalScore: 4.2,
       viabilitySummary: "Strong project",

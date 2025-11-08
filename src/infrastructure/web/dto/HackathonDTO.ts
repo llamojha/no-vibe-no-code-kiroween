@@ -10,8 +10,6 @@ export type KiroweenCategory = 'resurrection' | 'frankenstein' | 'skeleton-crew'
  */
 export interface ProjectSubmissionDTO {
   description: string;
-  selectedCategory: KiroweenCategory;
-  kiroUsage: string;
   supportingMaterials?: {
     screenshots?: string[];
     demoLink?: string;
@@ -26,13 +24,6 @@ export const ProjectSubmissionSchema = z.object({
   description: z.string()
     .min(50, 'Project description must be at least 50 characters')
     .max(10000, 'Project description cannot exceed 10000 characters')
-    .trim(),
-  selectedCategory: z.enum(['resurrection', 'frankenstein', 'skeleton-crew', 'costume-contest'], {
-    message: 'Invalid category selected'
-  }),
-  kiroUsage: z.string()
-    .min(20, 'Kiro usage description must be at least 20 characters')
-    .max(2000, 'Kiro usage description cannot exceed 2000 characters')
     .trim(),
   supportingMaterials: z.object({
     screenshots: z.array(z.string().url('Invalid screenshot URL')).max(10, 'Maximum 10 screenshots allowed').optional(),
@@ -146,8 +137,11 @@ export interface HackathonLeaderboardEntryDTO {
   id: string;
   submission: {
     description: string;
-    selectedCategory: KiroweenCategory;
-    kiroUsage: string;
+    supportingMaterials?: {
+      screenshots?: string[];
+      demoLink?: string;
+      additionalNotes?: string;
+    };
   };
   score: number;
   rank: number;

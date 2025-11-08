@@ -3,10 +3,8 @@ import type { ProjectSubmission } from "@/lib/types";
 
 describe("hackathonScoring", () => {
   const mockSubmission: ProjectSubmission = {
-    description: "A unique and innovative project that solves real problems",
-    selectedCategory: "resurrection",
-    kiroUsage:
-      "Using Kiro agents and tools for automation and workflow integration",
+    description:
+      "A unique and innovative project that solves real problems using Kiro agents and tools for automation and workflow integration",
     supportingMaterials: {
       screenshots: ["screenshot1.png"],
       demoLink: "https://demo.example.com",
@@ -141,13 +139,15 @@ describe("hackathonScoring", () => {
     it("should score higher for variety of Kiro features", () => {
       const richKiroUsage: ProjectSubmission = {
         ...mockSubmission,
-        kiroUsage:
-          "Using Kiro agents, tools, functions, API integration, automation workflows, and MCP context",
+        description:
+          mockSubmission.description +
+          
+          " including Kiro agents, tools, functions, API integration, automation workflows, and MCP context",
       };
 
       const basicKiroUsage: ProjectSubmission = {
         ...mockSubmission,
-        kiroUsage: "Using Kiro agent",
+        description: mockSubmission.description + " using a single Kiro agent",
       };
 
       const richResult = analyzeCriteria(richKiroUsage);
@@ -168,8 +168,9 @@ describe("hackathonScoring", () => {
     it("should score higher for detailed explanations", () => {
       const detailedUsage: ProjectSubmission = {
         ...mockSubmission,
-        kiroUsage:
-          "Using Kiro specifically because it provides comprehensive automation capabilities with detailed implementation considerations",
+        description:
+          mockSubmission.description +
+          " using Kiro specifically because it provides comprehensive automation capabilities with detailed implementation considerations",
       };
 
       const result = analyzeCriteria(detailedUsage);
