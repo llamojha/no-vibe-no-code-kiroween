@@ -1,9 +1,17 @@
-import { Analysis } from '../../domain/entities';
-import { AnalysisId, UserId, Score, Category } from '../../domain/value-objects';
-import { IAnalysisRepository } from '../../domain/repositories';
-import { AnalysisValidationService } from '../../domain/services';
-import { Result, success, failure } from '../../shared/types/common';
-import { BusinessRuleViolationError, EntityNotFoundError } from '../../shared/types/errors';
+import { Analysis } from "../../domain/entities";
+import {
+  AnalysisId,
+  UserId,
+  Score,
+  Category,
+} from "../../domain/value-objects";
+import { IAnalysisRepository } from "../../domain/repositories";
+import { AnalysisValidationService } from "../../domain/services";
+import { Result, success, failure } from "../../shared/types/common";
+import {
+  BusinessRuleViolationError,
+  EntityNotFoundError,
+} from "../../shared/types/errors";
 
 /**
  * Input for saving analysis updates
@@ -41,52 +49,64 @@ export class SaveAnalysisUseCase {
   /**
    * Execute the save analysis process
    */
-  async execute(input: SaveAnalysisInput): Promise<Result<SaveAnalysisOutput, Error>> {
+  async execute(
+    input: SaveAnalysisInput
+  ): Promise<Result<SaveAnalysisOutput, Error>> {
     try {
       // Step 1: Retrieve existing analysis
-      const existingResult = await this.analysisRepository.findById(input.analysisId);
-      
+      const existingResult = await this.analysisRepository.findById(
+        input.analysisId,
+        input.userId
+      );
+
       if (!existingResult.success) {
         return failure(existingResult.error);
       }
 
       if (!existingResult.data) {
-        return failure(new EntityNotFoundError('Analysis', input.analysisId.value));
+        return failure(
+          new EntityNotFoundError("Analysis", input.analysisId.value)
+        );
       }
 
       const analysis = existingResult.data;
 
       // Step 2: Verify ownership
       if (!analysis.belongsToUser(input.userId)) {
-        return failure(new BusinessRuleViolationError(
-          'User does not have permission to update this analysis'
-        ));
+        return failure(
+          new BusinessRuleViolationError(
+            "User does not have permission to update this analysis"
+          )
+        );
       }
 
       // Step 3: Check if analysis can be updated
-      const canUpdateResult = this.validationService.canUpdateAnalysis(analysis);
+      const canUpdateResult =
+        this.validationService.canUpdateAnalysis(analysis);
       if (!canUpdateResult.canUpdate) {
-        return failure(new BusinessRuleViolationError(
-          canUpdateResult.reason || 'Analysis cannot be updated'
-        ));
+        return failure(
+          new BusinessRuleViolationError(
+            canUpdateResult.reason || "Analysis cannot be updated"
+          )
+        );
       }
 
       // Step 4: Apply updates
       const updatedFields: string[] = [];
-      
+
       if (input.updates.score !== undefined) {
         analysis.updateScore(input.updates.score);
-        updatedFields.push('score');
+        updatedFields.push("score");
       }
 
       if (input.updates.feedback !== undefined) {
         analysis.updateFeedback(input.updates.feedback);
-        updatedFields.push('feedback');
+        updatedFields.push("feedback");
       }
 
       if (input.updates.category !== undefined) {
         analysis.setCategory(input.updates.category);
-        updatedFields.push('category');
+        updatedFields.push("category");
       }
 
       if (input.updates.suggestions !== undefined) {
@@ -108,15 +128,19 @@ export class SaveAnalysisUseCase {
             // Continue if suggestion can't be added
           }
         }
-        updatedFields.push('suggestions');
+        updatedFields.push("suggestions");
       }
 
       // Step 5: Validate updated analysis
-      const validationResult = this.validationService.validateAnalysis(analysis);
-      
+      const validationResult =
+        this.validationService.validateAnalysis(analysis);
+
       // Step 6: Save the updated analysis
-      const saveResult = await this.analysisRepository.update(analysis);
-      
+      const saveResult = await this.analysisRepository.update(
+        analysis,
+        input.userId
+      );
+
       if (!saveResult.success) {
         return failure(saveResult.error);
       }
@@ -125,13 +149,14 @@ export class SaveAnalysisUseCase {
       const output: SaveAnalysisOutput = {
         analysis: saveResult.data,
         updatedFields,
-        validationWarnings: validationResult.warnings
+        validationWarnings: validationResult.warnings,
       };
 
       return success(output);
-
     } catch (error) {
-      return failure(error instanceof Error ? error : new Error('Unknown error during save'));
+      return failure(
+        error instanceof Error ? error : new Error("Unknown error during save")
+      );
     }
   }
 }

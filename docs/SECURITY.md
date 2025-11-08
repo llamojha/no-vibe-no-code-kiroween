@@ -33,11 +33,12 @@ If you cache the Supabase client globally, you cache the cookie store from the f
 ### Attack Scenario
 
 **Vulnerable Code:**
+
 ```typescript
 // ❌ DANGEROUS - DO NOT DO THIS
 class VulnerableAdapter {
   private static serverInstance: SupabaseClient | null = null;
-  
+
   static getServerClient() {
     if (!this.serverInstance) {
       // This caches the cookies from the FIRST request
@@ -51,11 +52,13 @@ class VulnerableAdapter {
 **What Happens:**
 
 1. **10:00 AM** - Admin user logs in and makes first request
+
    - Client created with admin cookies
    - Client cached in `serverInstance`
    - Admin sees their data ✓
 
 2. **10:01 AM** - Regular user logs in and makes request
+
    - Gets cached client with admin cookies
    - Regular user now has admin access ✗
    - **CRITICAL SECURITY BREACH**
@@ -68,32 +71,31 @@ class VulnerableAdapter {
 ### Real-World Impact
 
 **Data Exposure:**
+
 ```typescript
 // User A (admin) makes request
 const supabase = VulnerableAdapter.getServerClient();
-const { data: adminData } = await supabase
-  .from('sensitive_data')
-  .select('*'); // Admin can see everything
+const { data: adminData } = await supabase.from("sensitive_data").select("*"); // Admin can see everything
 
 // User B (regular user) makes request
 const supabase = VulnerableAdapter.getServerClient(); // Same instance!
-const { data: userData } = await supabase
-  .from('sensitive_data')
-  .select('*'); // User B sees admin's data!
+const { data: userData } = await supabase.from("sensitive_data").select("*"); // User B sees admin's data!
 ```
 
 **Permission Bypass:**
+
 ```typescript
 // User A has permission to delete
 const supabase = VulnerableAdapter.getServerClient();
-await supabase.from('projects').delete().eq('id', projectId); // Success
+await supabase.from("projects").delete().eq("id", projectId); // Success
 
 // User B doesn't have permission, but...
 const supabase = VulnerableAdapter.getServerClient(); // Same instance!
-await supabase.from('projects').delete().eq('id', projectId); // Success! (Should fail)
+await supabase.from("projects").delete().eq("id", projectId); // Success! (Should fail)
 ```
 
 **Row-Level Security (RLS) Bypass:**
+
 ```typescript
 // Even with RLS policies in place:
 CREATE POLICY "Users can only see their own data"
@@ -107,6 +109,7 @@ USING (auth.uid() = user_id);
 ### The Secure Solution
 
 **Our Implementation:**
+
 ```typescript
 // ✅ SAFE - Always create fresh client
 export class SupabaseAdapter {
@@ -118,6 +121,7 @@ export class SupabaseAdapter {
 ```
 
 **Why This Works:**
+
 - Each request calls `cookies()` which returns that request's cookie store
 - Each client is tied to its own request's session
 - User sessions are properly isolated
@@ -133,12 +137,12 @@ export class SupabaseAdapter {
 export default async function DashboardPage() {
   // Fresh client with current user's cookies
   const supabase = SupabaseAdapter.getServerClient();
-  
+
   const { data: analyses } = await supabase
-    .from('analyses')
-    .select('*')
-    .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-  
+    .from("analyses")
+    .select("*")
+    .eq("user_id", (await supabase.auth.getUser()).data.user?.id);
+
   return <DashboardView analyses={analyses} />;
 }
 ```
@@ -150,20 +154,22 @@ export default async function DashboardPage() {
 export async function GET(request: NextRequest) {
   // Fresh client with current user's cookies
   const supabase = SupabaseAdapter.getServerClient();
-  
+
   // Get current user from their session
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
+
   // Query with proper user isolation
   const { data } = await supabase
-    .from('analyses')
-    .select('*')
-    .eq('user_id', user.id);
-  
+    .from("analyses")
+    .select("*")
+    .eq("user_id", user.id);
+
   return NextResponse.json(data);
 }
 ```
@@ -172,26 +178,28 @@ export async function GET(request: NextRequest) {
 
 ```typescript
 // app/actions/analysis.ts
-'use server';
+"use server";
 
 export async function deleteAnalysis(analysisId: string) {
   // Fresh client with current user's cookies
   const supabase = SupabaseAdapter.getServerClient();
-  
+
   // Verify user owns the analysis
   const { data: analysis } = await supabase
-    .from('analyses')
-    .select('user_id')
-    .eq('id', analysisId)
+    .from("analyses")
+    .select("user_id")
+    .eq("id", analysisId)
     .single();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (analysis?.user_id !== user?.id) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
-  
-  await supabase.from('analyses').delete().eq('id', analysisId);
+
+  await supabase.from("analyses").delete().eq("id", analysisId);
 }
 ```
 
@@ -199,25 +207,25 @@ export async function deleteAnalysis(analysisId: string) {
 
 ```typescript
 // components/AnalysisList.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { SupabaseAdapter } from '@/infrastructure/integration/SupabaseAdapter';
+import { useEffect, useState } from "react";
+import { SupabaseAdapter } from "@/infrastructure/integration/SupabaseAdapter";
 
 export function AnalysisList() {
   const [analyses, setAnalyses] = useState([]);
-  
+
   useEffect(() => {
     // Singleton is SAFE in client components
     // Each browser has its own isolated context
     const supabase = SupabaseAdapter.getClientClient();
-    
+
     supabase
-      .from('analyses')
-      .select('*')
+      .from("analyses")
+      .select("*")
       .then(({ data }) => setAnalyses(data || []));
   }, []);
-  
+
   return <div>{/* Render analyses */}</div>;
 }
 ```
@@ -228,15 +236,15 @@ export function AnalysisList() {
 // ❌ DO NOT DO THIS
 class BadRepository {
   private client: SupabaseClient;
-  
+
   constructor() {
     // Caching client in constructor
     this.client = createServerComponentClient({ cookies });
   }
-  
+
   async findAll() {
     // This uses cached client with wrong user's session!
-    return this.client.from('analyses').select('*');
+    return this.client.from("analyses").select("*");
   }
 }
 ```
@@ -247,7 +255,7 @@ class BadRepository {
 // ❌ DO NOT DO THIS
 class BadAdapter {
   private static instance: SupabaseClient;
-  
+
   static getInstance() {
     if (!this.instance) {
       this.instance = createServerComponentClient({ cookies });
@@ -265,7 +273,7 @@ Client-side code runs in the user's browser, which provides natural isolation:
 // ✅ SAFE - Singleton in browser
 export class SupabaseAdapter {
   private static clientInstance: SupabaseClient | null = null;
-  
+
   static getClientClient(): SupabaseClient {
     if (!this.clientInstance) {
       this.clientInstance = createClientComponentClient();
@@ -276,6 +284,7 @@ export class SupabaseAdapter {
 ```
 
 **Why This is Safe:**
+
 - Each browser has its own JavaScript context
 - Cookies are managed by the browser, not shared between users
 - No server-side request multiplexing
@@ -294,11 +303,12 @@ export class SupabaseAdapter {
 4. **Security First**: Security always trumps micro-optimizations
 
 **Benchmark:**
+
 ```typescript
 // Creating a new client takes ~0.1ms
-console.time('create-client');
+console.time("create-client");
 const client = createServerComponentClient({ cookies });
-console.timeEnd('create-client'); // ~0.1ms
+console.timeEnd("create-client"); // ~0.1ms
 ```
 
 ### Testing for Session Isolation
@@ -308,28 +318,28 @@ We have comprehensive tests to ensure session isolation:
 ```typescript
 // src/infrastructure/integration/__tests__/SupabaseAdapter.test.ts
 
-describe('SupabaseAdapter Security', () => {
-  it('should create a new client for each call', () => {
+describe("SupabaseAdapter Security", () => {
+  it("should create a new client for each call", () => {
     const client1 = SupabaseAdapter.getServerClient();
     const client2 = SupabaseAdapter.getServerClient();
-    
+
     // CRITICAL: Must be different instances
     expect(client1).not.toBe(client2);
   });
 
-  it('should use current request cookies', async () => {
+  it("should use current request cookies", async () => {
     // Mock different users
-    const mockCookies1 = { get: vi.fn().mockReturnValue('user1-token') };
-    const mockCookies2 = { get: vi.fn().mockReturnValue('user2-token') };
-    
+    const mockCookies1 = { get: vi.fn().mockReturnValue("user1-token") };
+    const mockCookies2 = { get: vi.fn().mockReturnValue("user2-token") };
+
     // Simulate User A's request
     vi.mocked(cookies).mockReturnValueOnce(mockCookies1 as any);
     const client1 = SupabaseAdapter.getServerClient();
-    
+
     // Simulate User B's request
     vi.mocked(cookies).mockReturnValueOnce(mockCookies2 as any);
     const client2 = SupabaseAdapter.getServerClient();
-    
+
     // Verify isolation
     expect(client1).not.toBe(client2);
   });
@@ -340,21 +350,21 @@ describe('SupabaseAdapter Security', () => {
 
 ```typescript
 // Test that RLS works correctly
-describe('Session Isolation Integration', () => {
-  it('should not leak sessions between users', async () => {
+describe("Session Isolation Integration", () => {
+  it("should not leak sessions between users", async () => {
     // User A creates analysis
-    const userARequest = createRequestWithAuth('user-a-token');
+    const userARequest = createRequestWithAuth("user-a-token");
     const clientA = SupabaseAdapter.getServerClient();
-    await clientA.from('analyses').insert({ idea: 'User A idea' });
-    
+    await clientA.from("analyses").insert({ idea: "User A idea" });
+
     // User B tries to access User A's data
-    const userBRequest = createRequestWithAuth('user-b-token');
+    const userBRequest = createRequestWithAuth("user-b-token");
     const clientB = SupabaseAdapter.getServerClient();
     const { data } = await clientB
-      .from('analyses')
-      .select('*')
-      .eq('idea', 'User A idea');
-    
+      .from("analyses")
+      .select("*")
+      .eq("idea", "User A idea");
+
     // User B should NOT see User A's data
     expect(data).toHaveLength(0);
   });
@@ -366,11 +376,12 @@ describe('Session Isolation Integration', () => {
 The same session leak vulnerability applies to factory classes. We've fixed this by removing singleton patterns:
 
 **✅ Correct Implementation:**
+
 ```typescript
 // ServiceFactory.ts
 export class ServiceFactory {
   // No static instance variable
-  
+
   static create(supabaseClient: SupabaseClient): ServiceFactory {
     return new ServiceFactory(supabaseClient); // Fresh instance
   }
@@ -379,18 +390,19 @@ export class ServiceFactory {
 // Usage in API route
 export async function GET(request: NextRequest) {
   const supabase = SupabaseAdapter.getServerClient(); // Fresh client
-  const factory = ServiceFactory.create(supabase);    // Fresh factory
+  const factory = ServiceFactory.create(supabase); // Fresh factory
   const controller = factory.createAnalysisController();
   return controller.listAnalyses(request);
 }
 ```
 
 **❌ Previous Vulnerable Implementation:**
+
 ```typescript
 // ❌ DO NOT DO THIS
 export class ServiceFactory {
   private static instance: ServiceFactory; // Cached instance
-  
+
   static getInstance(supabaseClient: SupabaseClient): ServiceFactory {
     if (!this.instance) {
       this.instance = new ServiceFactory(supabaseClient);
@@ -425,12 +437,43 @@ When working with Supabase in server-side code:
 
 ## Authentication and Authorization
 
+### Secure Authentication with getUser()
+
+The application uses Supabase's `getUser()` method for secure authentication validation. This method verifies the JWT token with the auth server, ensuring the token is authentic and not tampered with.
+
+**Authentication Process:**
+
+1. **Token Verification**: `getUser()` validates the token with Supabase Auth server
+2. **Session Retrieval**: `getSession()` retrieves additional session data after verification
+3. **Verification Flag**: `isVerified` field in `SessionInfo` indicates successful token validation
+
+**SessionInfo Interface:**
+
+```typescript
+interface SessionInfo {
+  userId: string; // User's unique identifier
+  userEmail?: string; // User's email address
+  isAuthenticated: boolean; // Has active session
+  isVerified: boolean; // Token verified with auth server (via getUser())
+}
+```
+
+The `isVerified` field is set to `true` only when `getUser()` successfully validates the token, providing an additional layer of security beyond just checking for a session cookie.
+
+**Why This Matters:**
+
+- `getSession()` alone reads from cookies without server validation
+- `getUser()` contacts the auth server to verify token authenticity
+- This prevents attacks using tampered or stolen session cookies
+- The `isVerified` flag allows code to distinguish between verified and unverified sessions
+
 ### JWT Token Management
 
 - Tokens are stored in HTTP-only cookies
 - Automatic token refresh handled by Supabase
 - Short-lived access tokens (1 hour)
 - Long-lived refresh tokens (30 days)
+- Token verification via `getUser()` ensures authenticity
 
 ### Row-Level Security (RLS)
 
@@ -455,14 +498,16 @@ USING (auth.uid() = user_id);
 export class AuthMiddleware {
   async authenticate(request: NextRequest): Promise<User | null> {
     const supabase = SupabaseAdapter.getServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     return user;
   }
-  
+
   async requireAuth(request: NextRequest): Promise<User> {
     const user = await this.authenticate(request);
     if (!user) {
-      throw new UnauthorizedError('Authentication required');
+      throw new UnauthorizedError("Authentication required");
     }
     return user;
   }
@@ -481,12 +526,12 @@ export class AuthMiddleware {
 
 ```typescript
 // Never log sensitive data
-console.log('User logged in:', user.email); // ❌ Bad
-console.log('User logged in:', user.id);    // ✅ Good
+console.log("User logged in:", user.email); // ❌ Bad
+console.log("User logged in:", user.id); // ✅ Good
 
 // Sanitize error messages
 throw new Error(`Invalid credentials for ${email}`); // ❌ Bad
-throw new Error('Invalid credentials');              // ✅ Good
+throw new Error("Invalid credentials"); // ✅ Good
 ```
 
 ## Input Validation
@@ -496,11 +541,11 @@ throw new Error('Invalid credentials');              // ✅ Good
 All inputs are validated using Zod:
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
 const CreateAnalysisSchema = z.object({
   idea: z.string().min(10).max(5000),
-  locale: z.enum(['en', 'es'])
+  locale: z.enum(["en", "es"]),
 });
 
 // Validate input
@@ -514,15 +559,14 @@ Always use parameterized queries:
 ```typescript
 // ✅ Safe - Parameterized query
 const { data } = await supabase
-  .from('analyses')
-  .select('*')
-  .eq('id', analysisId);
+  .from("analyses")
+  .select("*")
+  .eq("id", analysisId);
 
 // ❌ Dangerous - String concatenation (don't do this)
-const { data } = await supabase
-  .rpc('raw_query', { 
-    query: `SELECT * FROM analyses WHERE id = '${analysisId}'` 
-  });
+const { data } = await supabase.rpc("raw_query", {
+  query: `SELECT * FROM analyses WHERE id = '${analysisId}'`,
+});
 ```
 
 ## API Security
@@ -535,7 +579,7 @@ Implement rate limiting for API endpoints:
 // Example rate limiting middleware
 const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 });
 ```
 
@@ -547,11 +591,17 @@ module.exports = {
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: "/api/:path*",
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: 'https://yourdomain.com' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,DELETE' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://yourdomain.com",
+          },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,PUT,DELETE" },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
         ],
       },
     ];
@@ -589,7 +639,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 ```typescript
 // src/infrastructure/config/env.ts
-import { z } from 'zod';
+import { z } from "zod";
 
 const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -618,39 +668,39 @@ export const env = envSchema.parse(process.env);
 ### Example Security Tests
 
 ```typescript
-describe('Security Tests', () => {
-  it('should prevent unauthorized access', async () => {
-    const response = await fetch('/api/analyses', {
-      method: 'GET',
+describe("Security Tests", () => {
+  it("should prevent unauthorized access", async () => {
+    const response = await fetch("/api/analyses", {
+      method: "GET",
       // No auth header
     });
-    
+
     expect(response.status).toBe(401);
   });
-  
-  it('should prevent SQL injection', async () => {
+
+  it("should prevent SQL injection", async () => {
     const maliciousInput = "'; DROP TABLE analyses; --";
-    
-    const response = await fetch('/api/analyses', {
-      method: 'POST',
+
+    const response = await fetch("/api/analyses", {
+      method: "POST",
       body: JSON.stringify({ idea: maliciousInput }),
     });
-    
+
     // Should be rejected by validation
     expect(response.status).toBe(400);
   });
-  
-  it('should prevent XSS attacks', async () => {
+
+  it("should prevent XSS attacks", async () => {
     const xssInput = '<script>alert("XSS")</script>';
-    
-    const response = await fetch('/api/analyses', {
-      method: 'POST',
+
+    const response = await fetch("/api/analyses", {
+      method: "POST",
       body: JSON.stringify({ idea: xssInput }),
     });
-    
+
     // Should be sanitized or rejected
     const data = await response.json();
-    expect(data.idea).not.toContain('<script>');
+    expect(data.idea).not.toContain("<script>");
   });
 });
 ```

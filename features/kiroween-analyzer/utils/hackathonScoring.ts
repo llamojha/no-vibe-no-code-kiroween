@@ -81,7 +81,6 @@ const SCORING_CRITERIA = {
  */
 function evaluatePotentialValue(submission: ProjectSubmission): CriteriaScore {
   const projectText = submission.description.toLowerCase();
-  const kiroUsage = submission.kiroUsage.toLowerCase();
 
   // Market Uniqueness (1-5 scale)
   const marketUniqueness = evaluateMarketUniqueness(projectText);
@@ -93,7 +92,7 @@ function evaluatePotentialValue(submission: ProjectSubmission): CriteriaScore {
   );
 
   // Scalability (1-5 scale)
-  const scalability = evaluateScalability(projectText, kiroUsage);
+  const scalability = evaluateScalability(projectText);
 
   // Calculate weighted average
   const weights = SCORING_CRITERIA["Potential Value"].subCriteria;
@@ -123,11 +122,7 @@ function evaluatePotentialValue(submission: ProjectSubmission): CriteriaScore {
     },
     Scalability: {
       score: scalability,
-      explanation: generateScalabilityExplanation(
-        scalability,
-        projectText,
-        kiroUsage
-      ),
+      explanation: generateScalabilityExplanation(scalability, projectText),
     },
   };
 
@@ -145,23 +140,16 @@ function evaluatePotentialValue(submission: ProjectSubmission): CriteriaScore {
  * Evaluates Implementation criteria
  */
 function evaluateImplementation(submission: ProjectSubmission): CriteriaScore {
-  const kiroUsage = submission.kiroUsage.toLowerCase();
   const projectText = submission.description.toLowerCase();
 
-  // Kiro Features Variety (1-5 scale)
-  const kiroFeaturesVariety = evaluateKiroFeaturesVariety(kiroUsage);
+  // Technical Features Variety (1-5 scale)
+  const kiroFeaturesVariety = evaluateKiroFeaturesVariety(projectText);
 
   // Depth of Understanding (1-5 scale)
-  const depthOfUnderstanding = evaluateDepthOfUnderstanding(
-    kiroUsage,
-    projectText
-  );
+  const depthOfUnderstanding = evaluateDepthOfUnderstanding(projectText);
 
   // Strategic Integration (1-5 scale)
-  const strategicIntegration = evaluateStrategicIntegration(
-    kiroUsage,
-    projectText
-  );
+  const strategicIntegration = evaluateStrategicIntegration(projectText);
 
   // Calculate weighted average
   const weights = SCORING_CRITERIA["Implementation"].subCriteria;
@@ -178,18 +166,18 @@ function evaluateImplementation(submission: ProjectSubmission): CriteriaScore {
       score: kiroFeaturesVariety,
       explanation: generateKiroFeaturesExplanation(
         kiroFeaturesVariety,
-        kiroUsage
+        projectText
       ),
     },
     "Depth of Understanding": {
       score: depthOfUnderstanding,
-      explanation: generateDepthExplanation(depthOfUnderstanding, kiroUsage),
+      explanation: generateDepthExplanation(depthOfUnderstanding, projectText),
     },
     "Strategic Integration": {
       score: strategicIntegration,
       explanation: generateStrategicIntegrationExplanation(
         strategicIntegration,
-        kiroUsage
+        projectText
       ),
     },
   };
@@ -211,10 +199,9 @@ function evaluateQualityAndDesign(
   submission: ProjectSubmission
 ): CriteriaScore {
   const projectText = submission.description.toLowerCase();
-  const kiroUsage = submission.kiroUsage.toLowerCase();
 
   // Creativity (1-5 scale)
-  const creativity = evaluateCreativity(projectText, kiroUsage);
+  const creativity = evaluateCreativity(projectText);
 
   // Originality (1-5 scale)
   const originality = evaluateOriginality(projectText);
@@ -337,7 +324,7 @@ function evaluateUIIntuitiveness(
   return Math.min(Math.max(score, 1), 5);
 }
 
-function evaluateScalability(projectText: string, kiroUsage: string): number {
+function evaluateScalability(projectText: string): number {
   let score = 2.5; // Base score
 
   // Check for scalability mentions
@@ -349,11 +336,7 @@ function evaluateScalability(projectText: string, kiroUsage: string): number {
     "extensible",
     "modular",
   ];
-  if (
-    scalabilityTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (scalabilityTerms.some((term) => projectText.includes(term))) {
     score += 1;
   }
 
@@ -365,11 +348,7 @@ function evaluateScalability(projectText: string, kiroUsage: string): number {
     "infrastructure",
     "system",
   ];
-  if (
-    architectureTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (architectureTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
@@ -382,8 +361,8 @@ function evaluateScalability(projectText: string, kiroUsage: string): number {
   return Math.min(Math.max(score, 1), 5);
 }
 
-function evaluateKiroFeaturesVariety(kiroUsage: string): number {
-  const kiroFeatures = [
+function evaluateKiroFeaturesVariety(projectText: string): number {
+  const technicalFeatures = [
     "agent",
     "tool",
     "function",
@@ -399,10 +378,12 @@ function evaluateKiroFeaturesVariety(kiroUsage: string): number {
     "llm",
     "chat",
     "assistant",
+    "feature",
+    "implement",
   ];
 
-  const mentionedFeatures = kiroFeatures.filter((feature) =>
-    kiroUsage.includes(feature)
+  const mentionedFeatures = technicalFeatures.filter((feature) =>
+    projectText.includes(feature)
   ).length;
 
   // Score based on variety of features mentioned
@@ -413,10 +394,7 @@ function evaluateKiroFeaturesVariety(kiroUsage: string): number {
   return 1;
 }
 
-function evaluateDepthOfUnderstanding(
-  kiroUsage: string,
-  projectText: string
-): number {
+function evaluateDepthOfUnderstanding(projectText: string): number {
   let score = 2; // Base score
 
   // Check for detailed explanations
@@ -427,7 +405,7 @@ function evaluateDepthOfUnderstanding(
     "comprehensive",
     "in-depth",
   ];
-  if (depthIndicators.some((indicator) => kiroUsage.includes(indicator))) {
+  if (depthIndicators.some((indicator) => projectText.includes(indicator))) {
     score += 1;
   }
 
@@ -439,7 +417,7 @@ function evaluateDepthOfUnderstanding(
     "configuration",
     "setup",
   ];
-  if (technicalTerms.some((term) => kiroUsage.includes(term))) {
+  if (technicalTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
@@ -450,26 +428,19 @@ function evaluateDepthOfUnderstanding(
     "consideration",
     "trade-off",
   ];
-  if (
-    challengeTerms.some(
-      (term) => kiroUsage.includes(term) || projectText.includes(term)
-    )
-  ) {
+  if (challengeTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
   // Length and detail bonus
-  if (kiroUsage.length > 200) {
+  if (projectText.length > 200) {
     score += 0.5;
   }
 
   return Math.min(Math.max(score, 1), 5);
 }
 
-function evaluateStrategicIntegration(
-  kiroUsage: string,
-  projectText: string
-): number {
+function evaluateStrategicIntegration(projectText: string): number {
   let score = 2.5; // Base score
 
   // Check for strategic thinking
@@ -480,17 +451,13 @@ function evaluateStrategicIntegration(
     "systematic",
     "strategic",
   ];
-  if (
-    strategyTerms.some(
-      (term) => kiroUsage.includes(term) || projectText.includes(term)
-    )
-  ) {
+  if (strategyTerms.some((term) => projectText.includes(term))) {
     score += 1;
   }
 
   // Check for integration rationale
   const rationaleTerms = ["why", "reason", "benefit", "advantage", "purpose"];
-  if (rationaleTerms.some((term) => kiroUsage.includes(term))) {
+  if (rationaleTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
@@ -502,14 +469,14 @@ function evaluateStrategicIntegration(
     "automation",
     "integration",
   ];
-  if (workflowTerms.some((term) => kiroUsage.includes(term))) {
+  if (workflowTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
   return Math.min(Math.max(score, 1), 5);
 }
 
-function evaluateCreativity(projectText: string, kiroUsage: string): number {
+function evaluateCreativity(projectText: string): number {
   let score = 2.5; // Base score
 
   // Check for creative language
@@ -521,8 +488,8 @@ function evaluateCreativity(projectText: string, kiroUsage: string): number {
     "original",
     "inventive",
   ];
-  const creativityCount = creativityTerms.filter(
-    (term) => projectText.includes(term) || kiroUsage.includes(term)
+  const creativityCount = creativityTerms.filter((term) =>
+    projectText.includes(term)
   ).length;
   score += Math.min(creativityCount * 0.3, 1);
 
@@ -683,8 +650,7 @@ function generateUIIntuitivenessExplanation(
 
 function generateScalabilityExplanation(
   score: number,
-  projectText: string,
-  kiroUsage: string
+  projectText: string
 ): string {
   if (score >= 4.5)
     return "Strong scalability potential with clear growth and expansion considerations.";
@@ -699,39 +665,39 @@ function generateScalabilityExplanation(
 
 function generateKiroFeaturesExplanation(
   score: number,
-  kiroUsage: string
+  projectText: string
 ): string {
   if (score >= 4.5)
-    return "Excellent variety of Kiro features utilized, demonstrating comprehensive platform knowledge.";
+    return "Excellent variety of technical features utilized, demonstrating comprehensive implementation.";
   if (score >= 3.5)
-    return "Good variety of Kiro features used, showing solid platform understanding.";
+    return "Good variety of technical features used, showing solid implementation understanding.";
   if (score >= 2.5)
-    return "Moderate use of Kiro features; could explore additional platform capabilities.";
+    return "Moderate use of technical features; could explore additional capabilities.";
   if (score >= 1.5)
-    return "Limited variety of Kiro features; needs broader platform utilization.";
-  return "Minimal Kiro feature variety; requires significant expansion of platform usage.";
+    return "Limited variety of technical features; needs broader implementation.";
+  return "Minimal technical feature variety; requires significant expansion of implementation.";
 }
 
-function generateDepthExplanation(score: number, kiroUsage: string): string {
+function generateDepthExplanation(score: number, projectText: string): string {
   if (score >= 4.5)
-    return "Demonstrates deep understanding of Kiro capabilities with detailed implementation insights.";
+    return "Demonstrates deep understanding of technical capabilities with detailed implementation insights.";
   if (score >= 3.5)
-    return "Shows good understanding of Kiro with solid implementation details.";
+    return "Shows good understanding with solid implementation details.";
   if (score >= 2.5)
-    return "Moderate understanding of Kiro; could provide more implementation depth.";
+    return "Moderate understanding; could provide more implementation depth.";
   if (score >= 1.5)
-    return "Limited understanding of Kiro capabilities; needs more detailed explanation.";
-  return "Minimal understanding demonstrated; requires significant improvement in Kiro knowledge.";
+    return "Limited understanding of technical capabilities; needs more detailed explanation.";
+  return "Minimal understanding demonstrated; requires significant improvement in technical knowledge.";
 }
 
 function generateStrategicIntegrationExplanation(
   score: number,
-  kiroUsage: string
+  projectText: string
 ): string {
   if (score >= 4.5)
-    return "Excellent strategic integration of Kiro with clear rationale and workflow considerations.";
+    return "Excellent strategic integration with clear rationale and workflow considerations.";
   if (score >= 3.5)
-    return "Good strategic thinking in Kiro integration with solid reasoning.";
+    return "Good strategic thinking in integration with solid reasoning.";
   if (score >= 2.5)
     return "Moderate strategic integration; could benefit from clearer rationale.";
   if (score >= 1.5)

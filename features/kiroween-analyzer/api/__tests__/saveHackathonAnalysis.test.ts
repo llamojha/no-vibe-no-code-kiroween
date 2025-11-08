@@ -23,8 +23,6 @@ jest.mock("@/lib/supabase/mappers", () => ({
     id: row.id,
     userId: row.user_id,
     projectDescription: row.project_description,
-    selectedCategory: row.selected_category,
-    kiroUsage: row.kiro_usage,
     analysis: row.analysis,
     createdAt: row.created_at,
     audioBase64: row.audio_base64,
@@ -59,8 +57,6 @@ describe("saveHackathonAnalysis", () => {
 
   const mockParams = {
     projectDescription: "Test project description",
-    selectedCategory: "resurrection" as const,
-    kiroUsage: "Using Kiro for automation",
     analysis: mockAnalysis,
     supportingMaterials: {
       screenshots: ["screenshot1.png"],
@@ -95,8 +91,8 @@ describe("saveHackathonAnalysis", () => {
       id: "analysis-123",
       user_id: "user-123",
       project_description: mockParams.projectDescription,
-      selected_category: mockParams.selectedCategory,
-      kiro_usage: mockParams.kiroUsage,
+      selected_category: "resurrection",
+      kiro_usage: "",
       analysis: mockParams.analysis,
       audio_base64: mockParams.audioBase64,
       supporting_materials: mockParams.supportingMaterials,
@@ -168,8 +164,8 @@ describe("saveHackathonAnalysis", () => {
     expect(mockInsert).toHaveBeenCalledWith({
       user_id: "user-123",
       project_description: mockParams.projectDescription,
-      selected_category: mockParams.selectedCategory,
-      kiro_usage: mockParams.kiroUsage,
+      selected_category: "resurrection",
+      kiro_usage: "",
       analysis: mockParams.analysis,
       audio_base64: mockParams.audioBase64,
       supporting_materials: mockParams.supportingMaterials,

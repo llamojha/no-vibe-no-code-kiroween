@@ -7,8 +7,6 @@ global.fetch = jest.fn();
 describe("analyzeHackathonProject API", () => {
   const mockSubmission: ProjectSubmission = {
     description: "A unique hackathon project that solves real problems",
-    selectedCategory: "resurrection",
-    kiroUsage: "Using Kiro agents and tools for automation",
     supportingMaterials: {
       screenshots: ["screenshot1.png"],
       demoLink: "https://demo.example.com",

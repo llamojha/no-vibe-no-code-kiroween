@@ -1,10 +1,14 @@
-'use server';
+"use server";
 
-import { redirect } from 'next/navigation';
-import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
-import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapter';
-import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import type { UnifiedAnalysisRecord, AnalysisCounts } from '@/lib/types';
+import { redirect } from "next/navigation";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import type { NextRequest } from "next/server";
+import { SupabaseAdapter } from "@/src/infrastructure/integration/SupabaseAdapter";
+import {
+  getCurrentUserId,
+  isAuthenticated,
+} from "@/src/infrastructure/web/helpers/serverAuth";
+import type { UnifiedAnalysisRecord, AnalysisCounts } from "@/lib/types";
 
 // Type for mock request used in server actions
 type MockRequest = {
@@ -33,31 +37,47 @@ export async function getDashboardDataAction(): Promise<{
     // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-      redirect('/login');
+      redirect("/login");
     }
 
     const userId = await getCurrentUserId();
     if (!userId) {
-      redirect('/login');
+      redirect("/login");
     }
 
     // Execute through controller and parse response
     const supabase = SupabaseAdapter.getServerClient();
     const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
-    
+
+    // Validate user authenticity with getUser() before getting session token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User authentication failed",
+      };
+    }
+
     // Get session token for authorization header
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || '';
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || "";
+
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       headers: new Headers({
-        'authorization': `Bearer ${accessToken}`
-      })
+        authorization: `Bearer ${accessToken}`,
+      }),
     };
-    
-    const response = await dashboardController.getDashboard(mockRequest as any);
+
+    const response = await dashboardController.getDashboard(
+      mockRequest as unknown as NextRequest
+    );
     const responseData = await response.json();
 
     if (response.status === 200) {
@@ -68,15 +88,15 @@ export async function getDashboardDataAction(): Promise<{
     } else {
       return {
         success: false,
-        error: responseData.error || 'Failed to get dashboard data',
+        error: responseData.error || "Failed to get dashboard data",
       };
     }
   } catch (error) {
-    console.error('Error in getDashboardDataAction:', error);
-    
+    console.error("Error in getDashboardDataAction:", error);
+
     return {
       success: false,
-      error: 'Failed to load dashboard data. Please try again.',
+      error: "Failed to load dashboard data. Please try again.",
     };
   }
 }
@@ -87,7 +107,7 @@ export async function getDashboardDataAction(): Promise<{
 export async function getUserAnalysesAction(
   page: number = 1,
   limit: number = 20,
-  category?: 'idea' | 'kiroween'
+  category?: "idea" | "kiroween"
 ): Promise<{
   success: boolean;
   data?: {
@@ -101,32 +121,50 @@ export async function getUserAnalysesAction(
     // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-      redirect('/login');
+      redirect("/login");
     }
 
     const userId = await getCurrentUserId();
     if (!userId) {
-      redirect('/login');
+      redirect("/login");
     }
 
     // Execute through controller and parse response
     const supabase = SupabaseAdapter.getServerClient();
     const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
-    
+
+    // Validate user authenticity with getUser() before getting session token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User authentication failed",
+      };
+    }
+
     // Get session token for authorization header
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || '';
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || "";
+
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
-      url: `http://localhost:3000/api/v2/dashboard/analyses?page=${page}&limit=${limit}${category ? `&category=${category}` : ''}`,
+      url: `http://localhost:3000/api/v2/dashboard/analyses?page=${page}&limit=${limit}${
+        category ? `&category=${category}` : ""
+      }`,
       headers: new Headers({
-        'authorization': `Bearer ${accessToken}`
-      })
+        authorization: `Bearer ${accessToken}`,
+      }),
     };
-    
-    const response = await dashboardController.getUserAnalyses(mockRequest as any);
+
+    const response = await dashboardController.getUserAnalyses(
+      mockRequest as unknown as NextRequest
+    );
     const responseData = await response.json();
 
     if (response.status === 200) {
@@ -137,15 +175,15 @@ export async function getUserAnalysesAction(
     } else {
       return {
         success: false,
-        error: responseData.error || 'Failed to get analyses',
+        error: responseData.error || "Failed to get analyses",
       };
     }
   } catch (error) {
-    console.error('Error in getUserAnalysesAction:', error);
-    
+    console.error("Error in getUserAnalysesAction:", error);
+
     return {
       success: false,
-      error: 'Failed to load analyses. Please try again.',
+      error: "Failed to load analyses. Please try again.",
     };
   }
 }

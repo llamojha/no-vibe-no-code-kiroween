@@ -1,7 +1,11 @@
-import { User } from '../entities';
-import { UserId, Email, Locale } from '../value-objects';
-import { ICommandRepository, IQueryRepository } from './base/IRepository';
-import { Result, PaginatedResult, PaginationParams } from '../../shared/types/common';
+import { User } from "../entities";
+import { UserId, Email, Locale } from "../value-objects";
+import { ICommandRepository, IQueryRepository } from "./base/IRepository";
+import {
+  Result,
+  PaginatedResult,
+  PaginationParams,
+} from "../../shared/types/common";
 
 /**
  * Search criteria for user queries
@@ -23,14 +27,15 @@ export interface UserSearchCriteria {
  * Sorting options for user queries
  */
 export interface UserSortOptions {
-  field: 'createdAt' | 'updatedAt' | 'lastLoginAt' | 'email' | 'name';
-  direction: 'asc' | 'desc';
+  field: "createdAt" | "updatedAt" | "lastLoginAt" | "email" | "name";
+  direction: "asc" | "desc";
 }
 
 /**
  * Command repository interface for User write operations
  */
-export interface IUserCommandRepository extends ICommandRepository<User, UserId> {
+export interface IUserCommandRepository
+  extends ICommandRepository<User, UserId> {
   /**
    * Save a new user with validation
    */
@@ -38,13 +43,17 @@ export interface IUserCommandRepository extends ICommandRepository<User, UserId>
 
   /**
    * Update an existing user
+   * @param user - The user to update
+   * @param requestingUserId - Optional ID of the user making the request (for authorization)
    */
-  update(user: User): Promise<Result<User, Error>>;
+  update(user: User, requestingUserId?: UserId): Promise<Result<User, Error>>;
 
   /**
    * Delete a user by ID
+   * @param id - The ID of the user to delete
+   * @param requestingUserId - Optional ID of the user making the request (for authorization)
    */
-  delete(id: UserId): Promise<Result<void, Error>>;
+  delete(id: UserId, requestingUserId?: UserId): Promise<Result<void, Error>>;
 
   /**
    * Activate a user account
@@ -72,6 +81,15 @@ export interface IUserCommandRepository extends ICommandRepository<User, UserId>
  */
 export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
   /**
+   * Find user by ID with optional authorization context
+   * @param id - User ID to look up
+   * @param requestingUserId - Optional user ID for ownership/authorization checks
+   */
+  findById(
+    id: UserId,
+    requestingUserId?: UserId
+  ): Promise<Result<User | null, Error>>;
+  /**
    * Find a user by email address
    */
   findByEmail(email: Email): Promise<Result<User | null, Error>>;
@@ -80,25 +98,29 @@ export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
    * Find users by email domain
    */
   findByEmailDomain(
-    domain: string, 
+    domain: string,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 
   /**
    * Find active users with pagination
    */
-  findActive(params: PaginationParams): Promise<Result<PaginatedResult<User>, Error>>;
+  findActive(
+    params: PaginationParams
+  ): Promise<Result<PaginatedResult<User>, Error>>;
 
   /**
    * Find inactive users with pagination
    */
-  findInactive(params: PaginationParams): Promise<Result<PaginatedResult<User>, Error>>;
+  findInactive(
+    params: PaginationParams
+  ): Promise<Result<PaginatedResult<User>, Error>>;
 
   /**
    * Find new users (created within specified days)
    */
   findNewUsers(
-    days: number, 
+    days: number,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 
@@ -106,7 +128,7 @@ export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
    * Find users with recent activity (logged in within specified days)
    */
   findWithRecentActivity(
-    days: number, 
+    days: number,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 
@@ -123,29 +145,34 @@ export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
    * Find users by locale preference
    */
   findByLocale(
-    locale: Locale, 
+    locale: Locale,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 
   /**
    * Get user statistics
    */
-  getUserStats(): Promise<Result<{
-    totalCount: number;
-    activeCount: number;
-    inactiveCount: number;
-    newUsersThisWeek: number;
-    newUsersThisMonth: number;
-    usersWithRecentActivity: number;
-    localeDistribution: Record<string, number>;
-    emailDomainDistribution: Record<string, number>;
-  }, Error>>;
+  getUserStats(): Promise<
+    Result<
+      {
+        totalCount: number;
+        activeCount: number;
+        inactiveCount: number;
+        newUsersThisWeek: number;
+        newUsersThisMonth: number;
+        usersWithRecentActivity: number;
+        localeDistribution: Record<string, number>;
+        emailDomainDistribution: Record<string, number>;
+      },
+      Error
+    >
+  >;
 
   /**
    * Find users who haven't logged in for specified days
    */
   findInactiveForDays(
-    days: number, 
+    days: number,
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 
@@ -165,7 +192,7 @@ export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
    * Find users who should receive notifications
    */
   findForNotifications(
-    notificationType: 'email' | 'analysis_reminder',
+    notificationType: "email" | "analysis_reminder",
     params: PaginationParams
   ): Promise<Result<PaginatedResult<User>, Error>>;
 }
@@ -174,6 +201,12 @@ export interface IUserQueryRepository extends IQueryRepository<User, UserId> {
  * Combined User repository interface
  * Provides both command and query operations
  */
-export interface IUserRepository extends IUserCommandRepository, IUserQueryRepository {
-  // Inherits all methods from both command and query repositories
+export interface IUserRepository
+  extends IUserCommandRepository,
+    IUserQueryRepository {
+  // Ensure unified overload is available on the combined interface
+  findById(
+    id: UserId,
+    requestingUserId?: UserId
+  ): Promise<Result<User | null, Error>>;
 }

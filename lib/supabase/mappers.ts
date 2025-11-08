@@ -29,8 +29,6 @@ export const mapSavedHackathonAnalysesRow = (
   id: row.id,
   userId: row.user_id,
   projectDescription: row.project_description,
-  selectedCategory: row.selected_category,
-  kiroUsage: row.kiro_usage,
   analysis: row.analysis as unknown as HackathonAnalysis,
   audioBase64: row.audio_base64,
   supportingMaterials:

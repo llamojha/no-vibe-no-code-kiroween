@@ -11,6 +11,7 @@ import {
   generateShareableLink,
   copyShareableLinkToClipboard,
 } from "../utils/shareableLinks";
+import { isEnabled } from "@/lib/featureFlags";
 import type { SavedHackathonAnalysis, KiroweenCategory } from "@/lib/types";
 import { capture } from "@/features/analytics/posthogClient";
 
@@ -113,6 +114,7 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
     useState<SavedHackathonAnalysis | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
+  const shareLinksEnabled = isEnabled("ENABLE_SHARE_LINKS");
 
   const refreshAnalyses = useCallback(async () => {
     setIsRefreshing(true);
@@ -131,14 +133,10 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
 
   const filteredAndSortedAnalyses = useMemo(() => {
     return analyses
-      .filter(
-        (analysis) =>
-          analysis.projectDescription
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          analysis.selectedCategory
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+      .filter((analysis) =>
+        analysis.projectDescription
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
       )
       .sort((a, b) => {
         switch (sortOption) {
@@ -172,13 +170,17 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
     setAnalysisToDelete(null);
   }, [analysisToDelete]);
 
-  const handleShare = useCallback(async (analysisId: string) => {
-    const success = await copyShareableLinkToClipboard(analysisId);
-    if (success) {
-      setShareSuccess(analysisId);
-      setTimeout(() => setShareSuccess(null), 2000);
-    }
-  }, []);
+  const handleShare = useCallback(
+    async (analysisId: string) => {
+      if (!shareLinksEnabled) return;
+      const success = await copyShareableLinkToClipboard(analysisId);
+      if (success) {
+        setShareSuccess(analysisId);
+        setTimeout(() => setShareSuccess(null), 2000);
+      }
+    },
+    [shareLinksEnabled]
+  );
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -308,7 +310,7 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
                         })()}
                       </h3>
                       <CategoryBadge
-                        category={analysis.selectedCategory}
+                        category={analysis.analysis.categoryAnalysis.bestMatch}
                         t={t}
                       />
                     </div>
@@ -365,24 +367,28 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
                       </svg>
                       {t("refine")}
                     </button>
-                    <button
-                      onClick={() => handleShare(analysis.id)}
-                      className={`flex items-center gap-2 px-3 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-blue-500/20 hover:text-blue-500 hover:border-blue-500 transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm ${
-                        shareSuccess === analysis.id
-                          ? "bg-green-500/20 text-green-500 border-green-500"
-                          : ""
-                      }`}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
+                    {shareLinksEnabled && (
+                      <button
+                        onClick={() => handleShare(analysis.id)}
+                        className={`flex items-center gap-2 px-3 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-blue-500/20 hover:text-blue-500 hover:border-blue-500 transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm ${
+                          shareSuccess === analysis.id
+                            ? "bg-green-500/20 text-green-500 border-green-500"
+                            : ""
+                        }`}
                       >
-                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                      </svg>
-                      {shareSuccess === analysis.id ? t("copied") : t("share")}
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                        {shareSuccess === analysis.id
+                          ? t("copied")
+                          : t("share")}
+                      </button>
+                    )}
                     <button
                       onClick={() => setAnalysisToDelete(analysis)}
                       className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-700 text-red-400 hover:bg-red-500/20 transition-colors rounded-none uppercase tracking-wider text-xs sm:text-sm"

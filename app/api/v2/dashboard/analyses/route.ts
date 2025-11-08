@@ -4,6 +4,7 @@ import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
 import { handleApiError } from '@/src/infrastructure/web/middleware/ErrorMiddleware';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * Get user analyses

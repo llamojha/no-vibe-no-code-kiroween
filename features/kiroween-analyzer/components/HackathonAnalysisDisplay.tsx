@@ -5,6 +5,7 @@ import { HackathonAnalysis } from "@/lib/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { copyShareableLinkToClipboard } from "../utils/shareableLinks";
+import { isEnabled } from "@/lib/featureFlags";
 import CollapsibleSection from "@/features/analyzer/components/CollapsibleSection";
 import CategoryEvaluation from "./CategoryEvaluation";
 import CriteriaScoring from "./CriteriaScoring";
@@ -41,8 +42,10 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
   const { t } = useLocale();
   const isLoggedIn = !!session;
   const [shareSuccess, setShareSuccess] = useState(false);
+  const shareLinksEnabled = isEnabled("ENABLE_SHARE_LINKS");
 
   const handleShare = async () => {
+    if (!shareLinksEnabled) return;
     if (!savedAnalysisId) return;
 
     const success = await copyShareableLinkToClipboard(savedAnalysisId);
@@ -579,7 +582,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                 </svg>
                 <span>{t("reportSavedMessage")}</span>
               </span>
-              {savedAnalysisId && (
+              {shareLinksEnabled && savedAnalysisId && (
                 <button
                   onClick={handleShare}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${

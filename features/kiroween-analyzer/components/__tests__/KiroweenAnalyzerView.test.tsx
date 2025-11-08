@@ -161,8 +161,6 @@ describe("KiroweenAnalyzerView", () => {
       );
       const [submission, setSubmission] = React.useState({
         description: "Initial description",
-        selectedCategory: "resurrection" as const,
-        kiroUsage: "Test usage",
         supportingMaterials: {},
       });
 
@@ -231,8 +229,6 @@ describe("KiroweenAnalyzerView", () => {
       );
       const [submission, setSubmission] = React.useState({
         description: "Initial description",
-        selectedCategory: "resurrection" as const,
-        kiroUsage: "Test usage",
         supportingMaterials: {},
       });
 

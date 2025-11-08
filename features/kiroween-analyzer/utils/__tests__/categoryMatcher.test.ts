@@ -6,9 +6,8 @@ import type { ProjectSubmission, KiroweenCategory } from "@/lib/types";
 
 describe("categoryMatcher", () => {
   const mockSubmission: ProjectSubmission = {
-    description: "A project that combines old and new technologies",
-    selectedCategory: "resurrection",
-    kiroUsage: "Using Kiro agents for integration and automation",
+    description:
+      "A project that combines old and new technologies and uses Kiro agents for integration and automation",
     supportingMaterials: {
       screenshots: ["screenshot1.png"],
       demoLink: "https://demo.example.com",
@@ -88,9 +87,7 @@ describe("categoryMatcher", () => {
       const frankensteinSubmission: ProjectSubmission = {
         ...mockSubmission,
         description:
-          "Combining incompatible technologies and integrating different systems into a hybrid solution",
-        kiroUsage:
-          "Using Kiro to merge various different technologies and overcome integration challenges",
+          "Combining incompatible technologies and integrating different systems into a hybrid solution using Kiro to merge various technologies and overcome integration challenges",
       };
 
       const result = evaluateProjectForCategory(
@@ -107,9 +104,7 @@ describe("categoryMatcher", () => {
       const frameworkSubmission: ProjectSubmission = {
         ...mockSubmission,
         description:
-          "A flexible framework and extensible platform that provides a foundation for multiple use cases",
-        kiroUsage:
-          "Using Kiro to create a modular and adaptable system architecture",
+          "A flexible framework and extensible platform that provides a foundation for multiple use cases, using Kiro to create a modular and adaptable system architecture",
       };
 
       const result = evaluateProjectForCategory(

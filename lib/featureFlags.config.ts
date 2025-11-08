@@ -20,9 +20,15 @@ export function initFeatureFlags() {
     LOCAL_DEV_MODE: defineBooleanFlag({
       key: "LOCAL_DEV_MODE",
       description:
-        "Enable local development mode with mock auth and local storage",
-      default: false,
+        "Local development mode (derives from NODE_ENV === 'development')",
+      default: (process.env.NODE_ENV || "development") === "development",
       exposeToClient: false,
+    }),
+    ENABLE_SHARE_LINKS: defineBooleanFlag({
+      key: "ENABLE_SHARE_LINKS",
+      description: "Enable share link buttons and functionality",
+      default: false,
+      exposeToClient: true,
     }),
   });
 }
