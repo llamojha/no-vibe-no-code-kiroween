@@ -294,21 +294,34 @@
   - Verificar que no haya errores de TypeScript
   - _Requirements: 3.4_
 
-- [ ] 12. Fase 10: Corregir Internacionalización de UI
+- [x] 12. Fase 10: Corregir Internacionalización de UI
+
+
   - Identificar y corregir componentes con texto hardcodeado que no se traducen
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 12.1 Identificar componentes con texto hardcodeado
+- [x] 12.1 Identificar componentes con texto hardcodeado
+
+
+
   - Buscar componentes en features/ y app/ que tengan texto hardcodeado en botones, labels y mensajes
   - Crear lista de componentes que necesitan corrección
   - Priorizar componentes más visibles (botones de acción, formularios principales)
   - _Requirements: 8.1, 8.2, 8.3_
 
+
+
+
 - [ ] 12.2 Agregar useTranslation a componentes identificados
   - Importar y usar hook useTranslation en cada componente
+
+
+
   - Reemplazar texto hardcodeado con llamadas a t('key')
   - Asegurar que el patrón sea consistente en todos los componentes
   - _Requirements: 8.4_
+
+
 
 - [ ] 12.3 Agregar claves de traducción faltantes
   - Agregar claves necesarias en locales/en.json

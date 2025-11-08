@@ -3,7 +3,9 @@
  * This file demonstrates how to use the factories and bootstrap system
  */
 
-import { initializeApplication, getServiceFactory } from '../../main';
+import { initializeApplication } from '../../main';
+import { ServiceFactory } from '../factories/ServiceFactory';
+import { SupabaseAdapter } from '../integration/SupabaseAdapter';
 import { getControllers } from '../bootstrap';
 
 /**
@@ -11,9 +13,12 @@ import { getControllers } from '../bootstrap';
  */
 export async function exampleApplicationInitialization() {
   try {
-    // Method 1: Direct application initialization
-    const app = await initializeApplication();
-    const serviceFactory = app.getServiceFactory();
+    // Method 1: Initialize application and create fresh factory per request
+    await initializeApplication();
+    
+    // ✅ SECURE: Create fresh factory with fresh Supabase client
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     
     // Get controllers
     const analysisController = serviceFactory.createAnalysisController();
@@ -62,8 +67,9 @@ export async function exampleFactoryUsage() {
     // Initialize application first
     await initializeApplication();
     
-    // Get service factory
-    const serviceFactory = getServiceFactory();
+    // ✅ SECURE: Create fresh factory with fresh Supabase client
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     
     // Get repository factory
     const repositoryFactory = serviceFactory.getRepositoryFactory();

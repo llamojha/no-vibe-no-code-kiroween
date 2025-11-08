@@ -4,8 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApplication, getServiceFactory, healthCheck } from '../../main';
+import { initializeApplication, healthCheck } from '../../main';
 import { ServiceFactory } from '../factories/ServiceFactory';
+import { SupabaseAdapter } from '../integration/SupabaseAdapter';
 import { logger } from '@/lib/logger';
 
 /**
@@ -49,10 +50,15 @@ export class NextJSBootstrap {
 
   /**
    * Get service factory with automatic initialization
+   * 
+   * ⚠️ SECURITY: Always creates fresh factory with fresh Supabase client
+   * This prevents session leaks between users
    */
   static async getServiceFactory(): Promise<ServiceFactory> {
     await NextJSBootstrap.initialize();
-    return getServiceFactory();
+    // Create fresh factory with fresh Supabase client per request
+    const supabase = SupabaseAdapter.getServerClient();
+    return ServiceFactory.create(supabase);
   }
 
   /**

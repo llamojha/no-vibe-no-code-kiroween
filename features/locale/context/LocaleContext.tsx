@@ -17,7 +17,7 @@ import {
 type LocaleContextValue = {
   locale: SupportedLocale;
   setLocale: (locale: SupportedLocale) => void;
-  t: (key: TranslationKey | string) => string;
+  t: (key: TranslationKey | string, params?: Record<string, string | number>) => string;
 };
 
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
@@ -33,8 +33,21 @@ export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const translate = useCallback(
-    (key: TranslationKey | string) =>
-      (dictionary[key as TranslationKey] as string) ?? key,
+    (key: TranslationKey | string, params?: Record<string, string | number>) => {
+      let translation = (dictionary[key as TranslationKey] as string) ?? key;
+      
+      // Handle parameter interpolation
+      if (params) {
+        Object.entries(params).forEach(([paramKey, paramValue]) => {
+          translation = translation.replace(
+            new RegExp(`\\{${paramKey}\\}`, 'g'),
+            String(paramValue)
+          );
+        });
+      }
+      
+      return translation;
+    },
     [dictionary],
   );
 
