@@ -16,7 +16,7 @@ import { SessionService } from '../../../application/services/SessionService';
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const supabase = SupabaseAdapter.getServerClient();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const serviceFactory = ServiceFactory.create(supabase);
     const authService = serviceFactory.createAuthenticationService();
     
     return await authService.getCurrentUser();
@@ -32,7 +32,7 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function getCurrentUserId(): Promise<UserId | null> {
   try {
     const supabase = SupabaseAdapter.getServerClient();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const serviceFactory = ServiceFactory.create(supabase);
     const authService = serviceFactory.createAuthenticationService();
     
     return await authService.getCurrentUserId();
@@ -48,7 +48,7 @@ export async function getCurrentUserId(): Promise<UserId | null> {
 export async function isAuthenticated(): Promise<boolean> {
   try {
     const supabase = SupabaseAdapter.getServerClient();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const serviceFactory = ServiceFactory.create(supabase);
     const authService = serviceFactory.createAuthenticationService();
     
     return await authService.isAuthenticated();
@@ -63,7 +63,7 @@ export async function isAuthenticated(): Promise<boolean> {
  */
 export async function getAuthenticationService(): Promise<AuthenticationService> {
   const supabase = SupabaseAdapter.getServerClient();
-  const serviceFactory = ServiceFactory.getInstance(supabase);
+  const serviceFactory = ServiceFactory.create(supabase);
   return serviceFactory.createAuthenticationService();
 }
 
@@ -72,7 +72,7 @@ export async function getAuthenticationService(): Promise<AuthenticationService>
  */
 export async function getSessionService(): Promise<SessionService> {
   const supabase = SupabaseAdapter.getServerClient();
-  const serviceFactory = ServiceFactory.getInstance(supabase);
+  const serviceFactory = ServiceFactory.create(supabase);
   return serviceFactory.createSessionService();
 }
 

@@ -6,21 +6,33 @@ import type { Database } from '../types';
 /**
  * Supabase client wrapper for hexagonal architecture
  * Provides both server-side and client-side Supabase clients
+ * 
+ * SECURITY NOTE:
+ * - Server-side clients MUST NOT be cached globally
+ * - Each request needs a fresh client with its own cookie store
+ * - Caching server clients causes session leaks between users
+ * - Browser-side singleton is safe (browser context isolation)
  */
 export class SupabaseClient {
-  private static serverInstance: any = null;
   private static browserInstance: any = null;
 
   /**
    * Get server-side Supabase client for use in API routes and server components
+   * 
+   * IMPORTANT: Creates a new client for each call to prevent session leaks.
+   * In Next.js, each HTTP request has its own cookie store containing user-specific
+   * session tokens. Caching the client would freeze the first user's cookies for all
+   * subsequent requests, causing:
+   * - Session leaks (User B accessing User A's session)
+   * - Stale tokens (refresh tokens not updating)
+   * - Authentication bypass (unauthenticated users inheriting sessions)
+   * 
+   * @returns A fresh Supabase client with current request cookies
    */
   static getServerClient(): any {
-    if (!SupabaseClient.serverInstance) {
-      SupabaseClient.serverInstance = createServerComponentClient({
-        cookies,
-      }) as any;
-    }
-    return SupabaseClient.serverInstance;
+    return createServerComponentClient({
+      cookies,
+    }) as any;
   }
 
   /**
@@ -52,9 +64,9 @@ export class SupabaseClient {
 
   /**
    * Reset client instances (useful for testing)
+   * Note: Only resets browser-side instance as server-side is never cached
    */
   static resetInstances(): void {
-    SupabaseClient.serverInstance = null;
     SupabaseClient.browserInstance = null;
   }
 }

@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
-import { serverSupabase } from '@/lib/supabase/server';
+import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapter';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 import type { UnifiedAnalysisRecord, AnalysisCounts } from '@/lib/types';
 
@@ -42,14 +42,18 @@ export async function getDashboardDataAction(): Promise<{
     }
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     
@@ -106,15 +110,19 @@ export async function getUserAnalysesAction(
     }
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       url: `http://localhost:3000/api/v2/dashboard/analyses?page=${page}&limit=${limit}${category ? `&category=${category}` : ''}`,
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     

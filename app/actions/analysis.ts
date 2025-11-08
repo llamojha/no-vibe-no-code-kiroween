@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
-import { serverSupabase } from '@/lib/supabase/server';
+import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapter';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 import { Locale } from '@/src/domain/value-objects/Locale';
 import type { AnalysisResponseDTO } from '@/src/infrastructure/web/dto/AnalysisDTO';
@@ -63,9 +63,13 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     );
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
@@ -74,7 +78,7 @@ export async function createAnalysisAction(formData: FormData): Promise<{
         locale: command.locale.value
       }),
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     
@@ -140,9 +144,13 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     const validatedData = DeleteAnalysisSchema.parse(rawData);
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
@@ -150,7 +158,7 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
         analysisId: validatedData.analysisId
       }),
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     
@@ -218,14 +226,18 @@ export async function getAnalysisAction(analysisId: string): Promise<{
     }
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     

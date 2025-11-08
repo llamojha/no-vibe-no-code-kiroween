@@ -3,6 +3,7 @@
  * Main entry point for service initialization and dependency composition
  */
 
+import { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceFactory } from './infrastructure/factories/ServiceFactory';
 import { 
   createSupabaseClient,
@@ -22,10 +23,12 @@ import { logger } from '@/lib/logger';
 /**
  * Application bootstrap class
  * Handles service initialization and startup checks
+ * 
+ * ⚠️ SECURITY NOTE: This class no longer caches ServiceFactory
+ * Each request must create its own ServiceFactory with a fresh Supabase client
  */
 export class Application {
   private static instance: Application;
-  private serviceFactory: ServiceFactory | null = null;
   private isInitialized = false;
 
   private constructor() {}
@@ -63,19 +66,18 @@ export class Application {
         throw new Error('Startup validation failed. Check the validation report above.');
       }
 
-      // Step 2: Initialize database connection
-      console.log('🗄️ Initializing database connection...');
-      const supabaseClient = createSupabaseClient();
+      // Step 2: Verify database connection (but don't cache client)
+      console.log('🗄️ Verifying database connection...');
+      const testClient = createSupabaseClient();
+      // Just verify connection works, don't cache the client
+      await checkDatabaseConnection();
 
-      // Step 3: Initialize service factory
-      console.log('🏭 Initializing service factory...');
-      this.serviceFactory = ServiceFactory.getInstance(supabaseClient);
-
-      // Step 4: Perform environment-specific initialization
+      // Step 3: Perform environment-specific initialization
       await this.performEnvironmentSpecificInitialization();
 
       this.isInitialized = true;
       console.log('✅ Application initialization complete');
+      console.log('ℹ️  ServiceFactory will be created per request for security');
 
     } catch (error) {
       console.error('❌ Application initialization failed:', error);
@@ -84,14 +86,32 @@ export class Application {
   }
 
   /**
-   * Get the service factory instance
-   * Throws error if application is not initialized
+   * Create a new ServiceFactory for the current request
+   * 
+   * ⚠️ SECURITY: Always creates fresh factory with fresh Supabase client
+   * 
+   * @param supabaseClient - Fresh Supabase client from current request
+   * @returns New ServiceFactory instance
+   * 
+   * @deprecated This method is deprecated. Create ServiceFactory directly in your routes:
+   * const factory = ServiceFactory.create(SupabaseAdapter.getServerClient());
    */
-  getServiceFactory(): ServiceFactory {
-    if (!this.serviceFactory) {
+  createServiceFactory(supabaseClient: SupabaseClient): ServiceFactory {
+    if (!this.isInitialized) {
       throw new Error('Application not initialized. Call initialize() first.');
     }
-    return this.serviceFactory;
+    return ServiceFactory.create(supabaseClient);
+  }
+
+  /**
+   * @deprecated ServiceFactory is no longer cached. Use createServiceFactory() or
+   * create ServiceFactory directly: ServiceFactory.create(supabaseClient)
+   */
+  getServiceFactory(): ServiceFactory {
+    throw new Error(
+      'ServiceFactory is no longer cached for security reasons. ' +
+      'Create a fresh factory per request: ServiceFactory.create(SupabaseAdapter.getServerClient())'
+    );
   }
 
   /**
@@ -107,12 +127,7 @@ export class Application {
   async shutdown(): Promise<void> {
     console.log('🛑 Shutting down application...');
     
-    if (this.serviceFactory) {
-      this.serviceFactory.clearCache();
-    }
-    
     this.isInitialized = false;
-    this.serviceFactory = null;
     
     console.log('✅ Application shutdown complete');
   }
@@ -190,11 +205,29 @@ export function getApplication(): Application {
 }
 
 /**
- * Get service factory from initialized application
- * Convenience function for accessing services
+ * Create a new service factory for the current request
+ * 
+ * ⚠️ SECURITY: Always creates fresh factory with fresh Supabase client
+ * 
+ * @param supabaseClient - Fresh Supabase client from current request
+ * @returns New ServiceFactory instance
+ * 
+ * @deprecated Create ServiceFactory directly in your routes:
+ * const factory = ServiceFactory.create(SupabaseAdapter.getServerClient());
+ */
+export function createServiceFactory(supabaseClient: SupabaseClient): ServiceFactory {
+  return getApplication().createServiceFactory(supabaseClient);
+}
+
+/**
+ * @deprecated ServiceFactory is no longer cached for security reasons.
+ * Use: ServiceFactory.create(SupabaseAdapter.getServerClient())
  */
 export function getServiceFactory(): ServiceFactory {
-  return getApplication().getServiceFactory();
+  throw new Error(
+    'ServiceFactory is no longer cached for security reasons. ' +
+    'Create a fresh factory per request: ServiceFactory.create(SupabaseAdapter.getServerClient())'
+  );
 }
 
 /**

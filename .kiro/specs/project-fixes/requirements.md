@@ -16,6 +16,10 @@ Este documento define los requisitos para corregir los errores y problemas ident
 - **AnalysisController**: Controlador para operaciones de análisis
 - **SupabaseAnalysisRepository**: Repositorio que implementa acceso a datos usando Supabase
 - **Mock Query Builder**: Objeto mock que simula el comportamiento del query builder de Supabase
+- **Server Client**: Cliente de Supabase para operaciones server-side que usa cookies de la petición actual
+- **Client Client**: Cliente de Supabase para operaciones client-side en el navegador
+- **Session Leak**: Vulnerabilidad donde las credenciales de un usuario son accesibles a otro usuario
+- **Cookie Store**: Almacenamiento de cookies específico de cada petición HTTP en Next.js
 
 ## Requirements
 
@@ -120,3 +124,18 @@ Este documento define los requisitos para corregir los errores y problemas ident
 3. WHEN el usuario cambia el locale a español, THE System SHALL traducir todos los mensajes de la interfaz a español
 4. THE System SHALL usar el hook useTranslation correctamente en todos los componentes de UI
 5. THE System SHALL asegurar que todas las claves de traducción existan en ambos archivos de locale (en.json y es.json)
+
+### Requirement 9: Corregir Vulnerabilidad de Seguridad en SupabaseAdapter
+
+**User Story:** Como desarrollador, quiero que cada petición HTTP use su propio cliente de Supabase con sus propias cookies, para prevenir fugas de sesión entre usuarios y asegurar que los tokens se actualicen correctamente.
+
+#### Acceptance Criteria
+
+1. THE System SHALL eliminar el singleton estático de serverInstance en SupabaseAdapter
+2. THE System SHALL crear un nuevo cliente de Supabase para cada petición en operaciones server-side
+3. WHEN un usuario hace una petición, THE System SHALL usar las cookies específicas de esa petición
+4. WHEN las cookies de sesión cambian, THE System SHALL reflejar esos cambios en peticiones subsecuentes
+5. THE System SHALL prevenir que las credenciales de un usuario sean reutilizadas para otro usuario
+6. THE System SHALL mantener el singleton de clientInstance solo para operaciones client-side
+7. WHEN se llama getServerClient, THE System SHALL retornar un cliente fresco con el cookie store actual
+8. THE System SHALL actualizar todos los usos de getServerClient para trabajar con clientes no cacheados

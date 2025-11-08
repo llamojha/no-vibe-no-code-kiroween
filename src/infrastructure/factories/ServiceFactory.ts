@@ -50,10 +50,16 @@ import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } fro
 
 /**
  * Service factory for creating configured service instances
- * Implements singleton pattern for expensive resources
+ * 
+ * ⚠️ SECURITY: No singleton pattern - creates fresh instance per request
+ * 
+ * This factory MUST be instantiated per request to prevent session leaks.
+ * Each HTTP request needs its own factory with its own Supabase client
+ * containing that request's user session.
+ * 
+ * @see docs/SECURITY.md for detailed explanation
  */
 export class ServiceFactory {
-  private static instance: ServiceFactory;
   private services: Map<string, unknown> = new Map();
   private repositoryFactory: RepositoryFactory;
   private useCaseFactory: UseCaseFactory | null = null;
@@ -63,17 +69,40 @@ export class ServiceFactory {
   private constructor(
     private readonly supabaseClient: SupabaseClient
   ) {
-    this.repositoryFactory = RepositoryFactory.getInstance(supabaseClient);
+    this.repositoryFactory = RepositoryFactory.create(supabaseClient);
     this.featureFlagAdapter = FeatureFlagAdapter.getInstance();
     this.localeAdapter = LocaleAdapter.getInstance();
     this.initializeUseCaseFactory();
   }
 
+  /**
+   * Create a new ServiceFactory instance
+   * 
+   * ✅ SAFE: Always creates fresh instance per request
+   * 
+   * @param supabaseClient - Fresh Supabase client from current request
+   * @returns New ServiceFactory instance
+   * 
+   * @example
+   * // In API Route
+   * export async function GET(request: NextRequest) {
+   *   const supabase = SupabaseAdapter.getServerClient(); // Fresh client
+   *   const factory = ServiceFactory.create(supabase);    // Fresh factory
+   *   const controller = factory.createAnalysisController();
+   *   return controller.listAnalyses(request);
+   * }
+   */
+  static create(supabaseClient: SupabaseClient): ServiceFactory {
+    return new ServiceFactory(supabaseClient);
+  }
+
+  /**
+   * @deprecated Use ServiceFactory.create() instead
+   * This method is kept for backward compatibility but will be removed.
+   * It now creates a fresh instance instead of returning a cached singleton.
+   */
   static getInstance(supabaseClient: SupabaseClient): ServiceFactory {
-    if (!ServiceFactory.instance) {
-      ServiceFactory.instance = new ServiceFactory(supabaseClient);
-    }
-    return ServiceFactory.instance;
+    return ServiceFactory.create(supabaseClient);
   }
 
   /**
@@ -104,7 +133,7 @@ export class ServiceFactory {
       }
     });
     
-    this.useCaseFactory = UseCaseFactory.getInstance(
+    this.useCaseFactory = UseCaseFactory.create(
       analysisRepository,
       userRepository,
       // aiAnalysisService, // Temporarily disabled

@@ -561,7 +561,196 @@ export const createMockGoogleAI = () => ({
 });
 ```
 
-### 5. UI Internationalization Fixes
+### 5. SupabaseAdapter Security Fix
+
+#### 5.1 Problema de Seguridad: Session Leak por Singleton Caching
+
+**Problema Crítico:** El método `getServerClient()` en `SupabaseAdapter` cachea el cliente de Supabase en una variable estática `serverInstance`. En Next.js, cada petición HTTP debe usar su propio cliente con sus propias cookies porque:
+
+1. Las cookies contienen el token de sesión del usuario
+2. El cookie store es específico de cada petición
+3. Cachear el cliente significa que el primer usuario que hace una petición "congela" sus cookies para todos los usuarios subsecuentes
+4. Esto causa:
+   - **Session Leak:** Usuario B puede acceder a la sesión de Usuario A
+   - **Stale Tokens:** Los refresh tokens no se actualizan cuando las cookies cambian
+   - **Authentication Bypass:** Usuarios no autenticados pueden heredar sesiones de usuarios autenticados
+
+**Severidad:** CRÍTICA - Vulnerabilidad de seguridad que permite acceso no autorizado a cuentas de otros usuarios.
+
+**Solución:**
+
+```typescript
+// src/infrastructure/integration/SupabaseAdapter.ts
+
+export class SupabaseAdapter {
+  // ELIMINAR: private static serverInstance: any = null;
+  private static clientInstance: any = null; // Mantener solo para client-side
+
+  /**
+   * Get Supabase client for server-side operations
+   * IMPORTANTE: Crea un nuevo cliente para cada petición usando las cookies actuales
+   */
+  static getServerClient(): SupabaseClient {
+    // ANTES (INSEGURO):
+    // if (!SupabaseAdapter.serverInstance) {
+    //   SupabaseAdapter.serverInstance = createServerComponentClient({ cookies });
+    // }
+    // return SupabaseAdapter.serverInstance;
+    
+    // DESPUÉS (SEGURO):
+    // Siempre crear un nuevo cliente con el cookie store actual
+    return createServerComponentClient({ cookies }) as any;
+  }
+
+  /**
+   * Get Supabase client for client-side operations
+   * El singleton es seguro aquí porque cada navegador tiene su propio contexto
+   */
+  static getClientClient(): SupabaseClient {
+    if (!SupabaseAdapter.clientInstance) {
+      SupabaseAdapter.clientInstance = createClientComponentClient();
+    }
+    return SupabaseAdapter.clientInstance;
+  }
+
+  /**
+   * Create a new server client instance
+   * DEPRECADO: Ya no es necesario porque getServerClient siempre crea uno nuevo
+   */
+  static createServerClient(): SupabaseClient {
+    return createServerComponentClient({ cookies }) as any;
+  }
+
+  /**
+   * Reset instances
+   * ACTUALIZAR: Solo resetear clientInstance
+   */
+  static resetInstances(): void {
+    // ELIMINAR: SupabaseAdapter.serverInstance = null;
+    SupabaseAdapter.clientInstance = null;
+  }
+}
+```
+
+**Impacto en el Código:**
+
+1. **Repositorios:** No requieren cambios - ya usan `getServerClient()` correctamente
+2. **Controllers:** No requieren cambios - ya usan `getServerClient()` correctamente
+3. **API Routes:** No requieren cambios - ya usan `getServerClient()` correctamente
+4. **Tests:** Actualizar para no depender del singleton
+
+**Tests Actualizados:**
+
+```typescript
+// src/infrastructure/integration/__tests__/SupabaseAdapter.test.ts
+
+describe('SupabaseAdapter', () => {
+  beforeEach(() => {
+    // Limpiar solo clientInstance
+    SupabaseAdapter.resetInstances();
+  });
+
+  describe('getServerClient', () => {
+    it('should create a new client for each call', () => {
+      const client1 = SupabaseAdapter.getServerClient();
+      const client2 = SupabaseAdapter.getServerClient();
+      
+      // IMPORTANTE: Deben ser instancias diferentes
+      expect(client1).not.toBe(client2);
+    });
+
+    it('should use current request cookies', async () => {
+      // Mock cookies para simular diferentes usuarios
+      const mockCookies1 = { get: vi.fn().mockReturnValue('user1-token') };
+      const mockCookies2 = { get: vi.fn().mockReturnValue('user2-token') };
+      
+      // Simular dos peticiones diferentes
+      vi.mocked(cookies).mockReturnValueOnce(mockCookies1 as any);
+      const client1 = SupabaseAdapter.getServerClient();
+      
+      vi.mocked(cookies).mockReturnValueOnce(mockCookies2 as any);
+      const client2 = SupabaseAdapter.getServerClient();
+      
+      // Verificar que cada cliente usa sus propias cookies
+      expect(client1).not.toBe(client2);
+    });
+  });
+
+  describe('getClientClient', () => {
+    it('should return singleton for client-side', () => {
+      const client1 = SupabaseAdapter.getClientClient();
+      const client2 = SupabaseAdapter.getClientClient();
+      
+      // Client-side puede ser singleton
+      expect(client1).toBe(client2);
+    });
+  });
+});
+```
+
+**Validación de Seguridad:**
+
+```typescript
+// Crear test de integración para verificar aislamiento de sesiones
+describe('Session Isolation Integration Test', () => {
+  it('should not leak sessions between users', async () => {
+    // Simular Usuario A haciendo login
+    const userARequest = new NextRequest('http://localhost/api/analyze', {
+      headers: { 'Cookie': 'sb-access-token=user-a-token' }
+    });
+    
+    const clientA = SupabaseAdapter.getServerClient();
+    const { data: userA } = await clientA.auth.getUser();
+    
+    // Simular Usuario B haciendo login
+    const userBRequest = new NextRequest('http://localhost/api/analyze', {
+      headers: { 'Cookie': 'sb-access-token=user-b-token' }
+    });
+    
+    const clientB = SupabaseAdapter.getServerClient();
+    const { data: userB } = await clientB.auth.getUser();
+    
+    // Verificar que son usuarios diferentes
+    expect(userA?.id).not.toBe(userB?.id);
+    
+    // Verificar que Usuario B no puede acceder a datos de Usuario A
+    const analysisA = await clientA.from('analyses').select().eq('user_id', userA?.id);
+    const analysisBAttempt = await clientB.from('analyses').select().eq('user_id', userA?.id);
+    
+    expect(analysisA.data?.length).toBeGreaterThan(0);
+    expect(analysisBAttempt.data?.length).toBe(0); // RLS debe bloquear acceso
+  });
+});
+```
+
+**Documentación:**
+
+```typescript
+/**
+ * IMPORTANTE: Seguridad de Supabase Client
+ * 
+ * Server-Side:
+ * - NUNCA cachear el cliente de Supabase en server-side
+ * - Cada petición debe crear su propio cliente con cookies frescas
+ * - El cookie store contiene tokens de sesión específicos del usuario
+ * - Cachear el cliente causa session leaks entre usuarios
+ * 
+ * Client-Side:
+ * - Es seguro usar singleton porque cada navegador tiene su propio contexto
+ * - Las cookies son manejadas automáticamente por el navegador
+ * 
+ * Uso Correcto:
+ * ```typescript
+ * // En Server Components, API Routes, Server Actions:
+ * const supabase = SupabaseAdapter.getServerClient(); // Siempre fresco
+ * 
+ * // En Client Components:
+ * const supabase = SupabaseAdapter.getClientClient(); // Singleton OK
+ * ```
+ */
+```
+
+### 6. UI Internationalization Fixes
 
 #### 5.1 Problema de Traducción de Componentes
 
@@ -661,34 +850,41 @@ const validateTranslations = () => {
 
 ## Implementation Order
 
-1. **Fase 1: Configuración y Setup**
+1. **Fase 1: CRÍTICO - Security Fix**
+   - **PRIORIDAD MÁXIMA:** Corregir SupabaseAdapter session leak
+   - Eliminar singleton de serverInstance
+   - Actualizar tests de SupabaseAdapter
+   - Crear tests de integración para validar aislamiento de sesiones
+   - Verificar que no hay session leaks en producción
+
+2. **Fase 2: Configuración y Setup**
    - Corregir imports en tests
    - Configurar mocks correctamente
    - Verificar exports de clases
 
-2. **Fase 2: Domain Layer**
+3. **Fase 3: Domain Layer**
    - Corregir AnalysisValidationService
    - Corregir HackathonAnalysisService
 
-3. **Fase 3: Infrastructure - Mappers**
+4. **Fase 4: Infrastructure - Mappers**
    - Corregir AnalysisMapper
    - Verificar otros mappers
 
-4. **Fase 4: Infrastructure - External**
+5. **Fase 5: Infrastructure - External**
    - Corregir GoogleAIAdapter
    - Mejorar manejo de errores
 
-5. **Fase 5: Infrastructure - Web**
+6. **Fase 6: Infrastructure - Web**
    - Agregar handleOptions a controllers
    - Corregir tests de controllers
    - Corregir tests de middleware
 
-6. **Fase 6: Code Quality**
+7. **Fase 7: Code Quality**
    - Eliminar uso de `any`
    - Limpiar imports no utilizados
    - Agregar prefijo `_` a parámetros no usados
 
-7. **Fase 7: UI Internationalization**
+8. **Fase 8: UI Internationalization**
    - Identificar componentes con texto hardcodeado
    - Agregar useTranslation a componentes
    - Agregar claves de traducción faltantes
@@ -702,9 +898,28 @@ const validateTranslations = () => {
 
 ## Security Considerations
 
-- No hay cambios de seguridad requeridos
+### CRÍTICO: SupabaseAdapter Session Leak
+
+**Vulnerabilidad Identificada:**
+- Caching de cliente Supabase server-side causa session leaks entre usuarios
+- Tokens de autenticación pueden ser compartidos entre diferentes usuarios
+- Refresh tokens no se actualizan correctamente
+
+**Mitigación:**
+- Eliminar singleton pattern para server-side client
+- Crear nuevo cliente para cada petición HTTP
+- Mantener singleton solo para client-side (seguro en navegador)
+- Implementar tests de integración para validar aislamiento
+
+**Validación:**
+- Tests unitarios verifican que cada llamada crea nueva instancia
+- Tests de integración verifican aislamiento de sesiones
+- Tests de seguridad verifican que RLS funciona correctamente
+
+**Otras Consideraciones:**
 - Mantener validación de inputs existente
 - Asegurar que los tests no expongan datos sensibles
+- Verificar que todos los API routes usan autenticación correcta
 
 ## Monitoring and Logging
 

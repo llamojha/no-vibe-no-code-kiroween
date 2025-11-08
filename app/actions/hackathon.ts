@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
-import { serverSupabase } from '@/lib/supabase/server';
+import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapter';
 import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
 import type { HackathonAnalysisResponseDTO } from '@/src/infrastructure/web/dto/HackathonDTO';
 
@@ -52,9 +52,16 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
     const validatedData = CreateHackathonAnalysisSchema.parse(rawData);
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const hackathonController = serviceFactory.createHackathonController();
+    
+    // Get session token for authorization header if authenticated
+    let accessToken = '';
+    if (authenticated) {
+      const { data: { session } } = await supabase.auth.getSession();
+      accessToken = session?.access_token || '';
+    }
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
@@ -66,7 +73,7 @@ export async function createHackathonAnalysisAction(formData: FormData): Promise
         locale: validatedData.locale
       }),
       headers: new Headers({
-        'authorization': authenticated ? `Bearer ${supabase.auth.getSession()}` : ''
+        'authorization': authenticated ? `Bearer ${accessToken}` : ''
       })
     };
     
@@ -134,9 +141,13 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
     const validatedData = DeleteHackathonAnalysisSchema.parse(rawData);
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
@@ -144,7 +155,7 @@ export async function deleteHackathonAnalysisAction(formData: FormData): Promise
         analysisId: validatedData.analysisId
       }),
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     
@@ -201,14 +212,18 @@ export async function getHackathonAnalysisAction(analysisId: string): Promise<{
     }
 
     // Execute through controller and parse response
-    const supabase = serverSupabase();
-    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const supabase = SupabaseAdapter.getServerClient();
+    const serviceFactory = ServiceFactory.create(supabase);
     const dashboardController = serviceFactory.createDashboardController();
+    
+    // Get session token for authorization header
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || '';
     
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       headers: new Headers({
-        'authorization': `Bearer ${supabase.auth.getSession()}`
+        'authorization': `Bearer ${accessToken}`
       })
     };
     

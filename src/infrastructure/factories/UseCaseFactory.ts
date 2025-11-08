@@ -19,9 +19,15 @@ import { GetHackathonLeaderboardUseCase } from '../../application/use-cases/GetH
 /**
  * Factory for creating use case instances with proper dependency composition
  * Handles use case instantiation with all required dependencies
+ * 
+ * ⚠️ SECURITY: No singleton pattern - creates fresh instance per request
+ * 
+ * This factory MUST be instantiated per request because it depends on
+ * repositories that contain request-specific Supabase clients.
+ * 
+ * @see docs/SECURITY.md for detailed explanation
  */
 export class UseCaseFactory {
-  private static instance: UseCaseFactory;
   private useCases: Map<string, unknown> = new Map();
 
   private constructor(
@@ -33,6 +39,41 @@ export class UseCaseFactory {
     private readonly scoreCalculationService: ScoreCalculationService
   ) {}
 
+  /**
+   * Create a new UseCaseFactory instance
+   * 
+   * ✅ SAFE: Always creates fresh instance per request
+   * 
+   * @param analysisRepository - Repository with fresh Supabase client
+   * @param userRepository - Repository with fresh Supabase client
+   * @param notificationService - Notification service
+   * @param analysisValidationService - Domain validation service
+   * @param scoreCalculationService - Domain score calculation service
+   * @returns New UseCaseFactory instance
+   */
+  static create(
+    analysisRepository: IAnalysisRepository,
+    userRepository: IUserRepository,
+    // aiAnalysisService: IAIAnalysisService, // Temporarily disabled
+    notificationService: INotificationService,
+    analysisValidationService: AnalysisValidationService,
+    scoreCalculationService: ScoreCalculationService
+  ): UseCaseFactory {
+    return new UseCaseFactory(
+      analysisRepository,
+      userRepository,
+      // aiAnalysisService, // Temporarily disabled
+      notificationService,
+      analysisValidationService,
+      scoreCalculationService
+    );
+  }
+
+  /**
+   * @deprecated Use UseCaseFactory.create() instead
+   * This method is kept for backward compatibility but will be removed.
+   * It now creates a fresh instance instead of returning a cached singleton.
+   */
   static getInstance(
     analysisRepository: IAnalysisRepository,
     userRepository: IUserRepository,
@@ -41,17 +82,13 @@ export class UseCaseFactory {
     analysisValidationService: AnalysisValidationService,
     scoreCalculationService: ScoreCalculationService
   ): UseCaseFactory {
-    if (!UseCaseFactory.instance) {
-      UseCaseFactory.instance = new UseCaseFactory(
-        analysisRepository,
-        userRepository,
-        // aiAnalysisService, // Temporarily disabled
-        notificationService,
-        analysisValidationService,
-        scoreCalculationService
-      );
-    }
-    return UseCaseFactory.instance;
+    return UseCaseFactory.create(
+      analysisRepository,
+      userRepository,
+      notificationService,
+      analysisValidationService,
+      scoreCalculationService
+    );
   }
 
   /**

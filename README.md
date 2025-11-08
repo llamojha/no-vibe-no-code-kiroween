@@ -29,6 +29,29 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
 - **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
 
+## Security
+
+### Critical: Supabase Client Management
+
+⚠️ **NEVER cache Supabase server clients in a static variable or singleton pattern.**
+
+In Next.js server-side operations, each HTTP request has its own cookie store containing user-specific session tokens. Caching the Supabase client globally causes:
+
+- **Session Leaks**: User B can access User A's data and permissions
+- **Stale Tokens**: Refresh tokens don't update when cookies change
+- **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
+
+**Correct Usage:**
+```typescript
+// ✅ Server-side: Always create fresh client
+const supabase = SupabaseAdapter.getServerClient(); // New client per request
+
+// ✅ Client-side: Singleton is safe
+const supabase = SupabaseAdapter.getClientClient(); // Browser context is isolated
+```
+
+See [Architecture Documentation](docs/ARCHITECTURE.md#critical-security-supabase-client-management) for detailed explanation and examples.
+
 ## Run Locally
 
 **Prerequisites:** Node.js

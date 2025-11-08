@@ -437,22 +437,182 @@ sequenceDiagram
     NextJS-->>Client: Response
 ```
 
+### Critical Security: Supabase Client Management
+
+⚠️ **IMPORTANT: Session Isolation in Server-Side Operations**
+
+One of the most critical security considerations in this application is proper management of Supabase clients in server-side contexts.
+
+#### The Session Leak Vulnerability
+
+In Next.js server-side operations (Server Components, API Routes, Server Actions), each HTTP request has its own cookie store containing user-specific session tokens. **Caching the Supabase client globally creates a critical security vulnerability:**
+
+**The Problem:**
+```typescript
+// ❌ DANGEROUS - DO NOT DO THIS
+class BadAdapter {
+  private static serverInstance: SupabaseClient | null = null;
+  
+  static getServerClient() {
+    if (!this.serverInstance) {
+      this.serverInstance = createServerComponentClient({ cookies });
+    }
+    return this.serverInstance; // Returns same instance for all users!
+  }
+}
+```
+
+**What Happens:**
+1. User A (admin) makes first request → Client cached with admin cookies
+2. User B (regular user) makes request → Gets cached client with admin cookies
+3. User B now has admin access → **CRITICAL SECURITY BREACH**
+
+**Additional Risks:**
+- **Session Leaks**: User B can access User A's data and permissions
+- **Stale Tokens**: Refresh tokens don't update when cookies change
+- **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
+- **Data Exposure**: Row-level security (RLS) is bypassed
+
+#### The Secure Solution
+
+**Our Implementation:**
+```typescript
+// ✅ SAFE - Always create fresh client
+class SupabaseAdapter {
+  static getServerClient(): SupabaseClient {
+    return createServerComponentClient({ cookies }); // New client per request
+  }
+}
+```
+
+**Why This Works:**
+- Each request gets a fresh client with its own cookie store
+- User sessions are properly isolated
+- Refresh tokens update correctly
+- RLS policies work as intended
+
+#### Usage Guidelines
+
+**Server-Side (Always Fresh):**
+```typescript
+// Server Component
+export default async function MyServerComponent() {
+  const supabase = SupabaseAdapter.getServerClient(); // Fresh client
+  const { data } = await supabase.from('analyses').select();
+  return <div>{data}</div>;
+}
+
+// API Route
+export async function GET(request: NextRequest) {
+  const supabase = SupabaseAdapter.getServerClient(); // Fresh client
+  const { data } = await supabase.from('analyses').select();
+  return NextResponse.json(data);
+}
+```
+
+**Client-Side (Singleton Safe):**
+```typescript
+// Client Component
+'use client';
+export function MyClientComponent() {
+  const supabase = SupabaseAdapter.getClientClient(); // Singleton OK
+  // Browser context is isolated per user
+}
+```
+
+#### Why Client-Side Singleton is Safe
+
+- Each browser has its own JavaScript context
+- Cookies are managed by the browser, not shared between users
+- No risk of cross-user session leaks
+- Performance benefit from reusing the same client instance
+
+#### ServiceFactory and RepositoryFactory Security
+
+The same session leak vulnerability applies to factory classes. We've eliminated singleton patterns:
+
+**Secure Implementation:**
+```typescript
+// ServiceFactory - No singleton
+export class ServiceFactory {
+  static create(supabaseClient: SupabaseClient): ServiceFactory {
+    return new ServiceFactory(supabaseClient); // Fresh instance per request
+  }
+}
+
+// RepositoryFactory - No singleton
+export class RepositoryFactory {
+  static create(supabaseClient: SupabaseClient): RepositoryFactory {
+    return new RepositoryFactory(supabaseClient); // Fresh instance per request
+  }
+}
+
+// Usage in API route
+export async function GET(request: NextRequest) {
+  const supabase = SupabaseAdapter.getServerClient(); // Fresh client
+  const factory = ServiceFactory.create(supabase);    // Fresh factory
+  const controller = factory.createAnalysisController();
+  return controller.listAnalyses(request);
+}
+```
+
+**Why This Matters:**
+
+If factories were singletons, they would cache repositories that contain the first user's Supabase client, causing the same session leak vulnerability.
+
+#### Verification and Testing
+
+We have comprehensive tests to ensure session isolation:
+
+```typescript
+// Test that each call creates a new instance
+it('should create a new client for each call', () => {
+  const client1 = SupabaseAdapter.getServerClient();
+  const client2 = SupabaseAdapter.getServerClient();
+  expect(client1).not.toBe(client2);
+});
+
+// Test that different users are isolated
+it('should not leak sessions between users', async () => {
+  // Simulate User A
+  const clientA = SupabaseAdapter.getServerClient();
+  const { data: userA } = await clientA.auth.getUser();
+  
+  // Simulate User B
+  const clientB = SupabaseAdapter.getServerClient();
+  const { data: userB } = await clientB.auth.getUser();
+  
+  // Verify isolation
+  expect(userA?.id).not.toBe(userB?.id);
+});
+
+// Test that factories create fresh instances
+it('should create fresh factory instances', () => {
+  const client = SupabaseAdapter.getServerClient();
+  const factory1 = ServiceFactory.create(client);
+  const factory2 = ServiceFactory.create(client);
+  expect(factory1).not.toBe(factory2);
+});
+```
+
 ### Security Measures
 
 1. **Authentication**: Supabase Auth with JWT tokens
 2. **Authorization**: Row-level security (RLS) in database
-3. **Input Validation**: Zod schemas for all inputs
-4. **SQL Injection Prevention**: Parameterized queries
-5. **CORS**: Configured for specific origins
-6. **Rate Limiting**: API endpoint rate limiting
-7. **Environment Variables**: Secure configuration management
+3. **Session Isolation**: Fresh Supabase clients per server-side request
+4. **Input Validation**: Zod schemas for all inputs
+5. **SQL Injection Prevention**: Parameterized queries
+6. **CORS**: Configured for specific origins
+7. **Rate Limiting**: API endpoint rate limiting
+8. **Environment Variables**: Secure configuration management
 
 ### Data Protection
 
 - **Encryption at Rest**: Supabase handles database encryption
 - **Encryption in Transit**: HTTPS for all communications
 - **API Key Security**: Server-side only API keys
-- **User Data Isolation**: RLS policies ensure data separation
+- **User Data Isolation**: RLS policies + proper session management ensure data separation
+- **Session Security**: No caching of server-side Supabase clients prevents session leaks
 
 ## Performance Considerations
 
