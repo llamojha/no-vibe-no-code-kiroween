@@ -42,6 +42,15 @@ drop policy if exists "Profiles are self-readable" on profiles;
 create policy "Profiles are self-readable" on profiles
   for select using (auth.uid() = id);
 
+-- Ensure insert and update policies for profiles (to match production)
+drop policy if exists "Profiles are self-insertable" on profiles;
+create policy "Profiles are self-insertable" on profiles
+  for insert with check (auth.uid() = id);
+
+drop policy if exists "Profiles are self-updatable" on profiles;
+create policy "Profiles are self-updatable" on profiles
+  for update using (auth.uid() = id);
+
 drop policy if exists "Saved analyses: owner access" on saved_analyses;
 create policy "Saved analyses: owner access" on saved_analyses
   for select using (auth.uid() = user_id);
