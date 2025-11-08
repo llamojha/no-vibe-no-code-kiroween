@@ -9,7 +9,7 @@ import {
   ListAnalysesHandler,
   SearchAnalysesHandler 
 } from '@/src/application/handlers/queries';
-import { UpdateAnalysisCommand, DeleteAnalysisCommand } from '@/src/application/types/commands';
+import { CreateAnalysisCommand, UpdateAnalysisCommand, DeleteAnalysisCommand } from '@/src/application/types/commands';
 import { GetAnalysisByIdQuery, GetAnalysesByUserQuery, SearchAnalysesQuery } from '@/src/application/types/queries';
 import { CreateAnalysisDTO, UpdateAnalysisDTO, AnalysisResponseDTO } from '../dto/AnalysisDTO';
 import { CreateAnalysisSchema, UpdateAnalysisSchema } from '../dto/AnalysisDTO';
@@ -17,7 +17,6 @@ import { AnalysisId, UserId, Locale, Category } from '@/src/domain/value-objects
 import { handleApiError } from '../middleware/ErrorMiddleware';
 import { validateRequest } from '../middleware/ValidationMiddleware';
 import { authenticateRequest } from '../middleware/AuthMiddleware';
-import { GoogleAIAdapter } from '../../external/ai/GoogleAIAdapter';
 
 /**
  * Controller for analysis-related API endpoints
@@ -55,24 +54,37 @@ export class AnalysisController {
       }
 
       const dto = validationResult.data as CreateAnalysisDTO;
+      // Build command and delegate to application handler to persist
+      const command = new CreateAnalysisCommand(
+        dto.idea,
+        UserId.fromString(authResult.userId),
+        Locale.fromString(dto.locale),
+        dto.category ? Category.createGeneral(dto.category) : undefined
+      );
 
-      // Use the new hexagonal architecture AI service
-      const googleAI = GoogleAIAdapter.create();
-      const analysisResult = await googleAI.analyzeIdea(dto.idea, Locale.fromString(dto.locale));
+      const result = await this.createAnalysisHandler.handle(command);
 
-      // Handle the Result<T, E> pattern
-      if (!analysisResult.success) {
+      if (!result.success) {
         return NextResponse.json(
-          { 
-            error: analysisResult.error?.message || 'Analysis failed',
-            code: analysisResult.error instanceof Error ? (analysisResult.error as any).code : 'UNKNOWN_ERROR'
-          }, 
-          { status: 500 }
+          { error: result.error?.message || 'Failed to create analysis' },
+          { status: 400 }
         );
       }
 
-      // Return the analysis data in the expected format for backward compatibility
-      return NextResponse.json(analysisResult, { status: 200 });
+      const analysis = result.data.analysis;
+      const responseDTO: AnalysisResponseDTO = {
+        id: analysis.id.value,
+        idea: analysis.idea,
+        score: analysis.score.value,
+        detailedSummary: analysis.feedback || '',
+        criteria: [],
+        createdAt: analysis.createdAt.toISOString(),
+        locale: analysis.locale.value,
+        category: analysis.category?.value
+      };
+
+      // Keep status 200 to match existing expectations/tests
+      return NextResponse.json(responseDTO, { status: 200 });
     } catch (error) {
       return handleApiError(error);
     }
@@ -210,6 +222,7 @@ export class AnalysisController {
 
       const command = new UpdateAnalysisCommand(
         AnalysisId.fromString(params.id),
+        UserId.fromString(authResult.userId),
         updates
       );
 

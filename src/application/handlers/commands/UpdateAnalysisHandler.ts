@@ -1,7 +1,7 @@
 import { CommandHandler } from '../../types/base/Command';
 import { UpdateAnalysisCommand, UpdateAnalysisResult } from '../../types/commands/AnalysisCommands';
 import { SaveAnalysisUseCase } from '../../use-cases/SaveAnalysisUseCase';
-import { AnalysisId, Score, Category } from '../../../domain/value-objects';
+import { AnalysisId, Score, Category, UserId } from '../../../domain/value-objects';
 import { Result, success, failure } from '../../../shared/types/common';
 import { ValidationError } from '../../../shared/types/errors';
 
@@ -37,7 +37,7 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
       // Convert command to use case input
       const input = {
         analysisId: command.analysisId,
-        userId: command.analysisId, // This should be passed separately in a real implementation
+        userId: command.userId,
         updates
       };
 
@@ -76,12 +76,17 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
         return failure(new ValidationError('Analysis ID is required and must be a string'));
       }
 
+      if (!commandData.userId || typeof commandData.userId !== 'string') {
+        return failure(new ValidationError('User ID is required and must be a string'));
+      }
+
       if (!commandData.updates || typeof commandData.updates !== 'object') {
         return failure(new ValidationError('Updates object is required'));
       }
 
       // Create value objects
       const analysisId = AnalysisId.fromString(commandData.analysisId);
+      const userId = UserId.fromString(commandData.userId as string);
       
       const updatesData = commandData.updates as Record<string, unknown>;
       const updates: Record<string, unknown> = {};
@@ -98,9 +103,14 @@ export class UpdateAnalysisHandler implements CommandHandler<UpdateAnalysisComma
         updates.category = Category.createGeneral(updatesData.category);
       }
 
+      if (Array.isArray(updatesData.suggestions)) {
+        updates.suggestions = updatesData.suggestions as string[];
+      }
+
       // Create command
       const command = new UpdateAnalysisCommand(
         analysisId,
+        userId,
         updates,
         typeof commandData.correlationId === 'string' ? commandData.correlationId : undefined
       );

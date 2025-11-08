@@ -5,7 +5,7 @@
  * Validates that the hexagonal architecture is properly configured
  */
 
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const requiredDirectories = [
@@ -77,7 +77,7 @@ function validateArchitecture() {
   console.log('\n⚙️  Checking TypeScript configuration...');
   try {
     const tsconfig = JSON.parse(
-      require('fs').readFileSync('tsconfig.json', 'utf8')
+      readFileSync('tsconfig.json', 'utf8')
     );
     
     const requiredPaths = [
@@ -113,7 +113,7 @@ function validateArchitecture() {
   console.log('\n📦 Checking package.json scripts...');
   try {
     const packageJson = JSON.parse(
-      require('fs').readFileSync('package.json', 'utf8')
+      readFileSync('package.json', 'utf8')
     );
     
     const requiredScripts = ['dev', 'build', 'start', 'lint'];

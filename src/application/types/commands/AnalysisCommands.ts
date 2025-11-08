@@ -36,10 +36,12 @@ export const CreateAnalysisCommandSchema = createCommandSchema(
 export class UpdateAnalysisCommand extends BaseCommand {
   constructor(
     public readonly analysisId: AnalysisId,
+    public readonly userId: UserId,
     public readonly updates: {
       score?: Score;
       feedback?: string;
       category?: Category;
+      suggestions?: string[];
     },
     correlationId?: string
   ) {
@@ -53,10 +55,12 @@ export class UpdateAnalysisCommand extends BaseCommand {
 export const UpdateAnalysisCommandSchema = createCommandSchema(
   z.object({
     analysisId: z.string().uuid('Invalid analysis ID format'),
+    userId: z.string().uuid('Invalid user ID format'),
     updates: z.object({
       score: z.number().min(0).max(100).optional(),
       feedback: z.string().max(10000, 'Feedback cannot exceed 10000 characters').optional(),
-      category: z.string().optional()
+      category: z.string().optional(),
+      suggestions: z.array(z.string()).optional()
     })
   })
 );

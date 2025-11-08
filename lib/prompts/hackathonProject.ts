@@ -65,6 +65,8 @@ CRITERIOS DE EVALUACIÓN (cada uno puntuado 1-5):
 
 Proporciona tu análisis en el siguiente formato JSON (todos los valores numéricos deben ser números, no strings):
 
+REQUISITO IMPORTANTE: El arreglo "evaluations" DEBE contener exactamente CUATRO objetos, uno por cada categoría de Kiroween ("resurrection", "frankenstein", "skeleton-crew", "costume-contest"). Cada objeto debe incluir "category", "fitScore", "explanation" y "improvementSuggestions".
+
 {
   "categoryAnalysis": {
     "evaluations": [
@@ -72,6 +74,24 @@ Proporciona tu análisis en el siguiente formato JSON (todos los valores numéri
         "category": "resurrection",
         "fitScore": 7.5,
         "explanation": "Explicación detallada de qué tan bien encaja el proyecto en esta categoría",
+        "improvementSuggestions": ["Sugerencia específica 1", "Sugerencia específica 2"]
+      },
+      {
+        "category": "frankenstein",
+        "fitScore": 6.8,
+        "explanation": "Explicación de cómo el proyecto integra tecnologías aparentemente incompatibles",
+        "improvementSuggestions": ["Sugerencia específica 1", "Sugerencia específica 2"]
+      },
+      {
+        "category": "skeleton-crew",
+        "fitScore": 7.2,
+        "explanation": "Explicación sobre la base flexible y casos de uso",
+        "improvementSuggestions": ["Sugerencia específica 1", "Sugerencia específica 2"]
+      },
+      {
+        "category": "costume-contest",
+        "fitScore": 5.9,
+        "explanation": "Explicación del pulido de UI y elementos de diseño",
         "improvementSuggestions": ["Sugerencia específica 1", "Sugerencia específica 2"]
       }
     ],
@@ -193,6 +213,8 @@ JUDGING CRITERIA (each scored 1-5):
 
 Please provide your analysis in the following JSON format (all numeric values must be numbers, not strings):
 
+IMPORTANT REQUIREMENT: The "evaluations" array MUST contain exactly FOUR objects, one for each Kiroween category ("resurrection", "frankenstein", "skeleton-crew", "costume-contest"). Each object must include "category", "fitScore", "explanation", and "improvementSuggestions".
+
 {
   "categoryAnalysis": {
     "evaluations": [
@@ -200,6 +222,24 @@ Please provide your analysis in the following JSON format (all numeric values mu
         "category": "resurrection",
         "fitScore": 7.5,
         "explanation": "Detailed explanation of how well the project fits this category",
+        "improvementSuggestions": ["Specific suggestion 1", "Specific suggestion 2"]
+      },
+      {
+        "category": "frankenstein",
+        "fitScore": 6.8,
+        "explanation": "Explanation of how the project integrates seemingly incompatible technologies",
+        "improvementSuggestions": ["Specific suggestion 1", "Specific suggestion 2"]
+      },
+      {
+        "category": "skeleton-crew",
+        "fitScore": 7.2,
+        "explanation": "Explanation about the flexible foundation and multiple use cases",
+        "improvementSuggestions": ["Specific suggestion 1", "Specific suggestion 2"]
+      },
+      {
+        "category": "costume-contest",
+        "fitScore": 5.9,
+        "explanation": "Explanation of UI polish and spooky design elements",
         "improvementSuggestions": ["Specific suggestion 1", "Specific suggestion 2"]
       }
     ],
