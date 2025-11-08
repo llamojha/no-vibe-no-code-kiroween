@@ -113,31 +113,19 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
     requestingUserId?: UserId
   ): Promise<Result<Analysis, Error>> {
     try {
-      // Verify requesting user owns the analysis
-      if (
-        requestingUserId &&
-        analysis.userId.value !== requestingUserId.value
-      ) {
-        logger.warn(LogCategory.DATABASE, "Unauthorized update attempt", {
-          analysisId: analysis.id.value,
-          analysisUserId: analysis.userId.value,
-          requestingUserId: requestingUserId.value,
-        });
-        return failure(
-          new AuthorizationError(
-            "Cannot update analysis belonging to another user"
-          )
-        );
-      }
-
       const dao = this.mapper.toDAO(analysis);
 
-      const { data, error } = await this.client
+      // Apply DB-level ownership filter to prevent tampering with user_id in the payload
+      let query = this.client
         .from(this.tableName)
         .update(dao)
-        .eq("id", analysis.id.value)
-        .select()
-        .single();
+        .eq("id", analysis.id.value);
+
+      if (requestingUserId) {
+        query = query.eq("user_id", requestingUserId.value);
+      }
+
+      const { data, error } = await query.select().single();
 
       if (error) {
         return failure(
@@ -146,6 +134,18 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       }
 
       if (!data) {
+        // When a requesting user is provided, a no-op update implies either not found or not owned
+        if (requestingUserId) {
+          logger.warn(LogCategory.DATABASE, "Unauthorized or missing analysis on update", {
+            analysisId: analysis.id.value,
+            requestingUserId: requestingUserId.value,
+          });
+          return failure(
+            new AuthorizationError(
+              "Cannot update analysis belonging to another user"
+            )
+          );
+        }
         return failure(new RecordNotFoundError("Analysis", analysis.id.value));
       }
 
@@ -760,7 +760,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       let query = this.client
         .from(this.tableName)
         .select(
-          "id, idea, created_at, analysis->score, analysis->category, analysis->detailedSummary",
+          "id, idea, created_at, analysis->score as score, analysis->category as category, analysis->detailedSummary as detailedSummary",
           { count: "exact" }
         )
         .eq("user_id", userId.value);
