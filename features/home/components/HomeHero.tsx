@@ -24,7 +24,8 @@ const HomeHero: React.FC = () => {
   // Feature flag evaluations
   const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
   const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
-  const hasAnyAnalyzer = showClassicAnalyzer || showKiroweenAnalyzer;
+  const showDoctorFrankenstein = true; // Always enabled for now
+  const hasAnyAnalyzer = showClassicAnalyzer || showKiroweenAnalyzer || showDoctorFrankenstein;
 
   const handleAnalyzeClick = useCallback(() => {
     if (isLoading) return; // avoid double routing while auth initializes
@@ -108,6 +109,15 @@ const HomeHero: React.FC = () => {
                   description="Get spooky feedback on your hackathon project"
                   href="/kiroween-analyzer"
                   icon="🎃"
+                  variant="secondary"
+                />
+              )}
+              {showDoctorFrankenstein && (
+                <AnalyzerButton
+                  title="Doctor Frankenstein"
+                  description="Combine random technologies to create innovative ideas"
+                  href="/doctor-frankenstein"
+                  icon="🧟"
                   variant="secondary"
                 />
               )}

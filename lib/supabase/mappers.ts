@@ -4,8 +4,14 @@ import type {
   SavedHackathonAnalysis,
   HackathonAnalysis,
   ProjectSubmission,
+  SavedFrankensteinIdea,
+  FrankensteinAnalysis,
 } from "@/lib/types";
-import type { SavedAnalysesRow, SavedHackathonAnalysesRow } from "./types";
+import type {
+  SavedAnalysesRow,
+  SavedHackathonAnalysesRow,
+  SavedFrankensteinIdeasRow,
+} from "./types";
 
 export const mapSavedAnalysesRow = (
   row: SavedAnalysesRow
@@ -29,5 +35,25 @@ export const mapSavedHackathonAnalysesRow = (
   audioBase64: row.audio_base64,
   supportingMaterials:
     row.supporting_materials as unknown as ProjectSubmission["supportingMaterials"],
+  createdAt: row.created_at ?? new Date().toISOString(),
+});
+
+export const mapSavedFrankensteinIdea = (
+  row: SavedFrankensteinIdeasRow
+): SavedFrankensteinIdea => ({
+  id: row.id,
+  userId: row.user_id,
+  mode: row.mode,
+  tech1: {
+    name: row.tech1_name,
+    description: row.tech1_description,
+    category: row.tech1_category,
+  },
+  tech2: {
+    name: row.tech2_name,
+    description: row.tech2_description,
+    category: row.tech2_category,
+  },
+  analysis: row.analysis as unknown as FrankensteinAnalysis,
   createdAt: row.created_at ?? new Date().toISOString(),
 });

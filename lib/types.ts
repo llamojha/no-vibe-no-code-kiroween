@@ -182,3 +182,32 @@ export interface AnalysisCounts {
   idea: number;
   kiroween: number;
 }
+
+// Doctor Frankenstein Types
+
+export interface TechItem {
+  name: string;
+  description: string;
+  category: string;
+}
+
+export interface FrankensteinAnalysis {
+  ideaName: string;
+  description: string;
+  keyFeatures: string[];
+  targetMarket: string;
+  uniqueValueProposition: string;
+  language: "en" | "es";
+  fullAnalysis?: any; // Store complete FrankensteinIdeaResult
+  allSelectedTechnologies?: TechItem[]; // Store all selected technologies
+}
+
+export interface SavedFrankensteinIdea {
+  id: string;
+  userId: string;
+  mode: "companies" | "aws";
+  tech1: TechItem;
+  tech2: TechItem;
+  analysis: FrankensteinAnalysis;
+  createdAt: string;
+}

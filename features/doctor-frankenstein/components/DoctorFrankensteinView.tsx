@@ -1,0 +1,814 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useLocale } from "@/features/locale/context/LocaleContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import { FrankensteinSlotMachine } from "./FrankensteinSlotMachine";
+import { FrankensteinDiagram } from "./FrankensteinDiagram";
+import FrankensteinExportControl from "./FrankensteinExportControl";
+import { parseTechCompanies, parseAWSServices, selectRandom, type TechCompany, type AWSService } from "../utils/dataParser";
+import { type FrankensteinIdeaResult } from "../api/generateFrankensteinIdea";
+import { saveFrankensteinIdea, loadFrankensteinIdea } from "../api/saveFrankensteinIdea";
+import type { SavedFrankensteinIdea, TechItem } from "@/lib/types";
+import SpookyLoader from "@/features/kiroween-analyzer/components/SpookyLoader";
+
+export const DoctorFrankensteinView: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const savedId = searchParams.get("savedId");
+  
+  const { locale, t } = useLocale();
+  const { session, isLoading: isAuthLoading } = useAuth();
+  const isLoggedIn = !!session;
+  
+  const [mode, setMode] = useState<'companies' | 'aws'>('companies');
+  const [techCompanies, setTechCompanies] = useState<TechCompany[]>([]);
+  const [awsServices, setAWSServices] = useState<AWSService[]>([]);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Save/Share state
+  const [savedIdeaRecord, setSavedIdeaRecord] = useState<SavedFrankensteinIdea | null>(null);
+  const [isReportSaved, setIsReportSaved] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+  
+  // Separate state for each mode
+  const [companiesState, setCompaniesState] = useState<{
+    selectedItems: string[];
+    frankensteinIdea: FrankensteinIdeaResult | null;
+  }>({
+    selectedItems: [],
+    frankensteinIdea: null,
+  });
+  
+  const [awsState, setAWSState] = useState<{
+    selectedItems: string[];
+    frankensteinIdea: FrankensteinIdeaResult | null;
+  }>({
+    selectedItems: [],
+    frankensteinIdea: null,
+  });
+  
+  // Get current state based on mode
+  const currentState = mode === 'companies' ? companiesState : awsState;
+  const setCurrentState = mode === 'companies' ? setCompaniesState : setAWSState;
+  const selectedItems = currentState.selectedItems;
+  const frankensteinIdea = currentState.frankensteinIdea;
+
+  const slotCount = 4;
+
+  // Load data on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        console.log('Loading data sources...');
+        const [companiesRes, awsRes] = await Promise.all([
+          fetch('/doctor-frankenstein/well_known_unique_tech_companies_300_400_frankenstein_mashups_catalog.md'),
+          fetch('/doctor-frankenstein/aws_services_products_full_list_as_of_nov_5_2025.md')
+        ]);
+
+        if (!companiesRes.ok) {
+          throw new Error(`Failed to load companies: ${companiesRes.status}`);
+        }
+        if (!awsRes.ok) {
+          throw new Error(`Failed to load AWS services: ${awsRes.status}`);
+        }
+
+        const companiesText = await companiesRes.text();
+        const awsText = await awsRes.text();
+
+        const parsedCompanies = parseTechCompanies(companiesText);
+        const parsedAWS = parseAWSServices(awsText);
+
+        console.log(`Loaded ${parsedCompanies.length} companies and ${parsedAWS.length} AWS services`);
+
+        setTechCompanies(parsedCompanies);
+        setAWSServices(parsedAWS);
+      } catch (err) {
+        console.error('Failed to load data:', err);
+        setError(`Failed to load data sources: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Load saved idea if savedId is in URL
+  useEffect(() => {
+    if (!savedId) {
+      setSavedIdeaRecord(null);
+      setIsReportSaved(false);
+      return;
+    }
+
+    const fetchSavedIdea = async () => {
+      setIsLoadingSaved(true);
+      try {
+        const { data, error: loadError } = await loadFrankensteinIdea(savedId);
+
+        if (loadError || !data) {
+          console.error("Failed to load saved idea", loadError);
+          setSavedIdeaRecord(null);
+          setIsReportSaved(false);
+          if (loadError !== "Idea not found") {
+            setError("Unable to load the saved idea. It may have been removed.");
+          }
+          return;
+        }
+
+        // Restore the saved idea
+        setSavedIdeaRecord(data);
+        setMode(data.mode);
+        setIsReportSaved(true);
+        
+        // Use the complete analysis if available, otherwise create simplified version
+        const restoredIdea: FrankensteinIdeaResult = data.analysis.fullAnalysis || {
+          idea_title: data.analysis.ideaName,
+          idea_description: data.analysis.description,
+          core_concept: data.analysis.description,
+          problem_statement: "",
+          proposed_solution: "",
+          unique_value_proposition: data.analysis.uniqueValueProposition,
+          target_audience: data.analysis.targetMarket,
+          business_model: "",
+          growth_strategy: "",
+          tech_stack_suggestion: "",
+          risks_and_challenges: "",
+          metrics: {
+            originality_score: 0,
+            feasibility_score: 0,
+            impact_score: 0,
+            scalability_score: 0,
+            wow_factor: 0,
+          },
+          summary: "",
+          language: data.analysis.language,
+        };
+
+        // Use all selected technologies if available, otherwise fallback to tech1 and tech2
+        const selectedTechNames = data.analysis.allSelectedTechnologies 
+          ? data.analysis.allSelectedTechnologies.map(tech => tech.name)
+          : [data.tech1.name, data.tech2.name];
+        
+        if (data.mode === 'companies') {
+          setCompaniesState({
+            selectedItems: selectedTechNames,
+            frankensteinIdea: restoredIdea,
+          });
+        } else {
+          setAWSState({
+            selectedItems: selectedTechNames,
+            frankensteinIdea: restoredIdea,
+          });
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching saved idea:", err);
+        setError("Failed to load saved idea");
+      } finally {
+        setIsLoadingSaved(false);
+      }
+    };
+
+    void fetchSavedIdea();
+  }, [savedId]);
+
+  // Reset saved state when mode changes (but not when loading a saved idea)
+  useEffect(() => {
+    if (!savedId) {
+      setIsReportSaved(false);
+      setSavedIdeaRecord(null);
+    }
+  }, [mode, savedId]);
+
+  const currentItems = mode === 'companies' ? techCompanies : awsServices;
+  const currentItemNames = currentItems.map(item => item.name);
+
+  // Save report handler
+  const handleSaveReport = useCallback(async () => {
+    if (!frankensteinIdea || selectedItems.length < 2) return;
+
+    // Check authentication
+    if (!isLoggedIn) {
+      router.push(`/login?next=${encodeURIComponent("/doctor-frankenstein")}`);
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // Get tech items
+      const tech1Item = currentItems.find(i => i.name === selectedItems[0]);
+      const tech2Item = currentItems.find(i => i.name === selectedItems[1]);
+
+      if (!tech1Item || !tech2Item) {
+        throw new Error("Technology items not found");
+      }
+
+      const tech1: TechItem = {
+        name: tech1Item.name,
+        description: tech1Item.description || `${tech1Item.category} technology`,
+        category: tech1Item.category,
+      };
+
+      const tech2: TechItem = {
+        name: tech2Item.name,
+        description: tech2Item.description || `${tech2Item.category} technology`,
+        category: tech2Item.category,
+      };
+
+      // Store all selected technologies
+      const allSelectedTechs = selectedItems.map(name => {
+        const item = currentItems.find(i => i.name === name);
+        return {
+          name,
+          description: item?.description || `${item?.category || ''} technology`,
+          category: item?.category || '',
+        };
+      });
+
+      const { data, error: saveError } = await saveFrankensteinIdea({
+        mode,
+        tech1,
+        tech2,
+        analysis: {
+          ideaName: frankensteinIdea.idea_title,
+          description: frankensteinIdea.idea_description,
+          keyFeatures: [], // TODO: Extract from frankensteinIdea if available
+          targetMarket: frankensteinIdea.target_audience,
+          uniqueValueProposition: frankensteinIdea.unique_value_proposition,
+          language: (frankensteinIdea.language || locale) as 'en' | 'es',
+          // Store the complete analysis and all technologies
+          fullAnalysis: frankensteinIdea,
+          allSelectedTechnologies: allSelectedTechs,
+        },
+      });
+
+      if (saveError || !data) {
+        setError(saveError || "Failed to save your idea. Please try again.");
+        return;
+      }
+
+      setSavedIdeaRecord(data);
+      setIsReportSaved(true);
+      router.replace(`/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`);
+    } catch (err) {
+      console.error("Save error:", err);
+      setError(err instanceof Error ? err.message : "Failed to save idea");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [frankensteinIdea, selectedItems, isLoggedIn, mode, currentItems, locale, router]);
+
+  // Share handler
+  const handleShare = useCallback(async () => {
+    if (!savedIdeaRecord) return;
+
+    const url = `${window.location.origin}/doctor-frankenstein?savedId=${savedIdeaRecord.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareSuccess(true);
+      setTimeout(() => setShareSuccess(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy link", error);
+      setError("Failed to copy link to clipboard");
+    }
+  }, [savedIdeaRecord]);
+
+  // Go to dashboard handler
+  const handleGoToDashboard = useCallback(() => {
+    router.push("/dashboard");
+  }, [router]);
+
+  const handleCreateFrankenstein = () => {
+    if (currentItems.length === 0) return;
+
+    setIsSpinning(true);
+    setCurrentState({
+      selectedItems: [],
+      frankensteinIdea: null,
+    });
+    setError(null);
+    
+    // Reset saved state when generating a new idea
+    setIsReportSaved(false);
+    setSavedIdeaRecord(null);
+    
+    // Remove savedId from URL if present
+    if (savedId) {
+      router.replace('/doctor-frankenstein');
+    }
+
+    // Simulate slot machine animation
+    setTimeout(() => {
+      const selected = selectRandom(currentItems, slotCount);
+      setCurrentState({
+        selectedItems: selected.map(item => item.name),
+        frankensteinIdea: null,
+      });
+      setIsSpinning(false);
+    }, 3000);
+  };
+
+  const handleAcceptCombination = async () => {
+    if (selectedItems.length === 0) return;
+
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const elements = selectedItems.map(name => {
+        const item = currentItems.find(i => i.name === name);
+        return {
+          name,
+          description: 'description' in item! ? (item as TechCompany).description : undefined
+        };
+      });
+
+      const response = await fetch('/api/doctor-frankenstein/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          elements,
+          mode,
+          language: locale
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate idea');
+      }
+
+      const result = await response.json();
+      setCurrentState({
+        selectedItems: selectedItems,
+        frankensteinIdea: result,
+      });
+    } catch (err) {
+      console.error('Generation error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate idea');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleReject = () => {
+    setCurrentState({
+      selectedItems: [],
+      frankensteinIdea: null,
+    });
+  };
+
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black flex items-center justify-center">
+        <SpookyLoader message={t('generatingFrankensteinIdea') || 'Bringing your Frankenstein to life...'} />
+      </div>
+    );
+  }
+
+  if (frankensteinIdea) {
+    // Check if the report language matches current UI language
+    const reportLanguage = frankensteinIdea.language || 'en';
+    const currentLanguage = locale;
+    const languageMismatch = reportLanguage !== currentLanguage;
+
+    const handleRegenerateInCurrentLanguage = async () => {
+      setIsGenerating(true);
+      setError(null);
+
+      try {
+        const elements = selectedItems.map(name => {
+          const item = currentItems.find(i => i.name === name);
+          return {
+            name,
+            description: 'description' in item! ? (item as TechCompany).description : undefined
+          };
+        });
+
+        const response = await fetch('/api/doctor-frankenstein/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            elements,
+            mode,
+            language: currentLanguage
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate idea');
+        }
+
+        const result = await response.json();
+        setCurrentState({
+          selectedItems: selectedItems,
+          frankensteinIdea: result,
+        });
+      } catch (err) {
+        console.error('Generation error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to generate idea');
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+            >
+              ← {t('back') || 'Back'}
+            </button>
+            <LanguageToggle />
+          </div>
+
+          {/* Language mismatch warning */}
+          {languageMismatch && (
+            <div className="mb-6 p-4 bg-yellow-900/50 border border-yellow-500 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-yellow-200 font-semibold mb-1">
+                    {currentLanguage === 'es' 
+                      ? '⚠️ Este reporte está en inglés'
+                      : '⚠️ This report is in Spanish'}
+                  </p>
+                  <p className="text-yellow-300 text-sm">
+                    {currentLanguage === 'es'
+                      ? 'El contenido fue generado en otro idioma. ¿Quieres regenerarlo en español?'
+                      : 'The content was generated in another language. Do you want to regenerate it in English?'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleRegenerateInCurrentLanguage}
+                  disabled={isGenerating}
+                  className="ml-4 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white font-bold rounded-lg transition-all whitespace-nowrap"
+                >
+                  {isGenerating 
+                    ? (currentLanguage === 'es' ? 'Regenerando...' : 'Regenerating...')
+                    : (currentLanguage === 'es' ? '🔄 Regenerar' : '🔄 Regenerate')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-gradient-to-br from-purple-900/50 to-black/50 rounded-lg border-2 border-orange-500 p-8 space-y-6">
+            <h1 className="text-4xl font-bold text-orange-500 text-center mb-4">
+              {frankensteinIdea.idea_title}
+            </h1>
+
+            {/* Frankenstein Diagram showing the combination */}
+            <FrankensteinDiagram
+              elements={selectedItems.map(name => {
+                const item = currentItems.find(i => i.name === name);
+                // If no description, use category as fallback
+                let description = item?.description;
+                if (!description && item) {
+                  const categoryName = item.category || '';
+                  if (categoryName) {
+                    description = mode === 'aws' 
+                      ? `${categoryName} service`
+                      : `${categoryName} technology`;
+                  }
+                }
+                return {
+                  name,
+                  description
+                };
+              })}
+              ideaTitle={frankensteinIdea.idea_title}
+            />
+
+            <div className="space-y-4 text-purple-100">
+              <Section title={t('ideaDescription') || 'Idea Description'}>
+                {frankensteinIdea.idea_description}
+              </Section>
+
+              <Section title={t('coreConcept') || 'Core Concept'}>
+                {frankensteinIdea.core_concept}
+              </Section>
+
+              <Section title={t('problemStatement') || 'Problem Statement'}>
+                {frankensteinIdea.problem_statement}
+              </Section>
+
+              <Section title={t('proposedSolution') || 'Proposed Solution'}>
+                {frankensteinIdea.proposed_solution}
+              </Section>
+
+              <Section title={t('uniqueValueProposition') || 'Unique Value Proposition'}>
+                {frankensteinIdea.unique_value_proposition}
+              </Section>
+
+              <Section title={t('targetAudience') || 'Target Audience'}>
+                {frankensteinIdea.target_audience}
+              </Section>
+
+              <Section title={t('businessModel') || 'Business Model'}>
+                {frankensteinIdea.business_model}
+              </Section>
+
+              <Section title={t('growthStrategy') || 'Growth Strategy'}>
+                {frankensteinIdea.growth_strategy}
+              </Section>
+
+              <Section title={t('techStack') || 'Tech Stack'}>
+                {frankensteinIdea.tech_stack_suggestion}
+              </Section>
+
+              <Section title={t('risksAndChallenges') || 'Risks & Challenges'}>
+                {frankensteinIdea.risks_and_challenges}
+              </Section>
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 my-8">
+                <MetricCard label={t('originality') || 'Originality'} value={frankensteinIdea.metrics.originality_score} />
+                <MetricCard label={t('feasibility') || 'Feasibility'} value={frankensteinIdea.metrics.feasibility_score} />
+                <MetricCard label={t('impact') || 'Impact'} value={frankensteinIdea.metrics.impact_score} />
+                <MetricCard label={t('scalability') || 'Scalability'} value={frankensteinIdea.metrics.scalability_score} />
+                <MetricCard label={t('wowFactor') || 'Wow Factor'} value={frankensteinIdea.metrics.wow_factor} />
+              </div>
+
+              <Section title={t('summary') || 'Summary'}>
+                {frankensteinIdea.summary}
+              </Section>
+            </div>
+
+            {/* Action Buttons: Save, Share & Export */}
+            <div className="mt-8 flex flex-col sm:flex-row justify-end items-center gap-4">
+              {/* Export Control - Always visible */}
+              {selectedItems.length >= 2 && (
+                <FrankensteinExportControl
+                  mode={mode}
+                  tech1={{
+                    name: selectedItems[0],
+                    description: currentItems.find(i => i.name === selectedItems[0])?.description || "",
+                    category: currentItems.find(i => i.name === selectedItems[0])?.category || "",
+                  }}
+                  tech2={{
+                    name: selectedItems[1],
+                    description: currentItems.find(i => i.name === selectedItems[1])?.description || "",
+                    category: currentItems.find(i => i.name === selectedItems[1])?.category || "",
+                  }}
+                  analysis={{
+                    ideaName: frankensteinIdea.idea_title,
+                    description: frankensteinIdea.idea_description,
+                    keyFeatures: [],
+                    targetMarket: frankensteinIdea.target_audience,
+                    uniqueValueProposition: frankensteinIdea.unique_value_proposition,
+                    language: (frankensteinIdea.language || locale) as 'en' | 'es',
+                  }}
+                  fullAnalysis={frankensteinIdea}
+                  allTechnologies={selectedItems.map(name => {
+                    const item = currentItems.find(i => i.name === name);
+                    return {
+                      name,
+                      description: item?.description || `${item?.category || ''} technology`,
+                      category: item?.category || '',
+                    };
+                  })}
+                />
+              )}
+
+              {isLoggedIn && (
+                isReportSaved ? (
+                  <>
+                    <span className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-green-400 bg-green-900/20 border border-green-700 rounded cursor-default">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{t("reportSavedMessage") || "Report Saved"}</span>
+                    </span>
+
+                    {savedIdeaRecord && (
+                      <button
+                        onClick={handleShare}
+                        className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${
+                          shareSuccess
+                            ? "text-green-400 bg-green-900/20 border-green-700"
+                            : "text-slate-300 bg-black/50 border-purple-600 hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                        <span>{shareSuccess ? (t("linkCopied") || "Link Copied!") : (t("share") || "Share")}</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleGoToDashboard}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                      </svg>
+                      <span>{t("goToDashboardButton") || "Go to Dashboard"}</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleSaveReport}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V4zm3 1h4a1 1 0 000-2H8a1 1 0 000 2z" />
+                    </svg>
+                    <span>{isSaving ? (t("saving") || "Saving...") : (t("saveReportButton") || "Save Report")}</span>
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-orange-500">
+            🧟 Doctor Frankenstein Kiroween 🧟
+          </h1>
+          <LanguageToggle />
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-purple-900/50 rounded-lg p-1 flex gap-2">
+            <button
+              onClick={() => setMode('companies')}
+              className={`px-6 py-3 rounded-lg font-bold transition-all ${
+                mode === 'companies'
+                  ? 'bg-orange-500 text-black'
+                  : 'bg-transparent text-purple-300 hover:text-white'
+              }`}
+            >
+              🏢 {t('techCompanies') || 'Tech Companies'}
+            </button>
+            <button
+              onClick={() => setMode('aws')}
+              className={`px-6 py-3 rounded-lg font-bold transition-all ${
+                mode === 'aws'
+                  ? 'bg-orange-500 text-black'
+                  : 'bg-transparent text-purple-300 hover:text-white'
+              }`}
+            >
+              ☁️ {t('awsServices') || 'AWS Services'}
+            </button>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="text-center mb-8 text-purple-200">
+          <p className="text-lg">
+            {t('frankensteinDescription') || 
+              'Combine random technologies to create innovative startup ideas!'}
+          </p>
+          <p className="text-sm mt-2 text-purple-400">
+            {mode === 'companies' 
+              ? `${techCompanies.length} ${t('companiesAvailable') || 'companies available'}`
+              : `${awsServices.length} ${t('awsServicesAvailable') || 'AWS services available'}`}
+          </p>
+          {currentItems.length === 0 && !error && (
+            <p className="text-sm mt-2 text-yellow-400">
+              Loading data sources...
+            </p>
+          )}
+          {selectedItems.length === 0 && frankensteinIdea === null && (
+            <p className="text-xs mt-2 text-purple-500 italic">
+              {mode === 'companies' 
+                ? t('readyToCombineCompanies') || 'Ready to combine tech companies into a new idea'
+                : t('readyToCombineAWS') || 'Ready to combine AWS services into a new idea'}
+            </p>
+          )}
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-200">
+            {error}
+          </div>
+        )}
+
+        {/* Slot Machine */}
+        <div className="mb-8">
+          <FrankensteinSlotMachine
+            key={mode} // Force re-render when mode changes
+            allItems={currentItemNames}
+            selectedItems={selectedItems}
+            isSpinning={isSpinning}
+            slotCount={slotCount}
+            itemsWithDetails={currentItems.map(item => ({
+              name: item.name,
+              description: item.description,
+              category: item.category,
+            }))}
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4">
+          {selectedItems.length === 0 ? (
+            <button
+              onClick={handleCreateFrankenstein}
+              disabled={isSpinning || currentItems.length === 0}
+              className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-xl rounded-lg transition-all transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
+            >
+              ⚡ {t('createFrankenstein') || 'Create Frankenstein'} ⚡
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={handleReject}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all"
+              >
+                ❌ {t('reject') || 'Reject'}
+              </button>
+              <button
+                onClick={handleAcceptCombination}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-105"
+              >
+                ✅ {t('acceptAndGenerate') || 'Accept & Generate Idea'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+  // Helper to safely render content (handle objects, arrays, etc.)
+  const renderContent = (content: React.ReactNode): React.ReactNode => {
+    if (typeof content === 'string') {
+      return content;
+    }
+    if (typeof content === 'object' && content !== null && !Array.isArray(content)) {
+      // If it's an object, convert to JSON string for display
+      return JSON.stringify(content, null, 2);
+    }
+    if (Array.isArray(content)) {
+      return (
+        <ul className="list-disc list-inside space-y-1">
+          {content.map((item, i) => (
+            <li key={i}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+          ))}
+        </ul>
+      );
+    }
+    return content;
+  };
+
+  return (
+    <div>
+      <h3 className="text-xl font-bold text-orange-400 mb-2">{title}</h3>
+      <div className="text-purple-100 whitespace-pre-wrap">{renderContent(children)}</div>
+    </div>
+  );
+};
+
+const MetricCard: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+  <div className="bg-purple-900/50 rounded-lg p-4 text-center border border-purple-600">
+    <div className="text-3xl font-bold text-orange-400">{value}</div>
+    <div className="text-sm text-purple-300 mt-1">{label}</div>
+  </div>
+);
