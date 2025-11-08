@@ -1,14 +1,18 @@
-'use server';
+"use server";
 
-import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
-import { ServiceFactory } from '@/src/infrastructure/factories/ServiceFactory';
-import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapter';
-import { getCurrentUserId, isAuthenticated } from '@/src/infrastructure/web/helpers/serverAuth';
-import { Locale } from '@/src/domain/value-objects/Locale';
-import type { AnalysisResponseDTO } from '@/src/infrastructure/web/dto/AnalysisDTO';
-import { CreateAnalysisCommand } from '@/src/application/types/commands/AnalysisCommands';
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import type { NextRequest } from "next/server";
+import { SupabaseAdapter } from "@/src/infrastructure/integration/SupabaseAdapter";
+import {
+  getCurrentUserId,
+  isAuthenticated,
+} from "@/src/infrastructure/web/helpers/serverAuth";
+import { Locale } from "@/src/domain/value-objects/Locale";
+import type { AnalysisResponseDTO } from "@/src/infrastructure/web/dto/AnalysisDTO";
+import { CreateAnalysisCommand } from "@/src/application/types/commands/AnalysisCommands";
 
 // Type for mock request used in server actions
 type MockRequest = {
@@ -19,12 +23,15 @@ type MockRequest = {
 
 // Input validation schemas
 const CreateAnalysisSchema = z.object({
-  idea: z.string().min(10, 'Idea must be at least 10 characters').max(5000, 'Idea must be less than 5000 characters'),
-  locale: z.enum(['en', 'es']).default('en'),
+  idea: z
+    .string()
+    .min(10, "Idea must be at least 10 characters")
+    .max(5000, "Idea must be less than 5000 characters"),
+  locale: z.enum(["en", "es"]).default("en"),
 });
 
 const DeleteAnalysisSchema = z.object({
-  analysisId: z.string().uuid('Invalid analysis ID format'),
+  analysisId: z.string().uuid("Invalid analysis ID format"),
 });
 
 /**
@@ -39,18 +46,18 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-      redirect('/login');
+      redirect("/login");
     }
 
     const userId = await getCurrentUserId();
     if (!userId) {
-      redirect('/login');
+      redirect("/login");
     }
 
     // Parse and validate input
     const rawData = {
-      idea: formData.get('idea') as string,
-      locale: formData.get('locale') as string || 'en',
+      idea: formData.get("idea") as string,
+      locale: (formData.get("locale") as string) || "en",
     };
 
     const validatedData = CreateAnalysisSchema.parse(rawData);
@@ -66,29 +73,45 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     const supabase = SupabaseAdapter.getServerClient();
     const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
-    
+
+    // Validate user authenticity with getUser() before getting session token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User authentication failed",
+      };
+    }
+
     // Get session token for authorization header
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || '';
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || "";
+
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       json: async () => ({
         idea: command.idea,
-        locale: command.locale.value
+        locale: command.locale.value,
       }),
       headers: new Headers({
-        'authorization': `Bearer ${accessToken}`
-      })
+        authorization: `Bearer ${accessToken}`,
+      }),
     };
-    
-    const response = await analysisController.createAnalysis(mockRequest as any);
+
+    const response = await analysisController.createAnalysis(
+      mockRequest as unknown as NextRequest
+    );
     const responseData = await response.json();
 
     if (response.status === 200 || response.status === 201) {
       // Revalidate relevant pages
-      revalidatePath('/dashboard');
-      revalidatePath('/analyzer');
+      revalidatePath("/dashboard");
+      revalidatePath("/analyzer");
 
       return {
         success: true,
@@ -97,22 +120,22 @@ export async function createAnalysisAction(formData: FormData): Promise<{
     } else {
       return {
         success: false,
-        error: responseData.error || 'Analysis failed',
+        error: responseData.error || "Analysis failed",
       };
     }
   } catch (error) {
-    console.error('Error in createAnalysisAction:', error);
-    
+    console.error("Error in createAnalysisAction:", error);
+
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.issues.map(e => e.message).join(', '),
+        error: error.issues.map((e) => e.message).join(", "),
       };
     }
 
     return {
       success: false,
-      error: 'Failed to create analysis. Please try again.',
+      error: "Failed to create analysis. Please try again.",
     };
   }
 }
@@ -128,17 +151,17 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-      redirect('/login');
+      redirect("/login");
     }
 
     const userId = await getCurrentUserId();
     if (!userId) {
-      redirect('/login');
+      redirect("/login");
     }
 
     // Parse and validate input
     const rawData = {
-      analysisId: formData.get('analysisId') as string,
+      analysisId: formData.get("analysisId") as string,
     };
 
     const validatedData = DeleteAnalysisSchema.parse(rawData);
@@ -147,29 +170,46 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     const supabase = SupabaseAdapter.getServerClient();
     const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
-    
+
+    // Validate user authenticity with getUser() before getting session token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User authentication failed",
+      };
+    }
+
     // Get session token for authorization header
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || '';
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || "";
+
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       json: async () => ({
-        analysisId: validatedData.analysisId
+        analysisId: validatedData.analysisId,
       }),
       headers: new Headers({
-        'authorization': `Bearer ${accessToken}`
-      })
+        authorization: `Bearer ${accessToken}`,
+      }),
     };
-    
-    const response = await analysisController.deleteAnalysis(mockRequest as any, { 
-      params: { id: validatedData.analysisId } 
-    });
+
+    const response = await analysisController.deleteAnalysis(
+      mockRequest as unknown as NextRequest,
+      {
+        params: { id: validatedData.analysisId },
+      }
+    );
     const responseData = await response.json();
 
     if (response.status === 200 || response.status === 204) {
       // Revalidate relevant pages
-      revalidatePath('/dashboard');
+      revalidatePath("/dashboard");
 
       return {
         success: true,
@@ -177,22 +217,22 @@ export async function deleteAnalysisAction(formData: FormData): Promise<{
     } else {
       return {
         success: false,
-        error: responseData.error || 'Failed to delete analysis',
+        error: responseData.error || "Failed to delete analysis",
       };
     }
   } catch (error) {
-    console.error('Error in deleteAnalysisAction:', error);
-    
+    console.error("Error in deleteAnalysisAction:", error);
+
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.issues.map(e => e.message).join(', '),
+        error: error.issues.map((e) => e.message).join(", "),
       };
     }
 
     return {
       success: false,
-      error: 'Failed to delete analysis. Please try again.',
+      error: "Failed to delete analysis. Please try again.",
     };
   }
 }
@@ -209,19 +249,19 @@ export async function getAnalysisAction(analysisId: string): Promise<{
     // Check authentication
     const authenticated = await isAuthenticated();
     if (!authenticated) {
-      redirect('/login');
+      redirect("/login");
     }
 
     const userId = await getCurrentUserId();
     if (!userId) {
-      redirect('/login');
+      redirect("/login");
     }
 
     // Validate input
-    if (!analysisId || typeof analysisId !== 'string') {
+    if (!analysisId || typeof analysisId !== "string") {
       return {
         success: false,
-        error: 'Invalid analysis ID',
+        error: "Invalid analysis ID",
       };
     }
 
@@ -229,21 +269,38 @@ export async function getAnalysisAction(analysisId: string): Promise<{
     const supabase = SupabaseAdapter.getServerClient();
     const serviceFactory = ServiceFactory.create(supabase);
     const analysisController = serviceFactory.createAnalysisController();
-    
+
+    // Validate user authenticity with getUser() before getting session token
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User authentication failed",
+      };
+    }
+
     // Get session token for authorization header
-    const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || '';
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const accessToken = session?.access_token || "";
+
     // Create a mock request for the controller
     const mockRequest: MockRequest = {
       headers: new Headers({
-        'authorization': `Bearer ${accessToken}`
-      })
+        authorization: `Bearer ${accessToken}`,
+      }),
     };
-    
-    const response = await analysisController.getAnalysis(mockRequest as any, { 
-      params: { id: analysisId } 
-    });
+
+    const response = await analysisController.getAnalysis(
+      mockRequest as unknown as NextRequest,
+      {
+        params: { id: analysisId },
+      }
+    );
     const responseData = await response.json();
 
     if (response.status === 200) {
@@ -254,15 +311,15 @@ export async function getAnalysisAction(analysisId: string): Promise<{
     } else {
       return {
         success: false,
-        error: responseData.error || 'Analysis not found',
+        error: responseData.error || "Analysis not found",
       };
     }
   } catch (error) {
-    console.error('Error in getAnalysisAction:', error);
-    
+    console.error("Error in getAnalysisAction:", error);
+
     return {
       success: false,
-      error: 'Failed to get analysis. Please try again.',
+      error: "Failed to get analysis. Please try again.",
     };
   }
 }

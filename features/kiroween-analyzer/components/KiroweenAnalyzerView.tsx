@@ -39,8 +39,6 @@ const KiroweenAnalyzerView: React.FC = () => {
 
   const [submission, setSubmission] = useState<ProjectSubmission>({
     description: "",
-    selectedCategory: "resurrection",
-    kiroUsage: "",
     supportingMaterials: {},
   });
   const [newAnalysis, setNewAnalysis] = useState<HackathonAnalysis | null>(
@@ -78,8 +76,6 @@ const KiroweenAnalyzerView: React.FC = () => {
       setSavedAnalysisRecord(null);
       setSubmission({
         description: "",
-        selectedCategory: "resurrection",
-        kiroUsage: "",
         supportingMaterials: {},
       });
       setIsReportSaved(false);
@@ -108,8 +104,6 @@ const KiroweenAnalyzerView: React.FC = () => {
           setSavedAnalysisRecord(null);
           setSubmission({
             description: "",
-            selectedCategory: "resurrection",
-            kiroUsage: "",
             supportingMaterials: {},
           });
           setIsReportSaved(false);
@@ -126,8 +120,6 @@ const KiroweenAnalyzerView: React.FC = () => {
         setSavedAnalysisRecord(data);
         setSubmission({
           description: data.projectDescription,
-          selectedCategory: data.selectedCategory,
-          kiroUsage: data.kiroUsage,
           supportingMaterials: data.supportingMaterials || {},
         });
         setIsReportSaved(true);
@@ -245,8 +237,6 @@ const KiroweenAnalyzerView: React.FC = () => {
     try {
       const { data, error: saveError } = await saveHackathonAnalysis({
         projectDescription: submission.description,
-        selectedCategory: submission.selectedCategory,
-        kiroUsage: submission.kiroUsage,
         analysis: analysisToSave,
         supportingMaterials: submission.supportingMaterials,
         audioBase64: generatedAudio || undefined,
@@ -339,7 +329,7 @@ const KiroweenAnalyzerView: React.FC = () => {
         <header className="text-center mb-8 animate-fade-in relative">
           <button
             onClick={handleBack}
-            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black rounded-md p-1"
+            className="absolute left-0 top-[90%] -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black rounded-md p-1"
             aria-label={t("backToHome")}
           >
             <svg
@@ -359,7 +349,7 @@ const KiroweenAnalyzerView: React.FC = () => {
               {t("backToHome")}
             </span>
           </button>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          <div className="absolute right-0 top-[90%] -translate-y-1/2">
             <LanguageToggle />
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-400">
@@ -396,7 +386,11 @@ const KiroweenAnalyzerView: React.FC = () => {
             </section>
           )}
           {busy && (
-            <section aria-labelledby="loading-heading" aria-live="polite">
+            <section
+              aria-labelledby="loading-heading"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <h2 id="loading-heading" className="sr-only">
                 {t("loading")}
               </h2>

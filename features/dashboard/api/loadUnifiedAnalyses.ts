@@ -135,11 +135,13 @@ export async function loadUnifiedAnalyses(): Promise<{
   // Standard Supabase flow for production
   const supabase = browserSupabase();
 
+  // Use getUser() for secure authentication validation
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return {
       data: [],
       counts: { total: 0, idea: 0, kiroween: 0 },
@@ -152,7 +154,7 @@ export async function loadUnifiedAnalyses(): Promise<{
     const { data: startupData, error: startupError } = await supabase
       .from("saved_analyses")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .returns<SavedAnalysesRow[]>();
 
@@ -165,7 +167,7 @@ export async function loadUnifiedAnalyses(): Promise<{
     const { data: hackathonData, error: hackathonError } = await supabase
       .from("saved_hackathon_analyses")
       .select("*")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .returns<SavedHackathonAnalysesRow[]>();
 

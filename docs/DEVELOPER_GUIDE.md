@@ -80,7 +80,7 @@ GEMINI_API_KEY=your-gemini-api-key
 
 # Feature Flags
 NEXT_PUBLIC_FF_HACKATHON_ANALYZER=true
-FF_LOCAL_DEV_MODE=false
+# Local dev mode derives from NODE_ENV; no FF_LOCAL_DEV_MODE needed
 ```
 
 4. Start the development server:

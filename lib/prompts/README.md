@@ -21,31 +21,33 @@ lib/prompts/
 ### Basic Usage
 
 ```typescript
-import { generateStartupIdeaPrompt, generateHackathonProjectPrompt } from '@/lib/prompts';
+import {
+  generateStartupIdeaPrompt,
+  generateHackathonProjectPrompt,
+} from "@/lib/prompts";
 
 // Generate a startup idea prompt
-const prompt = generateStartupIdeaPrompt('My startup idea', 'en');
+const prompt = generateStartupIdeaPrompt("My startup idea", "en");
 
 // Generate a hackathon project prompt
 const hackathonPrompt = generateHackathonProjectPrompt(
-  'Project description',
-  'How Kiro was used',
-  'frankenstein',
-  'es'
+  "Project description",
+  "frankenstein",
+  "es"
 );
 ```
 
 ### Using with GoogleAIAdapter
 
 ```typescript
-import { GoogleAIAdapter } from '@/src/infrastructure/external/ai/GoogleAIAdapter';
-import { Locale } from '@/src/domain/value-objects';
+import { GoogleAIAdapter } from "@/src/infrastructure/external/ai/GoogleAIAdapter";
+import { Locale } from "@/src/domain/value-objects";
 
 const adapter = GoogleAIAdapter.create();
-const locale = Locale.create('en');
+const locale = Locale.create("en");
 
 // The adapter automatically uses the prompt library
-const result = await adapter.analyzeIdea('My idea', locale);
+const result = await adapter.analyzeIdea("My idea", locale);
 ```
 
 ## Supported Prompt Types
@@ -53,6 +55,7 @@ const result = await adapter.analyzeIdea('My idea', locale);
 ### Startup Idea Analysis
 
 Analyzes startup ideas based on:
+
 - Market Opportunity (0-20 points)
 - Innovation & Uniqueness (0-20 points)
 - Feasibility & Execution (0-20 points)
@@ -64,23 +67,26 @@ Analyzes startup ideas based on:
 ### Hackathon Project Analysis
 
 Analyzes hackathon projects based on:
+
 - Technical Implementation (0-25 points)
 - Creativity & Originality (0-25 points)
 - Theme Alignment (0-25 points)
 - Completeness & Polish (0-25 points)
 
 **Categories:**
+
 - `frankenstein`: Projects combining different technologies
 - `resurrection`: Projects reviving old technologies
 - `haunted`: Projects with mysterious behaviors
 - `cursed`: Projects with inherent challenges
 - `possessed`: Projects with autonomous/AI behaviors
 
-**Function:** `generateHackathonProjectPrompt(project: string, kiroUsage: string, category: string, locale: Locale): string`
+**Function:** `generateHackathonProjectPrompt(project: string, category: string, locale: Locale): string`
 
 ## Supported Languages
 
 Currently supported locales:
+
 - `en` - English
 - `es` - Spanish (Español)
 
@@ -92,16 +98,16 @@ To add a new type of prompt:
 
 ```typescript
 export enum PromptType {
-  STARTUP_IDEA = 'startup_idea',
-  HACKATHON_PROJECT = 'hackathon_project',
-  YOUR_NEW_TYPE = 'your_new_type'  // Add here
+  STARTUP_IDEA = "startup_idea",
+  HACKATHON_PROJECT = "hackathon_project",
+  YOUR_NEW_TYPE = "your_new_type", // Add here
 }
 ```
 
 2. **Create a new prompt file** (e.g., `yourNewType.ts`):
 
 ```typescript
-import { Locale } from './constants';
+import { Locale } from "./constants";
 
 /**
  * Generates prompt for your new analysis type
@@ -109,10 +115,13 @@ import { Locale } from './constants';
  * @param locale - The language for the analysis
  * @returns The formatted prompt
  */
-export function generateYourNewTypePrompt(input: string, locale: Locale): string {
+export function generateYourNewTypePrompt(
+  input: string,
+  locale: Locale
+): string {
   const prompts = {
     en: `Your English prompt template here: "${input}"`,
-    es: `Tu plantilla de prompt en español aquí: "${input}"`
+    es: `Tu plantilla de prompt en español aquí: "${input}"`,
   };
 
   return prompts[locale];
@@ -122,32 +131,32 @@ export function generateYourNewTypePrompt(input: string, locale: Locale): string
 3. **Export from index.ts**:
 
 ```typescript
-export { generateYourNewTypePrompt } from './yourNewType';
+export { generateYourNewTypePrompt } from "./yourNewType";
 
 export const promptGenerators: PromptGenerators = {
   [PromptType.STARTUP_IDEA]: generateStartupIdeaPrompt,
   [PromptType.HACKATHON_PROJECT]: generateHackathonProjectPrompt,
-  [PromptType.YOUR_NEW_TYPE]: generateYourNewTypePrompt  // Add here
+  [PromptType.YOUR_NEW_TYPE]: generateYourNewTypePrompt, // Add here
 };
 ```
 
 4. **Write tests** in `__tests__/yourNewType.test.ts`:
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { generateYourNewTypePrompt } from '../yourNewType';
+import { describe, it, expect } from "vitest";
+import { generateYourNewTypePrompt } from "../yourNewType";
 
-describe('generateYourNewTypePrompt', () => {
-  it('should generate prompt in English', () => {
-    const prompt = generateYourNewTypePrompt('test input', 'en');
+describe("generateYourNewTypePrompt", () => {
+  it("should generate prompt in English", () => {
+    const prompt = generateYourNewTypePrompt("test input", "en");
     expect(prompt).toBeTruthy();
-    expect(prompt).toContain('test input');
+    expect(prompt).toContain("test input");
   });
 
-  it('should generate prompt in Spanish', () => {
-    const prompt = generateYourNewTypePrompt('entrada de prueba', 'es');
+  it("should generate prompt in Spanish", () => {
+    const prompt = generateYourNewTypePrompt("entrada de prueba", "es");
     expect(prompt).toBeTruthy();
-    expect(prompt).toContain('entrada de prueba');
+    expect(prompt).toContain("entrada de prueba");
   });
 });
 ```
@@ -159,17 +168,20 @@ To add support for a new language:
 1. **Update the Locale type** in `constants.ts`:
 
 ```typescript
-export type Locale = 'en' | 'es' | 'fr';  // Add 'fr' for French
+export type Locale = "en" | "es" | "fr"; // Add 'fr' for French
 ```
 
 2. **Add translations to each prompt file**:
 
 ```typescript
-export function generateStartupIdeaPrompt(idea: string, locale: Locale): string {
+export function generateStartupIdeaPrompt(
+  idea: string,
+  locale: Locale
+): string {
   const prompts = {
     en: `English prompt...`,
     es: `Prompt en español...`,
-    fr: `Prompt en français...`  // Add French translation
+    fr: `Prompt en français...`, // Add French translation
   };
 
   return prompts[locale];
@@ -179,10 +191,10 @@ export function generateStartupIdeaPrompt(idea: string, locale: Locale): string 
 3. **Update tests** to cover the new language:
 
 ```typescript
-it('should generate prompt in French', () => {
-  const prompt = generateStartupIdeaPrompt('mon idée', 'fr');
+it("should generate prompt in French", () => {
+  const prompt = generateStartupIdeaPrompt("mon idée", "fr");
   expect(prompt).toBeTruthy();
-  expect(prompt).toContain('mon idée');
+  expect(prompt).toContain("mon idée");
 });
 ```
 
@@ -236,6 +248,7 @@ This library follows the **Ports and Adapters** pattern:
 - **Shared Library**: This prompts library is shared across the application
 
 The prompts are **pure functions** with no side effects, making them:
+
 - Easy to test
 - Easy to version
 - Easy to A/B test
@@ -262,6 +275,7 @@ Potential improvements for this library:
 ## Support
 
 For questions or issues related to prompts:
+
 1. Check the test files for usage examples
 2. Review the design document at `.kiro/specs/prompt-refactoring/design.md`
 3. Consult the requirements at `.kiro/specs/prompt-refactoring/requirements.md`

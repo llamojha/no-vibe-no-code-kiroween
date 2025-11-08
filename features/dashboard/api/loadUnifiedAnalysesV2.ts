@@ -1,7 +1,4 @@
-import type {
-  UnifiedAnalysisRecord,
-  AnalysisCounts,
-} from "@/lib/types";
+import type { UnifiedAnalysisRecord, AnalysisCounts } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 
@@ -26,29 +23,37 @@ export async function loadUnifiedAnalysesV2(): Promise<{
       ]);
 
       // Transform to unified format (simplified for now)
-      const transformedStartupAnalyses = startupAnalyses.map(analysis => ({
+      const transformedStartupAnalyses = startupAnalyses.map((analysis) => ({
         id: analysis.id,
         userId: analysis.userId,
         category: "idea" as const,
         title: analysis.idea.split("\n")[0].trim() || analysis.idea.trim(),
         createdAt: analysis.createdAt,
         finalScore: analysis.analysis.finalScore,
-        summary: analysis.analysis.viabilitySummary || analysis.analysis.detailedSummary,
+        summary:
+          analysis.analysis.viabilitySummary ||
+          analysis.analysis.detailedSummary,
         audioBase64: analysis.audioBase64,
         originalData: analysis,
       }));
 
-      const transformedHackathonAnalyses = hackathonAnalyses.map(analysis => ({
-        id: analysis.id,
-        userId: analysis.userId,
-        category: "kiroween" as const,
-        title: analysis.projectDescription.split("\n")[0].trim() || analysis.projectDescription.trim(),
-        createdAt: analysis.createdAt,
-        finalScore: analysis.analysis.finalScore,
-        summary: analysis.analysis.viabilitySummary || analysis.analysis.detailedSummary,
-        audioBase64: analysis.audioBase64,
-        originalData: analysis,
-      }));
+      const transformedHackathonAnalyses = hackathonAnalyses.map(
+        (analysis) => ({
+          id: analysis.id,
+          userId: analysis.userId,
+          category: "kiroween" as const,
+          title:
+            analysis.projectDescription.split("\n")[0].trim() ||
+            analysis.projectDescription.trim(),
+          createdAt: analysis.createdAt,
+          finalScore: analysis.analysis.finalScore,
+          summary:
+            analysis.analysis.viabilitySummary ||
+            analysis.analysis.detailedSummary,
+          audioBase64: analysis.audioBase64,
+          originalData: analysis,
+        })
+      );
 
       // Combine and sort by creation date (newest first)
       const allAnalyses = [
@@ -72,19 +77,23 @@ export async function loadUnifiedAnalysesV2(): Promise<{
       return {
         data: [],
         counts: { total: 0, idea: 0, kiroween: 0 },
-        error: "Failed to load your analyses from local storage. Please try again.",
+        error:
+          "Failed to load your analyses from local storage. Please try again.",
       };
     }
   }
 
-  // Use the new v2 API for production
+  // Use the new v2 API for production with optimized query
   try {
-    const response = await fetch('/api/v2/dashboard/analyses?limit=1000', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      "/api/v2/dashboard/analyses?limit=1000&optimized=true",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status}`);
@@ -96,24 +105,26 @@ export async function loadUnifiedAnalysesV2(): Promise<{
       throw new Error(result.error);
     }
 
-    // Transform API response to unified format
-    const analyses: UnifiedAnalysisRecord[] = result.analyses.map((analysis: any) => ({
-      id: analysis.id,
-      userId: analysis.userId || 'unknown',
-      category: analysis.category || 'idea',
-      title: analysis.idea?.split("\n")[0].trim() || analysis.idea?.trim() || 'Untitled',
-      createdAt: analysis.createdAt,
-      finalScore: analysis.score,
-      summary: analysis.detailedSummary || 'No summary available',
-      audioBase64: undefined, // Not included in v2 API response
-      originalData: analysis,
-    }));
+    // Transform optimized API response to unified format
+    const analyses: UnifiedAnalysisRecord[] = result.analyses.map(
+      (analysis: any) => ({
+        id: analysis.id,
+        userId: "current-user", // Not included in optimized response
+        category: analysis.category || "idea",
+        title: analysis.title || "Untitled",
+        createdAt: analysis.createdAt,
+        finalScore: analysis.score,
+        summary: analysis.summary || "No summary available",
+        audioBase64: undefined, // Not included in optimized response
+        originalData: analysis,
+      })
+    );
 
     // Calculate counts from the analyses
     const counts: AnalysisCounts = {
       total: analyses.length,
-      idea: analyses.filter(a => a.category === 'idea').length,
-      kiroween: analyses.filter(a => a.category === 'kiroween').length,
+      idea: analyses.filter((a) => a.category === "idea").length,
+      kiroween: analyses.filter((a) => a.category === "kiroween").length,
     };
 
     return { data: analyses, counts, error: null };
@@ -128,22 +139,23 @@ export async function loadUnifiedAnalysesV2(): Promise<{
 }
 
 /**
- * Server-side version for initial page load using v2 API
+ * Server-side version for initial page load using v2 API with optimized query
  */
-export async function loadUnifiedAnalysesServerV2(
-  baseUrl: string
-): Promise<{
+export async function loadUnifiedAnalysesServerV2(baseUrl: string): Promise<{
   data: UnifiedAnalysisRecord[];
   counts: AnalysisCounts;
   error: string | null;
 }> {
   try {
-    const response = await fetch(`${baseUrl}/api/v2/dashboard/analyses?limit=1000`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      `${baseUrl}/api/v2/dashboard/analyses?limit=1000&optimized=true`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status}`);
@@ -155,24 +167,26 @@ export async function loadUnifiedAnalysesServerV2(
       throw new Error(result.error);
     }
 
-    // Transform API response to unified format
-    const analyses: UnifiedAnalysisRecord[] = result.analyses.map((analysis: any) => ({
-      id: analysis.id,
-      userId: analysis.userId || 'unknown',
-      category: analysis.category || 'idea',
-      title: analysis.idea?.split("\n")[0].trim() || analysis.idea?.trim() || 'Untitled',
-      createdAt: analysis.createdAt,
-      finalScore: analysis.score,
-      summary: analysis.detailedSummary || 'No summary available',
-      audioBase64: undefined, // Not included in v2 API response
-      originalData: analysis,
-    }));
+    // Transform optimized API response to unified format
+    const analyses: UnifiedAnalysisRecord[] = result.analyses.map(
+      (analysis: any) => ({
+        id: analysis.id,
+        userId: "current-user", // Not included in optimized response
+        category: analysis.category || "idea",
+        title: analysis.title || "Untitled",
+        createdAt: analysis.createdAt,
+        finalScore: analysis.score,
+        summary: analysis.summary || "No summary available",
+        audioBase64: undefined, // Not included in optimized response
+        originalData: analysis,
+      })
+    );
 
     // Calculate counts from the analyses
     const counts: AnalysisCounts = {
       total: analyses.length,
-      idea: analyses.filter(a => a.category === 'idea').length,
-      kiroween: analyses.filter(a => a.category === 'kiroween').length,
+      idea: analyses.filter((a) => a.category === "idea").length,
+      kiroween: analyses.filter((a) => a.category === "kiroween").length,
     };
 
     return { data: analyses, counts, error: null };

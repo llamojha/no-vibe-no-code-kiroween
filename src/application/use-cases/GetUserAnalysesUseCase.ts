@@ -1,7 +1,7 @@
-import { UserId } from '../../domain/value-objects';
-import { IAnalysisRepository } from '../../domain/repositories';
-import { Result, success, failure } from '../../shared/types/common';
-import { Analysis } from '../../domain/entities';
+import { UserId } from "../../domain/value-objects";
+import { IAnalysisRepository } from "../../domain/repositories";
+import { Result, success, failure } from "../../shared/types/common";
+import { Analysis } from "../../domain/entities";
 
 /**
  * Input for getting user analyses
@@ -11,8 +11,8 @@ export interface GetUserAnalysesInput {
   page?: number;
   limit?: number;
   searchTerm?: string;
-  sortBy?: 'newest' | 'oldest' | 'score' | 'title';
-  category?: 'idea' | 'kiroween' | 'all';
+  sortBy?: "newest" | "oldest" | "score" | "title";
+  category?: "idea" | "kiroween" | "all";
 }
 
 /**
@@ -30,31 +30,52 @@ export interface GetUserAnalysesOutput {
 }
 
 /**
+ * Optimized output for dashboard display
+ * Contains only minimal data needed for dashboard cards
+ */
+export interface GetUserAnalysesOptimizedOutput {
+  analyses: Array<{
+    id: string;
+    title: string;
+    createdAt: string;
+    score: number;
+    category: string;
+    summary: string;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  sortBy: string;
+  category: string;
+}
+
+/**
  * Use case for retrieving user's analyses with filtering and pagination
  * Supports search, sorting, and category filtering
  */
 export class GetUserAnalysesUseCase {
-  constructor(
-    private readonly analysisRepository: IAnalysisRepository
-  ) {}
+  constructor(private readonly analysisRepository: IAnalysisRepository) {}
 
   /**
    * Execute the get user analyses process
    */
-  async execute(input: GetUserAnalysesInput): Promise<Result<GetUserAnalysesOutput, Error>> {
+  async execute(
+    input: GetUserAnalysesInput
+  ): Promise<Result<GetUserAnalysesOutput, Error>> {
     try {
       const page = input.page || 1;
       const limit = input.limit || 10;
-      const sortBy = input.sortBy || 'newest';
-      const category = input.category || 'all';
+      const sortBy = input.sortBy || "newest";
+      const category = input.category || "all";
 
       // Validate pagination parameters
       if (page < 1) {
-        return failure(new Error('Page number must be greater than 0'));
+        return failure(new Error("Page number must be greater than 0"));
       }
 
       if (limit < 1 || limit > 100) {
-        return failure(new Error('Limit must be between 1 and 100'));
+        return failure(new Error("Limit must be between 1 and 100"));
       }
 
       // Get analyses from repository
@@ -80,7 +101,7 @@ export class GetUserAnalysesUseCase {
       }
 
       const { analyses, total } = analysesResult.data;
-      const hasMore = (page * limit) < total;
+      const hasMore = page * limit < total;
 
       const output: GetUserAnalysesOutput = {
         analyses,
@@ -90,35 +111,105 @@ export class GetUserAnalysesUseCase {
         hasMore,
         searchTerm: input.searchTerm,
         sortBy,
-        category
+        category,
       };
 
       return success(output);
-
     } catch (error) {
-      return failure(error instanceof Error ? error : new Error('Unknown error getting user analyses'));
+      return failure(
+        error instanceof Error
+          ? error
+          : new Error("Unknown error getting user analyses")
+      );
+    }
+  }
+
+  /**
+   * Execute optimized query for dashboard display
+   * Returns only minimal data needed for dashboard cards (80-90% less data transfer)
+   */
+  async executeOptimized(
+    input: Omit<GetUserAnalysesInput, "searchTerm">
+  ): Promise<Result<GetUserAnalysesOptimizedOutput, Error>> {
+    try {
+      const page = input.page || 1;
+      const limit = input.limit || 10;
+      const sortBy = input.sortBy || "newest";
+      const category = input.category || "all";
+
+      // Validate pagination parameters
+      if (page < 1) {
+        return failure(new Error("Page number must be greater than 0"));
+      }
+
+      if (limit < 1 || limit > 100) {
+        return failure(new Error("Limit must be between 1 and 100"));
+      }
+
+      // Get optimized analyses from repository
+      const analysesResult =
+        await this.analysisRepository.findByUserIdForDashboard(input.userId, {
+          page,
+          limit,
+          sortBy,
+          category,
+        });
+
+      if (!analysesResult.success) {
+        return failure(analysesResult.error);
+      }
+
+      const { analyses, total } = analysesResult.data;
+      const hasMore = page * limit < total;
+
+      const output: GetUserAnalysesOptimizedOutput = {
+        analyses,
+        total,
+        page,
+        limit,
+        hasMore,
+        sortBy,
+        category,
+      };
+
+      return success(output);
+    } catch (error) {
+      return failure(
+        error instanceof Error
+          ? error
+          : new Error("Unknown error getting optimized user analyses")
+      );
     }
   }
 
   /**
    * Get analysis counts by category for a user
    */
-  async getAnalysisCounts(userId: UserId): Promise<Result<{
-    total: number;
-    idea: number;
-    kiroween: number;
-  }, Error>> {
+  async getAnalysisCounts(userId: UserId): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        kiroween: number;
+      },
+      Error
+    >
+  > {
     try {
-      const countsResult = await this.analysisRepository.getAnalysisCountsByUser(userId);
-      
+      const countsResult =
+        await this.analysisRepository.getAnalysisCountsByUser(userId);
+
       if (!countsResult.success) {
         return failure(countsResult.error);
       }
 
       return success(countsResult.data);
-
     } catch (error) {
-      return failure(error instanceof Error ? error : new Error('Unknown error getting analysis counts'));
+      return failure(
+        error instanceof Error
+          ? error
+          : new Error("Unknown error getting analysis counts")
+      );
     }
   }
 }

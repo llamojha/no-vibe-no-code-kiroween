@@ -27,9 +27,13 @@ const SpookyLoader: React.FC<SpookyLoaderProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-8">
+    <div
+      className="flex flex-col items-center justify-center p-8"
+      role="status"
+      aria-live="polite"
+    >
       {/* Animated Ghost */}
-      <div className="relative mb-6">
+      <div className="relative mb-6" aria-hidden="true">
         <div className={`${sizeClasses[size]} animate-ghost-hover`}>
           <svg
             className="w-full h-full text-orange-400"
@@ -63,7 +67,7 @@ const SpookyLoader: React.FC<SpookyLoaderProps> = ({
       </div>
 
       {/* Spooky progress dots */}
-      <div className="flex space-x-2 mt-4">
+      <div className="flex space-x-2 mt-4" aria-hidden="true">
         <div
           className="w-2 h-2 bg-orange-400 rounded-full animate-bounce"
           style={{ animationDelay: "0s" }}
@@ -77,6 +81,7 @@ const SpookyLoader: React.FC<SpookyLoaderProps> = ({
           style={{ animationDelay: "0.4s" }}
         />
       </div>
+      <span className="sr-only">{defaultMessage}</span>
     </div>
   );
 };

@@ -13,5 +13,24 @@
       }
     ],
     "@typescript-eslint/no-explicit-any": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**/*.{ts,tsx}", "vitest.config.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
+    },
+    {
+      "files": [
+        "src/infrastructure/database/supabase/**/*.ts",
+        "src/infrastructure/integration/**/*.ts",
+        "src/infrastructure/factories/**/*.ts"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }

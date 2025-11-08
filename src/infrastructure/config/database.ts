@@ -92,7 +92,8 @@ export function resetSupabaseClient(): void {
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
     const client = getSupabaseClient();
-    const { error } = await client.from('analyses').select('count').limit(1);
+    // Use an existing table for a lightweight check
+    const { error } = await client.from('saved_analyses').select('id').limit(1);
     
     if (error) {
       console.error('Database connection check failed:', error);

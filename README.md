@@ -83,12 +83,11 @@ The application includes several enhanced feature flags for controlling UI eleme
   - Environment variable: `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER`
   - Default: `true`
 
-#### Development Mode Flag (Server-Only)
+#### Local Development Mode
 
-- **`LOCAL_DEV_MODE`**: Enables local development mode with mock authentication and local storage
-  - Environment variable: `FF_LOCAL_DEV_MODE`
-  - Default: `false`
-  - **Security Note**: This flag is server-only and should never be enabled in production
+- **`LOCAL_DEV_MODE`**: Exposes whether local development mode is active to code via the flag system.
+  - It now derives from `NODE_ENV === 'development'` and does not require a separate env var.
+  - Keep `NODE_ENV=development` locally; set to `production` in deployments.
 
 ### Usage
 
@@ -122,13 +121,13 @@ const maxItems = getValue<number>("MAX_ITEMS");
 
 3. Set env vars locally in `.env.local`:
 
-- `FF_LOCAL_DEV_MODE=false` (server-only)
+- `NODE_ENV=development`
 - `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER=true` (exposed to client)
 - `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER=true` (exposed to client)
 
 ### Local Development Mode
 
-When `LOCAL_DEV_MODE` is enabled:
+When `NODE_ENV=development` (i.e., `LOCAL_DEV_MODE` resolves to enabled):
 
 - Authentication is bypassed with a mock user
 - Analysis data is stored in browser local storage instead of Supabase

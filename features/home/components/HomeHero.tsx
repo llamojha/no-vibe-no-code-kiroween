@@ -125,13 +125,39 @@ const HomeHero: React.FC = () => {
             </div>
           )}
 
-          {/* Login button */}
+          {/* Enhanced Login button */}
           <button
             onClick={() => router.push("/login")}
             aria-label={t("loginButtonAriaLabel")}
-            className="px-6 py-2 text-sm font-bold uppercase tracking-wider text-slate-300 bg-slate-900/80 border border-accent/50 rounded-none hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-accent"
+            className="group relative px-8 py-4 text-lg font-bold uppercase tracking-wider overflow-hidden
+                       bg-gradient-to-r from-accent via-secondary to-accent bg-size-200 bg-pos-0
+                       hover:bg-pos-100 transition-all duration-500 ease-out
+                       border-2 border-accent/50 hover:border-accent
+                       shadow-lg hover:shadow-accent/50 hover:shadow-2xl
+                       transform hover:scale-105 active:scale-95
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-accent"
           >
-            {t("loginButton")}
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <svg
+                className="w-5 h-5 transform group-hover:rotate-12 transition-transform"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {t("loginButton")}
+            </span>
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                         transform -skew-x-12 -translate-x-full group-hover:translate-x-full
+                         transition-transform duration-1000"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </main>

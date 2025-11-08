@@ -68,7 +68,10 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ff6b35%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M30%2030c0-11.046-8.954-20-20-20s-20%208.954-20%2020%208.954%2020%2020%2020%2020-8.954%2020-20zm0%200c0%2011.046%208.954%2020%2020%2020s20-8.954%2020-20-8.954-20-20-20-20%208.954-20%2020z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30" />
 
       {/* Floating ghost animation */}
-      <div className="absolute top-4 right-4 text-orange-400/20 animate-bounce">
+      <div
+        className="absolute top-4 right-4 text-orange-400/20 animate-bounce"
+        aria-hidden="true"
+      >
         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2C8.686 2 6 4.686 6 8v8c0 1.105.895 2 2 2h1l1-2h4l1 2h1c1.105 0 2-.895 2-2V8c0-3.314-2.686-6-6-6zM9 9c0-.552.448-1 1-1s1 .448 1 1-.448 1-1 1-1-.448-1-1zm4 0c0-.552.448-1 1-1s1 .448 1 1-.448 1-1 1-1-.448-1-1z" />
         </svg>
@@ -104,10 +107,20 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
             value={submission.description}
             onChange={(e) => updateSubmission({ description: e.target.value })}
             disabled={isLoading}
+            aria-describedby={
+              errors.description ? "description-error" : undefined
+            }
+            aria-invalid={!!errors.description}
           />
           {errors.description && (
-            <p className="mt-2 text-red-400 text-sm flex items-center">
-              <span className="mr-1">⚠️</span>
+            <p
+              id="description-error"
+              className="mt-2 text-red-400 text-sm flex items-center"
+              role="alert"
+            >
+              <span className="mr-1" aria-hidden="true">
+                ⚠️
+              </span>
               {errors.description}
             </p>
           )}

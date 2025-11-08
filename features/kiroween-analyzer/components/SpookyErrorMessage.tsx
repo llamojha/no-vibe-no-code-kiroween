@@ -14,8 +14,12 @@ const SpookyErrorMessage: React.FC<SpookyErrorMessageProps> = ({
 }) => {
   const { t } = useLocale();
   return (
-    <div className="bg-gradient-to-br from-red-950/50 to-orange-950/50 border-2 border-red-500/50 rounded-lg p-6 text-center">
-      <div className="text-red-400 mb-4">
+    <div
+      className="bg-gradient-to-br from-red-950/50 to-orange-950/50 border-2 border-red-500/50 rounded-lg p-6 text-center"
+      role="alert"
+      aria-atomic="true"
+    >
+      <div className="text-red-400 mb-4" aria-hidden="true">
         <svg
           className="w-12 h-12 mx-auto animate-pulse"
           fill="currentColor"
@@ -25,7 +29,8 @@ const SpookyErrorMessage: React.FC<SpookyErrorMessageProps> = ({
         </svg>
       </div>
       <h3 className="text-xl font-bold text-red-300 mb-2">
-        👻 {t("somethingSpookyHappened")}
+        <span aria-hidden="true">👻 </span>
+        {t("somethingSpookyHappened")}
       </h3>
       <p className="text-red-200 mb-4">{message}</p>
       {onRetry && (

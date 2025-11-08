@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getControllers, createAPIRouteHandler } from '@/src/infrastructure/bootstrap/nextjs';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // Create handlers using the new hexagonal architecture
 const handlers = createAPIRouteHandler({

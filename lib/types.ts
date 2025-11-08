@@ -86,8 +86,6 @@ export type KiroweenCategory =
 
 export interface ProjectSubmission {
   description: string;
-  selectedCategory: KiroweenCategory;
-  kiroUsage: string;
   supportingMaterials?: {
     screenshots?: string[];
     demoLink?: string;
@@ -147,8 +145,6 @@ export interface SavedHackathonAnalysis {
   id: string;
   userId: string;
   projectDescription: string;
-  selectedCategory: KiroweenCategory;
-  kiroUsage: string;
   analysis: HackathonAnalysis;
   createdAt: string;
   audioBase64?: string | null;

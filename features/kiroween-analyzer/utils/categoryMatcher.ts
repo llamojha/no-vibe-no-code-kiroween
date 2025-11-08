@@ -110,8 +110,7 @@ export function evaluateProjectForCategory(
   category: KiroweenCategory
 ): CategoryEvaluation {
   const categoryDef = CATEGORY_DEFINITIONS[category];
-  const projectText =
-    `${submission.description} ${submission.kiroUsage}`.toLowerCase();
+  const projectText = submission.description.toLowerCase();
 
   // Calculate keyword match score (0-3 points)
   const keywordMatches = categoryDef.keywords.filter((keyword) =>
@@ -171,19 +170,17 @@ function calculateThematicAlignment(
   category: KiroweenCategory
 ): number {
   const projectText = submission.description.toLowerCase();
-  const kiroUsage = submission.kiroUsage.toLowerCase();
 
   switch (category) {
     case "resurrection":
-      return calculateResurrectionAlignment(projectText, kiroUsage);
+      return calculateResurrectionAlignment(projectText);
     case "frankenstein":
-      return calculateFrankensteinAlignment(projectText, kiroUsage);
+      return calculateFrankensteinAlignment(projectText);
     case "skeleton-crew":
-      return calculateSkeletonCrewAlignment(projectText, kiroUsage);
+      return calculateSkeletonCrewAlignment(projectText);
     case "costume-contest":
       return calculateCostumeContestAlignment(
         projectText,
-        kiroUsage,
         submission.supportingMaterials
       );
     default:
@@ -191,10 +188,7 @@ function calculateThematicAlignment(
   }
 }
 
-function calculateResurrectionAlignment(
-  projectText: string,
-  kiroUsage: string
-): number {
+function calculateResurrectionAlignment(projectText: string): number {
   let score = 0;
 
   // Check for obsolete technology mentions (0-1.5 points)
@@ -220,11 +214,7 @@ function calculateResurrectionAlignment(
     "reboot",
     "contemporary",
   ];
-  if (
-    modernizationTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (modernizationTerms.some((term) => projectText.includes(term))) {
     score += 1.5;
   }
 
@@ -244,10 +234,7 @@ function calculateResurrectionAlignment(
   return Math.min(score, 4);
 }
 
-function calculateFrankensteinAlignment(
-  projectText: string,
-  kiroUsage: string
-): number {
+function calculateFrankensteinAlignment(projectText: string): number {
   let score = 0;
 
   // Check for integration/combination language (0-2 points)
@@ -260,8 +247,8 @@ function calculateFrankensteinAlignment(
     "mix",
     "blend",
   ];
-  const integrationCount = integrationTerms.filter(
-    (term) => projectText.includes(term) || kiroUsage.includes(term)
+  const integrationCount = integrationTerms.filter((term) =>
+    projectText.includes(term)
   ).length;
   score += Math.min(integrationCount * 0.5, 2);
 
@@ -273,11 +260,7 @@ function calculateFrankensteinAlignment(
     "diverse",
     "incompatible",
   ];
-  if (
-    techDiversityTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (techDiversityTerms.some((term) => projectText.includes(term))) {
     score += 1.5;
   }
 
@@ -290,10 +273,7 @@ function calculateFrankensteinAlignment(
   return Math.min(score, 4);
 }
 
-function calculateSkeletonCrewAlignment(
-  projectText: string,
-  kiroUsage: string
-): number {
+function calculateSkeletonCrewAlignment(projectText: string): number {
   let score = 0;
 
   // Check for framework/foundation language (0-2 points)
@@ -305,11 +285,7 @@ function calculateSkeletonCrewAlignment(
     "core",
     "skeleton",
   ];
-  if (
-    foundationTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (foundationTerms.some((term) => projectText.includes(term))) {
     score += 2;
   }
 
@@ -322,11 +298,7 @@ function calculateSkeletonCrewAlignment(
     "customizable",
     "configurable",
   ];
-  if (
-    flexibilityTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (flexibilityTerms.some((term) => projectText.includes(term))) {
     score += 1.5;
   }
 
@@ -347,7 +319,6 @@ function calculateSkeletonCrewAlignment(
 
 function calculateCostumeContestAlignment(
   projectText: string,
-  kiroUsage: string,
   supportingMaterials?: ProjectSubmission["supportingMaterials"]
 ): number {
   let score = 0;
@@ -363,8 +334,8 @@ function calculateCostumeContestAlignment(
     "beautiful",
     "polished",
   ];
-  const designCount = designTerms.filter(
-    (term) => projectText.includes(term) || kiroUsage.includes(term)
+  const designCount = designTerms.filter((term) =>
+    projectText.includes(term)
   ).length;
   score += Math.min(designCount * 0.4, 2);
 
@@ -379,11 +350,7 @@ function calculateCostumeContestAlignment(
     "dark",
     "theme",
   ];
-  if (
-    spookyTerms.some(
-      (term) => projectText.includes(term) || kiroUsage.includes(term)
-    )
-  ) {
+  if (spookyTerms.some((term) => projectText.includes(term))) {
     score += 1.5;
   }
 
@@ -399,17 +366,17 @@ function calculateCostumeContestAlignment(
 }
 
 /**
- * Calculates implementation quality score based on Kiro usage description
+ * Calculates implementation quality score based on project description
  */
 function calculateImplementationQuality(
   submission: ProjectSubmission,
   category: KiroweenCategory
 ): number {
-  const kiroUsage = submission.kiroUsage.toLowerCase();
+  const projectText = submission.description.toLowerCase();
   let score = 0;
 
-  // Check for variety of Kiro features mentioned (0-1.5 points)
-  const kiroFeatures = [
+  // Check for variety of technical features mentioned (0-1.5 points)
+  const technicalFeatures = [
     "agent",
     "tool",
     "function",
@@ -417,9 +384,11 @@ function calculateImplementationQuality(
     "integration",
     "automation",
     "workflow",
+    "feature",
+    "implement",
   ];
-  const featureCount = kiroFeatures.filter((feature) =>
-    kiroUsage.includes(feature)
+  const featureCount = technicalFeatures.filter((feature) =>
+    projectText.includes(feature)
   ).length;
   score += Math.min(featureCount * 0.3, 1.5);
 
@@ -431,13 +400,13 @@ function calculateImplementationQuality(
     "comprehensive",
     "strategic",
   ];
-  if (depthIndicators.some((indicator) => kiroUsage.includes(indicator))) {
+  if (depthIndicators.some((indicator) => projectText.includes(indicator))) {
     score += 1;
   }
 
   // Check for strategic thinking (0-0.5 points)
   const strategyTerms = ["strategy", "approach", "methodology", "systematic"];
-  if (strategyTerms.some((term) => kiroUsage.includes(term))) {
+  if (strategyTerms.some((term) => projectText.includes(term))) {
     score += 0.5;
   }
 
@@ -563,10 +532,10 @@ function generateImprovementSuggestions(
   // Implementation quality suggestions
   if (implementationScore < 1.5) {
     suggestions.push(
-      "Provide more detail about how you're using Kiro's features and capabilities"
+      "Provide more technical detail about the features and capabilities you're implementing"
     );
     suggestions.push(
-      "Explain the strategic reasoning behind your Kiro integration choices"
+      "Explain the strategic reasoning behind your technical implementation choices"
     );
   }
 

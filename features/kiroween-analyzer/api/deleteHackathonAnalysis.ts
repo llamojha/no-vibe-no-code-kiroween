@@ -34,11 +34,13 @@ export async function deleteHackathonAnalysis(
   // Standard Supabase flow for production
   const supabase = browserSupabase();
 
+  // Use getUser() for secure authentication validation
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (userError || !user) {
     return { error: "Authentication required" };
   }
 
@@ -47,7 +49,7 @@ export async function deleteHackathonAnalysis(
       .from("saved_hackathon_analyses")
       .delete()
       .eq("id", analysisId)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) {
       console.error("Failed to delete hackathon analysis", error);

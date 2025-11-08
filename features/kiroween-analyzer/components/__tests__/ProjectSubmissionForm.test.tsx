@@ -6,8 +6,6 @@ import { ProjectSubmission } from "@/lib/types";
 
 const mockSubmission: ProjectSubmission = {
   description: "",
-  selectedCategory: "resurrection",
-  kiroUsage: "",
   supportingMaterials: {},
 };
 
@@ -27,8 +25,7 @@ describe("ProjectSubmissionForm", () => {
     render(<ProjectSubmissionForm {...mockProps} />);
 
     expect(screen.getByLabelText(/project description/i)).toBeInTheDocument();
-    expect(screen.getByText(/competition category/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/how you used kiro/i)).toBeInTheDocument();
+    // Category and Kiro usage fields have been removed
     expect(
       screen.getByRole("button", { name: /analyze my project/i })
     ).toBeInTheDocument();
@@ -45,9 +42,7 @@ describe("ProjectSubmissionForm", () => {
     expect(
       screen.getByText(/project description is required/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/please explain how you used kiro/i)
-    ).toBeInTheDocument();
+    // No Kiro usage validation anymore
   });
 
   it("calls onSubmissionChange when form fields are updated", () => {
@@ -64,25 +59,12 @@ describe("ProjectSubmissionForm", () => {
     });
   });
 
-  it("updates Kiro usage field correctly", () => {
-    render(<ProjectSubmissionForm {...mockProps} />);
-
-    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
-    fireEvent.change(kiroUsageField, {
-      target: { value: "Used Kiro agents for automation" },
-    });
-
-    expect(mockProps.onSubmissionChange).toHaveBeenCalledWith({
-      ...mockSubmission,
-      kiroUsage: "Used Kiro agents for automation",
-    });
-  });
+  // Kiro usage field removed
 
   it("calls onAnalyze when form is valid and submitted", async () => {
     const validSubmission = {
       ...mockSubmission,
-      description: "Valid project description",
-      kiroUsage: "Valid Kiro usage explanation",
+      description: "Valid project description that is sufficiently long to pass validation with more than 50 characters.",
     };
 
     render(
@@ -118,7 +100,6 @@ describe("ProjectSubmissionForm", () => {
     const shortSubmission = {
       ...mockSubmission,
       description: "Too short",
-      kiroUsage: "Valid Kiro usage",
     };
 
     render(
@@ -135,25 +116,5 @@ describe("ProjectSubmissionForm", () => {
     ).toBeInTheDocument();
   });
 
-  it("validates minimum Kiro usage length", () => {
-    const shortKiroSubmission = {
-      ...mockSubmission,
-      description:
-        "Valid project description that is long enough to pass validation",
-      kiroUsage: "Short",
-    };
-
-    render(
-      <ProjectSubmissionForm {...mockProps} submission={shortKiroSubmission} />
-    );
-
-    const submitButton = screen.getByRole("button", {
-      name: /analyze my project/i,
-    });
-    fireEvent.click(submitButton);
-
-    expect(
-      screen.getByText(/please provide more detail about how you used kiro/i)
-    ).toBeInTheDocument();
-  });
+  // Minimum Kiro usage validation removed
 });

@@ -1,41 +1,25 @@
-import { Locale } from './constants';
+import { Locale } from "./constants";
 
 /**
  * Generates the prompt for hackathon project analysis
  * @param projectDescription - The hackathon project description
- * @param kiroUsage - Description of how Kiro was used in the project
  * @param category - The hackathon category (resurrection, frankenstein, skeleton-crew, costume-contest)
  * @param locale - The language for the analysis (en/es)
  * @returns The formatted prompt for Google Gemini AI
  */
 export function generateHackathonProjectPrompt(
   projectDescription: string,
-  kiroUsage: string,
   category: string,
   locale: Locale
 ): string {
-  const isSpanish = locale === 'es';
-  
+  const isSpanish = locale === "es";
+
   const languageInstruction = isSpanish
     ? "MUY IMPORTANTE: Tu respuesta completa, incluyendo todo el texto en los valores JSON, debe estar en español."
     : "VERY IMPORTANT: Your entire response, including all text in the JSON values, must be in English.";
 
-  const categoryDescriptions: Record<string, string> = {
-    resurrection: isSpanish 
-      ? "Revivir tecnología obsoleta con innovaciones modernas"
-      : "Reviving obsolete technology with modern innovations",
-    frankenstein: isSpanish
-      ? "Integración de tecnologías aparentemente incompatibles"
-      : "Integration of seemingly incompatible technologies",
-    "skeleton-crew": isSpanish
-      ? "Base flexible con múltiples casos de uso"
-      : "Flexible foundation with multiple use cases",
-    "costume-contest": isSpanish
-      ? "Pulido de UI y elementos de diseño espeluznantes"
-      : "UI polish and spooky design elements",
-  };
-
-  const prompt = isSpanish ? `Eres un juez de hackathon de clase mundial y evaluador técnico especializado en la competencia Kiroween. Tu tarea es proporcionar un análisis completo de un proyecto de hackathon contra las categorías específicas de Kiroween y los criterios de evaluación.
+  const prompt = isSpanish
+    ? `Eres un juez de hackathon de clase mundial y evaluador técnico especializado en la competencia Kiroween. Tu tarea es proporcionar un análisis completo de un proyecto de hackathon contra las categorías específicas de Kiroween y los criterios de evaluación.
 
 ${languageInstruction}
 
@@ -49,8 +33,7 @@ INSTRUCCIONES CRÍTICAS DE FORMATO:
 
 PROYECTO ENVIADO:
 Descripción: "${projectDescription.replace(/"/g, '\\"')}"
-Categoría Seleccionada: "${category}" (${categoryDescriptions[category] || category})
-Uso de Kiro: "${kiroUsage.replace(/"/g, '\\"')}"
+Categoría Seleccionada: "${category}"
 
 CATEGORÍAS KIROWEEN:
 1. Resurrection: Revivir tecnología obsoleta con innovaciones modernas
@@ -183,7 +166,8 @@ REQUISITO IMPORTANTE: El arreglo "evaluations" DEBE contener exactamente CUATRO 
   },
   "finalScore": 4.0,
   "finalScoreExplanation": "El puntaje final refleja el rendimiento en todos los criterios"
-}` : `You are a world-class hackathon judge and technical evaluator specializing in the Kiroween competition. Your task is to provide a comprehensive analysis of a hackathon project submission against the specific Kiroween categories and judging criteria.
+}`
+    : `You are a world-class hackathon judge and technical evaluator specializing in the Kiroween competition. Your task is to provide a comprehensive analysis of a hackathon project submission against the specific Kiroween categories and judging criteria.
 
 ${languageInstruction}
 
@@ -197,8 +181,7 @@ CRITICAL FORMATTING INSTRUCTIONS:
 
 PROJECT SUBMISSION:
 Description: "${projectDescription.replace(/"/g, '\\"')}"
-Selected Category: "${category}" (${categoryDescriptions[category] || category})
-Kiro Usage: "${kiroUsage.replace(/"/g, '\\"')}"
+Selected Category: "${category}"
 
 KIROWEEN CATEGORIES:
 1. Resurrection: Reviving obsolete technology with modern innovations

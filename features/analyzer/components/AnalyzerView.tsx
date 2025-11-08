@@ -304,6 +304,14 @@ const AnalyzerView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      {/* Skip to main content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded"
+      >
+        {t("skipToMainContent") || "Skip to main content"}
+      </a>
+
       <div className="w-full max-w-4xl mx-auto">
         <header className="text-center mb-8 animate-fade-in relative">
           <button
@@ -338,7 +346,7 @@ const AnalyzerView: React.FC = () => {
           </div>
         </header>
 
-        <main className="w-full">
+        <main id="main-content" className="w-full">
           {showInputForm && (
             <div ref={ideaInputRef}>
               <IdeaInputForm
@@ -349,8 +357,16 @@ const AnalyzerView: React.FC = () => {
               />
             </div>
           )}
-          {error && <ErrorMessage message={error} />}
-          {busy && <Loader message={busyMessage} />}
+          {error && (
+            <div role="alert" aria-live="assertive">
+              <ErrorMessage message={error} />
+            </div>
+          )}
+          {busy && (
+            <div role="status" aria-live="polite" aria-atomic="true">
+              <Loader message={busyMessage} />
+            </div>
+          )}
           {analysisToDisplay && !busy && (
             <div className={showInputForm ? "mt-8" : ""}>
               <AnalysisDisplay

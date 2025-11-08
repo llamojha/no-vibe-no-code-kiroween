@@ -69,7 +69,8 @@ export function getAppConfig(): AppConfig {
       enableHackathonAnalyzer: process.env.NEXT_PUBLIC_FF_HACKATHON_ANALYZER === 'true',
       enableAudioFeatures: process.env.NEXT_PUBLIC_FF_AUDIO_FEATURES === 'true',
       enableClassicAnalyzer: process.env.NEXT_PUBLIC_FF_CLASSIC_ANALYZER !== 'false', // Default true
-      localDevMode: process.env.FF_LOCAL_DEV_MODE === 'true',
+      // Local dev mode now follows NODE_ENV
+      localDevMode: ((process.env.NODE_ENV as string) || 'development') === 'development',
     },
     environment: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
     logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',

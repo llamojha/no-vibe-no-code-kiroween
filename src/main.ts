@@ -6,7 +6,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceFactory } from './infrastructure/factories/ServiceFactory';
 import { 
-  createSupabaseClient,
   checkDatabaseConnection,
   checkAIServiceConnection,
   isDevelopment,
@@ -68,8 +67,7 @@ export class Application {
 
       // Step 2: Verify database connection (but don't cache client)
       console.log('🗄️ Verifying database connection...');
-      const testClient = createSupabaseClient();
-      // Just verify connection works, don't cache the client
+      // Verify connection works, don't cache the client
       await checkDatabaseConnection();
 
       // Step 3: Perform environment-specific initialization
