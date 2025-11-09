@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
       mockMode: mockModeStatus.mockMode
     });
     
-    return NextResponse.json(enhancedResponse, { status: response.status });
+    // Preserve headers from original response (e.g., auth token refresh, CORS, cache)
+    const headers = new Headers(response.headers);
+    return NextResponse.json(enhancedResponse, { status: response.status, headers });
   } catch (error) {
     const duration = Date.now() - startTime;
     
