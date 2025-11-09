@@ -352,8 +352,17 @@ const KiroweenAnalyzerView: React.FC = () => {
           <div className="absolute right-0 top-[90%] -translate-y-1/2">
             <LanguageToggle />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-400">
-            🎃 {t("kiroweenAnalyzerTitle")}
+          <h1 className="flex items-center justify-center gap-3 text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent">
+            <span
+              role="img"
+              aria-label="Jack-o-lantern"
+              className="text-orange-400 drop-shadow-lg"
+            >
+              🎃
+            </span>
+            <span className="bg-clip-text bg-gradient-to-r from-orange-400 to-purple-400">
+              {t("kiroweenAnalyzerTitle")}
+            </span>
           </h1>
           <p className="mt-2 text-lg text-slate-400">
             {t("kiroweenAnalyzerSubtitle")}

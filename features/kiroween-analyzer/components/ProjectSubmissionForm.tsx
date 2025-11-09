@@ -78,15 +78,6 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="relative z-10">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-orange-400 mb-2 tracking-wider uppercase">
-            🎃 {t("kiroweenAnalyzerTitle")}
-          </h2>
-          <p className="text-slate-300 text-sm">
-            {t("kiroweenAnalyzerSubtitle")}
-          </p>
-        </div>
-
         {/* Project Description */}
         <div className="mb-6">
           <label

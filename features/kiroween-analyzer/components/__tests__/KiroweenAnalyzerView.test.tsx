@@ -118,7 +118,9 @@ describe("KiroweenAnalyzerView", () => {
   it("renders the main components correctly", () => {
     render(<KiroweenAnalyzerView />);
 
-    expect(screen.getByText("🎃 Kiroween Analyzer")).toBeInTheDocument();
+    expect(
+      screen.getByText("Kiroween Hackathon Analyzer")
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Evaluate your spooky hackathon project")
     ).toBeInTheDocument();
