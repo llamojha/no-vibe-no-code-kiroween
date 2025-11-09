@@ -72,13 +72,7 @@ export interface IdeaAnalysisData {
 /**
  * Supporting materials structure for hackathon analyses
  */
-export interface SupportingMaterials {
-  githubRepo?: string;
-  demoUrl?: string;
-  videoUrl?: string;
-  screenshots?: string[];
-  additionalNotes?: string;
-}
+// Note: SupportingMaterials removed from unified analysis JSON shape
 
 /**
  * Hackathon-specific analysis data structure (stored in analysis JSONB field)
@@ -90,8 +84,6 @@ export interface HackathonAnalysisData extends IdeaAnalysisData {
     | "frankenstein"
     | "skeleton-crew"
     | "costume-contest";
-  kiroUsage: string;
-  supportingMaterials?: SupportingMaterials;
 }
 
 /**
@@ -148,8 +140,7 @@ export function isIdeaAnalysisData(data: any): data is IdeaAnalysisData {
   return (
     data &&
     typeof data === "object" &&
-    !("selectedCategory" in data) &&
-    !("kiroUsage" in data)
+    !("selectedCategory" in data)
   );
 }
 
@@ -164,7 +155,6 @@ export function isHackathonAnalysisData(
   return (
     data &&
     typeof data === "object" &&
-    "selectedCategory" in data &&
-    "kiroUsage" in data
+    "selectedCategory" in data
   );
 }

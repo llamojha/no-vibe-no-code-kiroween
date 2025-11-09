@@ -678,8 +678,7 @@ The `analysis` JSONB field contains type-specific data:
   "criteria": [...],
   "locale": "en",
   "selectedCategory": "frankenstein",
-  "kiroUsage": "Used Kiro for code generation",
-  "supportingMaterials": {...}
+  
 }
 ```
 

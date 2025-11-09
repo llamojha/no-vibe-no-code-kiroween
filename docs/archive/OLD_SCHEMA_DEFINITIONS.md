@@ -380,8 +380,8 @@ export interface IHackathonAnalysisRepository {
 | `saved_hackathon_analyses` | `user_id`              | `saved_analyses` | `user_id`                      | Unchanged                    |
 | `saved_hackathon_analyses` | `project_description`  | `saved_analyses` | `idea`                         | Renamed                      |
 | `saved_hackathon_analyses` | `selected_category`    | `saved_analyses` | `analysis.selectedCategory`    | Moved to JSONB               |
-| `saved_hackathon_analyses` | `kiro_usage`           | `saved_analyses` | `analysis.kiroUsage`           | Moved to JSONB               |
-| `saved_hackathon_analyses` | `supporting_materials` | `saved_analyses` | `analysis.supportingMaterials` | Moved to JSONB               |
+| `saved_hackathon_analyses` | `kiro_usage`           | removed          | -                              | Removed in unified model     |
+| `saved_hackathon_analyses` | `supporting_materials` | removed          | -                              | Removed in unified model     |
 | `saved_hackathon_analyses` | `analysis`             | `saved_analyses` | `analysis`                     | Merged with hackathon fields |
 | `saved_hackathon_analyses` | `audio_base64`         | `saved_analyses` | `audio_base64`                 | Unchanged                    |
 | `saved_hackathon_analyses` | `created_at`           | `saved_analyses` | `created_at`                   | Unchanged                    |
@@ -410,8 +410,7 @@ SELECT
   user_id,
   project_description,
   selected_category,
-  kiro_usage,
-  supporting_materials,
+  
   analysis,
   audio_base64,
   created_at
@@ -429,8 +428,7 @@ SELECT
     'criteria', analysis->'criteria',
     'locale', analysis->>'locale',
     'selectedCategory', selected_category,
-    'kiroUsage', kiro_usage,
-    'supportingMaterials', supporting_materials
+    
   ) as analysis,
   audio_base64,
   created_at
@@ -548,8 +546,7 @@ INSERT INTO saved_hackathon_analyses (
   user_id,
   project_description,
   selected_category,
-  kiro_usage,
-  supporting_materials,
+  
   analysis,
   audio_base64,
   created_at
@@ -559,8 +556,7 @@ SELECT
   user_id,
   idea as project_description,
   analysis->>'selectedCategory' as selected_category,
-  analysis->>'kiroUsage' as kiro_usage,
-  analysis->'supportingMaterials' as supporting_materials,
+  
   jsonb_build_object(
     'score', analysis->'score',
     'detailedSummary', analysis->'detailedSummary',

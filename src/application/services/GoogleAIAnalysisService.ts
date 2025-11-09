@@ -47,11 +47,10 @@ export class GoogleAIAnalysisService implements IAIAnalysisService {
   async analyzeHackathonProject(
     projectName: string,
     description: string,
-    kiroUsage: string,
     locale: Locale
   ): Promise<Result<AIAnalysisResult, Error>> {
     try {
-      const prompt = this.buildHackathonAnalysisPrompt(projectName, description, kiroUsage, locale);
+      const prompt = this.buildHackathonAnalysisPrompt(projectName, description, locale);
       const response = await this.callGoogleAI(prompt);
 
       if (!response.success) {
@@ -129,8 +128,7 @@ export class GoogleAIAnalysisService implements IAIAnalysisService {
    */
   async recommendHackathonCategory(
     projectName: string,
-    description: string,
-    kiroUsage: string
+    description: string
   ): Promise<Result<{
     recommendedCategory: string;
     confidence: Score;
@@ -141,7 +139,7 @@ export class GoogleAIAnalysisService implements IAIAnalysisService {
     }>;
   }, Error>> {
     try {
-      const prompt = this.buildCategoryRecommendationPrompt(projectName, description, kiroUsage);
+      const prompt = this.buildCategoryRecommendationPrompt(projectName, description);
       const response = await this.callGoogleAI(prompt);
 
       if (!response.success) {
@@ -269,7 +267,6 @@ Format the response as JSON with the specified structure.`;
   private buildHackathonAnalysisPrompt(
     projectName: string,
     description: string,
-    kiroUsage: string,
     locale: Locale
   ): string {
     const language = locale.value === 'es' ? 'Spanish' : 'English';
@@ -278,15 +275,13 @@ Format the response as JSON with the specified structure.`;
 
 Project Name: "${projectName}"
 Description: "${description}"
-Kiro Usage: "${kiroUsage}"
 
 Focus on:
 1. Innovation and creativity
 2. Technical implementation
-3. Use of Kiro AI tools
-4. Presentation quality
-5. Potential impact
-6. Category fit for hackathon
+3. Presentation quality
+4. Potential impact
+5. Category fit for hackathon
 
 Format the response as JSON with detailed analysis.`;
   }
@@ -337,14 +332,12 @@ Format as JSON with structured comparison data.`;
    */
   private buildCategoryRecommendationPrompt(
     projectName: string,
-    description: string,
-    kiroUsage: string
+    description: string
   ): string {
     return `Recommend the best hackathon category for this project:
 
 Project: "${projectName}"
 Description: "${description}"
-Kiro Usage: "${kiroUsage}"
 
 Available categories:
 - resurrection (reviving old/abandoned projects)

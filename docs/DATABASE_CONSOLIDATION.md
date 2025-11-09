@@ -189,15 +189,6 @@ interface HackathonAnalysisData extends IdeaAnalysisData {
     | "frankenstein"
     | "skeleton-crew"
     | "costume-contest";
-  kiroUsage: string; // Description of how Kiro was used
-  supportingMaterials?: {
-    // Optional supporting materials
-    githubRepo?: string;
-    demoUrl?: string;
-    videoUrl?: string;
-    screenshots?: string[];
-    additionalNotes?: string;
-  };
 }
 ```
 
@@ -216,12 +207,7 @@ interface HackathonAnalysisData extends IdeaAnalysisData {
   ],
   "locale": "en",
   "selectedCategory": "frankenstein",
-  "kiroUsage": "Used Kiro for code generation and architecture design",
-  "supportingMaterials": {
-    "githubRepo": "https://github.com/user/ecotracker",
-    "demoUrl": "https://ecotracker.demo.com",
-    "screenshots": ["screenshot1.png", "screenshot2.png"]
-  }
+  
 }
 ```
 
@@ -230,14 +216,14 @@ interface HackathonAnalysisData extends IdeaAnalysisData {
 ```typescript
 // Type guard for idea analysis data
 export function isIdeaAnalysisData(data: any): data is IdeaAnalysisData {
-  return !("selectedCategory" in data) && !("kiroUsage" in data);
+  return !("selectedCategory" in data);
 }
 
 // Type guard for hackathon analysis data
 export function isHackathonAnalysisData(
   data: any
 ): data is HackathonAnalysisData {
-  return "selectedCategory" in data && "kiroUsage" in data;
+  return "selectedCategory" in data;
 }
 ```
 
@@ -310,11 +296,7 @@ export class AnalysisMapper {
   }
 
   private isHackathonAnalysis(analysis: Analysis): boolean {
-    return !!(
-      analysis.category ||
-      analysis.kiroUsage ||
-      analysis.supportingMaterials
-    );
+    return !!(analysis.category);
   }
 }
 ```
@@ -349,8 +331,6 @@ export class AnalysisMapper {
       return Analysis.reconstruct({
         ...baseProps,
         category: Category.fromString(analysisData.selectedCategory),
-        kiroUsage: analysisData.kiroUsage,
-        supportingMaterials: analysisData.supportingMaterials,
       });
     } else {
       return Analysis.reconstruct(baseProps);
@@ -371,7 +351,7 @@ All existing API endpoints maintain the same request and response formats. The c
 
 Creates a standard idea analysis (automatically sets `analysis_type = 'idea'`).
 
-**Request** (unchanged):
+**Request**:
 
 ```json
 {
@@ -380,7 +360,7 @@ Creates a standard idea analysis (automatically sets `analysis_type = 'idea'`).
 }
 ```
 
-**Response** (unchanged):
+**Response**:
 
 ```json
 {
@@ -397,21 +377,17 @@ Creates a standard idea analysis (automatically sets `analysis_type = 'idea'`).
 
 Creates a hackathon analysis (automatically sets `analysis_type = 'hackathon'`).
 
-**Request** (unchanged):
+**Request**:
 
 ```json
 {
   "projectDescription": "EcoTracker - A mobile app for carbon tracking",
   "selectedCategory": "frankenstein",
-  "kiroUsage": "Used Kiro for code generation",
-  "supportingMaterials": {
-    "githubRepo": "https://github.com/user/ecotracker"
-  },
   "locale": "en"
 }
 ```
 
-**Response** (unchanged):
+**Response**:
 
 ```json
 {
@@ -419,8 +395,6 @@ Creates a hackathon analysis (automatically sets `analysis_type = 'hackathon'`).
   "projectDescription": "EcoTracker - A mobile app for carbon tracking",
   "score": 82,
   "selectedCategory": "frankenstein",
-  "kiroUsage": "Used Kiro for code generation",
-  "supportingMaterials": {...},
   "criteria": [...],
   "locale": "en"
 }
@@ -526,9 +500,7 @@ SELECT
     'detailedSummary', analysis->>'detailedSummary',
     'criteria', analysis->'criteria',
     'locale', analysis->>'locale',
-    'selectedCategory', selected_category,
-    'kiroUsage', kiro_usage,
-    'supportingMaterials', supporting_materials
+    'selectedCategory', selected_category
   ) as analysis,
   audio_base64,
   created_at
@@ -646,8 +618,7 @@ SELECT
   user_id,
   idea as project_description,
   analysis->>'selectedCategory' as selected_category,
-  analysis->>'kiroUsage' as kiro_usage,
-  analysis->'supportingMaterials' as supporting_materials,
+  
   jsonb_build_object(
     'score', analysis->'score',
     'detailedSummary', analysis->'detailedSummary',

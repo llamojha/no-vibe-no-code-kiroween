@@ -175,7 +175,6 @@ describe('API Integration Tests', () => {
     const validHackathonRequest = {
       projectName: 'AI Code Assistant',
       description: 'An innovative AI-powered tool that helps developers write better code by providing intelligent suggestions, automated refactoring, and real-time code quality analysis.',
-      kiroUsage: 'We used Kiro extensively throughout the development process for project planning, feature analysis, and implementation strategy. Kiro helped us identify key features, prioritize development tasks, and validate our technical approach.',
       githubUrl: 'https://github.com/team/ai-code-assistant',
       demoUrl: 'https://demo.ai-code-assistant.com',
       screenshots: ['screenshot1.png', 'screenshot2.png'],
@@ -229,7 +228,6 @@ describe('API Integration Tests', () => {
       const incompleteRequest = {
         projectName: 'Test Project',
         description: 'Too short', // Description too short
-        kiroUsage: '', // Empty Kiro usage
         teamSize: 0, // Invalid team size
         locale: 'en'
       };

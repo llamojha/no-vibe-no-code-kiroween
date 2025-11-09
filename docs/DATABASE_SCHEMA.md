@@ -156,14 +156,6 @@ interface HackathonAnalysisData extends IdeaAnalysisData {
     | "frankenstein"
     | "skeleton-crew"
     | "costume-contest";
-  kiroUsage: string;
-  supportingMaterials?: {
-    githubRepo?: string;
-    demoUrl?: string;
-    videoUrl?: string;
-    screenshots?: string[];
-    additionalNotes?: string;
-  };
 }
 ```
 
@@ -176,11 +168,7 @@ Example:
   "criteria": [...],
   "locale": "en",
   "selectedCategory": "frankenstein",
-  "kiroUsage": "Used Kiro for code generation and architecture design",
-  "supportingMaterials": {
-    "githubRepo": "https://github.com/user/ecotracker",
-    "demoUrl": "https://ecotracker.demo.com"
-  }
+  
 }
 ```
 

@@ -102,8 +102,6 @@ export class AnalysisMapper {
       return Analysis.reconstruct({
         ...baseProps,
         category: Category.createHackathon(analysisData.selectedCategory),
-        kiroUsage: analysisData.kiroUsage,
-        supportingMaterials: analysisData.supportingMaterials,
       });
     } else {
       // Default to idea type
@@ -284,14 +282,10 @@ export class AnalysisMapper {
 
   /**
    * Determine if analysis is hackathon type based on domain properties
-   * Detects presence of hackathon-specific category, kiroUsage, or supportingMaterials
+   * Detects presence of hackathon-specific category
    */
   private isHackathonAnalysis(analysis: Analysis): boolean {
-    return !!(
-      (analysis.category && analysis.category.isHackathon) ||
-      analysis.kiroUsage ||
-      analysis.supportingMaterials
-    );
+    return !!(analysis.category && analysis.category.isHackathon);
   }
 
   /**
@@ -313,7 +307,7 @@ export class AnalysisMapper {
 
   /**
    * Map hackathon analysis to JSONB structure
-   * Includes all idea fields plus selectedCategory, kiroUsage, and supportingMaterials
+   * Includes all idea fields plus selectedCategory
    */
   private mapHackathonAnalysisData(analysis: Analysis): HackathonAnalysisData {
     return {
@@ -326,8 +320,6 @@ export class AnalysisMapper {
       })),
       locale: analysis.locale.value,
       selectedCategory: (analysis.category?.value as any) || "costume-contest",
-      kiroUsage: analysis.kiroUsage || "",
-      supportingMaterials: analysis.supportingMaterials,
     };
   }
 }

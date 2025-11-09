@@ -36,12 +36,6 @@ const testHackathonAnalysis = Analysis.reconstruct({
   category: Category.createHackathon("frankenstein"),
   feedback: "Great hackathon project",
   suggestions: ["Add more documentation", "Improve UI"],
-  kiroUsage: "Used Kiro for code generation and testing",
-  supportingMaterials: {
-    githubRepo: "https://github.com/test/repo",
-    demoUrl: "https://demo.test.com",
-    screenshots: ["screenshot1.png", "screenshot2.png"],
-  },
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),
 });
@@ -75,8 +69,7 @@ function verifyResponseFormat() {
 
   // Verify no hackathon fields in idea analysis
   const hasHackathonFields =
-    "selectedCategory" in (ideaDAO.analysis as any) ||
-    "kiroUsage" in (ideaDAO.analysis as any);
+    "selectedCategory" in (ideaDAO.analysis as any);
   console.log("✓ No hackathon fields in idea analysis:", !hasHackathonFields);
   console.log("");
 
@@ -105,14 +98,7 @@ function verifyResponseFormat() {
     "✓ analysis JSONB has selectedCategory:",
     "selectedCategory" in (hackathonDAO.analysis as any)
   );
-  console.log(
-    "✓ analysis JSONB has kiroUsage:",
-    "kiroUsage" in (hackathonDAO.analysis as any)
-  );
-  console.log(
-    "✓ analysis JSONB has supportingMaterials:",
-    "supportingMaterials" in (hackathonDAO.analysis as any)
-  );
+  // No kiroUsage or supportingMaterials expected
   console.log("");
 
   // Test 3: Verify round-trip conversion for idea analysis
@@ -139,11 +125,7 @@ function verifyResponseFormat() {
     ideaDomainFromDAO.feedback === testIdeaAnalysis.feedback
   );
   console.log("✓ No category:", !ideaDomainFromDAO.category);
-  console.log("✓ No kiroUsage:", !ideaDomainFromDAO.kiroUsage);
-  console.log(
-    "✓ No supportingMaterials:",
-    !ideaDomainFromDAO.supportingMaterials
-  );
+  // No hackathon-only fields in idea analysis
   console.log("");
 
   // Test 4: Verify round-trip conversion for hackathon analysis
@@ -174,14 +156,7 @@ function verifyResponseFormat() {
     hackathonDomainFromDAO.category?.value ===
       testHackathonAnalysis.category?.value
   );
-  console.log(
-    "✓ KiroUsage preserved:",
-    hackathonDomainFromDAO.kiroUsage === testHackathonAnalysis.kiroUsage
-  );
-  console.log(
-    "✓ SupportingMaterials preserved:",
-    !!hackathonDomainFromDAO.supportingMaterials
-  );
+  // No kiroUsage/supportingMaterials in unified model
   console.log("");
 
   // Test 5: Verify DTO response format (as returned by controllers)

@@ -12,13 +12,8 @@ import {
 /**
  * Supporting materials for hackathon analyses
  */
-export interface SupportingMaterials {
-  githubRepo?: string;
-  demoUrl?: string;
-  videoUrl?: string;
-  screenshots?: string[];
-  additionalNotes?: string;
-}
+// Note: SupportingMaterials removed from domain. Hackathon-specific
+// attachments are not persisted in the unified model.
 
 /**
  * Properties required to create a new Analysis
@@ -31,8 +26,6 @@ export interface CreateAnalysisProps {
   category?: Category;
   feedback?: string;
   suggestions?: string[];
-  kiroUsage?: string;
-  supportingMaterials?: SupportingMaterials;
 }
 
 /**
@@ -56,8 +49,6 @@ export class Analysis extends Entity<AnalysisId> {
   private _category?: Category;
   private _feedback?: string;
   private _suggestions: string[];
-  private _kiroUsage?: string;
-  private _supportingMaterials?: SupportingMaterials;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -71,9 +62,7 @@ export class Analysis extends Entity<AnalysisId> {
     updatedAt: Date,
     category?: Category,
     feedback?: string,
-    suggestions: string[] = [],
-    kiroUsage?: string,
-    supportingMaterials?: SupportingMaterials
+    suggestions: string[] = []
   ) {
     super(id);
     this._idea = idea;
@@ -83,8 +72,6 @@ export class Analysis extends Entity<AnalysisId> {
     this._category = category;
     this._feedback = feedback;
     this._suggestions = suggestions;
-    this._kiroUsage = kiroUsage;
-    this._supportingMaterials = supportingMaterials;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
 
@@ -108,9 +95,7 @@ export class Analysis extends Entity<AnalysisId> {
       now,
       props.category,
       props.feedback,
-      props.suggestions || [],
-      props.kiroUsage,
-      props.supportingMaterials
+      props.suggestions || []
     );
   }
 
@@ -128,9 +113,7 @@ export class Analysis extends Entity<AnalysisId> {
       props.updatedAt,
       props.category,
       props.feedback,
-      props.suggestions || [],
-      props.kiroUsage,
-      props.supportingMaterials
+      props.suggestions || []
     );
   }
 
@@ -316,16 +299,6 @@ export class Analysis extends Entity<AnalysisId> {
 
   get suggestions(): readonly string[] {
     return [...this._suggestions];
-  }
-
-  get kiroUsage(): string | undefined {
-    return this._kiroUsage;
-  }
-
-  get supportingMaterials(): SupportingMaterials | undefined {
-    return this._supportingMaterials
-      ? { ...this._supportingMaterials }
-      : undefined;
   }
 
   get createdAt(): Date {
