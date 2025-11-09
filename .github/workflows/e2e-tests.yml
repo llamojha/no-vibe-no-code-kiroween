@@ -1,0 +1,472 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Build application
+        run: npm run build
+        env:
+          # Build with mock mode enabled for testing
+          FF_USE_MOCK_API: true
+          NEXT_PUBLIC_FF_USE_MOCK_API: true
+          FF_MOCK_SCENARIO: success
+          FF_SIMULATE_LATENCY: false
+          # Disable Supabase for build (not needed for E2E with mocks)
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
+      
+      - name: Start application
+        run: |
+          echo "=== Starting Application with Mock Mode ==="
+          echo "Setting environment variables..."
+          
+          # Start application in background
+          npm run start &
+          APP_PID=$!
+          echo $APP_PID > .app-pid
+          
+          echo "✅ Application started with PID: $APP_PID"
+          echo "Waiting for application to initialize..."
+        env:
+          # Mock mode configuration
+          FF_USE_MOCK_API: true
+          NEXT_PUBLIC_FF_USE_MOCK_API: true
+          FF_MOCK_SCENARIO: success
+          FF_SIMULATE_LATENCY: false
+          NODE_ENV: test
+          # Server configuration
+          PORT: 3000
+          # Disable Supabase for testing (not needed with mocks)
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
+      
+      - name: Wait for application to be ready
+        run: |
+          echo "=== Waiting for Application ==="
+          
+          # Wait for the main application to be available
+          echo "Waiting for application to respond..."
+          npx wait-on http://localhost:3000 --timeout 60000
+          
+          # Wait for mock status endpoint to be available
+          echo "Waiting for mock status endpoint..."
+          npx wait-on http://localhost:3000/api/test/mock-status --timeout 30000
+          
+          # Give the application a moment to fully initialize
+          echo "Allowing application to fully initialize..."
+          sleep 5
+          
+          echo "✅ Application is ready"
+      
+      - name: Verify environment variables
+        run: |
+          echo "=== Mock Mode Environment Variables ==="
+          echo "FF_USE_MOCK_API: $FF_USE_MOCK_API"
+          echo "NEXT_PUBLIC_FF_USE_MOCK_API: $NEXT_PUBLIC_FF_USE_MOCK_API"
+          echo "FF_MOCK_SCENARIO: $FF_MOCK_SCENARIO"
+          echo "FF_SIMULATE_LATENCY: $FF_SIMULATE_LATENCY"
+          echo "NODE_ENV: $NODE_ENV"
+          echo "======================================="
+          
+          # Verify FF_USE_MOCK_API is set to true
+          if [ "$FF_USE_MOCK_API" != "true" ]; then
+            echo "❌ ERROR: FF_USE_MOCK_API is not set to 'true'"
+            echo "Current value: $FF_USE_MOCK_API"
+            exit 1
+          fi
+          echo "✅ FF_USE_MOCK_API is correctly set to 'true'"
+          
+          # Verify NODE_ENV is set to test (optional but recommended)
+          if [ -n "$NODE_ENV" ] && [ "$NODE_ENV" != "test" ] && [ "$NODE_ENV" != "production" ]; then
+            echo "⚠️ WARNING: NODE_ENV is set to '$NODE_ENV' (expected 'test' or 'production')"
+          else
+            echo "✅ NODE_ENV is set to: ${NODE_ENV:-'not set (using default)'}"
+          fi
+          
+          echo "✅ Environment variable verification complete"
+        env:
+          FF_USE_MOCK_API: true
+          NEXT_PUBLIC_FF_USE_MOCK_API: true
+          FF_MOCK_SCENARIO: success
+          FF_SIMULATE_LATENCY: false
+          NODE_ENV: test
+      
+      - name: Verify mock mode is active
+        run: |
+          echo "=== Verifying Mock Mode Status ==="
+          
+          # Call the mock status endpoint
+          response=$(curl -s -w "\n%{http_code}" http://localhost:3000/api/test/mock-status)
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "HTTP Status Code: $http_code"
+          echo "Response Body:"
+          echo "$body" | jq '.' || echo "$body"
+          
+          # Check if request was successful
+          if [ "$http_code" != "200" ]; then
+            echo "❌ ERROR: Mock status endpoint returned HTTP $http_code"
+            echo "Expected: 200"
+            exit 1
+          fi
+          echo "✅ Mock status endpoint is accessible"
+          
+          # Parse and verify mockMode is true
+          mockMode=$(echo "$body" | jq -r '.mockMode')
+          
+          if [ "$mockMode" != "true" ]; then
+            echo "❌ ERROR: Mock mode is not active on the server"
+            echo "mockMode value: $mockMode"
+            echo "Full response:"
+            echo "$body" | jq '.'
+            exit 1
+          fi
+          
+          echo "✅ Mock mode is active on the server"
+          
+          # Display additional configuration details
+          scenario=$(echo "$body" | jq -r '.scenario')
+          isValid=$(echo "$body" | jq -r '.isValid')
+          
+          echo ""
+          echo "Mock Mode Configuration:"
+          echo "  - Scenario: $scenario"
+          echo "  - Valid: $isValid"
+          echo ""
+          echo "✅ Mock mode verification complete - ready to run E2E tests"
+      
+      - name: Run E2E tests with coverage
+        run: npm run test:e2e:coverage
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_HEADLESS: true
+          E2E_SCREENSHOT_ON_FAILURE: true
+          E2E_VIDEO_ON_FAILURE: false
+          E2E_TIMEOUT: 30000
+          E2E_COLLECT_COVERAGE: true
+          CI: true
+      
+      - name: Generate coverage reports
+        if: always()
+        run: npm run test:e2e:coverage-report
+        continue-on-error: true
+      
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f .app-pid ]; then
+            kill $(cat .app-pid) || true
+            rm .app-pid
+          fi
+      
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ github.run_number }}
+          path: |
+            tests/e2e/artifacts/
+            tests/e2e/reports/
+          retention-days: 7
+          if-no-files-found: warn
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: |
+            tests/e2e/reports/results.json
+            tests/e2e/reports/junit.xml
+            tests/e2e/reports/html/
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports-${{ github.run_number }}
+          path: |
+            tests/e2e/reports/coverage.html
+            tests/e2e/reports/coverage.json
+            tests/e2e/coverage/coverage-summary.json
+          retention-days: 30
+          if-no-files-found: warn
+      
+      - name: Generate test summary with coverage
+        if: always()
+        run: |
+          if [ -f tests/e2e/reports/results.json ]; then
+            node -e "
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('tests/e2e/reports/results.json', 'utf8'));
+              const stats = results.suites.reduce((acc, suite) => {
+                suite.specs.forEach(spec => {
+                  spec.tests.forEach(test => {
+                    if (test.status === 'expected') acc.passed++;
+                    else if (test.status === 'unexpected') acc.failed++;
+                    else if (test.status === 'skipped') acc.skipped++;
+                  });
+                });
+                return acc;
+              }, { passed: 0, failed: 0, skipped: 0 });
+              
+              const total = stats.passed + stats.failed + stats.skipped;
+              const duration = (results.stats.duration / 1000).toFixed(2);
+              
+              console.log('## E2E Test Results');
+              console.log('');
+              console.log('### Test Summary');
+              console.log('');
+              console.log('| Metric | Value |');
+              console.log('|--------|-------|');
+              console.log(\`| Total Tests | \${total} |\`);
+              console.log(\`| ✅ Passed | \${stats.passed} |\`);
+              console.log(\`| ❌ Failed | \${stats.failed} |\`);
+              console.log(\`| ⏭️ Skipped | \${stats.skipped} |\`);
+              console.log(\`| ⏱️ Duration | \${duration}s |\`);
+              console.log('');
+              
+              // Add coverage information if available
+              try {
+                const coverage = JSON.parse(fs.readFileSync('tests/e2e/reports/coverage.json', 'utf8'));
+                const coveragePercent = coverage.summary.percentage.toFixed(1);
+                const coverageIcon = coverage.summary.percentage >= 70 ? '✅' : 
+                                    coverage.summary.percentage >= 50 ? '⚠️' : '❌';
+                
+                console.log('### Code Coverage');
+                console.log('');
+                console.log('| Metric | Value |');
+                console.log('|--------|-------|');
+                console.log(\`| \${coverageIcon} Overall Coverage | \${coveragePercent}% |\`);
+                console.log(\`| 📁 Files Covered | \${coverage.summary.files} |\`);
+                console.log(\`| 🎯 Threshold | 70% |\`);
+                console.log(\`| Status | \${coverage.meetsThresholds ? '✅ Meets threshold' : '⚠️ Below threshold'} |\`);
+                console.log('');
+              } catch (e) {
+                console.log('### Code Coverage');
+                console.log('');
+                console.log('⚠️ Coverage data not available');
+                console.log('');
+              }
+              
+              if (stats.failed > 0) {
+                console.log('### Failed Tests');
+                console.log('');
+                results.suites.forEach(suite => {
+                  suite.specs.forEach(spec => {
+                    spec.tests.forEach(test => {
+                      if (test.status === 'unexpected') {
+                        console.log(\`- \${spec.title}: \${test.results[0]?.error?.message || 'Unknown error'}\`);
+                      }
+                    });
+                  });
+                });
+              }
+            " >> $GITHUB_STEP_SUMMARY
+          else
+            echo '⚠️ Test results file not found' >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Comment PR with test results and coverage
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🧪 E2E Test Results\n\n';
+            
+            try {
+              const results = JSON.parse(fs.readFileSync('tests/e2e/reports/results.json', 'utf8'));
+              
+              const stats = results.suites.reduce((acc, suite) => {
+                suite.specs.forEach(spec => {
+                  spec.tests.forEach(test => {
+                    if (test.status === 'expected') acc.passed++;
+                    else if (test.status === 'unexpected') acc.failed++;
+                    else if (test.status === 'skipped') acc.skipped++;
+                  });
+                });
+                return acc;
+              }, { passed: 0, failed: 0, skipped: 0 });
+              
+              const total = stats.passed + stats.failed + stats.skipped;
+              const duration = (results.stats.duration / 1000).toFixed(2);
+              const passRate = total > 0 ? ((stats.passed / total) * 100).toFixed(1) : 0;
+              
+              comment += '### Test Summary\n\n';
+              comment += '| Metric | Value |\n';
+              comment += '|--------|-------|\n';
+              comment += `| Total Tests | ${total} |\n`;
+              comment += `| ✅ Passed | ${stats.passed} |\n`;
+              comment += `| ❌ Failed | ${stats.failed} |\n`;
+              comment += `| ⏭️ Skipped | ${stats.skipped} |\n`;
+              comment += `| 📊 Pass Rate | ${passRate}% |\n`;
+              comment += `| ⏱️ Duration | ${duration}s |\n\n`;
+              
+              // Add coverage metrics if available
+              try {
+                const coverage = JSON.parse(fs.readFileSync('tests/e2e/reports/coverage.json', 'utf8'));
+                
+                const coveragePercent = coverage.summary.percentage.toFixed(1);
+                const coverageIcon = coverage.summary.percentage >= 70 ? '✅' : 
+                                    coverage.summary.percentage >= 50 ? '⚠️' : '❌';
+                const coverageStatus = coverage.summary.percentage >= 70 ? 'Good' : 
+                                      coverage.summary.percentage >= 50 ? 'Fair' : 'Low';
+                
+                comment += '### Code Coverage\n\n';
+                comment += '| Metric | Value |\n';
+                comment += '|--------|-------|\n';
+                comment += `| ${coverageIcon} Overall Coverage | ${coveragePercent}% (${coverageStatus}) |\n`;
+                comment += `| 📁 Files Covered | ${coverage.summary.files} |\n`;
+                comment += `| 📝 Code Executed | ${formatBytes(coverage.summary.usedBytes)} |\n`;
+                comment += `| 📦 Total Code | ${formatBytes(coverage.summary.totalBytes)} |\n`;
+                comment += `| 🎯 Threshold | 70% |\n`;
+                comment += `| Status | ${coverage.meetsThresholds ? '✅ Meets threshold' : '⚠️ Below threshold'} |\n\n`;
+                
+                // Show top 5 files with lowest coverage
+                const sortedFiles = Object.entries(coverage.files)
+                  .sort((a, b) => a[1].percentage - b[1].percentage)
+                  .slice(0, 5);
+                
+                if (sortedFiles.length > 0) {
+                  comment += '<details>\n';
+                  comment += '<summary>📉 Files with Lowest Coverage</summary>\n\n';
+                  comment += '| File | Coverage |\n';
+                  comment += '|------|----------|\n';
+                  sortedFiles.forEach(([file, metrics]) => {
+                    const icon = metrics.percentage >= 70 ? '✅' : 
+                                metrics.percentage >= 50 ? '⚠️' : '❌';
+                    comment += `| ${icon} \`${file}\` | ${metrics.percentage.toFixed(1)}% |\n`;
+                  });
+                  comment += '\n</details>\n\n';
+                }
+                
+                // Coverage change indicator (if we had previous data)
+                comment += `📊 [View detailed coverage report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n`;
+                
+              } catch (coverageError) {
+                comment += '### Code Coverage\n\n';
+                comment += '⚠️ Coverage data not available\n\n';
+              }
+              
+              if (stats.failed > 0) {
+                comment += '### ❌ Failed Tests\n\n';
+                results.suites.forEach(suite => {
+                  suite.specs.forEach(spec => {
+                    spec.tests.forEach(test => {
+                      if (test.status === 'unexpected') {
+                        const error = test.results[0]?.error?.message || 'Unknown error';
+                        comment += `- **${spec.title}**: ${error.split('\n')[0]}\n`;
+                      }
+                    });
+                  });
+                });
+                comment += '\n';
+              }
+              
+              comment += `\n📦 [View full test report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+              
+              if (stats.failed > 0) {
+                comment += '\n\n⚠️ **Tests failed. Please review the failures before merging.**';
+              } else {
+                comment += '\n\n✅ **All tests passed!**';
+              }
+              
+            } catch (error) {
+              comment += '⚠️ Could not parse test results.\n\n';
+              comment += `Error: ${error.message}\n\n`;
+              comment += `[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            }
+            
+            // Helper function to format bytes
+            function formatBytes(bytes) {
+              if (bytes < 1024) return bytes + ' B';
+              if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+              return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('E2E Test Results')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+      
+      - name: Check test status
+        if: always()
+        run: |
+          if [ -f tests/e2e/reports/results.json ]; then
+            node -e "
+              const fs = require('fs');
+              const results = JSON.parse(fs.readFileSync('tests/e2e/reports/results.json', 'utf8'));
+              const failed = results.suites.reduce((acc, suite) => {
+                suite.specs.forEach(spec => {
+                  spec.tests.forEach(test => {
+                    if (test.status === 'unexpected') acc++;
+                  });
+                });
+                return acc;
+              }, 0);
+              
+              if (failed > 0) {
+                console.error(\`\${failed} test(s) failed\`);
+                process.exit(1);
+              }
+            "
+          else
+            echo "Test results file not found"
+            exit 1
+          fi

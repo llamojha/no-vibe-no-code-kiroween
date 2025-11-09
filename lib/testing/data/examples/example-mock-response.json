@@ -1,0 +1,331 @@
+{
+  "description": "Example mock response file demonstrating the structure and best practices for creating mock data",
+  
+  "success": [
+    {
+      "comment": "Variant 1: High-scoring startup idea with strong metrics",
+      "score": 88,
+      "summary": "This is an innovative startup idea with strong market potential and solid technical feasibility. The concept addresses a clear pain point in the market and offers a unique value proposition that differentiates it from existing solutions.",
+      "strengths": [
+        "Clear value proposition that solves a real problem",
+        "Large addressable market with growing demand",
+        "Strong technical feasibility with existing technologies",
+        "Scalable business model with multiple revenue streams",
+        "Low initial capital requirements"
+      ],
+      "weaknesses": [
+        "Competitive market with established players",
+        "Requires significant user acquisition efforts",
+        "Potential regulatory challenges in certain markets"
+      ],
+      "opportunities": [
+        "Expand into adjacent markets and verticals",
+        "Partner with complementary service providers",
+        "Leverage emerging technologies for competitive advantage",
+        "Build a strong community and network effects"
+      ],
+      "threats": [
+        "Rapid technological changes could disrupt the model",
+        "Larger competitors could replicate the solution",
+        "Economic downturn could reduce customer spending"
+      ],
+      "suggestions": [
+        "Focus on a specific niche market initially to establish product-market fit",
+        "Build a minimum viable product (MVP) to validate assumptions quickly",
+        "Develop a strong go-to-market strategy with clear customer acquisition channels",
+        "Consider strategic partnerships to accelerate growth",
+        "Implement robust analytics to track key metrics and iterate rapidly"
+      ],
+      "criteriaScores": [
+        {
+          "criteriaName": "Innovation",
+          "score": 90,
+          "justification": "The idea introduces a novel approach to solving an existing problem, combining technologies in a unique way that hasn't been widely adopted yet."
+        },
+        {
+          "criteriaName": "Market Potential",
+          "score": 85,
+          "justification": "Large and growing target market with clear demand signals. The total addressable market is estimated at $2B+ with strong growth projections."
+        },
+        {
+          "criteriaName": "Technical Feasibility",
+          "score": 88,
+          "justification": "The solution can be built using proven technologies and frameworks. Technical complexity is moderate, requiring a skilled team but no breakthrough innovations."
+        },
+        {
+          "criteriaName": "Business Viability",
+          "score": 87,
+          "justification": "Clear path to monetization with multiple revenue streams. Unit economics are favorable with reasonable customer acquisition costs."
+        },
+        {
+          "criteriaName": "Competitive Advantage",
+          "score": 82,
+          "justification": "Strong differentiation through unique features and superior user experience. Network effects and data advantages create defensibility."
+        }
+      ],
+      "marketPotential": {
+        "score": 85,
+        "analysis": "The target market is experiencing rapid growth driven by digital transformation trends. Current market size is estimated at $500M with a projected CAGR of 25% over the next 5 years, reaching $2B+ TAM. Key market drivers include increasing adoption of cloud technologies, remote work trends, and growing demand for automation solutions.",
+        "targetMarket": "Small to medium-sized businesses (SMBs) in the technology and professional services sectors, particularly those with 10-100 employees looking to streamline operations and improve productivity.",
+        "marketSize": "$500M current, $2B+ TAM in 5 years"
+      },
+      "technicalFeasibility": {
+        "score": 88,
+        "analysis": "The solution leverages mature, well-documented technologies including React, Node.js, and cloud infrastructure. Core functionality can be implemented within 3-6 months with a team of 3-5 engineers. No significant technical risks identified, though integration with third-party APIs requires careful planning.",
+        "complexity": "medium",
+        "requiredSkills": [
+          "Full-stack JavaScript/TypeScript development",
+          "React and modern frontend frameworks",
+          "Node.js and API development",
+          "Cloud infrastructure (AWS/GCP/Azure)",
+          "Database design and optimization",
+          "API integration and webhooks"
+        ]
+      },
+      "businessViability": {
+        "score": 87,
+        "analysis": "Strong business model with clear monetization strategy. Customer acquisition cost (CAC) is estimated at $200-300 with lifetime value (LTV) of $2,000+, providing a healthy 6-10x LTV:CAC ratio. Gross margins are expected to be 70-80% at scale.",
+        "revenueModel": [
+          "Subscription-based SaaS model with tiered pricing",
+          "Freemium model to drive user acquisition",
+          "Usage-based pricing for premium features",
+          "Enterprise licensing for larger organizations"
+        ],
+        "competitiveAdvantage": "First-mover advantage in a niche segment, superior user experience through AI-powered features, strong network effects as user base grows, and proprietary data that improves product quality over time."
+      }
+    },
+    {
+      "comment": "Variant 2: Moderate-scoring idea with balanced metrics",
+      "score": 72,
+      "summary": "A solid startup concept with reasonable market potential and achievable technical implementation. While not groundbreaking, the idea addresses a genuine need and has a clear path to market.",
+      "strengths": [
+        "Addresses a validated pain point",
+        "Reasonable market size with steady growth",
+        "Achievable with current technology stack",
+        "Clear target customer segment"
+      ],
+      "weaknesses": [
+        "Moderate differentiation from existing solutions",
+        "Limited scalability in current form",
+        "Requires significant marketing investment",
+        "Longer sales cycles expected"
+      ],
+      "opportunities": [
+        "Expand feature set based on customer feedback",
+        "Target international markets",
+        "Develop strategic partnerships"
+      ],
+      "threats": [
+        "Market saturation in core segment",
+        "Price pressure from competitors",
+        "Changing customer preferences"
+      ],
+      "suggestions": [
+        "Conduct thorough customer discovery to validate assumptions",
+        "Start with a focused MVP targeting a specific use case",
+        "Build strong customer relationships for retention",
+        "Consider a lean approach to minimize initial investment"
+      ],
+      "criteriaScores": [
+        {
+          "criteriaName": "Innovation",
+          "score": 70,
+          "justification": "Incremental improvement over existing solutions with some unique features."
+        },
+        {
+          "criteriaName": "Market Potential",
+          "score": 75,
+          "justification": "Moderate market size with steady growth. Competition is present but not overwhelming."
+        },
+        {
+          "criteriaName": "Technical Feasibility",
+          "score": 80,
+          "justification": "Straightforward implementation using standard technologies and patterns."
+        },
+        {
+          "criteriaName": "Business Viability",
+          "score": 68,
+          "justification": "Viable business model but requires careful execution and cost management."
+        },
+        {
+          "criteriaName": "Competitive Advantage",
+          "score": 65,
+          "justification": "Some differentiation but not strongly defensible without continuous innovation."
+        }
+      ],
+      "marketPotential": {
+        "score": 75,
+        "analysis": "Moderate market opportunity with steady growth. Market is mature but still expanding.",
+        "targetMarket": "Mid-market companies in specific verticals",
+        "marketSize": "$200M current market"
+      },
+      "technicalFeasibility": {
+        "score": 80,
+        "analysis": "Standard implementation using proven technologies. Low technical risk.",
+        "complexity": "low",
+        "requiredSkills": [
+          "Web development (React/Vue)",
+          "Backend development (Node.js/Python)",
+          "Database management",
+          "Cloud deployment"
+        ]
+      },
+      "businessViability": {
+        "score": 68,
+        "analysis": "Viable business model with moderate margins. Requires efficient operations.",
+        "revenueModel": [
+          "Subscription pricing",
+          "Professional services"
+        ],
+        "competitiveAdvantage": "Customer service excellence and niche market focus."
+      }
+    },
+    {
+      "comment": "Variant 3: Lower-scoring idea with challenges to address",
+      "score": 58,
+      "summary": "An interesting concept that faces significant challenges in execution and market fit. Requires substantial refinement and validation before pursuing.",
+      "strengths": [
+        "Novel approach to problem-solving",
+        "Passionate founder with domain expertise"
+      ],
+      "weaknesses": [
+        "Unclear value proposition",
+        "Small addressable market",
+        "High technical complexity",
+        "Uncertain monetization strategy",
+        "Strong competition from established players"
+      ],
+      "opportunities": [
+        "Pivot to adjacent market with clearer demand",
+        "Simplify the solution to reduce complexity",
+        "Partner with established players"
+      ],
+      "threats": [
+        "Market may not be ready for this solution",
+        "High customer acquisition costs",
+        "Difficulty in achieving product-market fit"
+      ],
+      "suggestions": [
+        "Conduct extensive customer discovery to validate the problem",
+        "Consider pivoting to a simpler, more focused solution",
+        "Explore alternative business models",
+        "Build a strong advisory board with relevant expertise",
+        "Start with a very narrow niche to prove the concept"
+      ],
+      "criteriaScores": [
+        {
+          "criteriaName": "Innovation",
+          "score": 75,
+          "justification": "Highly innovative but may be too early for the market."
+        },
+        {
+          "criteriaName": "Market Potential",
+          "score": 50,
+          "justification": "Limited market size with unclear demand signals."
+        },
+        {
+          "criteriaName": "Technical Feasibility",
+          "score": 55,
+          "justification": "High technical complexity with significant implementation challenges."
+        },
+        {
+          "criteriaName": "Business Viability",
+          "score": 52,
+          "justification": "Unclear path to profitability with high operational costs."
+        },
+        {
+          "criteriaName": "Competitive Advantage",
+          "score": 58,
+          "justification": "Unique approach but difficult to defend and scale."
+        }
+      ],
+      "marketPotential": {
+        "score": 50,
+        "analysis": "Small niche market with uncertain growth prospects.",
+        "targetMarket": "Early adopters in a specific niche",
+        "marketSize": "$50M niche market"
+      },
+      "technicalFeasibility": {
+        "score": 55,
+        "analysis": "Complex implementation requiring specialized expertise and significant development time.",
+        "complexity": "high",
+        "requiredSkills": [
+          "Advanced machine learning",
+          "Distributed systems",
+          "Real-time data processing",
+          "Complex algorithm development",
+          "Specialized domain knowledge"
+        ]
+      },
+      "businessViability": {
+        "score": 52,
+        "analysis": "Challenging business model with high costs and uncertain revenue potential.",
+        "revenueModel": [
+          "Enterprise licensing (uncertain demand)",
+          "Consulting services"
+        ],
+        "competitiveAdvantage": "Technical innovation but difficult to commercialize."
+      }
+    }
+  ],
+  
+  "api_error": {
+    "comment": "Error scenario for testing error handling",
+    "error": {
+      "code": "API_ERROR",
+      "message": "The AI service encountered an error while processing your request. Please try again later.",
+      "statusCode": 500,
+      "details": "Simulated API error for testing purposes"
+    }
+  },
+  
+  "timeout": {
+    "comment": "Timeout scenario for testing timeout handling",
+    "error": {
+      "code": "TIMEOUT",
+      "message": "The request timed out. Please check your connection and try again.",
+      "statusCode": 408,
+      "details": "Request exceeded 30 second timeout limit"
+    }
+  },
+  
+  "rate_limit": {
+    "comment": "Rate limit scenario for testing rate limiting",
+    "error": {
+      "code": "RATE_LIMIT",
+      "message": "Too many requests. Please wait a moment and try again.",
+      "statusCode": 429,
+      "details": "Rate limit of 10 requests per minute exceeded",
+      "retryAfter": 60
+    }
+  },
+  
+  "invalid_input": {
+    "comment": "Invalid input scenario for testing validation",
+    "error": {
+      "code": "INVALID_INPUT",
+      "message": "The provided input is invalid. Please check your data and try again.",
+      "statusCode": 400,
+      "details": "Input validation failed",
+      "validationErrors": [
+        {
+          "field": "idea",
+          "message": "Idea must be at least 10 characters long"
+        }
+      ]
+    }
+  },
+  
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-15",
+    "author": "Development Team",
+    "notes": [
+      "This file demonstrates the structure for mock responses",
+      "Each scenario should have multiple variants for testing variability",
+      "Error scenarios should include appropriate error codes and messages",
+      "All responses should match the Zod schema defined in lib/testing/schemas.ts",
+      "Use comments to document the purpose of each variant"
+    ]
+  }
+}

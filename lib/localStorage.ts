@@ -8,6 +8,7 @@
 import {
   SavedAnalysisRecord,
   SavedHackathonAnalysis,
+  SavedFrankensteinIdea,
   UnifiedAnalysisRecord,
 } from "./types";
 
@@ -18,6 +19,7 @@ const STORAGE_PREFIX = "nvnc-local-";
 const STORAGE_KEYS = {
   ANALYSES: `${STORAGE_PREFIX}analyses`,
   HACKATHON_ANALYSES: `${STORAGE_PREFIX}hackathon-analyses`,
+  FRANKENSTEIN_IDEAS: `${STORAGE_PREFIX}frankenstein-ideas`,
   USER: `${STORAGE_PREFIX}user`,
 } as const;
 
@@ -224,6 +226,101 @@ export class LocalStorageService {
     }
   }
 
+  // CRUD Operations for Doctor Frankenstein Ideas
+
+  /**
+   * Save a Doctor Frankenstein idea to local storage
+   */
+  public async saveFrankensteinIdea(
+    idea: SavedFrankensteinIdea
+  ): Promise<void> {
+    try {
+      const existingIdeas = await this.loadFrankensteinIdeas();
+
+      // Check if idea already exists and update it, otherwise add new
+      const existingIndex = existingIdeas.findIndex((i) => i.id === idea.id);
+      if (existingIndex >= 0) {
+        existingIdeas[existingIndex] = idea;
+      } else {
+        existingIdeas.push(idea);
+      }
+
+      // Limit to 50 ideas to prevent storage bloat
+      const limitedIdeas = existingIdeas.slice(0, 50);
+
+      const serializedData = JSON.stringify(limitedIdeas);
+      this.safeSetItem(STORAGE_KEYS.FRANKENSTEIN_IDEAS, serializedData);
+    } catch (error) {
+      if (error instanceof LocalStorageError) {
+        throw error;
+      }
+      throw new LocalStorageError(
+        "Failed to save Frankenstein idea",
+        error as Error
+      );
+    }
+  }
+
+  /**
+   * Load all Doctor Frankenstein ideas from local storage
+   */
+  public async loadFrankensteinIdeas(): Promise<SavedFrankensteinIdea[]> {
+    try {
+      if (!this.isLocalStorageAvailable()) {
+        return [];
+      }
+
+      const data = localStorage.getItem(STORAGE_KEYS.FRANKENSTEIN_IDEAS);
+      const ideas = this.safeParseJSON<SavedFrankensteinIdea[]>(data, []);
+      
+      // Sort by createdAt descending (newest first)
+      return ideas.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    } catch (error) {
+      if (error instanceof StorageCorruptionError) {
+        // Clear corrupted data and return empty array
+        console.warn("Clearing corrupted Frankenstein idea data");
+        localStorage.removeItem(STORAGE_KEYS.FRANKENSTEIN_IDEAS);
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific Doctor Frankenstein idea by ID
+   */
+  public async getFrankensteinIdea(
+    id: string
+  ): Promise<SavedFrankensteinIdea | null> {
+    const ideas = await this.loadFrankensteinIdeas();
+    return ideas.find((i) => i.id === id) || null;
+  }
+
+  /**
+   * Delete a Doctor Frankenstein idea by ID
+   */
+  public async deleteFrankensteinIdea(id: string): Promise<boolean> {
+    try {
+      const ideas = await this.loadFrankensteinIdeas();
+      const filteredIdeas = ideas.filter((i) => i.id !== id);
+
+      if (filteredIdeas.length === ideas.length) {
+        return false; // Idea not found
+      }
+
+      const serializedData = JSON.stringify(filteredIdeas);
+      this.safeSetItem(STORAGE_KEYS.FRANKENSTEIN_IDEAS, serializedData);
+      return true;
+    } catch (error) {
+      throw new LocalStorageError(
+        "Failed to delete Frankenstein idea",
+        error as Error
+      );
+    }
+  }
+
   // CRUD Operations for Hackathon Analyses
 
   /**
@@ -383,6 +480,7 @@ export class LocalStorageService {
 
       localStorage.removeItem(STORAGE_KEYS.ANALYSES);
       localStorage.removeItem(STORAGE_KEYS.HACKATHON_ANALYSES);
+      localStorage.removeItem(STORAGE_KEYS.FRANKENSTEIN_IDEAS);
     } catch (error) {
       throw new LocalStorageError(
         "Failed to clear analysis data",
@@ -400,6 +498,7 @@ export class LocalStorageService {
     nearQuota: boolean;
     analysisCount: number;
     hackathonAnalysisCount: number;
+    frankensteinIdeaCount: number;
   } {
     const isAvailable = this.isLocalStorageAvailable();
 
@@ -410,17 +509,24 @@ export class LocalStorageService {
         nearQuota: false,
         analysisCount: 0,
         hackathonAnalysisCount: 0,
+        frankensteinIdeaCount: 0,
       };
     }
 
     const analysisData = localStorage.getItem(STORAGE_KEYS.ANALYSES);
     const hackathonData = localStorage.getItem(STORAGE_KEYS.HACKATHON_ANALYSES);
+    const frankensteinData = localStorage.getItem(
+      STORAGE_KEYS.FRANKENSTEIN_IDEAS
+    );
 
     const analysisCount = analysisData
       ? this.safeParseJSON(analysisData, []).length
       : 0;
     const hackathonAnalysisCount = hackathonData
       ? this.safeParseJSON(hackathonData, []).length
+      : 0;
+    const frankensteinIdeaCount = frankensteinData
+      ? this.safeParseJSON(frankensteinData, []).length
       : 0;
 
     return {
@@ -429,6 +535,7 @@ export class LocalStorageService {
       nearQuota: this.isStorageNearQuota(),
       analysisCount,
       hackathonAnalysisCount,
+      frankensteinIdeaCount,
     };
   }
 }

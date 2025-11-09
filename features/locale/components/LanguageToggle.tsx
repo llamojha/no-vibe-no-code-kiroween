@@ -13,8 +13,9 @@ const LanguageToggle: React.FC = () => {
   const { locale, setLocale } = useLocale();
 
   return (
-    <div className="flex items-center p-1 space-x-1 bg-primary/30 backdrop-blur-sm shadow border border-slate-800">
+    <div data-testid="language-toggle" className="flex items-center p-1 space-x-1 bg-primary/30 backdrop-blur-sm shadow border border-slate-800">
       <button
+        data-testid="language-en"
         onClick={() => setLocale('en')}
         className={`${toggleBase} ${
           locale === 'en' ? activeStyles : inactiveStyles
@@ -25,6 +26,7 @@ const LanguageToggle: React.FC = () => {
         <span>EN</span>
       </button>
       <button
+        data-testid="language-es"
         onClick={() => setLocale('es')}
         className={`${toggleBase} ${
           locale === 'es' ? activeStyles : inactiveStyles

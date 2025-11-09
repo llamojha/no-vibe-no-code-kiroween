@@ -21,6 +21,7 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 
 ### Documentation
 
+**Architecture & Development:**
 - **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
 - **[API Documentation](docs/API.md)**: Complete API reference
@@ -30,6 +31,12 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **[Application Layer](src/application/README.md)**: Application layer documentation
 - **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
 - **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
+
+**Testing & Mocks:**
+- **[Sistema de Mocks](docs/SISTEMA_MOCKS_DOCUMENTACION.md)**: 🧪 Documentación completa del sistema de mocks para desarrollo sin costos de API
+- **[Guía de Ejecución de Tests](docs/GUIA_EJECUCION_TESTS.md)**: 📝 Paso a paso para ejecutar tests de integración y E2E
+- **[Mock Mode Guide](tests/MOCK_MODE_GUIDE.md)**: Technical guide for mock mode
+- **[Testing README](tests/README.md)**: General testing documentation
 
 ## Security
 
@@ -142,3 +149,219 @@ When `NODE_ENV=development` (i.e., `LOCAL_DEV_MODE` resolves to enabled):
 - Client-exposed flags are read from `NEXT_PUBLIC_FF_<FLAG>` and become part of the client bundle at build time.
 - Defaults apply when env vars are absent.
 - Flag validation runs automatically in development mode to ensure proper configuration.
+
+## Testing
+
+### Mock Mode
+
+The application includes a comprehensive mock system for development and testing without consuming API credits or requiring internet connectivity.
+
+#### Enabling Mock Mode
+
+Add to your `.env.local`:
+
+```bash
+# Enable mock mode
+FF_USE_MOCK_API=true
+
+# Configure mock behavior
+FF_MOCK_SCENARIO=success
+FF_MOCK_VARIABILITY=false
+FF_SIMULATE_LATENCY=true
+FF_MIN_LATENCY=500
+FF_MAX_LATENCY=2000
+FF_LOG_MOCK_REQUESTS=true
+```
+
+When mock mode is active, you'll see a "🧪 Mock Mode Active" indicator in the bottom-right corner of the application.
+
+#### Available Mock Scenarios
+
+- **`success`** (default): Returns realistic successful responses
+- **`api_error`**: Simulates API failures with 500 status codes
+- **`timeout`**: Simulates request timeouts
+- **`rate_limit`**: Simulates rate limit errors with 429 status codes
+- **`invalid_input`**: Simulates validation errors with 400 status codes
+
+#### Mock Features
+
+- **Predefined Responses**: Realistic mock data for all AI features (Analyzer, Hackathon Analyzer, Doctor Frankenstein)
+- **Response Variants**: Multiple response variations for testing different scenarios
+- **Latency Simulation**: Configurable network delay simulation
+- **Error Scenarios**: Test error handling without triggering real errors
+- **Request Logging**: Track all mock requests for debugging
+
+#### Documentation
+
+- **[Developer Guide](lib/testing/DEVELOPER_GUIDE.md)**: Complete guide to using the mock system
+- **[Mock System Overview](lib/testing/README.md)**: Architecture and implementation details
+- **[Example Files](tests/e2e/examples/)**: Example tests, page objects, and helpers
+
+### E2E Testing
+
+The application uses Playwright for end-to-end testing with comprehensive test coverage.
+
+#### Running E2E Tests
+
+```bash
+# Install Playwright browsers (first time only)
+npx playwright install --with-deps
+
+# Run all E2E tests
+npm run test:e2e
+
+# Run with UI mode (interactive)
+npm run test:e2e -- --ui
+
+# Run in headed mode (see browser)
+npm run test:e2e -- --headed
+
+# Run specific test file
+npm run test:e2e -- analyzer.spec.ts
+
+# Run specific test by name
+npm run test:e2e -- --grep "should analyze idea successfully"
+
+# Run in different browsers
+npm run test:e2e -- --project=firefox
+npm run test:e2e -- --project=webkit
+```
+
+#### Debugging Tests
+
+```bash
+# Run with debug mode
+npm run test:e2e -- --debug
+
+# Run with trace viewer
+npm run test:e2e -- --trace on
+
+# Generate and open HTML report
+npm run test:e2e -- --reporter=html
+npx playwright show-report
+```
+
+#### Test Configuration
+
+Configure test behavior via environment variables:
+
+```bash
+E2E_BASE_URL=http://localhost:3000    # Base URL for tests
+E2E_HEADLESS=true                     # Run in headless mode
+E2E_TIMEOUT=30000                     # Test timeout in ms
+E2E_SCREENSHOT_ON_FAILURE=true        # Capture screenshots on failure
+E2E_VIDEO_ON_FAILURE=false            # Record video on failure
+```
+
+#### Test Coverage
+
+The E2E test suite covers:
+
+- **Analyzer Feature**: Idea analysis, loading states, error handling, multi-language support
+- **Hackathon Analyzer**: Project evaluation, category recommendations, Kiro usage analysis
+- **Doctor Frankenstein**: Idea generation (companies and AWS modes), slot machine animation
+- **Dashboard**: Analysis history, project listings, empty states
+
+#### Test Artifacts
+
+Test artifacts (screenshots, videos, reports) are automatically captured on failure and stored in:
+
+- `tests/e2e/test-results/` - Test execution results
+- `tests/e2e/screenshots/` - Failure screenshots
+- `tests/e2e/videos/` - Failure videos (if enabled)
+- `tests/e2e/reports/` - HTML test reports
+
+### CI/CD Integration
+
+E2E tests run automatically in GitHub Actions on:
+
+- Pull requests to `main` or `develop` branches
+- Pushes to `main` branch
+
+#### Workflow Features
+
+- **Automated Testing**: All E2E tests run in CI environment
+- **Artifact Upload**: Screenshots, videos, and reports uploaded on failure
+- **PR Comments**: Test results automatically posted as PR comments
+- **Merge Blocking**: Failed tests block PR merges
+- **Coverage Reporting**: Test coverage metrics included in reports
+
+#### Viewing CI Results
+
+1. Navigate to the **Actions** tab in GitHub
+2. Select the **E2E Tests** workflow
+3. View test results and download artifacts
+4. Check PR comments for test summaries
+
+### Mock Response Validation
+
+Validate all mock responses against schemas:
+
+```bash
+# Validate all mock responses
+npm run validate:mocks
+
+# This checks:
+# - JSON syntax validity
+# - Schema compliance (Zod validation)
+# - Required fields presence
+# - Data type correctness
+```
+
+### Adding New Mock Responses
+
+1. Add your mock response to the appropriate JSON file in `lib/testing/data/`:
+   - `analyzer-mocks.json` - For analyzer responses
+   - `hackathon-mocks.json` - For hackathon analyzer responses
+   - `frankenstein-mocks.json` - For Doctor Frankenstein responses
+
+2. Validate the mock response:
+   ```bash
+   npm run validate:mocks
+   ```
+
+3. Test the mock response:
+   ```bash
+   # Set the scenario in .env.local
+   FF_MOCK_SCENARIO=your_scenario
+   
+   # Restart dev server
+   npm run dev
+   ```
+
+See the [Developer Guide](lib/testing/DEVELOPER_GUIDE.md) for detailed instructions on adding mock responses.
+
+### Environment Variables Reference
+
+#### Mock Mode Configuration
+
+| Variable | Description | Default | Values |
+|----------|-------------|---------|--------|
+| `FF_USE_MOCK_API` | Enable/disable mock mode | `false` | `true`, `false` |
+| `FF_MOCK_SCENARIO` | Default mock scenario | `success` | `success`, `api_error`, `timeout`, `rate_limit`, `invalid_input` |
+| `FF_MOCK_VARIABILITY` | Enable random response variants | `false` | `true`, `false` |
+| `FF_SIMULATE_LATENCY` | Simulate network latency | `false` | `true`, `false` |
+| `FF_MIN_LATENCY` | Minimum latency in ms | `500` | Any number |
+| `FF_MAX_LATENCY` | Maximum latency in ms | `2000` | Any number |
+| `FF_LOG_MOCK_REQUESTS` | Log all mock requests | `false` | `true`, `false` |
+
+#### E2E Testing Configuration
+
+| Variable | Description | Default | Values |
+|----------|-------------|---------|--------|
+| `E2E_BASE_URL` | Base URL for E2E tests | `http://localhost:3000` | Any URL |
+| `E2E_HEADLESS` | Run tests in headless mode | `true` | `true`, `false` |
+| `E2E_TIMEOUT` | Test timeout in ms | `30000` | Any number |
+| `E2E_SCREENSHOT_ON_FAILURE` | Capture screenshots on failure | `true` | `true`, `false` |
+| `E2E_VIDEO_ON_FAILURE` | Record video on failure | `false` | `true`, `false` |
+
+### Troubleshooting
+
+For common issues and solutions, see the [Developer Guide](lib/testing/DEVELOPER_GUIDE.md#troubleshooting-guide).
+
+Common issues:
+
+- **Mock mode not activating**: Check `FF_USE_MOCK_API` is set to `'true'` and restart dev server
+- **E2E tests failing**: Ensure dev server is running and increase timeout if needed
+- **Slow test execution**: Disable latency simulation with `FF_SIMULATE_LATENCY=false`
+- **Schema validation errors**: Run `npm run validate:mocks` and fix reported issues

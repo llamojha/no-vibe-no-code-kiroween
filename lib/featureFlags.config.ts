@@ -30,5 +30,11 @@ export function initFeatureFlags() {
       default: false,
       exposeToClient: true,
     }),
+    USE_MOCK_API: defineBooleanFlag({
+      key: "USE_MOCK_API",
+      description: "Enable mock API mode for testing (never enabled in production)",
+      default: process.env.NODE_ENV === 'production' ? false : (process.env.FF_USE_MOCK_API === 'true'),
+      exposeToClient: false,
+    }),
   });
 }

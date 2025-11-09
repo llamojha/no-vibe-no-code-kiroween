@@ -1,0 +1,16 @@
+{
+  "name": "Update Structure Index",
+  "description": "Automatically updates structure.md file index after spec tasks or file changes to keep the project structure documentation accurate and up-to-date",
+  "trigger": {
+    "type": "manual",
+    "label": "Update Structure Index"
+  },
+  "prompt": "Review the current project structure in src/, features/, lib/, and app/ directories. Update the Quick Reference Index section in .kiro/steering/structure.md to reflect any new files, moved files, or deleted files. Preserve all existing documentation sections including 'Architecture Pattern', 'Hexagonal Architecture Layers', 'Finding Files by Purpose', 'Naming Conventions', 'Import Patterns', 'Component Organization', and 'API Structure'. Add a timestamp comment at the end of the file: <!-- Last updated: [current date] -->. Focus only on updating file paths and purposes in the Quick Reference Index section with accurate information from the actual file system.",
+  "context": [
+    ".kiro/steering/structure.md",
+    "src/",
+    "features/",
+    "lib/",
+    "app/"
+  ]
+}

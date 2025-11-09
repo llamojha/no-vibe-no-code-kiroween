@@ -38,6 +38,15 @@ export class AnalysisController {
    */
   async createAnalysis(request: NextRequest): Promise<NextResponse> {
     try {
+      // Check if we're in mock mode
+      const isMockMode = process.env.FF_USE_MOCK_API === 'true' || 
+                        process.env.NEXT_PUBLIC_FF_USE_MOCK_API === 'true';
+
+      if (isMockMode) {
+        // In mock mode, return mock data directly
+        return await this.mockCreateAnalysis(request);
+      }
+
       // Authenticate request
       const authResult = await authenticateRequest(request);
       if (!authResult.success) {
@@ -88,6 +97,184 @@ export class AnalysisController {
     } catch (error) {
       return handleApiError(error);
     }
+  }
+
+  /**
+   * Mock implementation for testing without API calls
+   */
+  private async mockCreateAnalysis(request: NextRequest): Promise<NextResponse> {
+    const body = await request.json();
+    const { idea, locale } = body as { idea?: string; locale?: string };
+
+    if (!idea || !locale) {
+      return NextResponse.json(
+        { error: "Idea and locale are required." },
+        { status: 400 }
+      );
+    }
+
+    // Return mock analysis data matching the Analysis interface
+    const mockAnalysis = {
+      id: "12345678-1234-4234-8234-123456789012",
+      idea: idea,
+      detailedSummary: "This is a comprehensive analysis of your startup idea. The concept shows strong market potential and addresses a real pain point in the industry.",
+      viabilitySummary: "This is a promising startup idea with strong market potential and clear value proposition.",
+      finalScore: 4.1,
+      finalScoreExplanation: "The idea demonstrates strong viability with good market fit, feasible implementation, and clear monetization potential.",
+      founderQuestions: [
+        {
+          question: "What is your unique value proposition?",
+          why: "Understanding your differentiation is crucial for market positioning",
+          suggestedApproach: "Conduct competitor analysis and identify your key advantages"
+        },
+        {
+          question: "Who is your target customer?",
+          why: "Precise customer targeting enables effective marketing and product development",
+          suggestedApproach: "Create detailed customer personas based on market research"
+        }
+      ],
+      swotAnalysis: {
+        strengths: [
+          "Clear problem-solution fit",
+          "Strong value proposition",
+          "Scalable business model",
+          "Growing market demand"
+        ],
+        weaknesses: [
+          "Competitive market space",
+          "Requires significant initial investment",
+          "Technical complexity"
+        ],
+        opportunities: [
+          "Expand to adjacent markets",
+          "Leverage emerging technologies",
+          "Strategic partnerships potential"
+        ],
+        threats: [
+          "New competitors entering market",
+          "Changing regulations",
+          "Economic downturn impact"
+        ]
+      },
+      currentMarketTrends: [
+        {
+          trend: "Digital transformation acceleration",
+          relevance: "High relevance to your solution",
+          impact: "Positive - increases market demand"
+        },
+        {
+          trend: "Remote work adoption",
+          relevance: "Medium relevance",
+          impact: "Positive - expands addressable market"
+        }
+      ],
+      scoringRubric: [
+        {
+          name: "Market Demand",
+          score: 4.5,
+          maxScore: 5,
+          justification: "Strong market demand with clear pain points and growing interest"
+        },
+        {
+          name: "Market Size",
+          score: 4.2,
+          maxScore: 5,
+          justification: "Large addressable market with significant growth potential"
+        },
+        {
+          name: "Uniqueness",
+          score: 3.8,
+          maxScore: 5,
+          justification: "Novel approach with some unique features and differentiation"
+        },
+        {
+          name: "Scalability",
+          score: 4.3,
+          maxScore: 5,
+          justification: "Highly scalable business model with low marginal costs"
+        },
+        {
+          name: "Potential Profitability",
+          score: 4.0,
+          maxScore: 5,
+          justification: "Clear monetization path with multiple revenue streams"
+        }
+      ],
+      competitors: [
+        {
+          name: "Competitor A",
+          strengths: ["Established brand", "Large user base"],
+          weaknesses: ["Legacy technology", "Poor user experience"],
+          differentiators: "Your solution offers better UX and modern tech stack"
+        },
+        {
+          name: "Competitor B",
+          strengths: ["Strong funding", "Fast growth"],
+          weaknesses: ["Limited features", "High pricing"],
+          differentiators: "Your solution provides more features at competitive pricing"
+        }
+      ],
+      monetizationStrategies: [
+        {
+          strategy: "Subscription Model",
+          viability: "High",
+          pros: ["Predictable revenue", "Customer retention"],
+          cons: ["Requires ongoing value delivery"],
+          estimatedRevenue: "$50-100K MRR within 12 months"
+        },
+        {
+          strategy: "Freemium",
+          viability: "Medium",
+          pros: ["Low barrier to entry", "Viral growth potential"],
+          cons: ["Conversion challenges"],
+          estimatedRevenue: "$30-60K MRR within 12 months"
+        }
+      ],
+      improvementSuggestions: [
+        {
+          area: "Product Development",
+          suggestion: "Focus on MVP with core features first",
+          priority: "High",
+          impact: "Faster time to market and early user feedback",
+          effort: "Medium"
+        },
+        {
+          area: "Market Strategy",
+          suggestion: "Validate with target customers before full launch",
+          priority: "High",
+          impact: "Reduced risk and better product-market fit",
+          effort: "Low"
+        },
+        {
+          area: "Team Building",
+          suggestion: "Bring on technical co-founder or CTO",
+          priority: "Medium",
+          impact: "Stronger technical execution",
+          effort: "High"
+        }
+      ],
+      nextSteps: [
+        {
+          step: "Validate assumptions with target customers",
+          timeline: "Week 1-2",
+          resources: "Customer interviews, surveys"
+        },
+        {
+          step: "Build MVP with core features",
+          timeline: "Month 1-3",
+          resources: "Development team, design resources"
+        },
+        {
+          step: "Launch beta and gather feedback",
+          timeline: "Month 3-4",
+          resources: "Beta users, analytics tools"
+        }
+      ],
+      createdAt: new Date().toISOString(),
+      locale: locale
+    };
+
+    return NextResponse.json(mockAnalysis, { status: 200 });
   }
 
   /**

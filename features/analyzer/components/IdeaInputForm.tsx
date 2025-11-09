@@ -199,6 +199,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
         <div className="relative">
           <textarea
             id="startup-idea"
+            data-testid="idea-input"
             rows={5}
             className="w-full p-3 pr-16 bg-black/50 border border-slate-700 rounded-none focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 placeholder-slate-500 text-slate-100 font-mono"
             placeholder={t("formPlaceholder")}
@@ -210,6 +211,7 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
         </div>
         <button
           type="submit"
+          data-testid="analyze-button"
           disabled={isLoading || !idea.trim()}
           className="relative pointer-events-auto mt-4 w-full flex justify-center items-center px-6 py-3 border border-secondary text-base font-bold rounded-none text-white bg-secondary/20 hover:bg-secondary/40 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary focus:ring-secondary disabled:bg-slate-700 disabled:border-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed transition-all duration-300 uppercase tracking-widest group"
         >

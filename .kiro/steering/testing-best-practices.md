@@ -5,55 +5,124 @@ inclusion: always
 
 # Testing Best Practices
 
-## Test Execution
-- Always run tests with minimal verbosity to prevent session timeouts
-- Use `--silent` or `--quiet` flags when available
-- Filter tests with grep/pattern matching for focused testing
-- Avoid running full test suites in automated contexts unless necessary
+## Test Framework: Vitest
 
-## Common Test Commands
+This project uses Vitest as the testing framework. Vitest is a fast, modern test runner built for Vite projects with native ESM support.
+
+## Test Execution Commands
+
 ```bash
-# NPM/Yarn - Use silent mode
-npm test -- --silent
-yarn test --silent
+# Run tests once (default for CI/automated contexts)
+npm test
 
-# Jest - Minimal output
-npm test -- --verbose=false --silent
-npx jest --silent --passWithNoTests
+# Run tests in watch mode (for development)
+npm run test:watch
 
-# Pytest - Quiet mode
-pytest -q
-python -m pytest --tb=short -q
-
-# Mocha - Minimal reporter
-npx mocha --reporter min
-
-# Filtering specific tests
-npm test -- --grep "specific test"
-npx jest --testNamePattern="specific test"
-pytest -k "test_specific"
+# Run tests with coverage reports
+npm run test:coverage
 ```
 
-## Output Management
-- Use summary reporters instead of verbose output
-- Capture detailed logs only when tests fail
-- Use `--bail` or `--maxfail=1` to stop on first failure
-- Redirect verbose output to files when needed: `npm test > test-results.log 2>&1`
+## Test File Patterns
 
-## Test Organization
-- Group related tests to enable selective running
-- Use test tags/categories for filtering
-- Keep test names descriptive but concise
-- Separate unit, integration, and e2e tests
+- **Location**: Tests are located in `src/**/*.test.ts` and `lib/**/*.test.ts`
+- **Naming**: Use `.test.ts` suffix for test files
+- **Structure**: Use `describe/it/expect` pattern (Vitest globals enabled)
+- **Mocking**: Use Vitest's `vi.mock()` for mocking modules
 
-## Performance
-- Run tests in parallel when possible (`--parallel`, `--maxWorkers`)
-- Use test caching mechanisms
-- Mock external dependencies to speed up tests
-- Skip slow tests in development with appropriate flags
+Example test structure:
 
-## CI/CD Considerations
-- Use different verbosity levels for local vs CI environments
-- Capture test artifacts (coverage, reports) separately from console output
-- Use test result formatters that work well with CI systems
-- Consider splitting large test suites across multiple jobs
+```typescript
+import { describe, it, expect } from "vitest";
+
+describe("ComponentName", () => {
+  describe("methodName", () => {
+    it("should perform expected behavior", () => {
+      // Arrange
+      const input = "test";
+
+      // Act
+      const result = methodName(input);
+
+      // Assert
+      expect(result).toBe("expected");
+    });
+  });
+});
+```
+
+## Test Organization by Hexagonal Architecture Layer
+
+### Domain Layer Tests
+
+- **Pure unit tests**: Test entities, value objects, and domain services in isolation
+- **No mocks**: Domain logic should not depend on external systems
+- **Focus**: Business rules, invariants, and validation logic
+- **Example**: `src/domain/entities/__tests__/Analysis.test.ts`
+
+### Application Layer Tests
+
+- **Mock dependencies**: Mock repositories and external services
+- **Test use cases**: Verify orchestration and business flow
+- **Focus**: Use case logic, error handling, and service coordination
+- **Example**: `src/application/use-cases/__tests__/AnalyzeIdeaUseCase.test.ts`
+
+### Infrastructure Layer Tests
+
+- **Integration tests**: Test with real dependencies when possible
+- **Test adapters**: Verify database repositories, external API clients
+- **Focus**: Data mapping, persistence, and external integrations
+- **Example**: `src/infrastructure/database/supabase/repositories/__tests__/`
+
+## Vitest Configuration
+
+Configuration is defined in `vitest.config.ts`:
+
+- **Environment**: Node.js
+- **Globals**: Enabled (no need to import describe/it/expect)
+- **Coverage**: V8 provider with text, JSON, and HTML reporters
+- **Path aliases**: Configured to match TypeScript paths (@/domain, @/application, etc.)
+
+## Tesecution Best Practices
+
+- **Minimal verbosity**: Tests run with minimal output by default to prevent timeouts
+- **Focused testing**: Use `.only()` to run specific tests during development
+- **Skip tests**: Use `.skip()` to temporarily disable tests
+- **Parallel execution**: Vitest runs tests in parallel by default for better performance
+- **Bail on failure**: Use `--bail` flag to stop on first failure when debugging
+
+## Performance Optimization
+
+- **Parallel execution**: Enabled by default in Vitest
+- **Test isolation**: Each test file runs in its own environment
+- **Fast re-runs**: Vitest's watch mode only re-runs affected tests
+- **Coverage caching**: Coverage reports are cached for faster subsequent runs
+
+## Filtering and Targeting Tests
+
+```bash
+# Run tests matching a pattern
+npm test -- --grep "Analysis"
+
+# Run tests in a specific file
+npm test -- src/domain/entities/__tests__/Analysis.test.ts
+
+# Run only tests marked with .only()
+npm test -- --run
+
+# Update snapshots
+npm test -- -u
+```
+
+## Coverage Requirements
+
+Coverage configuration excludes:
+
+- Type definition files (`*.d.ts`)
+- Configuration files (`*.config.*`)
+- Test files themselves (`*.test.*`, `*.spec.*`)
+- Test utilities (`test-runner.ts`)
+
+Coverage reports are generated in:
+
+- Console output (text format)
+- `coverage/` directory (HTML and JSON formats)
