@@ -6,6 +6,8 @@ create table if not exists public.profiles (
 create table if not exists public.saved_analyses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
+  -- Type discriminator for unified table: 'idea' or 'hackathon'
+  analysis_type text not null default 'idea' check (analysis_type in ('idea','hackathon')),
   idea text not null,
   analysis jsonb not null,
   audio_base64 text,
@@ -22,6 +24,29 @@ end $$;
 alter table profiles add column if not exists tier public.user_tier not null default 'free';
 
 alter table saved_analyses add column if not exists audio_base64 text;
+
+-- Ensure unified schema column exists for fresh or previously-seeded DBs
+alter table saved_analyses add column if not exists analysis_type text;
+alter table saved_analyses alter column analysis_type set default 'idea';
+update saved_analyses set analysis_type = 'idea' where analysis_type is null;
+alter table saved_analyses alter column analysis_type set not null;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'saved_analyses_analysis_type_check'
+  ) then
+    alter table saved_analyses
+      add constraint saved_analyses_analysis_type_check
+      check (analysis_type in ('idea','hackathon'));
+  end if;
+end $$;
+
+-- Helpful indexes for common query patterns
+create index if not exists idx_saved_analyses_user_id on saved_analyses(user_id);
+create index if not exists idx_saved_analyses_type on saved_analyses(analysis_type);
+create index if not exists idx_saved_analyses_user_type on saved_analyses(user_id, analysis_type);
+create index if not exists idx_saved_analyses_created_at on saved_analyses(created_at desc);
 
 create table if not exists public.saved_hackathon_analyses (
   id uuid primary key default gen_random_uuid(),
