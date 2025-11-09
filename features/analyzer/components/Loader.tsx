@@ -10,7 +10,7 @@ interface LoaderProps {
 const Loader: React.FC<LoaderProps> = ({ message }) => {
   const { t } = useLocale();
   return (
-    <div className="flex flex-col items-center justify-center my-12 text-center animate-fade-in">
+    <div data-testid="loading-spinner" className="flex flex-col items-center justify-center my-12 text-center animate-fade-in">
       <div className="relative w-24 h-24">
         <div className="absolute inset-0 border-2 border-accent/30 rounded-full" />
         <div

@@ -105,6 +105,12 @@ export class AnalyzeIdeaUseCase {
         }
       }
 
+      // Step 6.5: Add default feedback if not present (for testing/mock mode)
+      if (!analysis.feedback || analysis.feedback.trim() === '') {
+        const defaultFeedback = this.generateDefaultFeedback(analysis, scoreBreakdown);
+        analysis.updateFeedback(defaultFeedback);
+      }
+
       // Step 7: Persist the analysis
       const saveResult = await this.analysisRepository.save(analysis);
       
@@ -135,6 +141,45 @@ export class AnalyzeIdeaUseCase {
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Unknown error during analysis'));
     }
+  }
+
+  /**
+   * Generate default feedback for analysis (used in mock/test mode)
+   */
+  private generateDefaultFeedback(
+    analysis: Analysis,
+    scoreBreakdown: {
+      totalScore: Score;
+      criteriaScores: Array<{
+        criteria: { name: string };
+        score: Score;
+      }>;
+    }
+  ): string {
+    const score = scoreBreakdown.totalScore.value;
+    let feedback = `Your idea has been analyzed and received a score of ${score}/100. `;
+
+    if (score >= 80) {
+      feedback += 'This is an excellent idea with strong potential! ';
+    } else if (score >= 60) {
+      feedback += 'This is a good idea with solid fundamentals. ';
+    } else if (score >= 40) {
+      feedback += 'This idea has potential but needs refinement. ';
+    } else {
+      feedback += 'This idea needs significant development. ';
+    }
+
+    feedback += `The analysis considered multiple criteria including market potential, technical feasibility, and innovation level. `;
+    
+    const topCriteria = scoreBreakdown.criteriaScores
+      .sort((a, b) => b.score.value - a.score.value)
+      .slice(0, 2);
+    
+    if (topCriteria.length > 0) {
+      feedback += `Your strongest areas are ${topCriteria.map(c => c.criteria.name.toLowerCase()).join(' and ')}. `;
+    }
+
+    return feedback;
   }
 
   /**

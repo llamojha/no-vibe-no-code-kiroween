@@ -11,6 +11,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {
   const { t } = useLocale();
   return (
     <div
+      data-testid="error-message"
       className="my-4 p-4 bg-red-900/20 border-l-4 border-red-500 text-red-300 rounded-none animate-fade-in"
       role="alert"
     >

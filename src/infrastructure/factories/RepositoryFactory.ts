@@ -5,6 +5,8 @@ import { SupabaseAnalysisRepository } from '../database/supabase/repositories/Su
 import { SupabaseUserRepository } from '../database/supabase/repositories/SupabaseUserRepository';
 import { AnalysisMapper } from '../database/supabase/mappers/AnalysisMapper';
 import { UserMapper } from '../database/supabase/mappers/UserMapper';
+import { MockAnalysisRepository } from '@/lib/testing/mocks/MockAnalysisRepository';
+import { FeatureFlagManager } from '@/lib/testing/FeatureFlagManager';
 
 /**
  * Factory for creating database repository instances
@@ -19,10 +21,13 @@ import { UserMapper } from '../database/supabase/mappers/UserMapper';
  */
 export class RepositoryFactory {
   private repositories: Map<string, IAnalysisRepository | IUserRepository> = new Map();
+  private featureFlagManager: FeatureFlagManager;
 
   private constructor(
     private readonly supabaseClient: SupabaseClient
-  ) {}
+  ) {
+    this.featureFlagManager = new FeatureFlagManager();
+  }
 
   /**
    * Create a new RepositoryFactory instance
@@ -47,14 +52,28 @@ export class RepositoryFactory {
 
   /**
    * Create configured AnalysisRepository instance
+   * Returns MockAnalysisRepository when in mock mode, otherwise SupabaseAnalysisRepository
    */
   createAnalysisRepository(): IAnalysisRepository {
     const cacheKey = 'analysisRepository';
     
     if (!this.repositories.has(cacheKey)) {
-      const mapper = new AnalysisMapper();
-      const repository = new SupabaseAnalysisRepository(this.supabaseClient, mapper);
-      this.repositories.set(cacheKey, repository);
+      // Check if mock mode is enabled
+      if (this.featureFlagManager.isMockModeEnabled()) {
+        // Create mock repository for testing
+        const mockRepository = new MockAnalysisRepository();
+        this.repositories.set(cacheKey, mockRepository);
+        
+        // Log when mock repository is created (only in non-production)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[RepositoryFactory] ✅ Mock Analysis Repository created');
+        }
+      } else {
+        // Create production Supabase repository
+        const mapper = new AnalysisMapper();
+        const repository = new SupabaseAnalysisRepository(this.supabaseClient, mapper);
+        this.repositories.set(cacheKey, repository);
+      }
     }
 
     const repository = this.repositories.get(cacheKey);
