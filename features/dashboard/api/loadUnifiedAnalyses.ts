@@ -2,6 +2,7 @@ import { browserSupabase } from "@/lib/supabase/client";
 import {
   mapSavedAnalysesRow,
   mapSavedHackathonAnalysesRow,
+  mapSavedFrankensteinIdea,
 } from "@/lib/supabase/mappers";
 import type { SavedAnalysesRow } from "@/lib/supabase/types";
 import type {
@@ -9,6 +10,7 @@ import type {
   SavedAnalysisRecord,
   SavedHackathonAnalysis,
   AnalysisCounts,
+  SavedFrankensteinIdea,
 } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
@@ -74,6 +76,63 @@ function transformHackathonAnalysis(
 }
 
 /**
+ * Transform a Doctor Frankenstein idea to unified format
+ */
+function transformFrankensteinIdea(
+  idea: SavedFrankensteinIdea
+): UnifiedAnalysisRecord {
+  const fullAnalysis = idea.analysis.fullAnalysis as
+    | {
+        summary?: string;
+        idea_description?: string;
+        metrics?: {
+          originality_score?: number;
+          feasibility_score?: number;
+          impact_score?: number;
+          scalability_score?: number;
+          wow_factor?: number;
+        };
+      }
+    | undefined;
+
+  const metricValues = fullAnalysis?.metrics
+    ? [
+        fullAnalysis.metrics.originality_score ?? 0,
+        fullAnalysis.metrics.feasibility_score ?? 0,
+        fullAnalysis.metrics.impact_score ?? 0,
+        fullAnalysis.metrics.scalability_score ?? 0,
+        fullAnalysis.metrics.wow_factor ?? 0,
+      ]
+    : [];
+
+  const average100 =
+    metricValues.length > 0
+      ? metricValues.reduce((sum, value) => sum + (value || 0), 0) /
+        metricValues.length
+      : 0;
+  const normalizedScore = Math.max(
+    0,
+    Math.min(5, Number((average100 / 20).toFixed(1)))
+  );
+
+  return {
+    id: idea.id,
+    userId: idea.userId,
+    category: "frankenstein",
+    title: idea.analysis.ideaName || `${idea.tech1.name} + ${idea.tech2.name}`,
+    createdAt: idea.createdAt,
+    finalScore: normalizedScore,
+    summary:
+      fullAnalysis?.summary ||
+      fullAnalysis?.idea_description ||
+      idea.analysis.description ||
+      `${idea.tech1.name} meets ${idea.tech2.name}`,
+    audioBase64: undefined,
+    originalData: idea,
+  };
+}
+
+/**
  * Load all analyses for the current user from both tables and transform to unified format
  * Routes to local storage when in local dev mode
  */
@@ -88,10 +147,12 @@ export async function loadUnifiedAnalyses(): Promise<{
   if (isLocalDevMode) {
     try {
       // Load from local storage
-      const [startupAnalyses, hackathonAnalyses] = await Promise.all([
-        localStorageService.loadAnalyses(),
-        localStorageService.loadHackathonAnalyses(),
-      ]);
+      const [startupAnalyses, hackathonAnalyses, frankensteinIdeas] =
+        await Promise.all([
+          localStorageService.loadAnalyses(),
+          localStorageService.loadHackathonAnalyses(),
+          localStorageService.loadFrankensteinIdeas(),
+        ]);
 
       // Transform to unified format
       const transformedStartupAnalyses = startupAnalyses.map(
@@ -100,11 +161,15 @@ export async function loadUnifiedAnalyses(): Promise<{
       const transformedHackathonAnalyses = hackathonAnalyses.map(
         transformHackathonAnalysis
       );
+      const transformedFrankensteinIdeas = frankensteinIdeas.map(
+        transformFrankensteinIdea
+      );
 
       // Combine and sort by creation date (newest first)
       const allAnalyses = [
         ...transformedStartupAnalyses,
         ...transformedHackathonAnalyses,
+        ...transformedFrankensteinIdeas,
       ].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -115,6 +180,7 @@ export async function loadUnifiedAnalyses(): Promise<{
         total: allAnalyses.length,
         idea: transformedStartupAnalyses.length,
         kiroween: transformedHackathonAnalyses.length,
+        frankenstein: transformedFrankensteinIdeas.length,
       };
 
       return { data: allAnalyses, counts, error: null };
@@ -122,7 +188,7 @@ export async function loadUnifiedAnalyses(): Promise<{
       console.error("Failed to load analyses from local storage", error);
       return {
         data: [],
-        counts: { total: 0, idea: 0, kiroween: 0 },
+        counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
         error:
           "Failed to load your analyses from local storage. Please try again.",
       };
@@ -141,7 +207,7 @@ export async function loadUnifiedAnalyses(): Promise<{
   if (userError || !user) {
     return {
       data: [],
-      counts: { total: 0, idea: 0, kiroween: 0 },
+      counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
       error: "Authentication required",
     };
   }
@@ -175,6 +241,23 @@ export async function loadUnifiedAnalyses(): Promise<{
       throw new Error("Failed to load hackathon analyses");
     }
 
+    // Load Doctor Frankenstein ideas
+    const { data: frankensteinData, error: frankensteinError } = await supabase
+      .from("saved_analyses")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("analysis_type", "frankenstein")
+      .order("created_at", { ascending: false })
+      .returns<SavedAnalysesRow[]>();
+
+    if (frankensteinError) {
+      console.error(
+        "Failed to load Doctor Frankenstein ideas",
+        frankensteinError
+      );
+      throw new Error("Failed to load Doctor Frankenstein ideas");
+    }
+
     // Transform to unified format
     const startupAnalyses = (startupData ?? [])
       .map(mapSavedAnalysesRow)
@@ -183,18 +266,23 @@ export async function loadUnifiedAnalyses(): Promise<{
     const hackathonAnalyses = (hackathonData ?? [])
       .map(mapSavedHackathonAnalysesRow)
       .map(transformHackathonAnalysis);
+    const frankensteinAnalyses = (frankensteinData ?? [])
+      .map(mapSavedFrankensteinIdea)
+      .map(transformFrankensteinIdea);
 
     // Combine and sort by creation date (newest first)
-    const allAnalyses = [...startupAnalyses, ...hackathonAnalyses].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const allAnalyses = [
+      ...startupAnalyses,
+      ...hackathonAnalyses,
+      ...frankensteinAnalyses,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Calculate counts
     const counts: AnalysisCounts = {
       total: allAnalyses.length,
       idea: startupAnalyses.length,
       kiroween: hackathonAnalyses.length,
+      frankenstein: frankensteinAnalyses.length,
     };
 
     return { data: allAnalyses, counts, error: null };
@@ -202,7 +290,7 @@ export async function loadUnifiedAnalyses(): Promise<{
     console.error("Failed to load unified analyses", error);
     return {
       data: [],
-      counts: { total: 0, idea: 0, kiroween: 0 },
+      counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
       error: "Failed to load your analyses. Please try again.",
     };
   }
@@ -247,6 +335,23 @@ export async function loadUnifiedAnalysesServer(
       throw new Error("Failed to load hackathon analyses");
     }
 
+    // Load Doctor Frankenstein ideas
+    const { data: frankensteinData, error: frankensteinError } =
+      await supabase
+        .from("saved_analyses")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("analysis_type", "frankenstein")
+        .order("created_at", { ascending: false });
+
+    if (frankensteinError) {
+      console.error(
+        "Failed to load Doctor Frankenstein ideas",
+        frankensteinError
+      );
+      throw new Error("Failed to load Doctor Frankenstein ideas");
+    }
+
     // Transform to unified format
     const startupAnalyses = (startupData ?? [])
       .map(mapSavedAnalysesRow)
@@ -255,18 +360,23 @@ export async function loadUnifiedAnalysesServer(
     const hackathonAnalyses = (hackathonData ?? [])
       .map(mapSavedHackathonAnalysesRow)
       .map(transformHackathonAnalysis);
+    const frankensteinAnalyses = (frankensteinData ?? [])
+      .map(mapSavedFrankensteinIdea)
+      .map(transformFrankensteinIdea);
 
     // Combine and sort by creation date (newest first)
-    const allAnalyses = [...startupAnalyses, ...hackathonAnalyses].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    const allAnalyses = [
+      ...startupAnalyses,
+      ...hackathonAnalyses,
+      ...frankensteinAnalyses,
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Calculate counts
     const counts: AnalysisCounts = {
       total: allAnalyses.length,
       idea: startupAnalyses.length,
       kiroween: hackathonAnalyses.length,
+      frankenstein: frankensteinAnalyses.length,
     };
 
     return { data: allAnalyses, counts, error: null };
@@ -274,7 +384,7 @@ export async function loadUnifiedAnalysesServer(
     console.error("Failed to load unified analyses", error);
     return {
       data: [],
-      counts: { total: 0, idea: 0, kiroween: 0 },
+      counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
       error: "Failed to load analyses. Please try again.",
     };
   }

@@ -2,11 +2,11 @@
 
 import React from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
-import type { AnalysisCounts } from "@/lib/types";
+import type { AnalysisCounts, DashboardFilterState } from "@/lib/types";
 
 interface AnalysisFilterProps {
-  currentFilter: "all" | "idea" | "kiroween";
-  onFilterChange: (filter: "all" | "idea" | "kiroween") => void;
+  currentFilter: DashboardFilterState["filter"];
+  onFilterChange: (filter: DashboardFilterState["filter"]) => void;
   counts: AnalysisCounts;
 }
 
@@ -78,6 +78,26 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
         </svg>
       ),
     },
+    {
+      key: "frankenstein" as const,
+      label: t('doctorFrankensteinIdeas'),
+      count: counts.frankenstein,
+      icon: (
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-8 4h10M12 6v6m-7 8h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -97,6 +117,9 @@ const AnalysisFilter: React.FC<AnalysisFilterProps> = ({
             colorClasses = "bg-teal-500/20 border-teal-500 text-teal-400";
           } else if (option.key === "kiroween") {
             colorClasses = "bg-orange-500/20 border-orange-500 text-orange-400";
+          } else if (option.key === "frankenstein") {
+            colorClasses =
+              "bg-purple-500/20 border-purple-500 text-purple-300";
           } else {
             colorClasses = "bg-accent/20 border-accent text-accent";
           }

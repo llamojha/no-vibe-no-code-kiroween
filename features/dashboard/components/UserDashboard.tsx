@@ -12,13 +12,9 @@ import type {
   UnifiedAnalysisRecord,
   AnalysisCounts,
   DashboardFilterState,
-  SavedFrankensteinIdea,
 } from "@/lib/types";
 import { capture } from "@/features/analytics/posthogClient";
 import { isEnabled } from "@/lib/featureFlags";
-import { browserSupabase } from "@/lib/supabase/client";
-import { mapSavedFrankensteinIdea } from "@/lib/supabase/mappers";
-import type { SavedAnalysesRow } from "@/lib/supabase/types";
 
 type SortOption = "newest" | "oldest" | "az";
 
@@ -43,7 +39,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 
   const [analyses, setAnalyses] =
     useState<UnifiedAnalysisRecord[]>(initialAnalyses);
-  const [counts, setCounts] = useState<AnalysisCounts>(initialCounts);
+  const [counts, setCounts] = useState<AnalysisCounts>({
+    total: initialCounts.total ?? 0,
+    idea: initialCounts.idea ?? 0,
+    kiroween: initialCounts.kiroween ?? 0,
+    frankenstein: initialCounts.frankenstein ?? 0,
+  });
   const [filterState, setFilterState] = useState<DashboardFilterState>({
     filter: "all",
     searchQuery: "",
@@ -52,9 +53,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const [analysisToDelete, setAnalysisToDelete] =
     useState<UnifiedAnalysisRecord | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [frankensteinIdeas, setFrankensteinIdeas] = useState<SavedFrankensteinIdea[]>([]);
-  const [isLoadingFrankenstein, setIsLoadingFrankenstein] = useState(false);
-  const [frankensteinIdeaToDelete, setFrankensteinIdeaToDelete] = useState<SavedFrankensteinIdea | null>(null);
   const cancelButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const refreshAnalyses = useCallback(async () => {
@@ -73,50 +71,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
     capture("dashboard_view");
   }, []);
 
-  // Load Frankenstein ideas
   useEffect(() => {
-    async function loadFrankensteinIdeas() {
-      setIsLoadingFrankenstein(true);
-      try {
-        // Check if we're in local dev mode
-        const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
-
-        if (isLocalDevMode) {
-          // Use localStorage in dev mode
-          const { localStorageService } = await import("@/lib/localStorage");
-          const ideas = await localStorageService.loadFrankensteinIdeas();
-          setFrankensteinIdeas(ideas);
-        } else {
-          // Use Supabase in production
-          const supabaseClient = browserSupabase();
-          const { data, error } = await supabaseClient
-            .from("saved_analyses")
-            .select("*")
-            .eq("analysis_type", "frankenstein")
-            .order("created_at", { ascending: false })
-            .limit(10);
-
-          if (error) {
-            console.error("Error loading Frankenstein ideas:", error);
-            return;
-          }
-
-          if (data) {
-            const mappedIdeas = data.map((row) =>
-              mapSavedFrankensteinIdea(row as SavedAnalysesRow)
-            );
-            setFrankensteinIdeas(mappedIdeas);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load Frankenstein ideas:", err);
-      } finally {
-        setIsLoadingFrankenstein(false);
-      }
-    }
-
-    loadFrankensteinIdeas();
-  }, []);
+    void refreshAnalyses();
+  }, [refreshAnalyses]);
 
   const filteredAndSortedAnalyses = useMemo(() => {
     return analyses
@@ -156,8 +113,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const handleDelete = useCallback(async () => {
     if (!analysisToDelete || !supabase) return;
 
-    const analysisType =
-      analysisToDelete.category === "kiroween" ? "hackathon" : "idea";
+    let analysisType: "idea" | "hackathon" | "frankenstein" = "idea";
+    if (analysisToDelete.category === "kiroween") {
+      analysisType = "hackathon";
+    } else if (analysisToDelete.category === "frankenstein") {
+      analysisType = "frankenstein";
+    }
 
     const { error } = await supabase
       .from("saved_analyses")
@@ -180,45 +141,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
         analysisToDelete.category === "kiroween"
           ? prev.kiroween - 1
           : prev.kiroween,
+      frankenstein:
+        analysisToDelete.category === "frankenstein"
+          ? prev.frankenstein - 1
+          : prev.frankenstein,
     }));
     setAnalysisToDelete(null);
   }, [analysisToDelete, supabase]);
-
-  const handleDeleteFrankensteinIdea = useCallback(async () => {
-    if (!frankensteinIdeaToDelete) return;
-
-    try {
-      // Check if we're in local dev mode
-      const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
-
-      if (isLocalDevMode) {
-        // Use localStorage in dev mode
-        const { localStorageService } = await import("@/lib/localStorage");
-        await localStorageService.deleteFrankensteinIdea(frankensteinIdeaToDelete.id);
-      } else {
-        // Use Supabase in production
-        if (!supabase) return;
-        
-        const { error } = await supabase
-          .from("saved_analyses")
-          .delete()
-          .eq("id", frankensteinIdeaToDelete.id)
-          .eq("analysis_type", "frankenstein");
-
-        if (error) {
-          console.error("Failed to delete Frankenstein idea", error);
-          return;
-        }
-      }
-
-      setFrankensteinIdeas((prev) =>
-        prev.filter((idea) => idea.id !== frankensteinIdeaToDelete.id)
-      );
-      setFrankensteinIdeaToDelete(null);
-    } catch (err) {
-      console.error("Failed to delete Frankenstein idea:", err);
-    }
-  }, [frankensteinIdeaToDelete, supabase]);
 
   // Focus management for delete dialog
   useEffect(() => {
@@ -233,7 +162,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   }, [router, signOut]);
 
   const handleFilterChange = useCallback(
-    (filter: "all" | "idea" | "kiroween") => {
+    (filter: "all" | "idea" | "kiroween" | "frankenstein") => {
       setFilterState((prev) => ({ ...prev, filter }));
     },
     []
@@ -392,7 +321,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                 : t('noAnalysesMatch')}
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4" data-testid="analyses-list">
               {filteredAndSortedAnalyses.map((analysis) => (
                 <AnalysisCard
                   key={analysis.id}
@@ -404,72 +333,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           )}
         </div>
 
-        {/* Doctor Frankenstein Ideas Section */}
-        {frankensteinIdeas.length > 0 && (
-          <div
-            className="mt-12 animate-slide-in-up"
-            style={{ animationDelay: "400ms" }}
-          >
-            <h2 className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider mb-4">
-              🧟 Doctor Frankenstein Ideas
-            </h2>
-            <div className="space-y-4">
-              {frankensteinIdeas.map((idea: SavedFrankensteinIdea) => (
-                <div
-                  key={idea.id}
-                  className="bg-primary/30 border border-purple-700 p-4 hover:border-purple-500 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-purple-300">
-                        {idea.analysis.ideaName}
-                      </h3>
-                      <p className="text-sm text-slate-400 mt-1">
-                        {idea.tech1.name} + {idea.tech2.name}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-2">
-                        {new Date(idea.createdAt).toLocaleDateString()} •{" "}
-                        {idea.mode === "companies"
-                          ? "Tech Companies"
-                          : "AWS Services"}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          router.push(
-                            `/doctor-frankenstein?savedId=${idea.id}`
-                          )
-                        }
-                        className="px-4 py-2 text-sm font-medium text-purple-300 bg-purple-900/50 border border-purple-700 rounded hover:bg-purple-800/50 hover:border-purple-500 transition-colors uppercase tracking-wider"
-                      >
-                        {t("view")}
-                      </button>
-                      <button
-                        onClick={() => setFrankensteinIdeaToDelete(idea)}
-                        className="px-3 py-2 text-sm font-medium text-red-300 bg-red-900/50 border border-red-700 rounded hover:bg-red-800/50 hover:border-red-500 transition-colors"
-                        aria-label={`Delete ${idea.analysis.ideaName}`}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
       {analysisToDelete && (
@@ -503,44 +366,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                 onClick={handleDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-none hover:bg-red-500 transition-colors uppercase tracking-wider"
                 aria-label={t('deleteAnalysisLabel', { title: analysisToDelete.title })}
-              >
-                {t('delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {frankensteinIdeaToDelete && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-frankenstein-dialog-title"
-          aria-describedby="delete-frankenstein-dialog-description"
-        >
-          <div className="bg-primary/90 border border-red-500 p-6 max-w-md w-full">
-            <h3
-              id="delete-frankenstein-dialog-title"
-              className="text-xl font-bold text-red-400 uppercase tracking-wider"
-            >
-              {t('deleteAnalysisTitle')}
-            </h3>
-            <p id="delete-frankenstein-dialog-description" className="text-slate-300 mt-4">
-              {t('deleteAnalysisConfirm', { title: frankensteinIdeaToDelete.analysis.ideaName })}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setFrankensteinIdeaToDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800/50 border border-slate-700 rounded-none hover:bg-slate-700/50 transition-colors uppercase tracking-wider"
-                aria-label={t('cancelDeleteLabel')}
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleDeleteFrankensteinIdea}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-none hover:bg-red-500 transition-colors uppercase tracking-wider"
-                aria-label={`Delete ${frankensteinIdeaToDelete.analysis.ideaName}`}
               >
                 {t('delete')}
               </button>

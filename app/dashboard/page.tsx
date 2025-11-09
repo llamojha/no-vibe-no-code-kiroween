@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     // In local dev mode, create mock data and bypass authentication
     const mockUser = generateMockUser();
     const mockAnalyses: UnifiedAnalysisRecord[] = []; // Empty array for now, could be populated with mock data
-    const mockCounts = { total: 0, idea: 0, kiroween: 0 };
+    const mockCounts = { total: 0, idea: 0, kiroween: 0, frankenstein: 0 };
 
     return (
       <div className="relative">
@@ -58,11 +58,17 @@ export default async function DashboardPage() {
   const result = await getDashboardDataAction();
 
   let initialAnalyses: UnifiedAnalysisRecord[] = [];
-  let initialCounts = { total: 0, idea: 0, kiroween: 0 };
+  let initialCounts = { total: 0, idea: 0, kiroween: 0, frankenstein: 0 };
 
   if (result.success && result.data) {
-    initialAnalyses = result.data.analyses;
-    initialCounts = result.data.counts;
+    initialAnalyses = result.data.analyses ?? [];
+    const counts = result.data.counts ?? {};
+    initialCounts = {
+      total: counts.total ?? 0,
+      idea: counts.idea ?? 0,
+      kiroween: counts.kiroween ?? 0,
+      frankenstein: counts.frankenstein ?? 0,
+    };
   } else if (result.error) {
     console.error("Error fetching dashboard data:", result.error);
   }

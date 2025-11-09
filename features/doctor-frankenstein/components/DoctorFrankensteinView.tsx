@@ -13,6 +13,7 @@ import { type FrankensteinIdeaResult } from "../api/generateFrankensteinIdea";
 import { saveFrankensteinIdea, loadFrankensteinIdea } from "../api/saveFrankensteinIdea";
 import type { SavedFrankensteinIdea, TechItem } from "@/lib/types";
 import SpookyLoader from "@/features/kiroween-analyzer/components/SpookyLoader";
+import { isEnabled } from "@/lib/featureFlags";
 
 export const DoctorFrankensteinView: React.FC = () => {
   const router = useRouter();
@@ -22,6 +23,7 @@ export const DoctorFrankensteinView: React.FC = () => {
   const { locale, t } = useLocale();
   const { session, isLoading: isAuthLoading } = useAuth();
   const isLoggedIn = !!session;
+  const shareLinksEnabled = isEnabled("ENABLE_SHARE_LINKS");
   
   const [mode, setMode] = useState<'companies' | 'aws'>('companies');
   const [techCompanies, setTechCompanies] = useState<TechCompany[]>([]);
@@ -269,7 +271,7 @@ export const DoctorFrankensteinView: React.FC = () => {
 
   // Share handler
   const handleShare = useCallback(async () => {
-    if (!savedIdeaRecord) return;
+    if (!shareLinksEnabled || !savedIdeaRecord) return;
 
     const url = `${window.location.origin}/doctor-frankenstein?savedId=${savedIdeaRecord.id}`;
     
@@ -281,7 +283,7 @@ export const DoctorFrankensteinView: React.FC = () => {
       console.error("Failed to copy link", error);
       setError("Failed to copy link to clipboard");
     }
-  }, [savedIdeaRecord]);
+  }, [savedIdeaRecord, shareLinksEnabled]);
 
   // Go to dashboard handler
   const handleGoToDashboard = useCallback(() => {
@@ -599,7 +601,7 @@ export const DoctorFrankensteinView: React.FC = () => {
                       <span>{t("reportSavedMessage") || "Report Saved"}</span>
                     </span>
 
-                    {savedIdeaRecord && (
+                    {shareLinksEnabled && savedIdeaRecord && (
                       <button
                         onClick={handleShare}
                         className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${

@@ -153,7 +153,7 @@ export interface SavedHackathonAnalysis {
 }
 
 // Unified analysis types for dashboard
-export type AnalysisCategory = "idea" | "kiroween";
+export type AnalysisCategory = "idea" | "kiroween" | "frankenstein";
 
 export interface UnifiedAnalysisRecord {
   id: string;
@@ -165,11 +165,11 @@ export interface UnifiedAnalysisRecord {
   summary: string;
   audioBase64?: string | null;
   // Original analysis data
-  originalData: SavedAnalysisRecord | SavedHackathonAnalysis;
+  originalData: SavedAnalysisRecord | SavedHackathonAnalysis | SavedFrankensteinIdea;
 }
 
 export interface DashboardFilterState {
-  filter: "all" | "idea" | "kiroween";
+  filter: "all" | "idea" | "kiroween" | "frankenstein";
   searchQuery: string;
   sortOption: "newest" | "oldest" | "az";
 }
@@ -178,6 +178,7 @@ export interface AnalysisCounts {
   total: number;
   idea: number;
   kiroween: number;
+  frankenstein: number;
 }
 
 // Doctor Frankenstein Types

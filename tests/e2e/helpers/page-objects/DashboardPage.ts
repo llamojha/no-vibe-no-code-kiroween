@@ -7,8 +7,6 @@ import { Page, Locator } from '@playwright/test';
 export class DashboardPage {
   readonly page: Page;
   readonly analysesList: Locator;
-  readonly hackathonProjectsList: Locator;
-  readonly frankensteinIdeasList: Locator;
   readonly emptyStateMessage: Locator;
   readonly loadingSpinner: Locator;
   readonly errorMessage: Locator;
@@ -20,8 +18,6 @@ export class DashboardPage {
     
     // Define locators for dashboard page elements
     this.analysesList = page.locator('[data-testid="analyses-list"]');
-    this.hackathonProjectsList = page.locator('[data-testid="hackathon-projects-list"]');
-    this.frankensteinIdeasList = page.locator('[data-testid="frankenstein-ideas-list"]');
     this.emptyStateMessage = page.locator('[data-testid="empty-state"]');
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
     this.errorMessage = page.locator('[data-testid="error-message"]');
@@ -58,9 +54,16 @@ export class DashboardPage {
     }
   }
 
+  private analysisItems(category?: 'idea' | 'kiroween' | 'frankenstein'): Locator {
+    if (!category) {
+      return this.analysesList.locator('[data-testid="analysis-item"]');
+    }
+    return this.analysesList.locator(`[data-testid="analysis-item"][data-analysis-category="${category}"]`);
+  }
+
   async getAnalysesCount(): Promise<number> {
     try {
-      const items = await this.analysesList.locator('[data-testid="analysis-item"]').count();
+      const items = await this.analysisItems().count();
       return items;
     } catch {
       return 0;
@@ -69,7 +72,7 @@ export class DashboardPage {
 
   async getHackathonProjectsCount(): Promise<number> {
     try {
-      const items = await this.hackathonProjectsList.locator('[data-testid="project-item"]').count();
+      const items = await this.analysisItems('kiroween').count();
       return items;
     } catch {
       return 0;
@@ -78,7 +81,7 @@ export class DashboardPage {
 
   async getFrankensteinIdeasCount(): Promise<number> {
     try {
-      const items = await this.frankensteinIdeasList.locator('[data-testid="frankenstein-item"]').count();
+      const items = await this.analysisItems('frankenstein').count();
       return items;
     } catch {
       return 0;
@@ -86,15 +89,15 @@ export class DashboardPage {
   }
 
   async clickAnalysis(index: number): Promise<void> {
-    await this.analysesList.locator('[data-testid="analysis-item"]').nth(index).click();
+    await this.analysisItems().nth(index).click();
   }
 
   async clickHackathonProject(index: number): Promise<void> {
-    await this.hackathonProjectsList.locator('[data-testid="project-item"]').nth(index).click();
+    await this.analysisItems('kiroween').nth(index).click();
   }
 
   async clickFrankensteinIdea(index: number): Promise<void> {
-    await this.frankensteinIdeasList.locator('[data-testid="frankenstein-item"]').nth(index).click();
+    await this.analysisItems('frankenstein').nth(index).click();
   }
 
   async isEmptyStateVisible(): Promise<boolean> {
@@ -122,12 +125,12 @@ export class DashboardPage {
   }
 
   async getAnalysisTitle(index: number): Promise<string> {
-    const item = this.analysesList.locator('[data-testid="analysis-item"]').nth(index);
+    const item = this.analysisItems().nth(index);
     return await item.locator('[data-testid="analysis-title"]').textContent() || '';
   }
 
   async getAnalysisScore(index: number): Promise<string> {
-    const item = this.analysesList.locator('[data-testid="analysis-item"]').nth(index);
+    const item = this.analysisItems().nth(index);
     return await item.locator('[data-testid="analysis-score"]').textContent() || '';
   }
 }

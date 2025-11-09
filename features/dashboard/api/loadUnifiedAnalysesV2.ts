@@ -1,6 +1,50 @@
-import type { UnifiedAnalysisRecord, AnalysisCounts } from "@/lib/types";
+import type {
+  UnifiedAnalysisRecord,
+  AnalysisCounts,
+  SavedFrankensteinIdea,
+} from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
+
+function transformFrankensteinIdea(
+  idea: SavedFrankensteinIdea
+): UnifiedAnalysisRecord {
+  const metrics = idea.analysis.fullAnalysis?.metrics;
+  const scores = metrics
+    ? [
+        metrics.originality_score ?? 0,
+        metrics.feasibility_score ?? 0,
+        metrics.impact_score ?? 0,
+        metrics.scalability_score ?? 0,
+        metrics.wow_factor ?? 0,
+      ]
+    : [];
+
+  const average100 =
+    scores.length > 0
+      ? scores.reduce((sum, value) => sum + (value || 0), 0) / scores.length
+      : 0;
+  const normalizedScore = Math.max(
+    0,
+    Math.min(5, Number((average100 / 20).toFixed(1)))
+  );
+
+  return {
+    id: idea.id,
+    userId: idea.userId,
+    category: "frankenstein",
+    title: idea.analysis.ideaName || `${idea.tech1.name} + ${idea.tech2.name}`,
+    createdAt: idea.createdAt,
+    finalScore: normalizedScore,
+    summary:
+      idea.analysis.fullAnalysis?.summary ||
+      idea.analysis.fullAnalysis?.idea_description ||
+      idea.analysis.description ||
+      `${idea.tech1.name} meets ${idea.tech2.name}`,
+    audioBase64: undefined,
+    originalData: idea,
+  };
+}
 
 /**
  * Load all analyses for the current user using the new v2 API
@@ -17,10 +61,12 @@ export async function loadUnifiedAnalysesV2(): Promise<{
   if (isLocalDevMode) {
     try {
       // Load from local storage (same as before)
-      const [startupAnalyses, hackathonAnalyses] = await Promise.all([
-        localStorageService.loadAnalyses(),
-        localStorageService.loadHackathonAnalyses(),
-      ]);
+      const [startupAnalyses, hackathonAnalyses, frankensteinIdeas] =
+        await Promise.all([
+          localStorageService.loadAnalyses(),
+          localStorageService.loadHackathonAnalyses(),
+          localStorageService.loadFrankensteinIdeas(),
+        ]);
 
       // Transform to unified format (simplified for now)
       const transformedStartupAnalyses = startupAnalyses.map((analysis) => ({
@@ -54,11 +100,15 @@ export async function loadUnifiedAnalysesV2(): Promise<{
           originalData: analysis,
         })
       );
+      const transformedFrankensteinAnalyses = frankensteinIdeas.map(
+        transformFrankensteinIdea
+      );
 
       // Combine and sort by creation date (newest first)
       const allAnalyses = [
         ...transformedStartupAnalyses,
         ...transformedHackathonAnalyses,
+        ...transformedFrankensteinAnalyses,
       ].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -69,6 +119,7 @@ export async function loadUnifiedAnalysesV2(): Promise<{
         total: allAnalyses.length,
         idea: transformedStartupAnalyses.length,
         kiroween: transformedHackathonAnalyses.length,
+        frankenstein: transformedFrankensteinAnalyses.length,
       };
 
       return { data: allAnalyses, counts, error: null };
@@ -76,7 +127,7 @@ export async function loadUnifiedAnalysesV2(): Promise<{
       console.error("Failed to load analyses from local storage", error);
       return {
         data: [],
-        counts: { total: 0, idea: 0, kiroween: 0 },
+        counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
         error:
           "Failed to load your analyses from local storage. Please try again.",
       };
@@ -125,6 +176,7 @@ export async function loadUnifiedAnalysesV2(): Promise<{
       total: analyses.length,
       idea: analyses.filter((a) => a.category === "idea").length,
       kiroween: analyses.filter((a) => a.category === "kiroween").length,
+      frankenstein: analyses.filter((a) => a.category === "frankenstein").length,
     };
 
     return { data: analyses, counts, error: null };
@@ -132,7 +184,7 @@ export async function loadUnifiedAnalysesV2(): Promise<{
     console.error("Failed to load unified analyses from v2 API", error);
     return {
       data: [],
-      counts: { total: 0, idea: 0, kiroween: 0 },
+      counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
       error: "Failed to load your analyses. Please try again.",
     };
   }
@@ -187,6 +239,7 @@ export async function loadUnifiedAnalysesServerV2(baseUrl: string): Promise<{
       total: analyses.length,
       idea: analyses.filter((a) => a.category === "idea").length,
       kiroween: analyses.filter((a) => a.category === "kiroween").length,
+      frankenstein: analyses.filter((a) => a.category === "frankenstein").length,
     };
 
     return { data: analyses, counts, error: null };
@@ -194,7 +247,7 @@ export async function loadUnifiedAnalysesServerV2(baseUrl: string): Promise<{
     console.error("Failed to load unified analyses from v2 API", error);
     return {
       data: [],
-      counts: { total: 0, idea: 0, kiroween: 0 },
+      counts: { total: 0, idea: 0, kiroween: 0, frankenstein: 0 },
       error: "Failed to load analyses. Please try again.",
     };
   }

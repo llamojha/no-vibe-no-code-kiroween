@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
-import type { UnifiedAnalysisRecord } from "@/lib/types";
+import type { UnifiedAnalysisRecord, AnalysisCategory } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { formatDateUTCEnUS } from "@/lib/date";
 
@@ -36,6 +36,7 @@ const ScoreRing: React.FC<{ score: number; t: (key: string, params?: Record<stri
   return (
     <div
       className={`relative flex-shrink-0 w-16 h-16 flex items-center justify-center font-mono ${scoreColorClass}`}
+      data-testid="analysis-score"
       role="img"
       aria-label={t('analysisScoreLabel', { score: score.toFixed(1), category: scoreCategory })}
     >
@@ -72,52 +73,77 @@ const ScoreRing: React.FC<{ score: number; t: (key: string, params?: Record<stri
   );
 };
 
-const CategoryBadge: React.FC<{ category: "idea" | "kiroween"; t: (key: string, params?: Record<string, string | number>) => string }> = ({
+const CategoryBadge: React.FC<{ category: AnalysisCategory; t: (key: string, params?: Record<string, string | number>) => string }> = ({
   category,
   t,
 }) => {
   const isIdea = category === "idea";
+  const isKiroween = category === "kiroween";
 
-  const badgeClasses = isIdea
-    ? "bg-teal-500/20 border-teal-500 text-teal-400"
-    : "bg-orange-500/20 border-orange-500 text-orange-400";
+  let badgeClasses = "bg-accent/20 border-accent text-accent";
+  let icon = null;
+  let label = t('categoryIdea');
+  let fullLabel = t('startupIdeaAnalysis');
 
-  const icon = isIdea ? (
-    <svg
-      className="h-3 w-3"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-      />
-    </svg>
-  ) : (
-    <svg
-      className="h-3 w-3"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-      />
-    </svg>
-  );
-
-  const label = isIdea ? t('categoryIdea') : t('categoryKiroween');
-  const fullLabel = isIdea
-    ? t('startupIdeaAnalysis')
-    : t('kiroweenProjectAnalysis');
+  if (isIdea) {
+    badgeClasses = "bg-teal-500/20 border-teal-500 text-teal-400";
+    icon = (
+      <svg
+        className="h-3 w-3"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+        />
+      </svg>
+    );
+  } else if (isKiroween) {
+    badgeClasses = "bg-orange-500/20 border-orange-500 text-orange-400";
+    icon = (
+      <svg
+        className="h-3 w-3"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+        />
+      </svg>
+    );
+    label = t('categoryKiroween');
+    fullLabel = t('kiroweenProjectAnalysis');
+  } else {
+    badgeClasses = "bg-purple-500/20 border-purple-500 text-purple-300";
+    icon = (
+      <svg
+        className="h-3 w-3"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12h6m-3-9v18m9-9H3"
+        />
+      </svg>
+    );
+    label = t('categoryFrankenstein');
+    fullLabel = t('frankensteinIdeaAnalysis');
+  }
 
   return (
     <div
@@ -140,19 +166,32 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
   const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
 
   // Determine if this analysis type is enabled
-  const isAnalyzerEnabled =
-    analysis.category === "idea" ? showClassicAnalyzer : showKiroweenAnalyzer;
+  const isAnalyzerEnabled = (() => {
+    switch (analysis.category) {
+      case "idea":
+        return showClassicAnalyzer;
+      case "kiroween":
+        return showKiroweenAnalyzer;
+      case "frankenstein":
+      default:
+        return true;
+    }
+  })();
 
   const handleView = () => {
     if (analysis.category === "idea") {
       router.push(
         `/analyzer?savedId=${encodeURIComponent(analysis.id)}&mode=view`
       );
-    } else {
+    } else if (analysis.category === "kiroween") {
       router.push(
         `/kiroween-analyzer?savedId=${encodeURIComponent(
           analysis.id
         )}&mode=view`
+      );
+    } else {
+      router.push(
+        `/doctor-frankenstein?savedId=${encodeURIComponent(analysis.id)}`
       );
     }
   };
@@ -175,7 +214,11 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
   };
 
   return (
-    <div className="bg-primary/40 border border-slate-700 p-4 flex flex-col sm:flex-row gap-4 sm:items-center animate-fade-in">
+    <div
+      className="bg-primary/40 border border-slate-700 p-4 flex flex-col sm:flex-row gap-4 sm:items-center animate-fade-in"
+      data-testid="analysis-item"
+      data-analysis-category={analysis.category}
+    >
       <ScoreRing score={analysis.finalScore} t={t} />
 
       <div className="flex-1">
@@ -206,7 +249,10 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
           )}
         </div>
 
-        <h3 className="text-xl font-semibold text-slate-200 uppercase tracking-wider mb-1">
+        <h3
+          className="text-xl font-semibold text-slate-200 uppercase tracking-wider mb-1"
+          data-testid="analysis-title"
+        >
           {analysis.title}
         </h3>
 
