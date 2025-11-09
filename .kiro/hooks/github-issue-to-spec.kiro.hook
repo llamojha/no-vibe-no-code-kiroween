@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Generate Spec from GitHub Issue",
+  "description": "Converts a GitHub issue into a complete Kiro spec with requirements.md, design.md, and tasks.md files",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I need you to convert a GitHub issue into a complete Kiro spec. Follow these steps:\n\n1. Ask me for the GitHub issue number from the llamojha/no-vibe-no-code-kiroween repository\n2. Fetch the issue details using the GitHub MCP tools\n3. Analyze the issue and ask clarifying questions if needed:\n   - Scope boundaries (what's IN vs OUT of scope)\n   - User personas and stories\n   - Acceptance criteria details\n   - Architectural layers affected (domain/application/infrastructure)\n   - Dependencies on existing components\n4. Create a new spec directory in .kiro/specs/ with a kebab-case name based on the issue title\n5. Generate three files following the existing spec structure:\n   - requirements.md: Introduction, Glossary, User Stories with Acceptance Criteria\n   - design.md: Architecture overview, Design principles, Components, Data models, Testing strategy\n   - tasks.md: Ordered implementation tasks with checkboxes, linked to requirements\n6. Follow the project's philosophy: minimal scope, single focus, hexagonal architecture alignment\n7. Reference existing specs in .kiro/specs/steering-improvements/ as templates for structure and style\n\nEnsure the spec is actionable, follows hexagonal architecture standards, and maintains the project's minimalist philosophy.\n\nContext files to reference:\n- .kiro/specs/steering-improvements/requirements.md\n- .kiro/specs/steering-improvements/design.md\n- .kiro/specs/steering-improvements/tasks.md\n- .kiro/steering/hexagonal-architecture-standards.md\n- .kiro/steering/philosophy.md\n- .kiro/steering/structure.md"
+  }
+}
