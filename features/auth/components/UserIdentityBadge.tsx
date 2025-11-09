@@ -21,7 +21,7 @@ export const UserIdentityBadge: React.FC<UserIdentityBadgeProps> = ({
   userName,
   className = "",
 }) => {
-  const displayName = userName || userEmail || "User";
+  const displayName = userEmail || userName  || "User";
 
   return (
     <div

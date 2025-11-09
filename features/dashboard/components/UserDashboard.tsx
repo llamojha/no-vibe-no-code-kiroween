@@ -197,26 +197,26 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       </header>
 
       <main className="max-w-4xl mx-auto">
-        {(showClassicAnalyzer || showKiroweenAnalyzer) && (
-          <div className="mb-12 animate-slide-in-up">
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {showClassicAnalyzer && (
-                <button
-                  onClick={() => router.push("/analyzer")}
-                  className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-                >
-                  {t('analyzeStartupIdea')}
-                </button>
-              )}
-              {showKiroweenAnalyzer && (
-                <button
-                  onClick={() => router.push("/kiroween-analyzer")}
-                  className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-                >
-                  {t('analyzeKiroweenProject')}
-                </button>
-              )}
+      {(showClassicAnalyzer || showKiroweenAnalyzer) && (
+        <div className="mb-12 animate-slide-in-up">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {showClassicAnalyzer && (
               <button
+                onClick={() => router.push("/analyzer")}
+                className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+              >
+                💡 {t("analyzeStartupIdea")}
+              </button>
+            )}
+            {showKiroweenAnalyzer && (
+              <button
+                onClick={() => router.push("/kiroween-analyzer")}
+                className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+              >
+                🎃 {t("analyzeKiroweenProject")}
+              </button>
+            )}
+            <button
                 onClick={() => router.push("/doctor-frankenstein")}
                 className="px-8 py-4 bg-purple-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-purple-500/30 hover:bg-purple-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
               >
