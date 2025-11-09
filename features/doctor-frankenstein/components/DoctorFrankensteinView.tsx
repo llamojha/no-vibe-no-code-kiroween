@@ -375,6 +375,31 @@ export const DoctorFrankensteinView: React.FC = () => {
     setSlotSelectionLocked(false);
   };
 
+  const handleGenerateNewIdea = useCallback(() => {
+    if (mode === 'companies') {
+      setCompaniesState({
+        selectedItems: [],
+        frankensteinIdea: null,
+      });
+    } else {
+      setAWSState({
+        selectedItems: [],
+        frankensteinIdea: null,
+      });
+    }
+
+    setSlotSelectionLocked(false);
+    setIsSpinning(false);
+    setIsReportSaved(false);
+    setSavedIdeaRecord(null);
+    setShareSuccess(false);
+    setError(null);
+
+    if (savedId) {
+      router.replace('/doctor-frankenstein');
+    }
+  }, [mode, router, savedId]);
+
   if (isGenerating) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black flex items-center justify-center">
@@ -554,6 +579,25 @@ export const DoctorFrankensteinView: React.FC = () => {
 
             {/* Action Buttons: Save, Share & Export */}
             <div className="mt-8 flex flex-col sm:flex-row justify-end items-center gap-4">
+              <button
+                onClick={handleGenerateNewIdea}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-orange-300 bg-black/50 border border-orange-500 rounded hover:bg-orange-500/20 hover:text-orange-100 hover:border-orange-300 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a1 1 0 011-1h4a1 1 0 110 2H6.414l1.293 1.293a1 1 0 01-1.414 1.414L3.293 4.707A1 1 0 013 4V3a1 1 0 011-1zm12 12a1 1 0 01-1 1h-4a1 1 0 110-2h2.586l-1.293-1.293a1 1 0 011.414-1.414l2.999 2.999a1 1 0 01.001 1.414L17 17v-1zM4 12a1 1 0 011-1h11a1 1 0 110 2H5a1 1 0 01-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{t("generateNewIdea") || "Generate New Idea"}</span>
+              </button>
+
               {/* Export Control - Always visible */}
               {selectedItems.length >= 2 && (
                 <FrankensteinExportControl
@@ -674,10 +718,10 @@ export const DoctorFrankensteinView: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/dashboard")}
             className="flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200 w-fit"
-            title={t("backToHome")}
-            aria-label={t("backToHome")}
+            title={t("goToDashboardButton")}
+            aria-label={t("goToDashboardButton")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -693,7 +737,7 @@ export const DoctorFrankensteinView: React.FC = () => {
               />
             </svg>
             <span className="uppercase tracking-wider text-sm">
-              {t("backToHome")}
+              {t("goToDashboardButton")}
             </span>
           </button>
           <h1 className="text-4xl font-bold text-orange-500 text-center flex-1">

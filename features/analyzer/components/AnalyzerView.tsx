@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Analysis, SavedAnalysisRecord } from "@/lib/types";
 import { mapSavedAnalysesRow } from "@/lib/supabase/mappers";
@@ -46,7 +40,6 @@ const AnalyzerView: React.FC = () => {
     isLoading: isAuthLoading,
     isLocalDevMode,
   } = useAuth();
-  const isLoggedIn = useMemo(() => !!session, [session]);
 
   const [idea, setIdea] = useState<string>("");
   const [newAnalysis, setNewAnalysis] = useState<Analysis | null>(null);
@@ -147,12 +140,8 @@ const AnalyzerView: React.FC = () => {
   }, [isLoading, t]);
 
   const handleBack = useCallback(() => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/");
-    }
-  }, [isLoggedIn, router]);
+    router.push("/dashboard");
+  }, [router]);
 
   const handleAnalyze = useCallback(async () => {
     if (!idea.trim()) {
@@ -296,6 +285,20 @@ const AnalyzerView: React.FC = () => {
     []
   );
 
+  const handleStartNewAnalysis = useCallback(() => {
+    setIdea("");
+    setNewAnalysis(null);
+    setSavedAnalysisRecord(null);
+    setIsReportSaved(false);
+    setGeneratedAudio(null);
+    setAddedSuggestions([]);
+    setError(null);
+
+    if (savedId) {
+      router.replace("/analyzer");
+    }
+  }, [router, savedId]);
+
   const analysisToDisplay =
     newAnalysis ?? savedAnalysisRecord?.analysis ?? null;
 
@@ -317,8 +320,8 @@ const AnalyzerView: React.FC = () => {
           <button
             onClick={handleBack}
             className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-accent transition-colors duration-200"
-            title={t("backToHome")}
-            aria-label={t("backToHome")}
+            title={t("goToDashboardButton")}
+            aria-label={t("goToDashboardButton")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -334,7 +337,7 @@ const AnalyzerView: React.FC = () => {
               />
             </svg>
             <span className="hidden sm:inline uppercase tracking-wider">
-              {t("backToHome")}
+              {t("goToDashboardButton")}
             </span>
           </button>
           <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">
@@ -369,6 +372,27 @@ const AnalyzerView: React.FC = () => {
           )}
           {analysisToDisplay && !busy && (
             <div className={showInputForm ? "mt-8" : ""}>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={handleStartNewAnalysis}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider border border-accent text-accent rounded hover:bg-accent/10 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.5 4a.5.5 0 01.5-.5h4a.5.5 0 010 1H6.207l1.647 1.646a.5.5 0 01-.708.708L4.146 4.854A.5.5 0 014 4.5V4zm11 12a.5.5 0 01-.5.5h-4a.5.5 0 010-1h2.793l-1.647-1.646a.5.5 0 11.708-.708l3 2.999a.5.5 0 01.146.355V16zM4 12.5a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{t("generateNewIdea") || "Generate New Idea"}</span>
+                </button>
+              </div>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
                 onSave={handleSaveReport}

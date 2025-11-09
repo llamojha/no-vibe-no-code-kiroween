@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   HackathonAnalysis,
@@ -35,7 +29,6 @@ const KiroweenAnalyzerView: React.FC = () => {
 
   const { locale, t } = useLocale();
   const { session, supabase, isLoading: isAuthLoading } = useAuth();
-  const isLoggedIn = useMemo(() => !!session, [session]);
 
   const [submission, setSubmission] = useState<ProjectSubmission>({
     description: "",
@@ -155,12 +148,8 @@ const KiroweenAnalyzerView: React.FC = () => {
   }, [isLoading, loadingMessages]);
 
   const handleBack = useCallback(() => {
-    if (isLoggedIn) {
-      router.push("/dashboard");
-    } else {
-      router.push("/");
-    }
-  }, [isLoggedIn, router]);
+    router.push("/dashboard");
+  }, [router]);
 
   const handleAnalyze = useCallback(async () => {
     if (!submission.description.trim()) {
@@ -317,6 +306,23 @@ const KiroweenAnalyzerView: React.FC = () => {
     []
   );
 
+  const handleStartNewAnalysis = useCallback(() => {
+    setSubmission({
+      description: "",
+      supportingMaterials: {},
+    });
+    setNewAnalysis(null);
+    setSavedAnalysisRecord(null);
+    setIsReportSaved(false);
+    setGeneratedAudio(null);
+    setAddedSuggestions([]);
+    setError(null);
+
+    if (savedId) {
+      router.replace("/kiroween-analyzer");
+    }
+  }, [router, savedId]);
+
   const analysisToDisplay =
     newAnalysis ?? savedAnalysisRecord?.analysis ?? null;
 
@@ -330,7 +336,8 @@ const KiroweenAnalyzerView: React.FC = () => {
           <button
             onClick={handleBack}
             className="absolute left-0 top-[90%] -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-orange-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-black rounded-md p-1"
-            aria-label={t("backToHome")}
+            aria-label={t("goToDashboardButton")}
+            title={t("goToDashboardButton")}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -346,7 +353,7 @@ const KiroweenAnalyzerView: React.FC = () => {
               />
             </svg>
             <span className="hidden sm:inline uppercase tracking-wider">
-              {t("backToHome")}
+              {t("goToDashboardButton")}
             </span>
           </button>
           <div className="absolute right-0 top-[90%] -translate-y-1/2">
@@ -414,6 +421,27 @@ const KiroweenAnalyzerView: React.FC = () => {
               <h2 id="analysis-results-heading" className="sr-only">
                 {t("analysisResults")}
               </h2>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={handleStartNewAnalysis}
+                  className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] border border-orange-400 text-orange-300 rounded hover:bg-orange-400/10 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.5 4a.5.5 0 01.5-.5h4a.5.5 0 010 1H6.207l1.647 1.646a.5.5 0 01-.708.708L4.146 4.854A.5.5 0 014 4.5V4zm11 12a.5.5 0 01-.5.5h-4a.5.5 0 010-1h2.793l-1.647-1.646a.5.5 0 11.708-.708l3 2.999a.5.5 0 01.146.355V16zM4 12.5a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{t("generateNewIdea") || "Generate New Idea"}</span>
+                </button>
+              </div>
               <HackathonAnalysisDisplay
                 analysis={analysisToDisplay}
                 onSave={handleSaveReport}

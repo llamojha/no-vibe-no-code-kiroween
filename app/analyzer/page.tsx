@@ -7,20 +7,17 @@ import {
   isAuthenticated,
   getCurrentUser,
 } from "@/src/infrastructure/web/helpers/serverAuth";
-import { isEnabled } from "@/lib/featureFlags";
-import { initFeatureFlags } from "@/lib/featureFlags.config";
 import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 import { generateMockUser } from "@/lib/mockData";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnalyzerPage() {
-  // Ensure feature flags are initialized
-  initFeatureFlags();
-  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+  // In development mode, bypass authentication and tier checks
+  const isDevelopment = process.env.NODE_ENV === "development";
 
-  if (isLocalDevMode) {
-    // In local dev mode, bypass authentication and tier checks
+  if (isDevelopment) {
+    // In development mode, bypass authentication and tier checks
     const mockUser = generateMockUser();
     return (
       <div className="relative">

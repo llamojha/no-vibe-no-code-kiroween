@@ -257,6 +257,7 @@
   "createFrankenstein": "Create Frankenstein",
   "reject": "Reject",
   "acceptAndGenerate": "Accept & Generate Idea",
+  "generateNewIdea": "Generate New Idea",
   "generatingFrankensteinIdea": "Bringing your Frankenstein to life...",
   "back": "Back",
   "ideaDescription": "Idea Description",
