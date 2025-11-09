@@ -55,14 +55,16 @@ export const DoctorFrankensteinView: React.FC = () => {
     selectedItems: [],
     frankensteinIdea: null,
   });
-  
   // Get current state based on mode
   const currentState = mode === 'companies' ? companiesState : awsState;
   const setCurrentState = mode === 'companies' ? setCompaniesState : setAWSState;
   const selectedItems = currentState.selectedItems;
   const frankensteinIdea = currentState.frankensteinIdea;
 
-  const slotCount = 4;
+  const [slotCount, setSlotCount] = useState<3 | 4>(4);
+  const [slotSelectionLocked, setSlotSelectionLocked] = useState(false);
+  const slotOptions: Array<3 | 4> = [3, 4];
+  const isModeSelectionDisabled = slotSelectionLocked || isSpinning;
 
   // Load data on mount
   useEffect(() => {
@@ -105,6 +107,7 @@ export const DoctorFrankensteinView: React.FC = () => {
     if (!savedId) {
       setSavedIdeaRecord(null);
       setIsReportSaved(false);
+      setSlotSelectionLocked(false);
       return;
     }
 
@@ -127,6 +130,7 @@ export const DoctorFrankensteinView: React.FC = () => {
         setSavedIdeaRecord(data);
         setMode(data.mode);
         setIsReportSaved(true);
+        setSlotSelectionLocked(true);
         
         // Use the complete analysis if available, otherwise create simplified version
         const restoredIdea: FrankensteinIdeaResult = data.analysis.fullAnalysis || {
@@ -291,8 +295,9 @@ export const DoctorFrankensteinView: React.FC = () => {
   }, [router]);
 
   const handleCreateFrankenstein = () => {
-    if (currentItems.length === 0) return;
+    if (currentItems.length === 0 || isSpinning) return;
 
+    setSlotSelectionLocked(true);
     setIsSpinning(true);
     setCurrentState({
       selectedItems: [],
@@ -367,6 +372,7 @@ export const DoctorFrankensteinView: React.FC = () => {
       selectedItems: [],
       frankensteinIdea: null,
     });
+    setSlotSelectionLocked(false);
   };
 
   if (isGenerating) {
@@ -677,22 +683,32 @@ export const DoctorFrankensteinView: React.FC = () => {
         <div className="flex justify-center mb-8">
           <div className="bg-purple-900/50 rounded-lg p-1 flex gap-2">
             <button
-              onClick={() => setMode('companies')}
+              onClick={() => {
+                if (isModeSelectionDisabled) return;
+                setMode('companies');
+              }}
+              disabled={isModeSelectionDisabled}
+              aria-disabled={isModeSelectionDisabled}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
                 mode === 'companies'
                   ? 'bg-orange-500 text-black'
                   : 'bg-transparent text-purple-300 hover:text-white'
-              }`}
+              } ${isModeSelectionDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               🏢 {t('techCompanies') || 'Tech Companies'}
             </button>
             <button
-              onClick={() => setMode('aws')}
+              onClick={() => {
+                if (isModeSelectionDisabled) return;
+                setMode('aws');
+              }}
+              disabled={isModeSelectionDisabled}
+              aria-disabled={isModeSelectionDisabled}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
                 mode === 'aws'
                   ? 'bg-orange-500 text-black'
                   : 'bg-transparent text-purple-300 hover:text-white'
-              }`}
+              } ${isModeSelectionDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               ☁️ {t('awsServices') || 'AWS Services'}
             </button>
@@ -729,6 +745,45 @@ export const DoctorFrankensteinView: React.FC = () => {
             {error}
           </div>
         )}
+
+        {/* Slot configuration */}
+        <div className="mb-8 flex justify-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center bg-purple-900/40 border border-purple-700 rounded-lg px-6 py-4 text-purple-200">
+            <span className="text-xs uppercase tracking-[0.3em] text-purple-400">
+              {t("slotCountLabel") || "Slots per spin"}
+            </span>
+            <div className="flex gap-2">
+              {slotOptions.map((option) => {
+                const isActive = slotCount === option;
+                const isDisabled = slotSelectionLocked || isSpinning;
+                return (
+                  <button
+                    key={option}
+                    onClick={() => {
+                      if (isDisabled) return;
+                      setSlotCount(option);
+                    }}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
+                    className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider border rounded-md transition-colors ${
+                      isActive
+                        ? "bg-orange-500 text-black border-orange-300 shadow-lg"
+                        : "bg-black/40 text-purple-200 border-purple-700 hover:border-orange-400 hover:text-orange-200"
+                    } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    aria-pressed={isActive}
+                    aria-label={
+                      t("slotCountOption", { count: option }) ||
+                      `${option} Slots`
+                    }
+                  >
+                    {t("slotCountOption", { count: option }) ||
+                      `${option} Slots`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
         {/* Slot Machine */}
         <div className="mb-8">
