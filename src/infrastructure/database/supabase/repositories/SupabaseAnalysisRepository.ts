@@ -790,14 +790,16 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       let query = this.client
         .from(this.tableName)
         .select(
-          "id, idea, created_at, analysis->score as score, analysis->category as category, analysis->detailedSummary as detailedSummary",
+          "id, idea, created_at, analysis->score as score, analysis->detailedSummary as detailedSummary, analysis_type",
           { count: "exact" }
         )
         .eq("user_id", userId.value);
 
       // Apply category filter
       if (options.category && options.category !== "all") {
-        query = query.contains("analysis", { category: options.category });
+        const typeFilter =
+          options.category === "kiroween" ? "hackathon" : "idea";
+        query = query.eq("analysis_type", typeFilter);
       }
 
       // Apply sorting
@@ -859,7 +861,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
           row.idea?.split("\n")[0]?.trim() || row.idea?.trim() || "Untitled",
         createdAt: row.created_at,
         score: row.score || 0,
-        category: row.category || "idea",
+        category: row.analysis_type === "hackathon" ? "kiroween" : "idea",
         summary: row.detailedSummary || "No summary available",
       }));
 
