@@ -64,7 +64,7 @@ const FinalScoreGauge: React.FC<{ score: number }> = ({ score }) => {
 
   return (
     <div className="relative flex items-center justify-center w-48 h-48 font-mono">
-       <div className={`absolute text-6xl font-bold ${textColorClass}`} style={{ textShadow: `0 0 15px currentColor` }}>
+       <div data-testid="analysis-score" className={`absolute text-6xl font-bold ${textColorClass}`} style={{ textShadow: `0 0 15px currentColor` }}>
         {validScore === 0 ? '—' : validScore.toFixed(1)}
       </div>
        <svg className="w-full h-full" viewBox="0 0 120 120">
@@ -153,10 +153,15 @@ const StarRating: React.FC<{ score: number }> = ({ score }) => {
 };
 
 
-const SWOTList: React.FC<{ title: string; items: string[]; color: string }> = ({ title, items, color }) => (
-  <div className="bg-primary/50 p-4 border border-slate-700">
-    <h3 className={`font-bold text-lg mb-2 ${color} uppercase tracking-wider`}>{title}</h3>
-    <ul className="list-none space-y-2 text-slate-400 text-base">
+const SWOTList: React.FC<{ title: string; items: string[]; color: string }> = ({ title, items, color }) => {
+  const testId = title.toLowerCase().includes('strength') ? 'strengths-list' : 
+                 title.toLowerCase().includes('weakness') ? 'weaknesses-list' :
+                 title.toLowerCase().includes('opportunit') ? 'opportunities-list' : 'threats-list';
+  
+  return (
+    <div className="bg-primary/50 p-4 border border-slate-700">
+      <h3 className={`font-bold text-lg mb-2 ${color} uppercase tracking-wider`}>{title}</h3>
+      <ul data-testid={testId} className="list-none space-y-2 text-slate-400 text-base">
       {(items || []).map((item, index) => (
          <li key={index} className="flex items-start">
           <svg className={`w-3 h-3 ${color} flex-shrink-0 mt-1.5 mr-2`} viewBox="0 0 8 8" fill="currentColor">
@@ -167,7 +172,8 @@ const SWOTList: React.FC<{ title: string; items: string[]; color: string }> = ({
       ))}
     </ul>
   </div>
-);
+  );
+};
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   analysis,
@@ -226,7 +232,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   const iconClasses = "w-7 h-7 text-accent";
 
   return (
-    <div className="mt-8 space-y-8 animate-fade-in">
+    <div data-testid="results-container" className="mt-8 space-y-8 animate-fade-in">
       <TTSPlayer
         analysis={analysis}
         initialAudioBase64={savedAudioBase64}
@@ -284,7 +290,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
           <FinalScoreGauge score={analysis.finalScore} />
           <div className="flex-1">
             <h3 className="text-xl font-bold text-slate-200 mb-2 uppercase tracking-wider">{t('viabilityVerdict')}</h3>
-            <p className="text-lg text-slate-300 mb-4">{analysis.viabilitySummary}</p>
+            <p data-testid="analysis-summary" className="text-lg text-slate-300 mb-4">{analysis.viabilitySummary}</p>
             <p className="text-base text-slate-400 font-mono italic">{analysis.finalScoreExplanation}</p>
           </div>
         </div>

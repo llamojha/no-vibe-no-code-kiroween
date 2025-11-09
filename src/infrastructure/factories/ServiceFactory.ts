@@ -44,6 +44,13 @@ import { TextToSpeechAdapter } from '../external/ai/TextToSpeechAdapter';
 import { TranscriptionAdapter } from '../external/ai/TranscriptionAdapter';
 import { GoogleAIAdapter } from '../external/ai/GoogleAIAdapter';
 
+// Import mock services and testing utilities
+import { MockAIAnalysisService } from '@/lib/testing/mocks/MockAIAnalysisService';
+import { TestDataManager } from '@/lib/testing/TestDataManager';
+import { FeatureFlagManager } from '@/lib/testing/FeatureFlagManager';
+import { MockServiceConfig } from '@/lib/testing/types';
+import { IAIAnalysisService } from '../../application/services/IAIAnalysisService';
+
 // Import use cases
 import { GetUserAnalysesUseCase, GetDashboardStatsUseCase } from '../../application/use-cases';
 import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../../application/use-cases/user';
@@ -65,6 +72,7 @@ export class ServiceFactory {
   private useCaseFactory: UseCaseFactory | null = null;
   private featureFlagAdapter: FeatureFlagAdapter;
   private localeAdapter: LocaleAdapter;
+  private mockFeatureFlagManager: FeatureFlagManager;
 
   private constructor(
     private readonly supabaseClient: SupabaseClient
@@ -72,6 +80,7 @@ export class ServiceFactory {
     this.repositoryFactory = RepositoryFactory.create(supabaseClient);
     this.featureFlagAdapter = FeatureFlagAdapter.getInstance();
     this.localeAdapter = LocaleAdapter.getInstance();
+    this.mockFeatureFlagManager = new FeatureFlagManager();
     this.initializeUseCaseFactory();
   }
 
@@ -458,6 +467,186 @@ export class ServiceFactory {
     }
 
     return this.services.get(cacheKey) as GoogleAIAdapter;
+  }
+
+  /**
+   * Verify mock mode is properly configured
+   * 
+   * This method validates that:
+   * - TestDataManager can load mock responses
+   * - Feature flags are properly set
+   * - Configuration is valid for the current environment
+   * 
+   * @throws Error if mock configuration is invalid
+   * @private
+   */
+  private verifyMockConfiguration(): void {
+    if (!this.mockFeatureFlagManager.isMockModeEnabled()) {
+      return; // No verification needed if mock mode is disabled
+    }
+
+    try {
+      // Verify TestDataManager can load mock responses for each type
+      const testDataManager = new TestDataManager();
+      
+      // Test loading analyzer mock responses
+      try {
+        testDataManager.getMockResponse('analyzer', 'success');
+      } catch (error) {
+        throw new Error(
+          `Mock mode is enabled but analyzer mock data cannot be loaded: ${(error as Error).message}`
+        );
+      }
+
+      // Test loading hackathon mock responses
+      try {
+        testDataManager.getMockResponse('hackathon', 'success');
+      } catch (error) {
+        throw new Error(
+          `Mock mode is enabled but hackathon mock data cannot be loaded: ${(error as Error).message}`
+        );
+      }
+
+      // Test loading frankenstein mock responses
+      try {
+        testDataManager.getMockResponse('frankenstein', 'success');
+      } catch (error) {
+        throw new Error(
+          `Mock mode is enabled but frankenstein mock data cannot be loaded: ${(error as Error).message}`
+        );
+      }
+
+      // Verify feature flags are properly set
+      const mockConfig = this.mockFeatureFlagManager.getMockServiceConfig();
+      const validScenarios = ['success', 'api_error', 'timeout', 'rate_limit', 'invalid_input', 'partial_response'];
+      
+      if (!validScenarios.includes(mockConfig.defaultScenario)) {
+        console.warn(
+          `[ServiceFactory] Invalid mock scenario "${mockConfig.defaultScenario}". ` +
+          `Valid scenarios: ${validScenarios.join(', ')}. Using "success" as fallback.`
+        );
+      }
+
+      // Log mock mode activation (only in non-production)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[ServiceFactory] ✅ Mock mode verified and active', {
+          scenario: mockConfig.defaultScenario,
+          simulateLatency: mockConfig.simulateLatency,
+          minLatency: mockConfig.minLatency,
+          maxLatency: mockConfig.maxLatency,
+        });
+      }
+    } catch (error) {
+      // Throw descriptive error if configuration is invalid
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Mock configuration verification failed: ${errorMessage}. ` +
+        `Please ensure mock data files exist and feature flags are properly configured.`
+      );
+    }
+  }
+
+  /**
+   * Create AI Analysis Service (mock or production based on feature flag)
+   * 
+   * This method checks the mock mode feature flag and returns either:
+   * - MockAIAnalysisService when mock mode is enabled
+   * - GoogleAIAnalysisService when mock mode is disabled (production)
+   * 
+   * @returns IAIAnalysisService implementation
+   */
+  createAIAnalysisService(): IAIAnalysisService {
+    const cacheKey = 'aiAnalysisService';
+    
+    if (!this.services.has(cacheKey)) {
+      // Verify mock configuration before creating service
+      this.verifyMockConfiguration();
+
+      // Check if mock mode is enabled
+      if (this.mockFeatureFlagManager.isMockModeEnabled()) {
+        // Create mock service with configuration
+        const testDataManager = new TestDataManager();
+        const mockConfig = this.getMockServiceConfig();
+        const mockService = new MockAIAnalysisService(testDataManager, mockConfig);
+        
+        this.services.set(cacheKey, mockService);
+        
+        // Log when mock service is created (only in non-production)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[ServiceFactory] ✅ Mock AI Analysis Service created', {
+            scenario: mockConfig.defaultScenario,
+            simulateLatency: mockConfig.simulateLatency,
+          });
+        }
+      } else {
+        // Create production Google AI service
+        // TODO: Implement GoogleAIAnalysisService adapter
+        // Improved error message for production service
+        throw new Error(
+          'Production AI Analysis Service is not yet implemented. ' +
+          'To use the application in test mode, enable mock mode by setting ' +
+          'the environment variable FF_USE_MOCK_API=true. ' +
+          'For production deployment, implement GoogleAIAnalysisService adapter.'
+        );
+      }
+    }
+
+    return this.services.get(cacheKey) as IAIAnalysisService;
+  }
+
+  /**
+   * Get mock service configuration from feature flags
+   * 
+   * Reads mock configuration from environment variables via FeatureFlagManager
+   * and provides sensible defaults for all settings.
+   * 
+   * @returns MockServiceConfig with validated configuration
+   * @private
+   */
+  private getMockServiceConfig(): MockServiceConfig {
+    return this.mockFeatureFlagManager.getMockServiceConfig();
+  }
+
+  /**
+   * Check if mock mode is currently enabled
+   * 
+   * @returns true if mock mode is active, false otherwise
+   */
+  isMockModeEnabled(): boolean {
+    return this.mockFeatureFlagManager.isMockModeEnabled();
+  }
+
+  /**
+   * Get the mock feature flag manager instance
+   * 
+   * @returns FeatureFlagManager instance
+   */
+  getMockFeatureFlagManager(): FeatureFlagManager {
+    return this.mockFeatureFlagManager;
+  }
+
+  /**
+   * Get diagnostic information about current service configuration
+   * 
+   * This method provides detailed information about:
+   * - Current mock mode status
+   * - List of services that have been created
+   * - Feature flag configuration
+   * 
+   * Useful for debugging and verifying the service factory state.
+   * 
+   * @returns Diagnostic information object
+   */
+  getDiagnostics(): {
+    mockMode: boolean;
+    servicesCreated: string[];
+    configuration: Record<string, unknown>;
+  } {
+    return {
+      mockMode: this.isMockModeEnabled(),
+      servicesCreated: Array.from(this.services.keys()),
+      configuration: this.mockFeatureFlagManager.getAllFlags(),
+    };
   }
 
   /**

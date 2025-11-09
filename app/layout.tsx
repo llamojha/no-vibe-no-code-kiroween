@@ -5,6 +5,7 @@ import './globals.css';
 import { Providers } from './providers';
 import { initFeatureFlags } from '@/lib/featureFlags.config';
 import { getAllFlagValues } from '@/lib/featureFlags';
+import { MockModeIndicator } from '@/features/testing/components/MockModeIndicator';
 
 const rajdhani = Rajdhani({
   subsets: ['latin'],
@@ -104,6 +105,7 @@ export default function RootLayout({
           }}
         />
         <Providers>{children}</Providers>
+        <MockModeIndicator />
       </body>
     </html>
   );

@@ -1,0 +1,98 @@
+{
+  "scenarios": {
+    "success": [
+      {
+        "data": {
+          "idea_title": "CloudTask AI - The Intelligent Workspace Orchestrator",
+          "idea_description": "CloudTask AI combines the power of cloud infrastructure with artificial intelligence to create a revolutionary workspace management platform. It automatically organizes, prioritizes, and executes tasks across your entire digital ecosystem, learning from your work patterns to optimize productivity. The platform seamlessly integrates with existing tools while providing intelligent automation that adapts to your unique workflow.",
+          "core_concept": "AI-powered workspace orchestration that thinks and acts like your personal productivity assistant",
+          "problem_statement": "Modern professionals struggle with fragmented tools, constant context switching, and manual task management across multiple platforms. This cognitive overhead reduces productivity and increases stress, while important tasks fall through the cracks.",
+          "proposed_solution": "CloudTask AI acts as a central nervous system for your digital workspace, using machine learning to understand your work patterns, automatically prioritize tasks, and orchestrate actions across all your tools. It reduces manual overhead by 70% while ensuring nothing important is missed.",
+          "unique_value_proposition": "Unlike traditional task managers, CloudTask AI doesn't just track tasks—it understands context, predicts needs, and takes action autonomously. It's the difference between a to-do list and a proactive AI colleague.",
+          "target_audience": "Knowledge workers, remote teams, and busy professionals who manage complex workflows across multiple tools and platforms. Primary focus on tech-savvy users aged 25-45 in fast-paced industries.",
+          "business_model": "Freemium SaaS with three tiers: Free (basic task management), Pro ($15/month with AI features), and Team ($12/user/month with collaboration). Enterprise plans with custom pricing for organizations over 50 users. Additional revenue from API access and white-label solutions.",
+          "growth_strategy": "Launch with product-led growth targeting individual power users, then expand to teams through viral collaboration features. Partner with productivity influencers for content marketing. Build a developer ecosystem around the API to create network effects. Geographic expansion starting with North America, then Europe and Asia.",
+          "tech_stack_suggestion": "Frontend built with React and TypeScript for responsive UI. Backend using Node.js with Python microservices for AI/ML processing. PostgreSQL for structured data, Redis for caching. Machine learning models using TensorFlow and PyTorch. Cloud infrastructure on AWS with Lambda for serverless functions. Real-time features powered by WebSockets. Integration layer using REST APIs and webhooks.",
+          "risks_and_challenges": "Primary risks include AI accuracy and user trust in autonomous actions. Technical challenges involve maintaining low latency with complex ML models and ensuring data privacy across integrations. Market risks include competition from established players adding AI features. Mitigation strategies include transparent AI decision-making, robust testing, and focusing on superior user experience.",
+          "metrics": {
+            "originality_score": 78,
+            "feasibility_score": 72,
+            "impact_score": 85,
+            "scalability_score": 80,
+            "wow_factor": 82
+          },
+          "summary": "CloudTask AI represents a compelling evolution in productivity software, combining proven task management concepts with cutting-edge AI capabilities. The market timing is excellent given the AI boom and remote work trends. Success depends on delivering genuinely useful AI features that build user trust, rather than AI for AI's sake. With focused execution and strong product-market fit validation, this concept has strong potential to capture significant market share in the growing productivity software space.",
+          "language": "en"
+        },
+        "statusCode": 200,
+        "delay": 1200
+      },
+      {
+        "data": {
+          "idea_title": "DataFlow Nexus - The Serverless Analytics Engine",
+          "idea_description": "DataFlow Nexus revolutionizes data analytics by combining serverless computing with real-time stream processing. It enables organizations to process massive data volumes without managing infrastructure, automatically scaling from zero to millions of events per second. The platform provides instant insights through intelligent data pipelines that adapt to changing business needs.",
+          "core_concept": "Serverless-first analytics platform that eliminates infrastructure complexity while delivering enterprise-grade performance",
+          "problem_statement": "Organizations struggle with the complexity and cost of building scalable data analytics infrastructure. Traditional solutions require significant DevOps expertise, upfront infrastructure investment, and constant maintenance, creating barriers to data-driven decision making.",
+          "proposed_solution": "DataFlow Nexus provides a fully managed, serverless analytics platform that automatically handles scaling, optimization, and maintenance. Users define data pipelines through a visual interface or code, and the platform handles all infrastructure concerns while optimizing for cost and performance.",
+          "unique_value_proposition": "Pay only for actual data processed with automatic scaling to zero during idle periods. No infrastructure management required, yet delivers performance comparable to dedicated clusters. Built-in ML capabilities for anomaly detection and predictive analytics.",
+          "target_audience": "Data engineers, analytics teams, and businesses of all sizes needing scalable data processing. Particularly attractive to startups and mid-market companies lacking dedicated infrastructure teams.",
+          "business_model": "Usage-based pricing at $0.05 per GB processed with volume discounts. Premium tier adds advanced features like custom ML models and priority support. Enterprise tier includes dedicated support, SLAs, and on-premise deployment options. Additional revenue from professional services and training.",
+          "growth_strategy": "Developer-first approach with generous free tier and excellent documentation. Build integrations with popular data sources and BI tools. Create educational content and certification program. Partner with cloud providers for co-marketing. Target vertical markets with pre-built templates.",
+          "tech_stack_suggestion": "Core platform built on AWS Lambda, Kinesis, and S3 for serverless architecture. Apache Flink for stream processing, Presto for SQL queries. Control plane using Kubernetes for orchestration. Frontend with React and D3.js for data visualization. Infrastructure as code using Terraform. Monitoring with Prometheus and Grafana.",
+          "risks_and_challenges": "Technical challenges include managing cold starts and ensuring consistent performance across varying workloads. Cost optimization is critical to maintain margins with usage-based pricing. Competition from cloud providers' native services. Mitigation through superior developer experience, multi-cloud support, and focus on specific use cases where we can deliver exceptional value.",
+          "metrics": {
+            "originality_score": 75,
+            "feasibility_score": 80,
+            "impact_score": 88,
+            "scalability_score": 92,
+            "wow_factor": 79
+          },
+          "summary": "DataFlow Nexus addresses a real pain point in the data analytics space with a technically sound approach. The serverless model aligns well with current cloud trends and offers clear cost advantages. Success requires excellent execution on developer experience and performance optimization. The market is competitive but growing rapidly, with room for differentiated players who can deliver superior value in specific segments.",
+          "language": "en"
+        },
+        "statusCode": 200,
+        "delay": 1100
+      }
+    ],
+    "api_error": [
+      {
+        "data": {
+          "error": "API_ERROR",
+          "message": "Failed to generate Frankenstein idea. Please try again."
+        },
+        "statusCode": 500,
+        "delay": 300
+      }
+    ],
+    "timeout": [
+      {
+        "data": {
+          "error": "TIMEOUT",
+          "message": "Idea generation timed out. Please try again."
+        },
+        "statusCode": 408,
+        "delay": 30000
+      }
+    ],
+    "rate_limit": [
+      {
+        "data": {
+          "error": "RATE_LIMIT",
+          "message": "Too many generation requests. Please wait before trying again."
+        },
+        "statusCode": 429,
+        "delay": 100
+      }
+    ],
+    "invalid_input": [
+      {
+        "data": {
+          "error": "INVALID_INPUT",
+          "message": "At least two elements are required to generate a Frankenstein idea."
+        },
+        "statusCode": 400,
+        "delay": 100
+      }
+    ]
+  }
+}

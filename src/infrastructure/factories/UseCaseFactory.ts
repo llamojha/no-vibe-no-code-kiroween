@@ -2,6 +2,7 @@ import { IAnalysisRepository } from '../../domain/repositories/IAnalysisReposito
 import { IUserRepository } from '../../domain/repositories/IUserRepository';
 import { AnalysisValidationService } from '../../domain/services/AnalysisValidationService';
 import { ScoreCalculationService } from '../../domain/services/ScoreCalculationService';
+import { HackathonAnalysisService } from '../../domain/services/HackathonAnalysisService';
 // import { IAIAnalysisService } from '../../application/services/IAIAnalysisService'; // Temporarily disabled
 import { INotificationService } from '../../application/services/INotificationService';
 
@@ -29,6 +30,7 @@ import { GetHackathonLeaderboardUseCase } from '../../application/use-cases/GetH
  */
 export class UseCaseFactory {
   private useCases: Map<string, unknown> = new Map();
+  private hackathonAnalysisService: HackathonAnalysisService;
 
   private constructor(
     private readonly analysisRepository: IAnalysisRepository,
@@ -37,7 +39,10 @@ export class UseCaseFactory {
     private readonly notificationService: INotificationService,
     private readonly analysisValidationService: AnalysisValidationService,
     private readonly scoreCalculationService: ScoreCalculationService
-  ) {}
+  ) {
+    // Initialize HackathonAnalysisService (it's a domain service with no external dependencies)
+    this.hackathonAnalysisService = new HackathonAnalysisService();
+  }
 
   /**
    * Create a new UseCaseFactory instance
@@ -166,11 +171,10 @@ export class UseCaseFactory {
     const cacheKey = 'analyzeHackathonProjectUseCase';
     
     if (!this.useCases.has(cacheKey)) {
-      // Note: This needs IHackathonAnalysisRepository and HackathonAnalysisService
-      // For now, using regular repository until hackathon-specific ones are implemented
+      // Note: Using regular repository until hackathon-specific one is implemented
       const useCase = new AnalyzeHackathonProjectUseCase(
         this.analysisRepository as any, // Cast to IHackathonAnalysisRepository
-        {} as any, // HackathonAnalysisService placeholder
+        this.hackathonAnalysisService,
         this.scoreCalculationService
       );
       this.useCases.set(cacheKey, useCase);
@@ -188,7 +192,7 @@ export class UseCaseFactory {
     if (!this.useCases.has(cacheKey)) {
       const useCase = new SaveHackathonAnalysisUseCase(
         this.analysisRepository as any, // Cast to IHackathonAnalysisRepository
-        {} as any // HackathonAnalysisService placeholder
+        this.hackathonAnalysisService
       );
       this.useCases.set(cacheKey, useCase);
     }

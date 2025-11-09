@@ -102,6 +102,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      saved_frankenstein_ideas: {
+        Row: {
+          id: string;
+          user_id: string;
+          mode: "companies" | "aws";
+          tech1_name: string;
+          tech1_description: string;
+          tech1_category: string;
+          tech2_name: string;
+          tech2_description: string;
+          tech2_category: string;
+          analysis: Json;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          mode: "companies" | "aws";
+          tech1_name: string;
+          tech1_description: string;
+          tech1_category: string;
+          tech2_name: string;
+          tech2_description: string;
+          tech2_category: string;
+          analysis: Json;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          mode?: "companies" | "aws";
+          tech1_name?: string;
+          tech1_description?: string;
+          tech1_category?: string;
+          tech2_name?: string;
+          tech2_description?: string;
+          tech2_category?: string;
+          analysis?: Json;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -122,5 +164,11 @@ export type SavedHackathonAnalysesInsert =
   Database["public"]["Tables"]["saved_hackathon_analyses"]["Insert"];
 export type SavedHackathonAnalysesUpdate =
   Database["public"]["Tables"]["saved_hackathon_analyses"]["Update"];
+export type SavedFrankensteinIdeasRow =
+  Database["public"]["Tables"]["saved_frankenstein_ideas"]["Row"];
+export type SavedFrankensteinIdeasInsert =
+  Database["public"]["Tables"]["saved_frankenstein_ideas"]["Insert"];
+export type SavedFrankensteinIdeasUpdate =
+  Database["public"]["Tables"]["saved_frankenstein_ideas"]["Update"];
 export type UserTier = Database["public"]["Tables"]["profiles"]["Row"]["tier"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];

@@ -1,0 +1,223 @@
+{
+  "scenarios": {
+    "success": [
+      {
+        "data": {
+          "detailedSummary": "This Kiroween hackathon project demonstrates excellent integration of Kiro's AI capabilities with creative Halloween theming. The project shows strong technical implementation and clear value proposition for the target audience. The use of Kiro for code generation and testing automation aligns perfectly with the hackathon's goals.",
+          "categoryAnalysis": {
+            "evaluations": [
+              {
+                "category": "resurrection",
+                "fitScore": 9,
+                "explanation": "Excellent fit - the project revives an old codebase using Kiro's AI capabilities to modernize and enhance it",
+                "improvementSuggestions": [
+                  "Document the before/after transformation more clearly",
+                  "Add metrics showing improvement in code quality"
+                ]
+              },
+              {
+                "category": "frankenstein",
+                "fitScore": 7,
+                "explanation": "Good fit - combines multiple technologies in creative ways, though not the primary focus",
+                "improvementSuggestions": [
+                  "Highlight the unique technology combinations more prominently"
+                ]
+              },
+              {
+                "category": "skeleton-crew",
+                "fitScore": 8,
+                "explanation": "Strong fit - demonstrates efficient development with minimal team using Kiro's automation",
+                "improvementSuggestions": [
+                  "Quantify time savings from using Kiro",
+                  "Show comparison with traditional development approach"
+                ]
+              },
+              {
+                "category": "costume-contest",
+                "fitScore": 6,
+                "explanation": "Moderate fit - has creative Halloween theming but not the main focus",
+                "improvementSuggestions": [
+                  "Enhance visual design with more Halloween elements"
+                ]
+              }
+            ],
+            "bestMatch": "resurrection",
+            "bestMatchReason": "The project's core value proposition centers on reviving and modernizing legacy code using Kiro's AI capabilities, which perfectly aligns with the Resurrection category's theme of bringing old projects back to life."
+          },
+          "criteriaAnalysis": {
+            "scores": [
+              {
+                "name": "Potential Value",
+                "score": 4.5,
+                "justification": "High potential value for developers dealing with legacy codebases. Clear problem-solution fit.",
+                "subScores": {
+                  "problemClarity": {
+                    "score": 5,
+                    "explanation": "Clearly identifies the pain of maintaining legacy code"
+                  },
+                  "solutionFit": {
+                    "score": 4,
+                    "explanation": "Kiro integration provides effective solution to the problem"
+                  }
+                }
+              },
+              {
+                "name": "Implementation",
+                "score": 4.2,
+                "justification": "Solid technical implementation with good use of Kiro's features. Code is well-structured and documented.",
+                "subScores": {
+                  "technicalQuality": {
+                    "score": 4,
+                    "explanation": "Clean code architecture and proper error handling"
+                  },
+                  "kiroIntegration": {
+                    "score": 5,
+                    "explanation": "Excellent use of Kiro for code generation and testing"
+                  },
+                  "completeness": {
+                    "score": 4,
+                    "explanation": "Core features implemented, some nice-to-haves missing"
+                  }
+                }
+              },
+              {
+                "name": "Quality and Design",
+                "score": 4.0,
+                "justification": "Good overall quality with room for improvement in visual design and user experience.",
+                "subScores": {
+                  "userExperience": {
+                    "score": 4,
+                    "explanation": "Intuitive interface with clear navigation"
+                  },
+                  "visualDesign": {
+                    "score": 3.5,
+                    "explanation": "Functional design but could be more polished"
+                  },
+                  "documentation": {
+                    "score": 4.5,
+                    "explanation": "Comprehensive documentation and setup instructions"
+                  }
+                }
+              }
+            ],
+            "finalScore": 4.2,
+            "finalScoreExplanation": "Strong overall submission with excellent Kiro integration and clear value proposition. The technical implementation is solid and the project addresses a real developer pain point. Minor improvements in visual design would elevate this to top-tier."
+          },
+          "hackathonSpecificAdvice": {
+            "categoryOptimization": [
+              "Add before/after metrics to strengthen the Resurrection narrative",
+              "Create a demo video showing the transformation process",
+              "Include testimonials or case studies from beta users"
+            ],
+            "kiroIntegrationTips": [
+              "Showcase specific Kiro features used (code generation, testing, etc.)",
+              "Document time savings achieved through Kiro automation",
+              "Add screenshots of Kiro in action during development"
+            ],
+            "competitionStrategy": [
+              "Emphasize the practical business value of legacy code modernization",
+              "Highlight the scalability of the solution",
+              "Prepare a compelling demo focusing on the transformation story"
+            ]
+          },
+          "scoringRubric": [
+            {
+              "name": "Kiro Integration Quality",
+              "score": 90,
+              "justification": "Excellent use of Kiro's AI capabilities throughout the project"
+            },
+            {
+              "name": "Technical Innovation",
+              "score": 82,
+              "justification": "Creative approach to legacy code modernization"
+            },
+            {
+              "name": "Practical Value",
+              "score": 88,
+              "justification": "Addresses real developer pain points effectively"
+            },
+            {
+              "name": "Halloween Theme",
+              "score": 75,
+              "justification": "Good thematic elements but could be more prominent"
+            }
+          ],
+          "competitors": [],
+          "improvementSuggestions": [
+            {
+              "title": "Enhance Visual Design",
+              "description": "Add more Halloween-themed visual elements and polish the UI"
+            },
+            {
+              "title": "Add Metrics Dashboard",
+              "description": "Show quantitative improvements in code quality, test coverage, etc."
+            },
+            {
+              "title": "Create Demo Video",
+              "description": "Produce a compelling video showing the transformation process"
+            }
+          ],
+          "nextSteps": [
+            {
+              "title": "Polish Demo",
+              "description": "Refine the demo to highlight the most impressive features"
+            },
+            {
+              "title": "Gather Feedback",
+              "description": "Get feedback from other developers on the value proposition"
+            },
+            {
+              "title": "Prepare Presentation",
+              "description": "Create a compelling pitch deck for the judges"
+            }
+          ],
+          "finalScore": 84,
+          "finalScoreExplanation": "This is a strong hackathon submission with excellent Kiro integration and clear practical value. The technical implementation is solid and the project addresses a real problem. With some polish on the visual design and stronger metrics, this could be a top contender.",
+          "viabilitySummary": "Highly viable project with strong potential for continued development beyond the hackathon. The core concept is sound and the execution demonstrates technical competence."
+        },
+        "statusCode": 200,
+        "delay": 900
+      }
+    ],
+    "api_error": [
+      {
+        "data": {
+          "error": "API_ERROR",
+          "message": "Failed to analyze hackathon project. Please try again."
+        },
+        "statusCode": 500,
+        "delay": 300
+      }
+    ],
+    "timeout": [
+      {
+        "data": {
+          "error": "TIMEOUT",
+          "message": "Analysis request timed out. Please try again."
+        },
+        "statusCode": 408,
+        "delay": 30000
+      }
+    ],
+    "rate_limit": [
+      {
+        "data": {
+          "error": "RATE_LIMIT",
+          "message": "Too many analysis requests. Please wait before trying again."
+        },
+        "statusCode": 429,
+        "delay": 100
+      }
+    ],
+    "invalid_input": [
+      {
+        "data": {
+          "error": "INVALID_INPUT",
+          "message": "Project description is required and must be at least 50 characters."
+        },
+        "statusCode": 400,
+        "delay": 100
+      }
+    ]
+  }
+}

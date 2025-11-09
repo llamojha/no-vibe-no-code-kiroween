@@ -31,12 +31,93 @@ export class HackathonController {
    */
   async analyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
     try {
-      // For now, delegate to the legacy implementation to maintain compatibility
-      // TODO: Fully implement with hexagonal architecture handlers
+      // Check if we're in mock mode
+      const isMockMode = process.env.FF_USE_MOCK_API === 'true' || 
+                        process.env.NEXT_PUBLIC_FF_USE_MOCK_API === 'true';
+
+      if (isMockMode) {
+        // In mock mode, return mock data directly
+        return await this.mockAnalyzeHackathonProject(request);
+      }
+
+      // Production mode: use the legacy implementation
       return await this.legacyAnalyzeHackathonProject(request);
     } catch (error) {
       return handleApiError(error);
     }
+  }
+
+  /**
+   * Mock implementation for testing without API calls
+   */
+  private async mockAnalyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
+    const body = await request.json();
+    const { submission, locale } = body as {
+      submission?: {
+        description: string;
+        supportingMaterials?: {
+          screenshots?: string[];
+          demoLink?: string;
+          additionalNotes?: string;
+        };
+      };
+      locale?: "en" | "es";
+    };
+
+    if (!submission || !locale) {
+      return NextResponse.json(
+        { error: "Project submission and locale are required." },
+        { status: 400 }
+      );
+    }
+
+    // Return mock hackathon analysis data
+    const mockAnalysis = {
+      score: 85,
+      strengths: [
+        "Innovative use of AI technology",
+        "Strong technical implementation",
+        "Clear problem-solution fit",
+        "Good use of Kiro for development"
+      ],
+      weaknesses: [
+        "Could benefit from more user testing",
+        "Documentation could be more comprehensive"
+      ],
+      opportunities: [
+        "Potential for scaling to enterprise",
+        "Could integrate with more platforms"
+      ],
+      threats: [
+        "Competitive market space",
+        "Rapid technology changes"
+      ],
+      recommendations: [
+        "Focus on user experience improvements",
+        "Build a strong community around the project",
+        "Consider monetization strategies early"
+      ],
+      categoryRecommendation: {
+        category: "best-use-of-ai",
+        confidence: 0.92,
+        reasoning: "Project demonstrates excellent AI integration and innovative problem-solving"
+      },
+      competitiveAdvantage: {
+        score: 78,
+        factors: [
+          "Unique approach to the problem",
+          "Strong technical execution",
+          "Good market timing"
+        ]
+      },
+      marketAnalysis: {
+        marketSize: "Large and growing",
+        competition: "Moderate",
+        barriers: "Low to medium"
+      }
+    };
+
+    return NextResponse.json(mockAnalysis);
   }
 
   /**
