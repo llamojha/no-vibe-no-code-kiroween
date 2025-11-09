@@ -4,7 +4,7 @@
 
 -- Create the saved_frankenstein_ideas table
 CREATE TABLE IF NOT EXISTS saved_frankenstein_ideas (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   mode VARCHAR(20) NOT NULL CHECK (mode IN ('companies', 'aws')),
   tech1_name TEXT NOT NULL,
