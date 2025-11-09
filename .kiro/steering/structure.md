@@ -2,50 +2,365 @@
 
 ## Architecture Pattern
 
-Feature-based architecture with clear separation of concerns. Each feature is self-contained with its own components, API functions, and utilities.
+This project follows hexagonal architecture (Ports and Adapters pattern) with clear separation between domain, application, and infrastructure layers. The codebase is organized to enforce dependency rules: domain has no dependencies, application depends only on domain, and infrastructure depends on both.
 
-## Directory Structure
+## Quick Reference Index
 
-### `/app` - Next.js App Router
+### Domain Layer (`src/domain/`)
 
-- **Pages**: Route-based page components (`page.tsx`)
-- **API Routes**: Server endpoints (`route.ts`)
-- **Layouts**: Shared layout components (`layout.tsx`)
-- **Global Styles**: Application-wide CSS (`globals.css`)
+The domain layer contains pure business logic with no external dependencies.
 
-### `/features` - Feature Modules
+#### Entities
 
-Each feature follows this structure:
+Core business objects with identity and lifecycle:
 
-```
-features/[feature-name]/
-├── components/          # React components
-├── api/                # Client-side API functions
-├── utils/              # Feature-specific utilities
-├── context/            # React contexts
-└── __tests__/          # Feature tests
-```
+- `entities/Analysis.ts` - Analysis aggregate root with business rules and invariants
+- `entities/User.ts` - User aggregate root
+- `entities/shared/Entity.ts` - Base entity class with ID encapsulation
 
-**Key Features:**
+#### Value Objects
 
-- `analyzer` - Core startup idea analysis
-- `kiroween-analyzer` - Hackathon project evaluation
-- `auth` - Authentication and user management
-- `dashboard` - User dashboard functionality
-- `locale` - Internationalization support
+Immutable domain concepts with validation:
 
-### `/lib` - Shared Libraries
+- `value-objects/AnalysisId.ts` - Strongly-typed analysis identifier
+- `value-objects/UserId.ts` - Strongly-typed user identifier
+- `value-objects/Email.ts` - Email validation and representation
+- `value-objects/Score.ts` - Score validation (0-100 range)
+- `value-objects/Category.ts` - Analysis categories (general/hackathon types)
+- `value-objects/Criteria.ts` - Evaluation criteria value object
+- `value-objects/Locale.ts` - Supported locale value object (en/es)
 
-- `auth/` - Authentication utilities and access control
-- `server/ai/` - AI integration (Gemini, TTS, transcription)
-- `supabase/` - Database client, types, and mappers
-- `types.ts` - Global TypeScript definitions
-- `featureFlags.ts` - Feature flag system
+#### Repository Interfaces
 
-### `/locales` - Internationalization
+Data access contracts (ports):
 
-- `en.json` - English translations
-- `es.json` - Spanish translations
+- `repositories/IAnalysisRepository.ts` - Analysis persistence interface
+- `repositories/IUserRepository.ts` - User persistence interface
+- `repositories/IHackathonAnalysisRepository.ts` - Hackathon analysis persistence
+- `repositories/IDashboardRepository.ts` - Dashboard data aggregation interface
+- `repositories/base/` - Base repository interfaces and types
+
+#### Domain Services
+
+Business logic coordination:
+
+- `services/AnalysisValidationService.ts` - Analysis validation rules and quality metrics
+- `services/ScoreCalculationService.ts` - Score computation logic
+- `services/HackathonAnalysisService.ts` - Hackathon-specific business rules
+
+### Application Layer (`src/application/`)
+
+The application layer orchestrates business operations and coordinates domain logic.
+
+#### Use Cases
+
+Business operation orchestration:
+
+- `use-cases/AnalyzeIdeaUseCase.ts` - Analyze startup idea with AI
+- `use-cases/SaveAnalysisUseCase.ts` - Persist analysis to database
+- `use-cases/GetAnalysisUseCase.ts` - Retrieve single analysis
+- `use-cases/DeleteAnalysisUseCase.ts` - Remove analysis
+- `use-cases/AnalyzeHackathonProjectUseCase.ts` - Analyze hackathon project
+- `use-cases/SaveHackathonAnalysisUseCase.ts` - Persist hackathon analysis
+- `use-cases/GetUserAnalysesUseCase.ts` - Retrieve user's analyses
+- `use-cases/GetDashboardStatsUseCase.ts` - Calculate dashboard statistics
+- `use-cases/GetHackathonLeaderboardUseCase.ts` - Generate hackathon leaderboard
+- `use-cases/user/CreateUserUseCase.ts` - User creation
+- `use-cases/user/GetUserByIdUseCase.ts` - User retrieval
+- `use-cases/user/UpdateUserLastLoginUseCase.ts` - Login tracking
+
+#### Handlers
+
+Command and query processing:
+
+- `handlers/commands/` - Write operations (create, update, delete)
+- `handlers/queries/` - Read operations (get, list, search)
+
+#### Application Services
+
+Cross-cutting application concerns:
+
+- `services/GoogleAIAnalysisService.ts` - AI analysis orchestration
+- `services/AudioProcessingService.ts` - Audio transcription and processing
+- `services/AuthenticationService.ts` - Authentication logic
+- `services/SessionService.ts` - Session management
+- `services/NotificationService.ts` - Notification handling
+- `services/IAIAnalysisService.ts` - AI service interface
+- `services/IAudioProcessingService.ts` - Audio service interface
+- `services/INotificationService.ts` - Notification service interface
+
+#### Types
+
+Application-level types:
+
+- `types/commands.ts` - Command type definitions
+- `types/queries.ts` - Query type definitions
+- `types/base/` - Base command/query types
+
+### Infrastructure Layer (`src/infrastructure/`)
+
+The infrastructure layer provides concrete implementations of interfaces and external integrations.
+
+#### Database Adapters
+
+- `database/supabase/SupabaseClient.ts` - Database connection management
+- `database/supabase/repositories/SupabaseAnalysisRepository.ts` - Analysis repository implementation
+- `database/supabase/repositories/SupabaseUserRepository.ts` - User repository implementation
+- `database/supabase/repositories/SupabaseHackathonAnalysisRepository.ts` - Hackathon repository
+- `database/supabase/repositories/SupabaseDashboardRepository.ts` - Dashboard repository
+- `database/supabase/mappers/AnalysisMapper.ts` - Entity ↔ DAO conversion for Analysis
+- `database/supabase/mappers/UserMapper.ts` - Entity ↔ DAO conversion for User
+- `database/supabase/mappers/HackathonAnalysisMapper.ts` - Hackathon analysis mapping
+- `database/types/` - Database-specific types (DAOs)
+- `database/errors/` - Database error handling
+
+#### External Service Adapters
+
+- `external/ai/GoogleAIAdapter.ts` - Google Gemini AI integration
+- `external/ai/TextToSpeechAdapter.ts` - Text-to-speech service
+- `external/ai/TranscriptionAdapter.ts` - Audio transcription service
+- `external/analytics/PostHogAdapter.ts` - Analytics integration
+
+#### Web Layer (Next.js Integration)
+
+- `web/controllers/AnalysisController.ts` - Analysis HTTP request handling
+- `web/controllers/DashboardController.ts` - Dashboard HTTP handling
+- `web/controllers/HackathonController.ts` - Hackathon HTTP handling
+- `web/middleware/AuthMiddleware.ts` - Authentication middleware
+- `web/middleware/ErrorMiddleware.ts` - Error handling middleware
+- `web/middleware/ValidationMiddleware.ts` - Request validation
+- `web/dto/AnalysisDTO.ts` - Analysis data transfer objects
+- `web/dto/UserDTO.ts` - User DTOs
+- `web/dto/HackathonDTO.ts` - Hackathon DTOs
+- `web/routes/` - Route definitions and mappings
+- `web/context/` - React context providers
+- `web/helpers/` - Web-specific utilities
+
+#### Factories
+
+Dependency injection and service instantiation:
+
+- `factories/RepositoryFactory.ts` - Repository instantiation with proper dependencies
+- `factories/ServiceFactory.ts` - Service instantiation and configuration
+- `factories/UseCaseFactory.ts` - Use case instantiation with injected dependencies
+
+#### Configuration
+
+Environment and feature configuration:
+
+- `config/environment.ts` - Environment variable management
+- `config/database.ts` - Database configuration
+- `config/ai.ts` - AI service configuration
+- `config/features.ts` - Feature flag configuration
+
+#### Integration Adapters
+
+- `integration/SupabaseAdapter.ts` - Supabase integration utilities
+- `integration/FeatureFlagAdapter.ts` - Feature flag adapter
+- `integration/LocaleAdapter.ts` - Localization adapter
+
+#### Bootstrap
+
+Application initialization:
+
+- `bootstrap/nextjs.ts` - Next.js-specific bootstrap
+- `bootstrap/validation.ts` - Validation setup
+- `bootstrap/index.ts` - Main bootstrap orchestration
+
+### Feature Modules (`features/`)
+
+Feature-specific UI components and client-side logic.
+
+#### Analyzer
+
+Startup idea analysis feature:
+
+- `analyzer/components/AnalyzerView.tsx` - Main analyzer UI
+- `analyzer/components/AnalysisDisplay.tsx` - Results display component
+- `analyzer/components/IdeaInputForm.tsx` - Input form component
+- `analyzer/api/analyzeIdea.ts` - Client-side API call wrapper
+- `analyzer/utils/exportReport.ts` - Report generation utilities
+
+#### Kiroween Analyzer
+
+Hackathon project evaluation:
+
+- `kiroween-analyzer/components/KiroweenAnalyzerView.tsx` - Main hackathon UI
+- `kiroween-analyzer/components/HackathonAnalysisDisplay.tsx` - Results display
+- `kiroween-analyzer/api/analyzeHackathonProject.ts` - Hackathon analysis API
+- `kiroween-analyzer/utils/hackathonScoring.ts` - Scoring utilities
+
+#### Auth
+
+Authentication and user management:
+
+- `auth/components/LoginForm.tsx` - Login UI component
+- `auth/components/SignupForm.tsx` - Signup UI component
+- `auth/context/AuthContext.tsx` - Authentication state management
+
+#### Dashboard
+
+User dashboard:
+
+- `dashboard/components/UserDashboard.tsx` - Dashboard UI
+- `dashboard/components/AnalysisList.tsx` - Analysis list component
+- `dashboard/api/loadUnifiedAnalysesV2.ts` - Dashboard data loading
+
+#### Locale
+
+Internationalization:
+
+- `locale/components/LanguageSwitcher.tsx` - Language selection UI
+- `locale/context/LocaleContext.tsx` - Locale state management
+- `locale/translations.ts` - Translation utilities
+
+#### Analytics
+
+Analytics integration:
+
+- `analytics/posthogClient.ts` - PostHog analytics client
+
+#### Home
+
+Landing page:
+
+- `home/components/` - Home page components
+- `home/hooks/` - Home page hooks
+
+### Shared Libraries (`lib/`)
+
+Cross-cutting utilities and shared code.
+
+#### Feature Flags
+
+- `featureFlags.ts` - Feature flag system implementation
+- `featureFlags.config.ts` - Feature flag configuration
+- `featureFlags.types.ts` - Feature flag types
+- `featureFlags.validation.ts` - Feature flag validation
+
+#### Logging
+
+- `logger/Logger.ts` - Structured logging implementation
+- `logger/types.ts` - Logger types
+- `logger/index.ts` - Logger exports
+
+#### AI Prompts
+
+- `prompts/startupIdea.ts` - AI prompts for startup analysis
+- `prompts/hackathonProject.ts` - AI prompts for hackathon evaluation
+- `prompts/constants.ts` - Prompt constants
+
+#### Supabase Client
+
+- `supabase/client.ts` - Supabase client setup (client-side)
+- `supabase/server.ts` - Supabase server client
+- `supabase/types.ts` - Supabase type definitions
+- `supabase/mappers.ts` - Legacy mappers (being migrated)
+
+#### Utilities
+
+- `auth/access.ts` - Access control utilities
+- `types.ts` - Global type definitions
+- `date.ts` - Date utilities
+- `localStorage.ts` - Local storage utilities
+- `mockData.ts` - Mock data for development
+
+### API Routes (`app/api/`)
+
+Next.js API routes (HTTP endpoints).
+
+#### Analysis Endpoints
+
+- `api/analyze/route.ts` - POST /api/analyze (legacy)
+- `api/analyze/[id]/route.ts` - GET /api/analyze/:id
+- `api/analyze/save/route.ts` - POST /api/analyze/save
+- `api/analyze/search/route.ts` - GET /api/analyze/search
+- `api/v2/analyze/route.ts` - POST /api/v2/analyze (new architecture)
+
+#### Hackathon Endpoints
+
+- `api/analyze-hackathon/route.ts` - POST /api/analyze-hackathon (legacy)
+- `api/v2/hackathon/analyze/route.ts` - POST /api/v2/hackathon/analyze (new architecture)
+
+#### Dashboard Endpoints
+
+- `api/v2/dashboard/route.ts` - GET /api/v2/dashboard
+
+#### Utility Endpoints
+
+- `api/health/route.ts` - GET /api/health (health check)
+- `api/transcribe/route.ts` - POST /api/transcribe (audio transcription)
+- `api/tts/route.ts` - POST /api/tts (text-to-speech)
+
+#### Development Endpoints
+
+- `api/dev/test-new-logger/route.ts` - Logger testing endpoint
+
+### Shared Types (`src/shared/`)
+
+Shared utilities and types used across layers.
+
+- `shared/types/common.ts` - Common type definitions
+- `shared/types/errors.ts` - Error types and classes
+- `shared/utils/validation.ts` - Validation utilities
+
+## Finding Files by Purpose
+
+### "Where do I add business validation?"
+
+→ `src/domain/services/` for domain services or add methods to entities in `src/domain/entities/`
+
+### "Where do I add a new API endpoint?"
+
+→ `app/api/` for the Next.js route, `src/infrastructure/web/controllers/` for the controller logic
+
+### "Where do I add database queries?"
+
+→ Implement repository interface in `src/infrastructure/database/supabase/repositories/`
+
+### "Where do I add AI integration?"
+
+→ `src/infrastructure/external/ai/` for adapters, `src/application/services/` for orchestration
+
+### "Where do I add UI components?"
+
+→ `features/[feature-name]/components/` for feature-specific, `app/` for pages and layouts
+
+### "Where are the tests?"
+
+→ Co-located with source in `__tests__/` folders or `.test.ts` files
+
+### "Where do I add a new use case?"
+
+→ `src/application/use-cases/` with proper dependency injection
+
+### "Where do I add a new entity or value object?"
+
+→ `src/domain/entities/` for entities, `src/domain/value-objects/` for value objects
+
+### "Where do I configure environment variables?"
+
+→ `src/infrastructure/config/environment.ts` for reading, `.env.local` for values
+
+### "Where do I add feature flags?"
+
+→ `lib/featureFlags.config.ts` for configuration, use via `lib/featureFlags.ts`
+
+## Hexagonal Architecture Layers
+
+### Dependency Rules
+
+- **Domain Layer**: No dependencies on other layers (pure business logic)
+- **Application Layer**: Depends only on Domain layer
+- **Infrastructure Layer**: Depends on both Domain and Application layers
+- **Features/UI**: Depends on Application and Infrastructure layers
+
+### Layer Responsibilities
+
+- **Domain**: Business entities, value objects, business rules, repository interfaces
+- **Application**: Use cases, application services, command/query handlers
+- **Infrastructure**: Database implementations, external APIs, web controllers, configuration
+- **Features**: UI components, client-side API calls, feature-specific utilities
 
 ## Naming Conventions
 
@@ -74,3 +389,5 @@ features/[feature-name]/
 - Client-side API functions in `/features/[feature]/api/`
 - Consistent error handling and response formats
 - Authentication middleware for protected routes
+
+<!-- Last updated: November 9, 2025 -->

@@ -15,7 +15,6 @@
 - **Document Generation**: Automated PRD and roadmap creation
 - **GitHub Integration**: Export analysis results as GitHub issues and project boards
 - **Multi-language Support**: English and Spanish localization
-- **Audio Features**: Text-to-speech and transcription capabilities
 
 ## Target Users
 
