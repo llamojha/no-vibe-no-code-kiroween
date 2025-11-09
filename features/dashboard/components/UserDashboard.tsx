@@ -104,15 +104,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const handleDelete = useCallback(async () => {
     if (!analysisToDelete || !supabase) return;
 
-    const tableName =
-      analysisToDelete.category === "idea"
-        ? "saved_analyses"
-        : "saved_hackathon_analyses";
+    const analysisType =
+      analysisToDelete.category === "kiroween" ? "hackathon" : "idea";
 
     const { error } = await supabase
-      .from(tableName)
+      .from("saved_analyses")
       .delete()
-      .eq("id", analysisToDelete.id);
+      .eq("id", analysisToDelete.id)
+      .eq("analysis_type", analysisType);
 
     if (error) {
       console.error("Failed to delete analysis", error);

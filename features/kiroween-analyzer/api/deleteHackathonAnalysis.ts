@@ -46,10 +46,11 @@ export async function deleteHackathonAnalysis(
 
   try {
     const { error } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .delete()
       .eq("id", analysisId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("analysis_type", "hackathon");
 
     if (error) {
       console.error("Failed to delete hackathon analysis", error);
