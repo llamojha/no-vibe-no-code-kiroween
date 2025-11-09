@@ -81,7 +81,6 @@ export class SaveHackathonAnalysisUseCase {
         const projectDataForValidation: HackathonProjectMetadata = {
           projectName: updatedHackathonData.projectName || hackathonData.projectName,
           description: updatedHackathonData.projectDescription || hackathonData.projectDescription,
-          kiroUsage: updatedHackathonData.kiroUsage || hackathonData.kiroUsage,
           teamSize: 1, // Default team size, will be updated from metadata if available
           githubUrl: updatedHackathonData.githubUrl || hackathonData.githubUrl,
           demoUrl: updatedHackathonData.demoUrl || hackathonData.demoUrl,
@@ -120,7 +119,6 @@ export class SaveHackathonAnalysisUseCase {
         const currentHackathonData: HackathonProjectMetadata = {
           projectName: hackathonData.projectName,
           description: hackathonData.projectDescription,
-          kiroUsage: hackathonData.kiroUsage,
           teamSize: 1, // Default, should be stored separately
           githubUrl: hackathonData.githubUrl,
           demoUrl: hackathonData.demoUrl,
@@ -161,7 +159,6 @@ export class SaveHackathonAnalysisUseCase {
           const currentHackathonData: HackathonProjectMetadata = {
             projectName: hackathonData.projectName,
             description: hackathonData.projectDescription,
-            kiroUsage: hackathonData.kiroUsage,
             teamSize: 1,
             githubUrl: hackathonData.githubUrl,
             demoUrl: hackathonData.demoUrl,
@@ -279,7 +276,6 @@ export class SaveHackathonAnalysisUseCase {
       const projectMetadata: HackathonProjectMetadata = {
         projectName: hackathonData.projectName,
         description: hackathonData.projectDescription,
-        kiroUsage: hackathonData.kiroUsage,
         teamSize: 1, // Default
         githubUrl: hackathonData.githubUrl,
         demoUrl: hackathonData.demoUrl,

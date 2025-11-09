@@ -112,7 +112,7 @@ export class HackathonAnalysisMapper {
       id: row.id,
       user_id: row.user_id,
       project_description: row.project_description,
-      selected_category: row.selected_category,
+      selected_category: row.selected_category as HackathonAnalysisDAO["selected_category"],
       kiro_usage: row.kiro_usage,
       analysis: row.analysis,
       audio_base64: row.audio_base64,

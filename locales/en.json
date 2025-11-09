@@ -92,8 +92,7 @@
   "projectDescriptionPlaceholder": "Describe your hackathon project in detail. What does it do? What problem does it solve? What makes it unique?",
   "categorySelectionLabel": "Competition Category",
   "categorySelectionPlaceholder": "Select the category that best fits your project",
-  "kiroUsageLabel": "Kiro Usage Explanation",
-  "kiroUsagePlaceholder": "Explain how you used Kiro in your project. What features did you leverage? How did it help you build your solution?",
+  
   "supportingMaterialsLabel": "Supporting Materials (Optional)",
   "screenshotsLabel": "Screenshots",
   "demoLinkLabel": "Demo Link",
@@ -133,7 +132,7 @@
   "competitionStrategy": "Competition Strategy",
   "projectDescriptionRequired": "Project description is required.",
   "categorySelectionRequired": "Please select a category.",
-  "kiroUsageRequired": "Please explain how you used Kiro in your project.",
+  
   "spookyLoaderMessage1": "Summoning the spirits of evaluation...",
   "spookyLoaderMessage2": "Brewing category analysis potion...",
   "spookyLoaderMessage3": "Consulting the hackathon oracle...",
@@ -144,7 +143,7 @@
   "appliedSuggestions": "Applied Suggestions",
   "reEvaluateProject": "Re-evaluate Project",
   "projectDescriptionMinLength": "Project description must be at least 50 characters",
-  "kiroUsageMinLength": "Kiro usage explanation must be at least 20 characters",
+  
   "brewingSpookyAnalysis": "Brewing spooky analysis...",
   "scoringGuide": "Scoring Guide",
   "excellentFit": "Excellent Fit",

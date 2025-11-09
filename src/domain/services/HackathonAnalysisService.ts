@@ -34,7 +34,6 @@ export interface CategoryMatchingCriteria {
 export interface HackathonProjectMetadata {
   projectName: string;
   description: string;
-  kiroUsage: string;
   githubUrl?: string;
   demoUrl?: string;
   videoUrl?: string;
@@ -106,9 +105,7 @@ export class HackathonAnalysisService {
       errors.push('Project description must be at least 50 characters');
     }
 
-    if (!metadata.kiroUsage || metadata.kiroUsage.trim().length < 30) {
-      errors.push('Kiro usage description must be at least 30 characters');
-    }
+    // Kiro usage removed from required fields
 
     // Team size validation
     if (metadata.teamSize < 1 || metadata.teamSize > 10) {
@@ -237,15 +234,7 @@ export class HackathonAnalysisService {
       advantageScore += 8;
     }
 
-    // Kiro integration advantage
-    if (this.hasStrongKiroIntegration(metadata.kiroUsage)) {
-      advantages.push({
-        factor: 'Excellent Kiro Integration',
-        impact: 'high',
-        description: 'Demonstrates deep understanding and creative use of Kiro'
-      });
-      advantageScore += 12;
-    }
+    // Kiro integration metrics removed
 
     // Category fit advantage
     const categoryFit = this.assessCategoryFit(analysis, metadata, category);
@@ -284,7 +273,6 @@ export class HackathonAnalysisService {
     const factors = [
       'implementation',
       'creativity',
-      'kiro_integration',
       'presentation',
       'category_fit'
     ];
@@ -461,9 +449,7 @@ export class HackathonAnalysisService {
       advantages.push('Collaborative team effort demonstrating coordination skills');
     }
 
-    if (this.hasStrongKiroIntegration(metadata.kiroUsage)) {
-      advantages.push('Excellent integration and creative use of Kiro features');
-    }
+    // Kiro integration advantages removed
 
     if (metadata.screenshots && metadata.screenshots.length >= 3) {
       advantages.push('Strong visual presentation with comprehensive screenshots');
@@ -508,11 +494,7 @@ export class HackathonAnalysisService {
     ];
   }
 
-  private hasStrongKiroIntegration(kiroUsage: string): boolean {
-    const strongIndicators = ['extensively', 'creatively', 'innovative', 'multiple features', 'advanced'];
-    const lowerUsage = kiroUsage.toLowerCase();
-    return strongIndicators.some(indicator => lowerUsage.includes(indicator)) && kiroUsage.length > 100;
-  }
+  // Kiro integration heuristic removed
 
   private isValidUrl(url: string): boolean {
     try {
@@ -541,8 +523,7 @@ export class HackathonAnalysisService {
       case 'creativity':
         return this.assessCreativity(analysis, metadata);
 
-      case 'kiro_integration':
-        return this.hasStrongKiroIntegration(metadata.kiroUsage) ? 85 : 60;
+      // Kiro integration factor removed
 
       case 'presentation':
         let presScore = 50;

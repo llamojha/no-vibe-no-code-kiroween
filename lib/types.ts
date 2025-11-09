@@ -74,6 +74,7 @@ export interface SavedAnalysis {
 
 export interface SavedAnalysisRecord extends SavedAnalysis {
   userId: string;
+  analysisType: "idea" | "hackathon";
 }
 
 // Kiroween Hackathon Analyzer Types

@@ -129,7 +129,6 @@ export class AnalyzeHackathonProjectUseCase {
       const hackathonAnalysisData = {
         projectName: input.projectData.projectName,
         projectDescription: input.projectData.description,
-        kiroUsage: input.projectData.kiroUsage,
         category: evaluation.recommendedCategory,
         githubUrl: input.projectData.githubUrl,
         demoUrl: input.projectData.demoUrl,

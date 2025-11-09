@@ -55,7 +55,6 @@ export interface IAIAnalysisService {
   analyzeHackathonProject(
     projectName: string,
     description: string,
-    kiroUsage: string,
     locale: Locale
   ): Promise<Result<AIAnalysisResult, Error>>;
 
@@ -92,8 +91,7 @@ export interface IAIAnalysisService {
    */
   recommendHackathonCategory(
     projectName: string,
-    description: string,
-    kiroUsage: string
+    description: string
   ): Promise<Result<{
     recommendedCategory: string;
     confidence: Score;

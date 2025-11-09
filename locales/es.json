@@ -92,8 +92,7 @@
   "projectDescriptionPlaceholder": "Describe tu proyecto de hackathon en detalle. ¿Qué hace? ¿Qué problema resuelve? ¿Qué lo hace único?",
   "categorySelectionLabel": "Categoría Kiroween",
   "categorySelectionPlaceholder": "Selecciona la categoría que mejor se adapte a tu proyecto",
-  "kiroUsageLabel": "Explicación del Uso de Kiro",
-  "kiroUsagePlaceholder": "Explica cómo usaste Kiro en tu proyecto. ¿Qué características aprovechaste? ¿Cómo te ayudó a construir tu solución?",
+  
   "supportingMaterialsLabel": "Materiales de Apoyo (Opcional)",
   "screenshotsLabel": "Capturas de Pantalla",
   "demoLinkLabel": "Enlace de Demo",
@@ -133,7 +132,7 @@
   "competitionStrategy": "Estrategia de Competencia",
   "projectDescriptionRequired": "La descripción del proyecto es obligatoria.",
   "categorySelectionRequired": "Por favor selecciona una categoría.",
-  "kiroUsageRequired": "Por favor explica cómo usaste Kiro en tu proyecto.",
+  
   "spookyLoaderMessage1": "Invocando los espíritus de evaluación...",
   "spookyLoaderMessage2": "Preparando poción de análisis de categoría...",
   "spookyLoaderMessage3": "Consultando el oráculo del hackathon...",
@@ -144,7 +143,7 @@
   "appliedSuggestions": "Sugerencias Aplicadas",
   "reEvaluateProject": "Re-evaluar Proyecto",
   "projectDescriptionMinLength": "La descripción del proyecto debe tener al menos 50 caracteres",
-  "kiroUsageMinLength": "La explicación del uso de Kiro debe tener al menos 20 caracteres",
+  
   "brewingSpookyAnalysis": "Preparando análisis espeluznante...",
   "scoringGuide": "Guía de Puntuación",
   "excellentFit": "Ajuste Excelente",

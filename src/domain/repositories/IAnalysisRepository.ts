@@ -88,10 +88,20 @@ export interface IAnalysisQueryRepository
     requestingUserId?: UserId
   ): Promise<Result<Analysis | null, Error>>;
   /**
-   * Find analyses by user ID with pagination
+   * Find analyses by user ID with pagination and optional type filter
    */
   findByUserId(
     userId: UserId,
+    params: PaginationParams,
+    type?: "idea" | "hackathon"
+  ): Promise<Result<PaginatedResult<Analysis>, Error>>;
+
+  /**
+   * Find analyses by user ID and specific type with pagination
+   */
+  findByUserIdAndType(
+    userId: UserId,
+    type: "idea" | "hackathon",
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>>;
 
@@ -110,6 +120,7 @@ export interface IAnalysisQueryRepository
       limit: number;
       sortBy?: "newest" | "oldest" | "score" | "title";
       category?: "idea" | "kiroween" | "all";
+      type?: "idea" | "hackathon";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>>;
 
@@ -124,11 +135,27 @@ export interface IAnalysisQueryRepository
       limit: number;
       sortBy?: "newest" | "oldest" | "score" | "title";
       category?: "idea" | "kiroween" | "all";
+      type?: "idea" | "hackathon";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>>;
 
   /**
+   * Get analysis counts by type for a user
+   */
+  getAnalysisCountsByType(userId: UserId): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        hackathon: number;
+      },
+      Error
+    >
+  >;
+
+  /**
    * Get analysis counts by category for a user
+   * @deprecated Use getAnalysisCountsByType instead
    */
   getAnalysisCountsByUser(userId: UserId): Promise<
     Result<

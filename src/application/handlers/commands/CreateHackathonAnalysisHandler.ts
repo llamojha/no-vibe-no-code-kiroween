@@ -80,9 +80,7 @@ export class CreateHackathonAnalysisHandler implements CommandHandler<CreateHack
         return failure(new ValidationError('Project description is required'));
       }
 
-      if (!projectData.kiroUsage || typeof projectData.kiroUsage !== 'string') {
-        return failure(new ValidationError('Kiro usage description is required'));
-      }
+      // Kiro usage removed from required fields
 
       if (!projectData.teamSize || typeof projectData.teamSize !== 'number' || projectData.teamSize < 1) {
         return failure(new ValidationError('Team size must be a positive number'));
@@ -95,7 +93,6 @@ export class CreateHackathonAnalysisHandler implements CommandHandler<CreateHack
       const metadata: HackathonProjectMetadata = {
         projectName: projectData.projectName as string,
         description: projectData.description as string,
-        kiroUsage: projectData.kiroUsage as string,
         teamSize: projectData.teamSize as number,
         githubUrl: typeof projectData.githubUrl === 'string' ? projectData.githubUrl : undefined,
         demoUrl: typeof projectData.demoUrl === 'string' ? projectData.demoUrl : undefined,

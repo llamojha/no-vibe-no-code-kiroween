@@ -1,10 +1,19 @@
-import { Entity } from './shared/Entity';
-import { AnalysisId } from '../value-objects/AnalysisId';
-import { UserId } from '../value-objects/UserId';
-import { Score } from '../value-objects/Score';
-import { Locale } from '../value-objects/Locale';
-import { Category } from '../value-objects/Category';
-import { BusinessRuleViolationError, InvariantViolationError } from '../../shared/types/errors';
+import { Entity } from "./shared/Entity";
+import { AnalysisId } from "../value-objects/AnalysisId";
+import { UserId } from "../value-objects/UserId";
+import { Score } from "../value-objects/Score";
+import { Locale } from "../value-objects/Locale";
+import { Category } from "../value-objects/Category";
+import {
+  BusinessRuleViolationError,
+  InvariantViolationError,
+} from "../../shared/types/errors";
+
+/**
+ * Supporting materials for hackathon analyses
+ */
+// Note: SupportingMaterials removed from domain. Hackathon-specific
+// attachments are not persisted in the unified model.
 
 /**
  * Properties required to create a new Analysis
@@ -113,23 +122,31 @@ export class Analysis extends Entity<AnalysisId> {
    */
   private validateInvariants(): void {
     if (!this._idea || this._idea.trim().length === 0) {
-      throw new InvariantViolationError('Analysis idea cannot be empty');
+      throw new InvariantViolationError("Analysis idea cannot be empty");
     }
 
     if (this._idea.trim().length < 10) {
-      throw new InvariantViolationError('Analysis idea must be at least 10 characters long');
+      throw new InvariantViolationError(
+        "Analysis idea must be at least 10 characters long"
+      );
     }
 
     if (this._idea.trim().length > 5000) {
-      throw new InvariantViolationError('Analysis idea cannot exceed 5000 characters');
+      throw new InvariantViolationError(
+        "Analysis idea cannot exceed 5000 characters"
+      );
     }
 
     if (this._feedback && this._feedback.length > 10000) {
-      throw new InvariantViolationError('Analysis feedback cannot exceed 10000 characters');
+      throw new InvariantViolationError(
+        "Analysis feedback cannot exceed 10000 characters"
+      );
     }
 
     if (this._suggestions.length > 50) {
-      throw new InvariantViolationError('Analysis cannot have more than 50 suggestions');
+      throw new InvariantViolationError(
+        "Analysis cannot have more than 50 suggestions"
+      );
     }
   }
 
@@ -138,7 +155,9 @@ export class Analysis extends Entity<AnalysisId> {
    */
   updateScore(newScore: Score): void {
     if (this.isCompleted()) {
-      throw new BusinessRuleViolationError('Cannot update score of a completed analysis');
+      throw new BusinessRuleViolationError(
+        "Cannot update score of a completed analysis"
+      );
     }
 
     this._score = newScore;
@@ -150,7 +169,9 @@ export class Analysis extends Entity<AnalysisId> {
    */
   updateFeedback(feedback: string): void {
     if (feedback && feedback.length > 10000) {
-      throw new BusinessRuleViolationError('Feedback cannot exceed 10000 characters');
+      throw new BusinessRuleViolationError(
+        "Feedback cannot exceed 10000 characters"
+      );
     }
 
     this._feedback = feedback;
@@ -162,19 +183,23 @@ export class Analysis extends Entity<AnalysisId> {
    */
   addSuggestion(suggestion: string): void {
     if (!suggestion || suggestion.trim().length === 0) {
-      throw new BusinessRuleViolationError('Suggestion cannot be empty');
+      throw new BusinessRuleViolationError("Suggestion cannot be empty");
     }
 
     if (suggestion.length > 500) {
-      throw new BusinessRuleViolationError('Suggestion cannot exceed 500 characters');
+      throw new BusinessRuleViolationError(
+        "Suggestion cannot exceed 500 characters"
+      );
     }
 
     if (this._suggestions.length >= 50) {
-      throw new BusinessRuleViolationError('Cannot add more than 50 suggestions to an analysis');
+      throw new BusinessRuleViolationError(
+        "Cannot add more than 50 suggestions to an analysis"
+      );
     }
 
     if (this._suggestions.includes(suggestion.trim())) {
-      throw new BusinessRuleViolationError('Suggestion already exists');
+      throw new BusinessRuleViolationError("Suggestion already exists");
     }
 
     this._suggestions.push(suggestion.trim());
@@ -187,7 +212,7 @@ export class Analysis extends Entity<AnalysisId> {
   removeSuggestion(suggestion: string): void {
     const index = this._suggestions.indexOf(suggestion);
     if (index === -1) {
-      throw new BusinessRuleViolationError('Suggestion not found');
+      throw new BusinessRuleViolationError("Suggestion not found");
     }
 
     this._suggestions.splice(index, 1);
@@ -288,10 +313,11 @@ export class Analysis extends Entity<AnalysisId> {
    * Get a summary of the analysis
    */
   getSummary(): string {
-    const ideaPreview = this._idea.length > 100 
-      ? this._idea.substring(0, 100) + '...' 
-      : this._idea;
-    
+    const ideaPreview =
+      this._idea.length > 100
+        ? this._idea.substring(0, 100) + "..."
+        : this._idea;
+
     return `Analysis (${this._score.toPercentage()}): ${ideaPreview}`;
   }
 }

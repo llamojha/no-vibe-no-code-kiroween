@@ -9,7 +9,6 @@ import { Result, PaginatedResult, PaginationParams } from '../../shared/types/co
 export interface HackathonAnalysisData {
   projectName: string;
   projectDescription: string;
-  kiroUsage: string;
   category: Category;
   githubUrl?: string;
   demoUrl?: string;

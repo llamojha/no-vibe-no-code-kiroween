@@ -27,7 +27,9 @@ export {
   getControllers 
 } from './infrastructure/bootstrap';
 export * from './infrastructure/config';
-export * from './infrastructure/database';
+// Export only safe database pieces to avoid name conflicts with domain types
+export { SupabaseClient } from './infrastructure/database/supabase/SupabaseClient';
+export * from './infrastructure/database/errors';
 export * from './infrastructure/factories';
 // Note: Excluding other infrastructure modules to avoid export conflicts
 

@@ -163,7 +163,6 @@ describe("Hackathon Evaluation Workflow E2E", () => {
 
     // Step 1: Fill out the project submission form
     const descriptionField = screen.getByLabelText(/project description/i);
-    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
 
     fireEvent.change(descriptionField, {
       target: {
@@ -172,12 +171,7 @@ describe("Hackathon Evaluation Workflow E2E", () => {
       },
     });
 
-    fireEvent.change(kiroUsageField, {
-      target: {
-        value:
-          "Used Kiro agents for code analysis, automated testing, and integration workflows to modernize legacy systems",
-      },
-    });
+    // Kiro usage field removed from form
 
     // Step 2: Submit the form for analysis
     const analyzeButton = screen.getByRole("button", {
@@ -239,7 +233,6 @@ describe("Hackathon Evaluation Workflow E2E", () => {
 
     // Fill out form
     const descriptionField = screen.getByLabelText(/project description/i);
-    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
 
     fireEvent.change(descriptionField, {
       target: {
@@ -247,9 +240,7 @@ describe("Hackathon Evaluation Workflow E2E", () => {
           "Test project description that meets minimum length requirements",
       },
     });
-    fireEvent.change(kiroUsageField, {
-      target: { value: "Test Kiro usage explanation" },
-    });
+    // Kiro usage field removed from form
 
     // Submit form
     const analyzeButton = screen.getByRole("button", {
@@ -284,9 +275,7 @@ describe("Hackathon Evaluation Workflow E2E", () => {
     expect(
       screen.getByText(/project description is required/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/please explain how you used kiro/i)
-    ).toBeInTheDocument();
+    // No Kiro usage validation anymore
 
     // Verify analysis was not called
     expect(analyzeHackathonProject).not.toHaveBeenCalled();
@@ -297,16 +286,13 @@ describe("Hackathon Evaluation Workflow E2E", () => {
 
     // Initial submission
     const descriptionField = screen.getByLabelText(/project description/i);
-    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
 
     fireEvent.change(descriptionField, {
       target: {
         value: "Initial project description that meets minimum requirements",
       },
     });
-    fireEvent.change(kiroUsageField, {
-      target: { value: "Initial Kiro usage explanation" },
-    });
+    // Kiro usage field removed from form
 
     const analyzeButton = screen.getByRole("button", {
       name: /analyze my project/i,
@@ -345,14 +331,11 @@ describe("Hackathon Evaluation Workflow E2E", () => {
 
     // Complete analysis workflow
     const descriptionField = screen.getByLabelText(/project description/i);
-    const kiroUsageField = screen.getByLabelText(/how you used kiro/i);
 
     fireEvent.change(descriptionField, {
       target: { value: "Test project description that meets requirements" },
     });
-    fireEvent.change(kiroUsageField, {
-      target: { value: "Test Kiro usage explanation" },
-    });
+    // Kiro usage field removed from form
 
     const analyzeButton = screen.getByRole("button", {
       name: /analyze my project/i,

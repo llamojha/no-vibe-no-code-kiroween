@@ -25,7 +25,6 @@ export const CreateHackathonAnalysisCommandSchema = createCommandSchema(
     projectData: z.object({
       projectName: z.string().min(1, 'Project name is required').max(100, 'Project name cannot exceed 100 characters'),
       description: z.string().min(50, 'Description must be at least 50 characters').max(2000, 'Description cannot exceed 2000 characters'),
-      kiroUsage: z.string().min(30, 'Kiro usage description must be at least 30 characters').max(1000, 'Kiro usage cannot exceed 1000 characters'),
       githubUrl: z.string().url('Invalid GitHub URL').optional(),
       demoUrl: z.string().url('Invalid demo URL').optional(),
       videoUrl: z.string().url('Invalid video URL').optional(),

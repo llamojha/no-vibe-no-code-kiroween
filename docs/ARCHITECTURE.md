@@ -12,8 +12,9 @@ This document provides a comprehensive overview of the No Vibe No Code applicati
 6. [Directory Structure](#directory-structure)
 7. [Integration Points](#integration-points)
 8. [Security Architecture](#security-architecture)
-9. [Performance Considerations](#performance-considerations)
-10. [Scalability](#scalability)
+9. [Database Architecture](#database-architecture)
+10. [Performance Considerations](#performance-considerations)
+11. [Scalability](#scalability)
 
 ## Architecture Overview
 
@@ -28,28 +29,28 @@ graph TB
         AUTH[Supabase Auth]
         ANALYTICS[PostHog Analytics]
     end
-    
+
     subgraph "Infrastructure Layer"
         WEB[Web Adapters]
         REPO[Repository Implementations]
         EXT[External Service Adapters]
         CONFIG[Configuration]
     end
-    
+
     subgraph "Application Layer"
         UC[Use Cases]
         CMD[Command Handlers]
         QRY[Query Handlers]
         SVC[Application Services]
     end
-    
+
     subgraph "Domain Layer"
         ENT[Entities]
         VO[Value Objects]
         PORTS[Repository Interfaces]
         DOM[Domain Services]
     end
-    
+
     UI --> WEB
     WEB --> UC
     UC --> CMD
@@ -79,6 +80,7 @@ graph TB
 The innermost layer containing pure business logic and rules.
 
 **Responsibilities:**
+
 - Define business entities and their behavior
 - Implement value objects for domain concepts
 - Specify repository interfaces (ports)
@@ -86,6 +88,7 @@ The innermost layer containing pure business logic and rules.
 - Define domain-specific errors and types
 
 **Key Components:**
+
 - **Entities**: `Analysis`, `User`, `Project`
 - **Value Objects**: `AnalysisId`, `Score`, `Email`, `Locale`
 - **Repository Interfaces**: `IAnalysisRepository`, `IUserRepository`
@@ -98,6 +101,7 @@ The innermost layer containing pure business logic and rules.
 Orchestrates business operations and coordinates between domain and infrastructure.
 
 **Responsibilities:**
+
 - Implement use cases and business workflows
 - Handle commands and queries
 - Coordinate domain entities and services
@@ -105,6 +109,7 @@ Orchestrates business operations and coordinates between domain and infrastructu
 - Manage application services
 
 **Key Components:**
+
 - **Use Cases**: `AnalyzeIdeaUseCase`, `SaveAnalysisUseCase`
 - **Command Handlers**: `CreateAnalysisHandler`, `UpdateAnalysisHandler`
 - **Query Handlers**: `GetAnalysisHandler`, `ListAnalysesHandler`
@@ -117,6 +122,7 @@ Orchestrates business operations and coordinates between domain and infrastructu
 Implements external integrations and provides concrete implementations.
 
 **Responsibilities:**
+
 - Implement repository interfaces
 - Provide web framework adapters
 - Integrate with external services
@@ -124,6 +130,7 @@ Implements external integrations and provides concrete implementations.
 - Manage service composition
 
 **Key Components:**
+
 - **Repository Implementations**: `SupabaseAnalysisRepository`
 - **Web Controllers**: `AnalysisController`, `DashboardController`
 - **External Adapters**: `GoogleAIAdapter`, `PostHogAdapter`
@@ -144,7 +151,7 @@ sequenceDiagram
     participant UseCase
     participant Repository
     participant Database
-    
+
     Client->>Controller: POST /api/analyze
     Controller->>Controller: Validate Request
     Controller->>Handler: Execute Command
@@ -167,7 +174,7 @@ sequenceDiagram
     participant Handler
     participant Repository
     participant Database
-    
+
     Client->>Controller: GET /api/analysis/123
     Controller->>Controller: Validate Request
     Controller->>Handler: Execute Query
@@ -205,18 +212,12 @@ Separates read and write operations:
 ```typescript
 // Command (write)
 class CreateAnalysisCommand {
-  constructor(
-    public readonly idea: string,
-    public readonly userId: UserId
-  ) {}
+  constructor(public readonly idea: string, public readonly userId: UserId) {}
 }
 
 // Query (read)
 class GetAnalysisQuery {
-  constructor(
-    public readonly id: AnalysisId,
-    public readonly userId: UserId
-  ) {}
+  constructor(public readonly id: AnalysisId, public readonly userId: UserId) {}
 }
 ```
 
@@ -254,11 +255,13 @@ Encapsulates domain concepts:
 class Score {
   constructor(private readonly value: number) {
     if (value < 0 || value > 100) {
-      throw new Error('Score must be between 0 and 100');
+      throw new Error("Score must be between 0 and 100");
     }
   }
-  
-  get value(): number { return this.value; }
+
+  get value(): number {
+    return this.value;
+  }
 }
 ```
 
@@ -343,7 +346,7 @@ export async function POST(request: NextRequest) {
 export async function analyzeIdea(formData: FormData) {
   const factory = ServiceFactory.getInstance();
   const useCase = factory.createAnalyzeIdeaUseCase();
-  
+
   const result = await useCase.execute(command);
   // Handle result
 }
@@ -356,7 +359,7 @@ export async function analyzeIdea(formData: FormData) {
 export default async function DashboardPage() {
   const factory = ServiceFactory.getInstance();
   const handler = factory.createListAnalysesHandler();
-  
+
   const result = await handler.handle(query);
   return <DashboardView analyses={result.data} />;
 }
@@ -386,10 +389,10 @@ class SupabaseAnalysisRepository implements IAnalysisRepository {
     private readonly client: SupabaseClient,
     private readonly mapper: AnalysisMapper
   ) {}
-  
+
   async save(analysis: Analysis): Promise<void> {
     const dao = this.mapper.toDAO(analysis);
-    await this.client.from('analyses').insert(dao);
+    await this.client.from("analyses").insert(dao);
   }
 }
 ```
@@ -401,12 +404,12 @@ class SupabaseAnalysisRepository implements IAnalysisRepository {
 ```typescript
 class GoogleAIAdapter implements IAIAnalysisService {
   constructor(private readonly apiKey: string) {}
-  
+
   async analyzeIdea(idea: string, locale: Locale): Promise<AIResult> {
     const response = await this.geminiClient.generateContent({
-      contents: [{ parts: [{ text: this.buildPrompt(idea, locale) }] }]
+      contents: [{ parts: [{ text: this.buildPrompt(idea, locale) }] }],
     });
-    
+
     return this.parseResponse(response);
   }
 }
@@ -422,14 +425,14 @@ sequenceDiagram
     participant NextJS
     participant Supabase
     participant Database
-    
+
     Client->>NextJS: Login Request
     NextJS->>Supabase: Authenticate User
     Supabase->>Database: Verify Credentials
     Database-->>Supabase: User Data
     Supabase-->>NextJS: JWT Token
     NextJS-->>Client: Set Auth Cookie
-    
+
     Client->>NextJS: API Request + Cookie
     NextJS->>Supabase: Verify JWT
     Supabase-->>NextJS: User Info
@@ -448,11 +451,12 @@ One of the most critical security considerations in this application is proper m
 In Next.js server-side operations (Server Components, API Routes, Server Actions), each HTTP request has its own cookie store containing user-specific session tokens. **Caching the Supabase client globally creates a critical security vulnerability:**
 
 **The Problem:**
+
 ```typescript
 // ❌ DANGEROUS - DO NOT DO THIS
 class BadAdapter {
   private static serverInstance: SupabaseClient | null = null;
-  
+
   static getServerClient() {
     if (!this.serverInstance) {
       this.serverInstance = createServerComponentClient({ cookies });
@@ -463,11 +467,13 @@ class BadAdapter {
 ```
 
 **What Happens:**
+
 1. User A (admin) makes first request → Client cached with admin cookies
 2. User B (regular user) makes request → Gets cached client with admin cookies
 3. User B now has admin access → **CRITICAL SECURITY BREACH**
 
 **Additional Risks:**
+
 - **Session Leaks**: User B can access User A's data and permissions
 - **Stale Tokens**: Refresh tokens don't update when cookies change
 - **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
@@ -476,6 +482,7 @@ class BadAdapter {
 #### The Secure Solution
 
 **Our Implementation:**
+
 ```typescript
 // ✅ SAFE - Always create fresh client
 class SupabaseAdapter {
@@ -486,6 +493,7 @@ class SupabaseAdapter {
 ```
 
 **Why This Works:**
+
 - Each request gets a fresh client with its own cookie store
 - User sessions are properly isolated
 - Refresh tokens update correctly
@@ -494,26 +502,28 @@ class SupabaseAdapter {
 #### Usage Guidelines
 
 **Server-Side (Always Fresh):**
+
 ```typescript
 // Server Component
 export default async function MyServerComponent() {
   const supabase = SupabaseAdapter.getServerClient(); // Fresh client
-  const { data } = await supabase.from('analyses').select();
+  const { data } = await supabase.from("analyses").select();
   return <div>{data}</div>;
 }
 
 // API Route
 export async function GET(request: NextRequest) {
   const supabase = SupabaseAdapter.getServerClient(); // Fresh client
-  const { data } = await supabase.from('analyses').select();
+  const { data } = await supabase.from("analyses").select();
   return NextResponse.json(data);
 }
 ```
 
 **Client-Side (Singleton Safe):**
+
 ```typescript
 // Client Component
-'use client';
+"use client";
 export function MyClientComponent() {
   const supabase = SupabaseAdapter.getClientClient(); // Singleton OK
   // Browser context is isolated per user
@@ -532,6 +542,7 @@ export function MyClientComponent() {
 The same session leak vulnerability applies to factory classes. We've eliminated singleton patterns:
 
 **Secure Implementation:**
+
 ```typescript
 // ServiceFactory - No singleton
 export class ServiceFactory {
@@ -550,7 +561,7 @@ export class RepositoryFactory {
 // Usage in API route
 export async function GET(request: NextRequest) {
   const supabase = SupabaseAdapter.getServerClient(); // Fresh client
-  const factory = ServiceFactory.create(supabase);    // Fresh factory
+  const factory = ServiceFactory.create(supabase); // Fresh factory
   const controller = factory.createAnalysisController();
   return controller.listAnalyses(request);
 }
@@ -566,28 +577,28 @@ We have comprehensive tests to ensure session isolation:
 
 ```typescript
 // Test that each call creates a new instance
-it('should create a new client for each call', () => {
+it("should create a new client for each call", () => {
   const client1 = SupabaseAdapter.getServerClient();
   const client2 = SupabaseAdapter.getServerClient();
   expect(client1).not.toBe(client2);
 });
 
 // Test that different users are isolated
-it('should not leak sessions between users', async () => {
+it("should not leak sessions between users", async () => {
   // Simulate User A
   const clientA = SupabaseAdapter.getServerClient();
   const { data: userA } = await clientA.auth.getUser();
-  
+
   // Simulate User B
   const clientB = SupabaseAdapter.getServerClient();
   const { data: userB } = await clientB.auth.getUser();
-  
+
   // Verify isolation
   expect(userA?.id).not.toBe(userB?.id);
 });
 
 // Test that factories create fresh instances
-it('should create fresh factory instances', () => {
+it("should create fresh factory instances", () => {
   const client = SupabaseAdapter.getServerClient();
   const factory1 = ServiceFactory.create(client);
   const factory2 = ServiceFactory.create(client);
@@ -613,6 +624,76 @@ it('should create fresh factory instances', () => {
 - **API Key Security**: Server-side only API keys
 - **User Data Isolation**: RLS policies + proper session management ensure data separation
 - **Session Security**: No caching of server-side Supabase clients prevents session leaks
+
+## Database Architecture
+
+### Unified Analysis Table
+
+The application uses a unified `saved_analyses` table with a type discriminator column to store both standard idea analyses and hackathon project analyses. This consolidation simplifies the data model and improves maintainability.
+
+#### Table Structure
+
+```sql
+CREATE TABLE public.saved_analyses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  analysis_type TEXT NOT NULL DEFAULT 'idea'
+    CHECK (analysis_type IN ('idea', 'hackathon')),
+  idea TEXT NOT NULL,  -- Dual purpose: idea text OR project description
+  analysis JSONB NOT NULL,  -- Type-specific structured data
+  audio_base64 TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### Type Discriminator
+
+The `analysis_type` column identifies the type of analysis:
+
+- `'idea'`: Standard startup idea analysis
+- `'hackathon'`: Hackathon project analysis
+
+#### JSONB Structure
+
+The `analysis` JSONB field contains type-specific data:
+
+**Idea Analysis**:
+
+```json
+{
+  "score": 78,
+  "detailedSummary": "Analysis summary...",
+  "criteria": [...],
+  "locale": "en"
+}
+```
+
+**Hackathon Analysis**:
+
+```json
+{
+  "score": 82,
+  "detailedSummary": "Analysis summary...",
+  "criteria": [...],
+  "locale": "en",
+  "selectedCategory": "frankenstein",
+  
+}
+```
+
+#### Benefits
+
+- **Simplified Schema**: Single table instead of two separate tables
+- **Reduced Code Duplication**: Unified repository and mapper logic
+- **Better Query Performance**: Single table scans with optimized indexes
+- **Easier Maintenance**: One schema to manage
+- **Flexible**: Easy to add new analysis types
+
+For detailed information about the database consolidation, see:
+
+- [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md)
+- [Archived Schema Definitions](./archive/OLD_SCHEMA_DEFINITIONS.md)
 
 ## Performance Considerations
 

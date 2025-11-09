@@ -1,6 +1,6 @@
 import { browserSupabase } from "@/lib/supabase/client";
 import { mapSavedHackathonAnalysesRow } from "@/lib/supabase/mappers";
-import type { SavedHackathonAnalysesRow } from "@/lib/supabase/types";
+import type { SavedAnalysesRow } from "@/lib/supabase/types";
 import type { SavedHackathonAnalysis } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
@@ -49,11 +49,12 @@ export async function loadHackathonAnalysis(
 
   try {
     const { data, error } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .select("*")
       .eq("id", analysisId)
       .eq("user_id", user.id)
-      .returns<SavedHackathonAnalysesRow>()
+      .eq("analysis_type", "hackathon")
+      .returns<SavedAnalysesRow>()
       .single();
 
     if (error || !data) {

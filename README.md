@@ -25,6 +25,8 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
 - **[API Documentation](docs/API.md)**: Complete API reference
+- **[Database Schema](docs/DATABASE_SCHEMA.md)**: Current database schema and query patterns
+- **[Database Consolidation](docs/DATABASE_CONSOLIDATION.md)**: Unified table structure and migration details
 - **[Domain Layer](src/domain/README.md)**: Domain layer documentation
 - **[Application Layer](src/application/README.md)**: Application layer documentation
 - **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
@@ -49,6 +51,7 @@ In Next.js server-side operations, each HTTP request has its own cookie store co
 - **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
 
 **Correct Usage:**
+
 ```typescript
 // ✅ Server-side: Always create fresh client
 const supabase = SupabaseAdapter.getServerClient(); // New client per request

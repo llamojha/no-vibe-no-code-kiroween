@@ -3,10 +3,7 @@ import {
   mapSavedAnalysesRow,
   mapSavedHackathonAnalysesRow,
 } from "@/lib/supabase/mappers";
-import type {
-  SavedAnalysesRow,
-  SavedHackathonAnalysesRow,
-} from "@/lib/supabase/types";
+import type { SavedAnalysesRow } from "@/lib/supabase/types";
 import type {
   UnifiedAnalysisRecord,
   SavedAnalysisRecord,
@@ -155,6 +152,7 @@ export async function loadUnifiedAnalyses(): Promise<{
       .from("saved_analyses")
       .select("*")
       .eq("user_id", user.id)
+      .eq("analysis_type", "idea")
       .order("created_at", { ascending: false })
       .returns<SavedAnalysesRow[]>();
 
@@ -165,11 +163,12 @@ export async function loadUnifiedAnalyses(): Promise<{
 
     // Load hackathon analyses
     const { data: hackathonData, error: hackathonError } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .select("*")
       .eq("user_id", user.id)
+      .eq("analysis_type", "hackathon")
       .order("created_at", { ascending: false })
-      .returns<SavedHackathonAnalysesRow[]>();
+      .returns<SavedAnalysesRow[]>();
 
     if (hackathonError) {
       console.error("Failed to load hackathon analyses", hackathonError);
@@ -227,6 +226,7 @@ export async function loadUnifiedAnalysesServer(
       .from("saved_analyses")
       .select("*")
       .eq("user_id", userId)
+      .eq("analysis_type", "idea")
       .order("created_at", { ascending: false });
 
     if (startupError) {
@@ -236,9 +236,10 @@ export async function loadUnifiedAnalysesServer(
 
     // Load hackathon analyses
     const { data: hackathonData, error: hackathonError } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .select("*")
       .eq("user_id", userId)
+      .eq("analysis_type", "hackathon")
       .order("created_at", { ascending: false });
 
     if (hackathonError) {

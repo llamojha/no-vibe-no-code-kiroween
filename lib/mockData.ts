@@ -44,6 +44,7 @@ export function generateMockStartupAnalyses(): SavedAnalysisRecord[] {
         baseDate.getTime() + 2 * 24 * 60 * 60 * 1000
       ).toISOString(), // 2 days later
       audioBase64: null,
+      analysisType: "idea",
       analysis: {
         detailedSummary:
           "This AI fitness coach concept shows strong potential in the growing health tech market. The personalization aspect addresses a key pain point where generic workout plans often fail to deliver results. The integration of body type analysis and equipment availability creates a comprehensive solution that could differentiate from existing fitness apps.",
@@ -226,6 +227,7 @@ export function generateMockStartupAnalyses(): SavedAnalysisRecord[] {
         baseDate.getTime() + 5 * 24 * 60 * 60 * 1000
       ).toISOString(), // 5 days later
       audioBase64: null,
+      analysisType: "idea",
       analysis: {
         detailedSummary:
           "This sustainable meal kit concept taps into growing environmental consciousness and local food movements. The zero-waste packaging differentiator addresses a major criticism of existing meal kit services. However, the operational complexity of managing local supplier networks and seasonal variations presents significant challenges.",
@@ -346,6 +348,7 @@ export function generateMockStartupAnalyses(): SavedAnalysisRecord[] {
         baseDate.getTime() + 8 * 24 * 60 * 60 * 1000
       ).toISOString(), // 8 days later
       audioBase64: null,
+      analysisType: "idea",
       analysis: {
         detailedSummary:
           "This AR programming education concept combines the growing demand for coding skills with innovative gamification and emerging AR technology. The real-world integration could make abstract programming concepts more tangible and engaging. However, the technical complexity and hardware requirements present significant barriers to adoption.",

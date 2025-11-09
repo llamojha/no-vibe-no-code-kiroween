@@ -128,7 +128,6 @@ describe('GoogleAIAnalysisService', () => {
       // Arrange
       const projectName = 'AI Code Assistant';
       const description = 'An AI-powered tool that helps developers write better code';
-      const kiroUsage = 'Used Kiro extensively for project planning and analysis';
       const locale = Locale.english();
 
       const mockAnalysisResult = {
@@ -147,7 +146,7 @@ describe('GoogleAIAnalysisService', () => {
       vi.spyOn(service, 'analyzeHackathonProject').mockResolvedValue(success(mockAnalysisResult));
 
       // Act
-      const result = await service.analyzeHackathonProject(projectName, description, kiroUsage, locale);
+      const result = await service.analyzeHackathonProject(projectName, description, locale);
 
       // Assert
       expect(result.success).toBe(true);
@@ -161,14 +160,13 @@ describe('GoogleAIAnalysisService', () => {
       // Arrange
       const projectName = 'Test Project';
       const description = 'Test description';
-      const kiroUsage = 'Test usage';
       const locale = Locale.english();
 
       const apiError = new Error('Service unavailable');
       vi.spyOn(service, 'analyzeHackathonProject').mockResolvedValue(failure(apiError));
 
       // Act
-      const result = await service.analyzeHackathonProject(projectName, description, kiroUsage, locale);
+      const result = await service.analyzeHackathonProject(projectName, description, locale);
 
       // Assert
       expect(result.success).toBe(false);
