@@ -3,7 +3,7 @@
  * These represent the structure of data as stored in the database
  */
 
-import type { Json } from './database';
+import type { Json } from "./database";
 
 /**
  * Base DAO interface with common fields
@@ -14,12 +14,19 @@ export interface BaseDAO {
 }
 
 /**
- * Analysis DAO - represents saved_analyses table structure
+ * Analysis type discriminator
+ */
+export type AnalysisType = "idea" | "hackathon";
+
+/**
+ * Analysis DAO - represents unified saved_analyses table structure
+ * Supports both idea and hackathon analysis types via analysis_type discriminator
  */
 export interface AnalysisDAO extends BaseDAO {
   user_id: string;
-  idea: string;
-  analysis: Json;
+  analysis_type: AnalysisType;
+  idea: string; // For 'idea': startup idea text; For 'hackathon': project description
+  analysis: Json; // Contains type-specific structured data (IdeaAnalysisData or HackathonAnalysisData)
   audio_base64: string | null;
 }
 
@@ -36,7 +43,11 @@ export interface UserDAO extends BaseDAO {
 export interface HackathonAnalysisDAO extends BaseDAO {
   user_id: string;
   project_description: string;
-  selected_category: "resurrection" | "frankenstein" | "skeleton-crew" | "costume-contest";
+  selected_category:
+    | "resurrection"
+    | "frankenstein"
+    | "skeleton-crew"
+    | "costume-contest";
   kiro_usage: string;
   analysis: Json;
   audio_base64: string | null;
@@ -44,6 +55,47 @@ export interface HackathonAnalysisDAO extends BaseDAO {
 }
 
 /**
+ * Idea-specific analysis data structure (stored in analysis JSONB field)
+ * This represents the analysis JSONB structure for 'idea' type analyses
+ */
+export interface IdeaAnalysisData {
+  score: number;
+  detailedSummary: string;
+  criteria: Array<{
+    name: string;
+    score: number;
+    justification: string;
+  }>;
+  locale: string;
+}
+
+/**
+ * Supporting materials structure for hackathon analyses
+ */
+export interface SupportingMaterials {
+  githubRepo?: string;
+  demoUrl?: string;
+  videoUrl?: string;
+  screenshots?: string[];
+  additionalNotes?: string;
+}
+
+/**
+ * Hackathon-specific analysis data structure (stored in analysis JSONB field)
+ * Extends IdeaAnalysisData with hackathon-specific fields
+ */
+export interface HackathonAnalysisData extends IdeaAnalysisData {
+  selectedCategory:
+    | "resurrection"
+    | "frankenstein"
+    | "skeleton-crew"
+    | "costume-contest";
+  kiroUsage: string;
+  supportingMaterials?: SupportingMaterials;
+}
+
+/**
+ * @deprecated Use IdeaAnalysisData instead
  * Analysis data structure as stored in the analysis JSON field
  */
 export interface AnalysisDataDAO {
@@ -58,6 +110,7 @@ export interface AnalysisDataDAO {
 }
 
 /**
+ * @deprecated Use HackathonAnalysisData instead
  * Hackathon analysis data structure as stored in the analysis JSON field
  */
 export interface HackathonAnalysisDataDAO {
@@ -75,6 +128,7 @@ export interface HackathonAnalysisDataDAO {
 }
 
 /**
+ * @deprecated Use SupportingMaterials instead
  * Supporting materials structure for hackathon analyses
  */
 export interface SupportingMaterialsDAO {
@@ -83,4 +137,34 @@ export interface SupportingMaterialsDAO {
   videoUrl?: string;
   screenshots?: string[];
   additionalNotes?: string;
+}
+
+/**
+ * Type guard to check if analysis data is IdeaAnalysisData
+ * @param data - The analysis data to check
+ * @returns true if the data is IdeaAnalysisData (not hackathon type)
+ */
+export function isIdeaAnalysisData(data: any): data is IdeaAnalysisData {
+  return (
+    data &&
+    typeof data === "object" &&
+    !("selectedCategory" in data) &&
+    !("kiroUsage" in data)
+  );
+}
+
+/**
+ * Type guard to check if analysis data is HackathonAnalysisData
+ * @param data - The analysis data to check
+ * @returns true if the data is HackathonAnalysisData
+ */
+export function isHackathonAnalysisData(
+  data: any
+): data is HackathonAnalysisData {
+  return (
+    data &&
+    typeof data === "object" &&
+    "selectedCategory" in data &&
+    "kiroUsage" in data
+  );
 }

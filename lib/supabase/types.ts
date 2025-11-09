@@ -13,17 +13,17 @@ export type Database = {
         Row: {
           id: string;
           created_at: string | null;
-          tier: "free" | "paid" | "admin";
+          tier: Database["public"]["Enums"]["user_tier"];
         };
         Insert: {
           id: string;
           created_at?: string | null;
-          tier?: "free" | "paid" | "admin";
+          tier?: Database["public"]["Enums"]["user_tier"];
         };
         Update: {
           id?: string;
           created_at?: string | null;
-          tier?: "free" | "paid" | "admin";
+          tier?: Database["public"]["Enums"]["user_tier"];
         };
         Relationships: [];
       };
@@ -31,6 +31,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
+          analysis_type: string;
           idea: string;
           analysis: Json;
           audio_base64: string | null;
@@ -39,6 +40,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
+          analysis_type?: string;
           idea: string;
           analysis: Json;
           audio_base64?: string | null;
@@ -47,6 +49,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
+          analysis_type?: string;
           idea?: string;
           analysis?: Json;
           audio_base64?: string | null;
@@ -54,58 +57,12 @@ export type Database = {
         };
         Relationships: [];
       };
-      saved_hackathon_analyses: {
-        Row: {
-          id: string;
-          user_id: string;
-          project_description: string;
-          selected_category:
-            | "resurrection"
-            | "frankenstein"
-            | "skeleton-crew"
-            | "costume-contest";
-          kiro_usage: string;
-          analysis: Json;
-          audio_base64: string | null;
-          supporting_materials: Json | null;
-          created_at: string | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          project_description: string;
-          selected_category:
-            | "resurrection"
-            | "frankenstein"
-            | "skeleton-crew"
-            | "costume-contest";
-          kiro_usage: string;
-          analysis: Json;
-          audio_base64?: string | null;
-          supporting_materials?: Json | null;
-          created_at?: string | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          project_description?: string;
-          selected_category?:
-            | "resurrection"
-            | "frankenstein"
-            | "skeleton-crew"
-            | "costume-contest";
-          kiro_usage?: string;
-          analysis?: Json;
-          audio_base64?: string | null;
-          supporting_materials?: Json | null;
-          created_at?: string | null;
-        };
-        Relationships: [];
-      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Enums: {
+      user_tier: "free" | "paid" | "admin";
+    };
     CompositeTypes: Record<string, never>;
   };
 };
@@ -116,11 +73,13 @@ export type SavedAnalysesInsert =
   Database["public"]["Tables"]["saved_analyses"]["Insert"];
 export type SavedAnalysesUpdate =
   Database["public"]["Tables"]["saved_analyses"]["Update"];
-export type SavedHackathonAnalysesRow =
-  Database["public"]["Tables"]["saved_hackathon_analyses"]["Row"];
-export type SavedHackathonAnalysesInsert =
-  Database["public"]["Tables"]["saved_hackathon_analyses"]["Insert"];
-export type SavedHackathonAnalysesUpdate =
-  Database["public"]["Tables"]["saved_hackathon_analyses"]["Update"];
-export type UserTier = Database["public"]["Tables"]["profiles"]["Row"]["tier"];
+export type UserTier = Database["public"]["Enums"]["user_tier"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
+// Re-export hackathon analysis table types from infrastructure database types.
+// This avoids duplicating or extending the schema here.
+export type {
+  SavedHackathonAnalysesRow,
+  SavedHackathonAnalysesInsert,
+  SavedHackathonAnalysesUpdate,
+} from "@/infrastructure/database/types/database";

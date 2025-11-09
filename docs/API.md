@@ -40,6 +40,12 @@ All endpoints return consistent error responses:
 
 ## Analysis Endpoints
 
+### Database Structure
+
+All analyses (both idea and hackathon types) are stored in a unified `saved_analyses` table with a type discriminator. This consolidation is transparent to API consumers - all endpoints maintain their original request and response formats.
+
+For details about the database structure, see [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md).
+
 ### POST /api/analyze
 
 Analyzes a startup idea using AI and returns detailed feedback.
@@ -47,6 +53,7 @@ Analyzes a startup idea using AI and returns detailed feedback.
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "idea": "A mobile app that connects dog owners with local dog walkers",
@@ -55,10 +62,12 @@ Analyzes a startup idea using AI and returns detailed feedback.
 ```
 
 **Request Schema**:
+
 - `idea` (string, required): The startup idea to analyze (10-5000 characters)
 - `locale` (string, required): Language locale ("en" or "es")
 
 **Response** (201):
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -78,6 +87,7 @@ Analyzes a startup idea using AI and returns detailed feedback.
 ```
 
 **Example cURL**:
+
 ```bash
 curl -X POST https://your-domain.com/api/analyze \
   -H "Content-Type: application/json" \
@@ -95,9 +105,11 @@ Retrieves a specific analysis by ID.
 **Authentication**: Required
 
 **Parameters**:
+
 - `id` (string): Analysis ID (UUID format)
 
 **Response** (200):
+
 ```json
 {
   "id": "123e4567-e89b-12d3-a456-426614174000",
@@ -111,6 +123,7 @@ Retrieves a specific analysis by ID.
 ```
 
 **Error Responses**:
+
 - `404` - Analysis not found
 - `403` - Analysis belongs to another user
 
@@ -121,6 +134,7 @@ Saves an analysis to the user's dashboard.
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "analysisId": "123e4567-e89b-12d3-a456-426614174000"
@@ -128,6 +142,7 @@ Saves an analysis to the user's dashboard.
 ```
 
 **Response** (200):
+
 ```json
 {
   "success": true,
@@ -142,6 +157,7 @@ Searches user's analyses with optional filters.
 **Authentication**: Required
 
 **Query Parameters**:
+
 - `q` (string, optional): Search query
 - `page` (number, optional): Page number (default: 1)
 - `limit` (number, optional): Results per page (default: 10, max: 50)
@@ -149,6 +165,7 @@ Searches user's analyses with optional filters.
 - `sortOrder` (string, optional): Sort order ("asc" or "desc")
 
 **Response** (200):
+
 ```json
 {
   "analyses": [
@@ -177,6 +194,7 @@ Analyzes a hackathon project with specialized criteria.
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "projectName": "EcoTracker",
@@ -189,6 +207,7 @@ Analyzes a hackathon project with specialized criteria.
 ```
 
 **Request Schema**:
+
 - `projectName` (string, required): Project name (1-100 characters)
 - `description` (string, required): Project description (10-2000 characters)
 - `category` (string, required): Project category
@@ -197,6 +216,7 @@ Analyzes a hackathon project with specialized criteria.
 - `locale` (string, required): Language locale ("en" or "es")
 
 **Response** (201):
+
 ```json
 {
   "id": "456e7890-e89b-12d3-a456-426614174001",
@@ -228,15 +248,18 @@ Analyzes a hackathon project with specialized criteria.
 
 ### GET /api/v2/dashboard/analyses
 
-Retrieves user's saved analyses for the dashboard.
+Retrieves user's saved analyses for the dashboard. Supports filtering by analysis type.
 
 **Authentication**: Required
 
 **Query Parameters**:
+
 - `page` (number, optional): Page number (default: 1)
 - `limit` (number, optional): Results per page (default: 10)
+- `type` (string, optional): Filter by analysis type ('idea' or 'hackathon')
 
 **Response** (200):
+
 ```json
 {
   "analyses": [
@@ -264,9 +287,11 @@ Deletes an analysis from the user's dashboard.
 **Authentication**: Required
 
 **Parameters**:
+
 - `id` (string): Analysis ID (UUID format)
 
 **Response** (200):
+
 ```json
 {
   "success": true,
@@ -275,6 +300,7 @@ Deletes an analysis from the user's dashboard.
 ```
 
 **Error Responses**:
+
 - `404` - Analysis not found
 - `403` - Analysis belongs to another user
 
@@ -287,6 +313,7 @@ Converts text to speech.
 **Authentication**: Required
 
 **Request Body**:
+
 ```json
 {
   "text": "This is a solid marketplace idea with clear value proposition",
@@ -295,6 +322,7 @@ Converts text to speech.
 ```
 
 **Response** (200):
+
 ```json
 {
   "audioUrl": "https://storage.example.com/audio/123456.mp3",
@@ -309,10 +337,12 @@ Transcribes audio to text.
 **Authentication**: Required
 
 **Request**: Multipart form data
+
 - `audio` (file): Audio file (MP3, WAV, M4A)
 - `locale` (string): Language locale
 
 **Response** (200):
+
 ```json
 {
   "text": "This is the transcribed text from the audio file",
@@ -330,6 +360,7 @@ Health check endpoint for monitoring.
 **Authentication**: Not required
 
 **Response** (200):
+
 ```json
 {
   "status": "healthy",
@@ -351,6 +382,7 @@ API endpoints are rate limited to prevent abuse:
 - **Other endpoints**: 60 requests per minute per user
 
 Rate limit headers are included in responses:
+
 ```
 X-RateLimit-Limit: 10
 X-RateLimit-Remaining: 7
@@ -365,10 +397,12 @@ Triggered when an analysis is completed (for async processing).
 
 **URL**: Configured in environment variables
 **Method**: POST
-**Headers**: 
+**Headers**:
+
 - `X-Webhook-Signature`: HMAC signature for verification
 
 **Payload**:
+
 ```json
 {
   "event": "analysis.completed",
@@ -386,23 +420,23 @@ Triggered when an analysis is completed (for async processing).
 ### JavaScript/TypeScript
 
 ```typescript
-import { NoVibeNoCodeClient } from '@novibecode/sdk';
+import { NoVibeNoCodeClient } from "@novibecode/sdk";
 
 const client = new NoVibeNoCodeClient({
-  apiKey: 'your-api-key',
-  baseUrl: 'https://your-domain.com/api'
+  apiKey: "your-api-key",
+  baseUrl: "https://your-domain.com/api",
 });
 
 // Analyze an idea
 const analysis = await client.analyze({
-  idea: 'A mobile app for dog walking',
-  locale: 'en'
+  idea: "A mobile app for dog walking",
+  locale: "en",
 });
 
 // Get user analyses
 const analyses = await client.getAnalyses({
   page: 1,
-  limit: 10
+  limit: 10,
 });
 ```
 
@@ -429,12 +463,14 @@ analyses = client.get_analyses(page=1, limit=10)
 ## Changelog
 
 ### v2.0.0 (2024-01-15)
+
 - Added hexagonal architecture endpoints
 - Improved error handling and validation
 - Added hackathon analysis endpoints
 - Enhanced dashboard functionality
 
 ### v1.0.0 (2023-12-01)
+
 - Initial API release
 - Basic analysis functionality
 - User authentication
@@ -443,6 +479,7 @@ analyses = client.get_analyses(page=1, limit=10)
 ## Support
 
 For API support and questions:
+
 - Email: api-support@novibecode.com
 - Documentation: https://docs.novibecode.com
 - Status Page: https://status.novibecode.com

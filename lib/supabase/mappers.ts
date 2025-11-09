@@ -5,7 +5,7 @@ import type {
   HackathonAnalysis,
   ProjectSubmission,
 } from "@/lib/types";
-import type { SavedAnalysesRow, SavedHackathonAnalysesRow } from "./types";
+import type { SavedAnalysesRow } from "./types";
 
 export const mapSavedAnalysesRow = (
   row: SavedAnalysesRow
@@ -16,16 +16,17 @@ export const mapSavedAnalysesRow = (
   analysis: row.analysis as unknown as Analysis,
   audioBase64: row.audio_base64,
   createdAt: row.created_at ?? new Date().toISOString(),
+  analysisType: row.analysis_type as "idea" | "hackathon",
 });
 export const mapSavedHackathonAnalysesRow = (
-  row: SavedHackathonAnalysesRow
+  row: SavedAnalysesRow
 ): SavedHackathonAnalysis => ({
   id: row.id,
   userId: row.user_id,
-  projectDescription: row.project_description,
+  projectDescription: row.idea,
   analysis: row.analysis as unknown as HackathonAnalysis,
   audioBase64: row.audio_base64,
-  supportingMaterials:
-    row.supporting_materials as unknown as ProjectSubmission["supportingMaterials"],
+  // saved_analyses doesn't store supporting materials
+  supportingMaterials: undefined,
   createdAt: row.created_at ?? new Date().toISOString(),
 });

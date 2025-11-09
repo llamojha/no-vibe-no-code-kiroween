@@ -49,6 +49,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
     const startTime = Date.now();
 
     try {
+      // Mapper automatically detects analysis type and sets analysis_type field
       const dao = this.mapper.toDAO(analysis);
 
       const { data, error } = await this.client
@@ -136,10 +137,14 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       if (!data) {
         // When a requesting user is provided, a no-op update implies either not found or not owned
         if (requestingUserId) {
-          logger.warn(LogCategory.DATABASE, "Unauthorized or missing analysis on update", {
-            analysisId: analysis.id.value,
-            requestingUserId: requestingUserId.value,
-          });
+          logger.warn(
+            LogCategory.DATABASE,
+            "Unauthorized or missing analysis on update",
+            {
+              analysisId: analysis.id.value,
+              requestingUserId: requestingUserId.value,
+            }
+          );
           return failure(
             new AuthorizationError(
               "Cannot update analysis belonging to another user"
@@ -609,9 +614,25 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
   async findByUserId(
     userId: UserId,
+    params: PaginationParams,
+    type?: "idea" | "hackathon"
+  ): Promise<Result<PaginatedResult<Analysis>, Error>> {
+    const criteria: Record<string, unknown> = { user_id: userId.value };
+
+    // Apply type filter if specified
+    if (type) {
+      criteria.analysis_type = type;
+    }
+
+    return this.findWhereWithPagination(criteria, params);
+  }
+
+  async findByUserIdAndType(
+    userId: UserId,
+    type: "idea" | "hackathon",
     params: PaginationParams
   ): Promise<Result<PaginatedResult<Analysis>, Error>> {
-    return this.findWhereWithPagination({ user_id: userId.value }, params);
+    return this.findByUserId(userId, params, type);
   }
 
   // Method for finding all analyses by user ID without pagination
@@ -654,6 +675,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       limit: number;
       sortBy?: "newest" | "oldest" | "score" | "title";
       category?: "idea" | "kiroween" | "all";
+      type?: "idea" | "hackathon";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>> {
     try {
@@ -663,9 +685,17 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         .select("*", { count: "exact" })
         .eq("user_id", userId.value);
 
-      // Apply category filter
+      // Apply type filter using analysis_type column
+      if (options.type) {
+        query = query.eq("analysis_type", options.type);
+      }
+
+      // Apply category filter (for backward compatibility)
+      // Map kiroween to hackathon type
       if (options.category && options.category !== "all") {
-        query = query.contains("analysis", { category: options.category });
+        const typeFilter =
+          options.category === "kiroween" ? "hackathon" : options.category;
+        query = query.eq("analysis_type", typeFilter);
       }
 
       // Apply sorting
@@ -870,6 +900,7 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       limit: number;
       sortBy?: "newest" | "oldest" | "score" | "title";
       category?: "idea" | "kiroween" | "all";
+      type?: "idea" | "hackathon";
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>> {
     try {
@@ -884,9 +915,17 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         `idea.ilike.%${searchTerm}%,analysis->detailedSummary.ilike.%${searchTerm}%`
       );
 
-      // Apply category filter
+      // Apply type filter using analysis_type column
+      if (options.type) {
+        query = query.eq("analysis_type", options.type);
+      }
+
+      // Apply category filter (for backward compatibility)
+      // Map kiroween to hackathon type
       if (options.category && options.category !== "all") {
-        query = query.contains("analysis", { category: options.category });
+        const typeFilter =
+          options.category === "kiroween" ? "hackathon" : options.category;
+        query = query.eq("analysis_type", typeFilter);
       }
 
       // Apply sorting
@@ -935,12 +974,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
     }
   }
 
-  async getAnalysisCountsByUser(userId: UserId): Promise<
+  async getAnalysisCountsByType(userId: UserId): Promise<
     Result<
       {
         total: number;
         idea: number;
-        kiroween: number;
+        hackathon: number;
       },
       Error
     >
@@ -962,12 +1001,12 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         );
       }
 
-      // Get idea count
+      // Get idea count using analysis_type column
       const { count: ideaCount, error: ideaError } = await this.client
         .from(this.tableName)
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId.value)
-        .contains("analysis", { category: "idea" });
+        .eq("analysis_type", "idea");
 
       if (ideaError) {
         return failure(
@@ -979,18 +1018,18 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
         );
       }
 
-      // Get kiroween count
-      const { count: kiroweenCount, error: kiroweenError } = await this.client
+      // Get hackathon count using analysis_type column
+      const { count: hackathonCount, error: hackathonError } = await this.client
         .from(this.tableName)
         .select("*", { count: "exact", head: true })
         .eq("user_id", userId.value)
-        .contains("analysis", { category: "kiroween" });
+        .eq("analysis_type", "hackathon");
 
-      if (kiroweenError) {
+      if (hackathonError) {
         return failure(
           new DatabaseQueryError(
-            "Failed to get kiroween analysis count",
-            kiroweenError,
+            "Failed to get hackathon analysis count",
+            hackathonError,
             "COUNT"
           )
         );
@@ -999,16 +1038,44 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
       return success({
         total: totalCount || 0,
         idea: ideaCount || 0,
-        kiroween: kiroweenCount || 0,
+        hackathon: hackathonCount || 0,
       });
     } catch (error) {
       return failure(
         new DatabaseQueryError(
-          "Unexpected error getting analysis counts by user",
+          "Unexpected error getting analysis counts by type",
           error
         )
       );
     }
+  }
+
+  async getAnalysisCountsByUser(userId: UserId): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        kiroween: number;
+      },
+      Error
+    >
+  > {
+    // Delegate to getAnalysisCountsByType for backward compatibility
+    const result = await this.getAnalysisCountsByType(userId);
+
+    if (!result.success) {
+      return result as Result<
+        { total: number; idea: number; kiroween: number },
+        Error
+      >;
+    }
+
+    // Map hackathon to kiroween for backward compatibility
+    return success({
+      total: result.data.total,
+      idea: result.data.idea,
+      kiroween: result.data.hackathon,
+    });
   }
 
   async getScoreStatsByUser(userId: UserId): Promise<

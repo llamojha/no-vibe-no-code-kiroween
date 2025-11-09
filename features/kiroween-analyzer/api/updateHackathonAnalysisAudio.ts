@@ -1,5 +1,5 @@
 import { browserSupabase } from "@/lib/supabase/client";
-import type { SavedHackathonAnalysesUpdate } from "@/lib/supabase/types";
+import type { SavedAnalysesUpdate } from "@/lib/supabase/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 import type { SavedHackathonAnalysis } from "@/lib/types";
@@ -55,15 +55,16 @@ export async function updateHackathonAnalysisAudio(
   }
 
   try {
-    const updatePayload: SavedHackathonAnalysesUpdate = {
+    const updatePayload: SavedAnalysesUpdate = {
       audio_base64: audioBase64,
     };
 
     const { error } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .update(updatePayload)
       .eq("id", analysisId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("analysis_type", "hackathon");
 
     if (error) {
       console.error("Failed to update hackathon analysis audio", error);

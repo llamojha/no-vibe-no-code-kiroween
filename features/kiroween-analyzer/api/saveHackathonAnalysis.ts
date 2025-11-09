@@ -1,9 +1,6 @@
 import { browserSupabase } from "@/lib/supabase/client";
 import { mapSavedHackathonAnalysesRow } from "@/lib/supabase/mappers";
-import type {
-  SavedHackathonAnalysesInsert,
-  SavedHackathonAnalysesRow,
-} from "@/lib/supabase/types";
+import type { SavedAnalysesInsert, SavedAnalysesRow } from "@/lib/supabase/types";
 import type {
   HackathonAnalysis,
   ProjectSubmission,
@@ -73,24 +70,19 @@ export async function saveHackathonAnalysis(
   }
 
   try {
-    const insertPayload: SavedHackathonAnalysesInsert = {
+    const insertPayload: SavedAnalysesInsert = {
       user_id: user.id,
-      project_description: params.projectDescription,
-      // Provide default values for deprecated database columns (to be removed in future migration)
-      selected_category: "resurrection",
-      kiro_usage: "",
-      analysis:
-        params.analysis as unknown as SavedHackathonAnalysesInsert["analysis"],
+      analysis_type: "hackathon",
+      idea: params.projectDescription,
+      analysis: params.analysis as unknown as SavedAnalysesInsert["analysis"],
       audio_base64: params.audioBase64 || null,
-      supporting_materials:
-        params.supportingMaterials as unknown as SavedHackathonAnalysesInsert["supporting_materials"],
     };
 
     const { data, error } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .insert(insertPayload)
       .select()
-      .returns<SavedHackathonAnalysesRow>()
+      .returns<SavedAnalysesRow>()
       .single();
 
     if (error || !data) {

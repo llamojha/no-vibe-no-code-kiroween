@@ -1,6 +1,6 @@
 import { browserSupabase } from "@/lib/supabase/client";
 import { mapSavedHackathonAnalysesRow } from "@/lib/supabase/mappers";
-import type { SavedHackathonAnalysesRow } from "@/lib/supabase/types";
+import type { SavedAnalysesRow } from "@/lib/supabase/types";
 import type { SavedHackathonAnalysis } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
@@ -50,11 +50,12 @@ export async function loadUserHackathonAnalyses(): Promise<{
 
   try {
     const { data, error } = await supabase
-      .from("saved_hackathon_analyses")
+      .from("saved_analyses")
       .select("*")
       .eq("user_id", user.id)
+      .eq("analysis_type", "hackathon")
       .order("created_at", { ascending: false })
-      .returns<SavedHackathonAnalysesRow[]>();
+      .returns<SavedAnalysesRow[]>();
 
     if (error) {
       console.error("Failed to load user hackathon analyses", error);

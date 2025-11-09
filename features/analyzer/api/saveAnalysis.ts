@@ -34,6 +34,7 @@ export async function saveAnalysis(
         analysis: params.analysis,
         audioBase64: params.audioBase64 || null,
         createdAt: new Date().toISOString(),
+        analysisType: "idea",
       };
 
       // Save to local storage
@@ -78,6 +79,7 @@ export async function saveAnalysis(
       analysis: params.analysis,
       audioBase64: params.audioBase64 || null,
       createdAt: result.createdAt || new Date().toISOString(),
+      analysisType: "idea",
     };
 
     return { data: record, error: null };
@@ -212,6 +214,7 @@ export async function loadAnalysis(
       },
       audioBase64: result.audioBase64 || null,
       createdAt: result.createdAt,
+      analysisType: "idea",
     };
 
     return { data: record, error: null };
