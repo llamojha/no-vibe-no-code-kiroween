@@ -12,6 +12,13 @@ const mockAnalysis: HackathonAnalysis = {
     "This project shows strong potential for success in the hackathon",
   detailedSummary:
     "Detailed analysis of the project's strengths and areas for improvement",
+  scoringRubric: [
+    {
+      name: "Innovation",
+      score: 4.4,
+      justification: "Strong inventive angle",
+    },
+  ],
   categoryAnalysis: {
     evaluations: [
       {
@@ -128,6 +135,9 @@ const mockProps = {
   analysis: mockAnalysis,
   onRefineSuggestion: jest.fn(),
   addedSuggestions: [],
+  onSave: jest.fn(),
+  isSaved: false,
+  onGoToDashboard: jest.fn(),
 };
 
 describe("HackathonAnalysisDisplay", () => {

@@ -46,10 +46,10 @@ const result = await mockService.analyzeIdea('My startup idea', Locale.english()
 All methods from `IAIAnalysisService` interface:
 
 - `analyzeIdea(idea, locale)` - Analyze a startup idea
-- `analyzeHackathonProject(projectName, description, kiroUsage, locale)` - Analyze hackathon project
+- `analyzeHackathonProject(projectName, description, locale)` - Analyze hackathon project
 - `getImprovementSuggestions(idea, currentScore, locale)` - Get improvement suggestions
 - `compareIdeas(idea1, idea2, locale)` - Compare two ideas
-- `recommendHackathonCategory(projectName, description, kiroUsage)` - Recommend category
+- `recommendHackathonCategory(projectName, description)` - Recommend category
 - `healthCheck()` - Check service health
 
 ### Error Scenarios

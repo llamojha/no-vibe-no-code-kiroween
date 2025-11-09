@@ -133,8 +133,8 @@ describe("CategoryEvaluation", () => {
   it("handles empty improvement suggestions gracefully", () => {
     const analysisWithoutSuggestions: CategoryAnalysis = {
       ...mockCategoryAnalysis,
-      evaluations: mockCategoryAnalysis.evaluations.map((eval) => ({
-        ...eval,
+      evaluations: mockCategoryAnalysis.evaluations.map((evaluation) => ({
+        ...evaluation,
         improvementSuggestions: [],
       })),
     };

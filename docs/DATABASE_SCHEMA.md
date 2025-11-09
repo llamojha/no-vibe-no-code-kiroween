@@ -22,7 +22,7 @@ CREATE TABLE public.saved_analyses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   analysis_type TEXT NOT NULL DEFAULT 'idea'
-    CHECK (analysis_type IN ('idea', 'hackathon')),
+    CHECK (analysis_type IN ('idea', 'hackathon', 'frankenstein')),
   idea TEXT NOT NULL,
   analysis JSONB NOT NULL,
   audio_base64 TEXT,
@@ -37,7 +37,7 @@ CREATE TABLE public.saved_analyses (
 | --------------- | ----------- | -------- | ------------------- | ------------------------------------------------------------------- |
 | `id`            | UUID        | NO       | `gen_random_uuid()` | Primary key                                                         |
 | `user_id`       | UUID        | NO       | -                   | Foreign key to auth.users                                           |
-| `analysis_type` | TEXT        | NO       | `'idea'`            | Type discriminator: 'idea' or 'hackathon'                           |
+| `analysis_type` | TEXT        | NO       | `'idea'`            | Type discriminator: 'idea', 'hackathon', or 'frankenstein'          |
 | `idea`          | TEXT        | NO       | -                   | For 'idea': startup idea text; For 'hackathon': project description |
 | `analysis`      | JSONB       | NO       | -                   | Type-specific structured analysis data                              |
 | `audio_base64`  | TEXT        | YES      | NULL                | Optional base64-encoded audio data                                  |
@@ -79,7 +79,7 @@ ALTER TABLE public.saved_analyses
 -- Analysis type check
 ALTER TABLE public.saved_analyses
   ADD CONSTRAINT saved_analyses_analysis_type_check
-  CHECK (analysis_type IN ('idea', 'hackathon'));
+  CHECK (analysis_type IN ('idea', 'hackathon', 'frankenstein'));
 ```
 
 #### Row Level Security

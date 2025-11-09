@@ -18,7 +18,7 @@ import { capture } from "@/features/analytics/posthogClient";
 import { isEnabled } from "@/lib/featureFlags";
 import { browserSupabase } from "@/lib/supabase/client";
 import { mapSavedFrankensteinIdea } from "@/lib/supabase/mappers";
-import type { SavedFrankensteinIdeasRow } from "@/lib/supabase/types";
+import type { SavedAnalysesRow } from "@/lib/supabase/types";
 
 type SortOption = "newest" | "oldest" | "az";
 
@@ -90,8 +90,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           // Use Supabase in production
           const supabaseClient = browserSupabase();
           const { data, error } = await supabaseClient
-            .from("saved_frankenstein_ideas")
+            .from("saved_analyses")
             .select("*")
+            .eq("analysis_type", "frankenstein")
             .order("created_at", { ascending: false })
             .limit(10);
 
@@ -102,7 +103,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 
           if (data) {
             const mappedIdeas = data.map((row) =>
-              mapSavedFrankensteinIdea(row as SavedFrankensteinIdeasRow)
+              mapSavedFrankensteinIdea(row as SavedAnalysesRow)
             );
             setFrankensteinIdeas(mappedIdeas);
           }
@@ -199,9 +200,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
         if (!supabase) return;
         
         const { error } = await supabase
-          .from("saved_frankenstein_ideas")
+          .from("saved_analyses")
           .delete()
-          .eq("id", frankensteinIdeaToDelete.id);
+          .eq("id", frankensteinIdeaToDelete.id)
+          .eq("analysis_type", "frankenstein");
 
         if (error) {
           console.error("Failed to delete Frankenstein idea", error);

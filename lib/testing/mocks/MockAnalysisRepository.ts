@@ -12,7 +12,7 @@
  */
 
 import { Analysis } from '@/src/domain/entities';
-import { AnalysisId, UserId, Category, Locale, Score } from '@/src/domain/value-objects';
+import { AnalysisId, UserId, Category, Score } from '@/src/domain/value-objects';
 import {
   IAnalysisRepository,
   AnalysisSearchCriteria,
@@ -24,6 +24,7 @@ import {
   failure,
   PaginatedResult,
   PaginationParams,
+  createPaginatedResult,
 } from '@/src/shared/types/common';
 
 /**
@@ -46,6 +47,18 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       return success(analysis);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to save analysis'));
+    }
+  }
+
+  /**
+   * Save multiple analyses atomically
+   */
+  async saveMany(analyses: Analysis[]): Promise<Result<Analysis[], Error>> {
+    try {
+      analyses.forEach(analysis => this.analyses.set(analysis.id.value, analysis));
+      return success(analyses);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to save analyses'));
     }
   }
 
@@ -98,6 +111,29 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       return success(undefined);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to delete analysis'));
+    }
+  }
+
+  /**
+   * Delete multiple analyses by their IDs
+   */
+  async deleteMany(ids: AnalysisId[]): Promise<Result<void, Error>> {
+    try {
+      ids.forEach(id => this.analyses.delete(id.value));
+      return success(undefined);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to delete analyses'));
+    }
+  }
+
+  /**
+   * Check if an analysis exists by ID
+   */
+  async exists(id: AnalysisId): Promise<Result<boolean, Error>> {
+    try {
+      return success(this.analyses.has(id.value));
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to check analysis existence'));
     }
   }
 
@@ -163,15 +199,82 @@ export class MockAnalysisRepository implements IAnalysisRepository {
   }
 
   /**
+   * Find all analyses with pagination
+   */
+  async findAll(params: PaginationParams): Promise<Result<PaginatedResult<Analysis>, Error>> {
+    try {
+      const analyses = Array.from(this.analyses.values()).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
+      const start = (params.page - 1) * params.limit;
+      const end = start + params.limit;
+      const items = analyses.slice(start, end);
+      const paginatedResult = createPaginatedResult(items, analyses.length, params.page, params.limit);
+      return success(paginatedResult);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to find analyses'));
+    }
+  }
+
+  /**
+   * Find analyses by multiple IDs
+   */
+  async findByIds(ids: AnalysisId[]): Promise<Result<Analysis[], Error>> {
+    try {
+      const found = ids
+        .map(id => this.analyses.get(id.value) || null)
+        .filter((analysis): analysis is Analysis => analysis !== null);
+      return success(found);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to find analyses by IDs'));
+    }
+  }
+
+  /**
+   * Find analyses matching arbitrary criteria
+   */
+  async findWhere(criteria: Record<string, unknown>): Promise<Result<Analysis[], Error>> {
+    try {
+      const filtered = this.filterByCriteria(criteria);
+      return success(filtered);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to find analyses by criteria'));
+    }
+  }
+
+  /**
+   * Find analyses matching criteria with pagination support
+   */
+  async findWhereWithPagination(
+    criteria: Record<string, unknown>,
+    params: PaginationParams
+  ): Promise<Result<PaginatedResult<Analysis>, Error>> {
+    try {
+      const filtered = this.filterByCriteria(criteria).sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
+      const start = (params.page - 1) * params.limit;
+      const end = start + params.limit;
+      const items = filtered.slice(start, end);
+      const paginatedResult = createPaginatedResult(items, filtered.length, params.page, params.limit);
+      return success(paginatedResult);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to find analyses by criteria'));
+    }
+  }
+
+  /**
    * Find analyses by user ID with pagination
    */
   async findByUserId(
     userId: UserId,
-    params: PaginationParams
+    params: PaginationParams,
+    type?: 'idea' | 'hackathon'
   ): Promise<Result<PaginatedResult<Analysis>, Error>> {
     try {
-      const userAnalyses = Array.from(this.analyses.values())
-        .filter(a => a.userId.equals(userId))
+      let userAnalyses = Array.from(this.analyses.values()).filter(a => a.userId.equals(userId));
+      userAnalyses = userAnalyses
+        .filter(analysis => this.matchesAnalysisType(analysis, type))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
       const total = userAnalyses.length;
@@ -179,16 +282,22 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = userAnalyses.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find analyses'));
     }
+  }
+
+  /**
+   * Find analyses by user ID and specific type
+   */
+  async findByUserIdAndType(
+    userId: UserId,
+    type: 'idea' | 'hackathon',
+    params: PaginationParams
+  ): Promise<Result<PaginatedResult<Analysis>, Error>> {
+    return this.findByUserId(userId, params, type);
   }
 
   /**
@@ -216,6 +325,7 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       limit: number;
       sortBy?: 'newest' | 'oldest' | 'score' | 'title';
       category?: 'idea' | 'kiroween' | 'all';
+      type?: 'idea' | 'hackathon';
     }
   ): Promise<Result<{ analyses: Analysis[]; total: number }, Error>> {
     try {
@@ -228,6 +338,10 @@ export class MockAnalysisRepository implements IAnalysisRepository {
           if (!a.category) return false;
           return options.category === 'kiroween' ? a.category.isHackathon : !a.category.isHackathon;
         });
+      }
+
+      if (options.type) {
+        userAnalyses = userAnalyses.filter(a => this.matchesAnalysisType(a, options.type));
       }
 
       // Sort
@@ -321,6 +435,30 @@ export class MockAnalysisRepository implements IAnalysisRepository {
   }
 
   /**
+   * Get analysis counts by type for a user
+   */
+  async getAnalysisCountsByType(userId: UserId): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        hackathon: number;
+      },
+      Error
+    >
+  > {
+    try {
+      const userAnalyses = Array.from(this.analyses.values()).filter(a => a.userId.equals(userId));
+      const total = userAnalyses.length;
+      const hackathon = userAnalyses.filter(a => this.matchesAnalysisType(a, 'hackathon')).length;
+      const idea = total - hackathon;
+      return success({ total, idea, hackathon });
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to get counts by type'));
+    }
+  }
+
+  /**
    * Get analysis counts by category for a user
    */
   async getAnalysisCountsByUser(userId: UserId): Promise<
@@ -334,14 +472,13 @@ export class MockAnalysisRepository implements IAnalysisRepository {
     >
   > {
     try {
-      const userAnalyses = Array.from(this.analyses.values())
-        .filter(a => a.userId.equals(userId));
+      const countsResult = await this.getAnalysisCountsByType(userId);
+      if (!countsResult.success) {
+        return failure(countsResult.error);
+      }
 
-      const total = userAnalyses.length;
-      const kiroween = userAnalyses.filter(a => a.category?.isHackathon).length;
-      const idea = total - kiroween;
-
-      return success({ total, idea, kiroween });
+      const { total, idea, hackathon } = countsResult.data;
+      return success({ total, idea, kiroween: hackathon });
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to get counts'));
     }
@@ -396,13 +533,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = categoryAnalyses.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find analyses by category'));
     }
@@ -424,13 +556,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = highQualityAnalyses.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find high-quality analyses'));
     }
@@ -456,13 +583,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = recentAnalyses.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find recent analyses'));
     }
@@ -528,13 +650,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = filtered.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to search analyses'));
     }
@@ -558,13 +675,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = filtered.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find analyses'));
     }
@@ -713,13 +825,8 @@ export class MockAnalysisRepository implements IAnalysisRepository {
       const end = start + params.limit;
       const items = needingAttention.slice(start, end);
 
-      return success({
-        items,
-        total,
-        page: params.page,
-        limit: params.limit,
-        hasMore: end < total,
-      });
+      const paginatedResult = createPaginatedResult(items, total, params.page, params.limit);
+      return success(paginatedResult);
     } catch (error) {
       return failure(error instanceof Error ? error : new Error('Failed to find analyses needing attention'));
     }
@@ -817,7 +924,62 @@ export class MockAnalysisRepository implements IAnalysisRepository {
   /**
    * Get count of analyses (useful for testing)
    */
-  count(): number {
-    return this.analyses.size;
+  async count(): Promise<Result<number, Error>> {
+    try {
+      return success(this.analyses.size);
+    } catch (error) {
+      return failure(error instanceof Error ? error : new Error('Failed to get analysis count'));
+    }
+  }
+
+  /**
+   * Determine if an analysis belongs to the requested type
+   */
+  private matchesAnalysisType(analysis: Analysis, type?: 'idea' | 'hackathon'): boolean {
+    if (!type) {
+      return true;
+    }
+
+    const isHackathon = analysis.category?.isHackathon === true;
+    return type === 'hackathon' ? isHackathon : !isHackathon;
+  }
+
+  /**
+   * Filter analyses using simple key/value criteria matching
+   */
+  private filterByCriteria(criteria: Record<string, unknown> = {}): Analysis[] {
+    const entries = Object.entries(criteria);
+    if (entries.length === 0) {
+      return Array.from(this.analyses.values());
+    }
+
+    return Array.from(this.analyses.values()).filter(analysis => {
+      const record = analysis as unknown as Record<string, unknown>;
+      return entries.every(([key, value]) => {
+        if (value === undefined) {
+          return true;
+        }
+        return this.valuesMatch(record[key], value);
+      });
+    });
+  }
+
+  private valuesMatch(target: unknown, value: unknown): boolean {
+    if (this.hasEquals(target)) {
+      return target.equals(value);
+    }
+    if (this.hasEquals(value)) {
+      return value.equals(target);
+    }
+    return target === value;
+  }
+
+  private hasEquals(obj: unknown): obj is { equals(other: unknown): boolean } {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'equals' in obj &&
+      typeof (obj as { equals?: (other: unknown) => boolean }).equals === 'function'
+    );
   }
 }

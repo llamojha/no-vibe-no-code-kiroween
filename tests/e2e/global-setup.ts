@@ -43,7 +43,8 @@ async function globalSetup(config: FullConfig): Promise<void> {
   console.log('🔍 Verifying mock mode is active...');
   
   // Get base URL from config
-  const baseURL = config.use?.baseURL || process.env.E2E_BASE_URL || 'http://localhost:3000';
+  const projectBaseURL = config.projects?.[0]?.use?.baseURL;
+  const baseURL = projectBaseURL || process.env.E2E_BASE_URL || 'http://localhost:3000';
   console.log(`[Global Setup] Base URL: ${baseURL}`);
   
   // Verify mock mode is active before running tests

@@ -1,8 +1,9 @@
 import { browserSupabase } from "@/lib/supabase/client";
 import { mapSavedFrankensteinIdea } from "@/lib/supabase/mappers";
 import type {
-  SavedFrankensteinIdeasInsert,
-  SavedFrankensteinIdeasRow,
+  SavedAnalysesInsert,
+  SavedAnalysesRow,
+  Json,
 } from "@/lib/supabase/types";
 import type {
   SavedFrankensteinIdea,
@@ -12,7 +13,6 @@ import type {
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 import { generateMockUser } from "@/lib/mockData";
-import type { Json } from "@/lib/supabase/types";
 
 export interface SaveFrankensteinIdeaParams {
   mode: "companies" | "aws";
@@ -71,20 +71,22 @@ export async function saveFrankensteinIdea(
     return { data: null, error: "User not authenticated" };
   }
 
-  const insert: SavedFrankensteinIdeasInsert = {
-    user_id: user.id,
+  const payload = {
     mode: params.mode,
-    tech1_name: params.tech1.name,
-    tech1_description: params.tech1.description,
-    tech1_category: params.tech1.category,
-    tech2_name: params.tech2.name,
-    tech2_description: params.tech2.description,
-    tech2_category: params.tech2.category,
-    analysis: params.analysis as unknown as Json,
+    tech1: params.tech1,
+    tech2: params.tech2,
+    analysis: params.analysis,
+  };
+
+  const insert: SavedAnalysesInsert = {
+    user_id: user.id,
+    analysis_type: "frankenstein",
+    idea: params.analysis.ideaName,
+    analysis: payload as unknown as Json,
   };
 
   const { data, error } = await supabase
-    .from("saved_frankenstein_ideas")
+    .from("saved_analyses")
     .insert(insert)
     .select()
     .single();
@@ -97,7 +99,7 @@ export async function saveFrankensteinIdea(
     };
   }
 
-  return { data: mapSavedFrankensteinIdea(data as SavedFrankensteinIdeasRow), error: null };
+  return { data: mapSavedFrankensteinIdea(data as SavedAnalysesRow), error: null };
 }
 
 /**
@@ -131,9 +133,10 @@ export async function loadFrankensteinIdea(
   // Production: use Supabase
   const supabase = browserSupabase();
   const { data, error } = await supabase
-    .from("saved_frankenstein_ideas")
+    .from("saved_analyses")
     .select("*")
     .eq("id", ideaId)
+    .eq("analysis_type", "frankenstein")
     .single();
 
   if (error || !data) {
@@ -144,5 +147,5 @@ export async function loadFrankensteinIdea(
     };
   }
 
-  return { data: mapSavedFrankensteinIdea(data as SavedFrankensteinIdeasRow), error: null };
+  return { data: mapSavedFrankensteinIdea(data as SavedAnalysesRow), error: null };
 }

@@ -139,7 +139,6 @@ export class MockAIAnalysisService implements IAIAnalysisService {
   async analyzeHackathonProject(
     projectName: string,
     description: string,
-    kiroUsage: string,
     locale: Locale
   ): Promise<Result<AIAnalysisResult, Error>> {
     const startTime = Date.now();
@@ -167,7 +166,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
         'hackathon',
         {
           locale: locale.value,
-          input: { projectName, projectDescription: description, kiroUsage },
+        input: { projectName, projectDescription: description },
         }
       );
 
@@ -360,8 +359,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
    */
   async recommendHackathonCategory(
     _projectName: string,
-    _description: string,
-    _kiroUsage: string
+    _description: string
   ): Promise<Result<{
     recommendedCategory: string;
     confidence: Score;

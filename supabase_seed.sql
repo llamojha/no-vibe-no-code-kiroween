@@ -7,7 +7,7 @@ create table if not exists public.saved_analyses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   -- Type discriminator for unified table: 'idea' or 'hackathon'
-  analysis_type text not null default 'idea' check (analysis_type in ('idea','hackathon')),
+  analysis_type text not null default 'idea' check (analysis_type in ('idea','hackathon','frankenstein')),
   idea text not null,
   analysis jsonb not null,
   audio_base64 text,
@@ -38,7 +38,7 @@ begin
   ) then
     alter table saved_analyses
       add constraint saved_analyses_analysis_type_check
-      check (analysis_type in ('idea','hackathon'));
+      check (analysis_type in ('idea','hackathon','frankenstein'));
   end if;
 end $$;
 

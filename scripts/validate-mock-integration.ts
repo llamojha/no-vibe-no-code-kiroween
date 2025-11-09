@@ -14,6 +14,7 @@ import { SupabaseAdapter } from '@/src/infrastructure/integration/SupabaseAdapte
 import { MockAIAnalysisService } from '@/lib/testing/mocks/MockAIAnalysisService';
 import { MockFrankensteinService } from '@/lib/testing/mocks/MockFrankensteinService';
 import { TestEnvironmentConfig } from '@/lib/testing/config/test-environment';
+import type { FrankensteinElement } from '@/features/doctor-frankenstein/api/generateFrankensteinIdea';
 
 interface ValidationResult {
   passed: boolean;
@@ -318,17 +319,27 @@ class MockIntegrationValidator {
       const factory = ServiceFactory.create(supabase);
       const frankensteinService = factory.createFrankensteinService();
       
+      const sampleElements: FrankensteinElement[] = [
+        { name: 'AI Copilot', description: 'Context-aware coding assistant' },
+        { name: 'Edge Robotics Cloud', description: 'Autonomous robotics deployment platform' },
+      ];
+
       const startTime = Date.now();
-      const result = await frankensteinService.generateIdea({ value: 'en' } as unknown);
+      const result = await frankensteinService.generateFrankensteinIdea(
+        sampleElements,
+        'companies',
+        'en'
+      );
       const duration = Date.now() - startTime;
       
       const isQuick = duration < 100;
+      const isSuccessful = Boolean(result?.idea_title);
       
       this.addResult('isolation', {
-        passed: result.success && isQuick,
+        passed: isSuccessful && isQuick,
         message: 'Mock Frankenstein service returns without external calls',
         details: { 
-          success: result.success,
+          ideaTitle: result.idea_title,
           duration: `${duration}ms`,
           isQuick,
         },
@@ -411,7 +422,8 @@ class MockIntegrationValidator {
   }
 }
 
-export { MockIntegrationValidator, ValidationReport, ValidationResult };
+export { MockIntegrationValidator };
+export type { ValidationReport, ValidationResult };
 
 // Run validation if executed directly
 (async () => {
@@ -419,8 +431,6 @@ export { MockIntegrationValidator, ValidationReport, ValidationResult };
   process.env.FF_USE_MOCK_API = 'true';
   process.env.FF_MOCK_SCENARIO = 'success';
   process.env.FF_SIMULATE_LATENCY = 'false';
-  process.env.NODE_ENV = 'test';
-
   const validator = new MockIntegrationValidator();
   
   try {

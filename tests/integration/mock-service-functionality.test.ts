@@ -83,7 +83,6 @@ describe('Mock Service Functionality Integration', () => {
       const result = await service.analyzeHackathonProject(
         'Test Project',
         'Project description',
-        'Kiro usage details',
         locale
       );
 

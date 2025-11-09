@@ -33,8 +33,16 @@ jest.mock("@/lib/supabase/mappers", () => ({
 describe("saveHackathonAnalysis", () => {
   const mockAnalysis: HackathonAnalysis = {
     finalScore: 4.2,
+    finalScoreExplanation: "Overall strong submission",
     viabilitySummary: "Strong project",
     detailedSummary: "Detailed analysis",
+    scoringRubric: [
+      {
+        name: "Potential Value",
+        score: 4.5,
+        justification: "High market potential",
+      },
+    ],
     categoryAnalysis: {
       evaluations: [],
       bestMatch: "resurrection",

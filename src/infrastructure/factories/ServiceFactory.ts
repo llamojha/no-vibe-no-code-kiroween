@@ -46,6 +46,7 @@ import { GoogleAIAdapter } from '../external/ai/GoogleAIAdapter';
 
 // Import mock services and testing utilities
 import { MockAIAnalysisService } from '@/lib/testing/mocks/MockAIAnalysisService';
+import { MockFrankensteinService } from '@/lib/testing/mocks/MockFrankensteinService';
 import { TestDataManager } from '@/lib/testing/TestDataManager';
 import { FeatureFlagManager } from '@/lib/testing/FeatureFlagManager';
 import { MockServiceConfig } from '@/lib/testing/types';
@@ -592,6 +593,43 @@ export class ServiceFactory {
     }
 
     return this.services.get(cacheKey) as IAIAnalysisService;
+  }
+
+  /**
+   * Create Doctor Frankenstein service (currently mock-only)
+   * 
+   * Returns a configured MockFrankensteinService when mock mode is enabled.
+   * Throws a descriptive error if mock mode is disabled since the production
+   * implementation has not been integrated yet.
+   */
+  createFrankensteinService(): MockFrankensteinService {
+    const cacheKey = 'frankensteinService';
+
+    if (!this.services.has(cacheKey)) {
+      this.verifyMockConfiguration();
+
+      if (!this.mockFeatureFlagManager.isMockModeEnabled()) {
+        throw new Error(
+          'Frankenstein service is only available in mock mode. ' +
+          'Enable FF_USE_MOCK_API or configure a mock scenario before calling this method.'
+        );
+      }
+
+      const testDataManager = new TestDataManager();
+      const mockConfig = this.getMockServiceConfig();
+      const mockService = new MockFrankensteinService(testDataManager, mockConfig);
+
+      this.services.set(cacheKey, mockService);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[ServiceFactory] ✅ Mock Frankenstein Service created', {
+          scenario: mockConfig.defaultScenario,
+          simulateLatency: mockConfig.simulateLatency,
+        });
+      }
+    }
+
+    return this.services.get(cacheKey) as MockFrankensteinService;
   }
 
   /**
