@@ -1,6 +1,6 @@
 ---
 title: Git Best Practices
-inclusion: always
+inclusion: never
 ---
 
 # Git Best Practices

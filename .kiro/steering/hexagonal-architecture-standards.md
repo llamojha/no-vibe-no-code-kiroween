@@ -1,4 +1,5 @@
 ---
+title: Project Hexagonal Arquitecture
 inclusion: always
 ---
 
@@ -71,9 +72,9 @@ export class Score {
       throw new Error('Score must be between 0 and 100');
     }
   }
-  
+
   get value(): number { return this._value; }
-  
+
   equals(other: Score): boolean {
     return this._value === other._value;
   }
@@ -218,7 +219,7 @@ export class ServiceFactory {
     const aiService = this.createAIService();
     const repository = this.createAnalysisRepository();
     const validationService = new AnalysisValidationService();
-    
+
     return new AnalyzeIdeaUseCase(aiService, repository, validationService);
   }
 }
