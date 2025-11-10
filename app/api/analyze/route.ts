@@ -13,8 +13,11 @@ const handlers = createAPIRouteHandler({
     try {
       // Use MockModeHelper to create ServiceFactory with proper mock mode handling
       await NextJSBootstrap.initialize();
-      const serviceFactory = MockModeHelper.createServiceFactory();
+      const mockModeActive = MockModeHelper.isMockModeActive();
       const mockModeStatus = MockModeHelper.getMockModeStatus();
+      const serviceFactory = mockModeActive
+        ? MockModeHelper.createServiceFactory()
+        : await NextJSBootstrap.getServiceFactory();
       
       logger.info(LogCategory.API, 'POST /api/analyze - Creating new analysis', {
         method: 'POST',
@@ -83,8 +86,11 @@ const handlers = createAPIRouteHandler({
     try {
       // Use MockModeHelper for GET requests as well
       await NextJSBootstrap.initialize();
-      const serviceFactory = MockModeHelper.createServiceFactory();
+      const mockModeActive = MockModeHelper.isMockModeActive();
       const mockModeStatus = MockModeHelper.getMockModeStatus();
+      const serviceFactory = mockModeActive
+        ? MockModeHelper.createServiceFactory()
+        : await NextJSBootstrap.getServiceFactory();
       
       logger.info(LogCategory.API, 'GET /api/analyze - Listing analyses', {
         method: 'GET',

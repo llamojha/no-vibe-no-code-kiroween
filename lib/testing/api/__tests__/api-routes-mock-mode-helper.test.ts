@@ -60,12 +60,12 @@ describe('API Routes MockModeHelper Integration', () => {
       expect(isActive).toBe(false);
     });
 
-    it('should return false when FF_USE_MOCK_API is not set', () => {
+    it('should default to true when FF_USE_MOCK_API is not set', () => {
       delete process.env.FF_USE_MOCK_API;
       
       const isActive = MockModeHelper.isMockModeActive();
       
-      expect(isActive).toBe(false);
+      expect(isActive).toBe(true);
     });
   });
 
@@ -126,7 +126,7 @@ describe('API Routes MockModeHelper Integration', () => {
       const config = MockModeHelper.getConfiguration();
       
       expect(config).toEqual({
-        mockMode: false,
+        mockMode: true,
         scenario: 'success',
         simulateLatency: false,
         nodeEnv: expect.any(String),
@@ -145,13 +145,13 @@ describe('API Routes MockModeHelper Integration', () => {
       expect(validation.errors).toHaveLength(0);
     });
 
-    it('should warn when mock mode is not set', () => {
+    it('should accept missing mock mode flag in non-production environments', () => {
       delete process.env.FF_USE_MOCK_API;
       
       const validation = MockModeHelper.validateEnvironment();
       
       expect(validation.isValid).toBe(true);
-      expect(validation.warnings).toContain('FF_USE_MOCK_API not set - mock mode disabled');
+      expect(validation.warnings).toHaveLength(0);
     });
 
     it('should warn for invalid scenario', () => {

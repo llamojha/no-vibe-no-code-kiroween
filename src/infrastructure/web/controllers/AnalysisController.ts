@@ -17,6 +17,7 @@ import { AnalysisId, UserId, Locale, Category } from '@/src/domain/value-objects
 import { handleApiError } from '../middleware/ErrorMiddleware';
 import { validateRequest } from '../middleware/ValidationMiddleware';
 import { authenticateRequest } from '../middleware/AuthMiddleware';
+import { resolveMockModeFlag } from '@/lib/testing/config/mock-mode-flags';
 
 /**
  * Controller for analysis-related API endpoints
@@ -39,8 +40,9 @@ export class AnalysisController {
   async createAnalysis(request: NextRequest): Promise<NextResponse> {
     try {
       // Check if we're in mock mode
-      const isMockMode = process.env.FF_USE_MOCK_API === 'true' || 
-                        process.env.NEXT_PUBLIC_FF_USE_MOCK_API === 'true';
+      const isMockMode =
+        resolveMockModeFlag(process.env.FF_USE_MOCK_API) ||
+        resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
 
       if (isMockMode) {
         // In mock mode, return mock data directly

@@ -48,12 +48,12 @@ describe('MockModeHelper', () => {
       expect(result).toBe(true);
     });
 
-    it('should return false when mock mode is disabled', () => {
+    it('should default to true when mock mode is not set in non-production', () => {
       delete process.env.FF_USE_MOCK_API;
       
       const result = MockModeHelper.isMockModeActive();
       
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
 
     it('should return false when FF_USE_MOCK_API is set to false', () => {
@@ -78,12 +78,12 @@ describe('MockModeHelper', () => {
       expect(new Date(status.timestamp).getTime()).toBeGreaterThan(0);
     });
 
-    it('should return correct status when mock mode is disabled', () => {
+    it('should return correct status when mock mode uses default value', () => {
       delete process.env.FF_USE_MOCK_API;
       
       const status = MockModeHelper.getMockModeStatus();
       
-      expect(status.mockMode).toBe(false);
+      expect(status.mockMode).toBe(true);
       expect(status.scenario).toBe('success'); // default scenario
       expect(status.timestamp).toBeDefined();
     });
@@ -123,7 +123,7 @@ describe('MockModeHelper', () => {
       
       const config = MockModeHelper.getConfiguration();
       
-      expect(config.mockMode).toBe(false);
+      expect(config.mockMode).toBe(true);
       expect(config.scenario).toBe('success');
       expect(config.simulateLatency).toBe(false);
       expect(config.nodeEnv).toBe('development');

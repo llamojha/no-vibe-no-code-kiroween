@@ -67,7 +67,7 @@ Status: 403 Forbidden
   "nodeEnv": "development",
   "isValid": true,
   "errors": [],
-  "warnings": ["FF_USE_MOCK_API not set - mock mode disabled"],
+  "warnings": [],
   "timestamp": "2025-11-09T12:34:56.789Z"
 }
 ```

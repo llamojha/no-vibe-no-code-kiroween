@@ -2,6 +2,7 @@
 // Add your flags in the object passed to `registerFlags`.
 
 import { registerFlags, defineBooleanFlag } from "./featureFlags";
+import { resolveMockModeFlag } from "./testing/config/mock-mode-flags";
 
 export function initFeatureFlags() {
   registerFlags({
@@ -33,7 +34,9 @@ export function initFeatureFlags() {
     USE_MOCK_API: defineBooleanFlag({
       key: "USE_MOCK_API",
       description: "Enable mock API mode for testing (never enabled in production)",
-      default: process.env.NODE_ENV === 'production' ? false : (process.env.FF_USE_MOCK_API === 'true'),
+      default: resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
+        allowInProduction: false,
+      }),
       exposeToClient: false,
     }),
   });

@@ -117,7 +117,7 @@ describe('Environment Configuration Integration', () => {
       expect(result.warnings[0]).toContain('invalid_scenario_name');
     });
 
-    it('should return warning when FF_USE_MOCK_API is not set', () => {
+    it('should treat missing mock flag as enabled in non-production', () => {
       // Arrange
       delete process.env.FF_USE_MOCK_API;
       process.env.NODE_ENV = 'test';
@@ -127,7 +127,7 @@ describe('Environment Configuration Integration', () => {
 
       // Assert
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('FF_USE_MOCK_API not set - mock mode disabled');
+      expect(result.warnings).toHaveLength(0);
     });
   });
 
@@ -175,7 +175,7 @@ describe('Environment Configuration Integration', () => {
       const config: TestEnvironmentConfiguration = TestEnvironmentConfig.getCurrentConfig();
 
       // Assert
-      expect(config.mockMode).toBe(false);
+      expect(config.mockMode).toBe(true);
       expect(config.scenario).toBe('success');
       expect(config.simulateLatency).toBe(false);
       expect(config.nodeEnv).toBe('development');

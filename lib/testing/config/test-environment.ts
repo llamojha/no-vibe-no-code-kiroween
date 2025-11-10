@@ -1,3 +1,5 @@
+import { resolveMockModeFlag } from './mock-mode-flags';
+
 /**
  * Test Environment Configuration
  * 
@@ -82,19 +84,19 @@ export class TestEnvironmentConfig {
     const warnings: string[] = [];
 
     // Check if mock mode is enabled
-    const useMockApi = process.env.FF_USE_MOCK_API;
-    
-    if (!useMockApi) {
-      warnings.push('FF_USE_MOCK_API not set - mock mode disabled');
-    }
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    const requestedMockValue = process.env.FF_USE_MOCK_API?.trim().toLowerCase();
+    const mockModeEnabled = resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
+      allowInProduction: false,
+    });
 
     // Check for production environment
-    if (process.env.NODE_ENV === 'production' && useMockApi === 'true') {
+    if (nodeEnv === 'production' && requestedMockValue === 'true') {
       errors.push('Mock mode cannot be enabled in production');
     }
 
     // Validate scenario if mock mode is enabled
-    if (useMockApi === 'true') {
+    if (mockModeEnabled) {
       const scenario = process.env.FF_MOCK_SCENARIO;
       
       if (scenario && !this.isValidScenario(scenario)) {
@@ -118,7 +120,9 @@ export class TestEnvironmentConfig {
    */
   static getCurrentConfig(): TestEnvironmentConfiguration {
     return {
-      mockMode: process.env.FF_USE_MOCK_API === 'true',
+      mockMode: resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
+        allowInProduction: false,
+      }),
       scenario: process.env.FF_MOCK_SCENARIO || 'success',
       simulateLatency: process.env.FF_SIMULATE_LATENCY === 'true',
       nodeEnv: process.env.NODE_ENV || 'development',

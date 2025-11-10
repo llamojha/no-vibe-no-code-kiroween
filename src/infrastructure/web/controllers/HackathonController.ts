@@ -12,6 +12,7 @@ import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
 import { GoogleAIAdapter } from "../../external/ai/GoogleAIAdapter";
 import { Locale } from "@/src/domain/value-objects";
+import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -32,8 +33,9 @@ export class HackathonController {
   async analyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
     try {
       // Check if we're in mock mode
-      const isMockMode = process.env.FF_USE_MOCK_API === 'true' || 
-                        process.env.NEXT_PUBLIC_FF_USE_MOCK_API === 'true';
+      const isMockMode =
+        resolveMockModeFlag(process.env.FF_USE_MOCK_API) ||
+        resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
 
       if (isMockMode) {
         // In mock mode, return mock data directly

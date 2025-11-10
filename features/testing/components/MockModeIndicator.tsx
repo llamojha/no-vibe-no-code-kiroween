@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { resolveMockModeFlag } from '@/lib/testing/config/mock-mode-flags';
 
 /**
  * MockModeIndicator Component
@@ -12,7 +13,7 @@ import React from 'react';
  */
 export function MockModeIndicator(): React.ReactElement | null {
   // Check if mock mode is enabled via client-side environment variable
-  const isMockMode = process.env.NEXT_PUBLIC_FF_USE_MOCK_API === 'true';
+  const isMockMode = resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
   const isProduction = process.env.NODE_ENV === 'production';
 
   // Never show in production, even if flag is somehow set

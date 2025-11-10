@@ -244,21 +244,47 @@ export class GoogleAIAnalysisService implements IAIAnalysisService {
   private buildIdeaAnalysisPrompt(idea: string, locale: Locale): string {
     const language = locale.value === 'es' ? 'Spanish' : 'English';
     
-    return `Analyze this startup idea and provide a comprehensive evaluation in ${language}:
+    return `Analyze this startup idea and provide a comprehensive evaluation in ${language}.
 
 Idea: "${idea}"
 
-Please provide:
-1. Overall score (0-100)
-2. Summary of the idea's potential
-3. Strengths and weaknesses
-4. Market potential analysis
-5. Technical feasibility assessment
-6. Business viability evaluation
-7. Specific improvement suggestions
-8. Detailed criteria scores with justifications
-
-Format the response as JSON with the specified structure.`;
+Respond ONLY with valid JSON strictly matching this schema (no prose before/after):
+{
+  "score": number between 0 and 100,
+  "summary": "2-3 sentence overview in ${language}",
+  "detailedAnalysis": {
+    "strengths": ["bullet strength 1", "..."],
+    "weaknesses": ["bullet weakness 1", "..."],
+    "opportunities": ["growth opportunity 1", "..."],
+    "threats": ["risk 1", "..."]
+  },
+  "criteriaScores": [
+    {
+      "criteriaName": "Specific dimension (e.g., Innovation)",
+      "score": number between 0 and 100,
+      "justification": "1-2 sentence explanation in ${language}"
+    }
+  ],
+  "suggestions": ["actionable next step 1", "..."],
+  "marketPotential": {
+    "score": number between 0 and 100,
+    "analysis": "summary of demand signal",
+    "targetMarket": "primary segment",
+    "marketSize": "quantified TAM/SAM/SOM or qualitative estimate"
+  },
+  "technicalFeasibility": {
+    "score": number between 0 and 100,
+    "analysis": "feasibility summary",
+    "complexity": "low" | "medium" | "high",
+    "requiredSkills": ["skill or stack", "..."]
+  },
+  "businessViability": {
+    "score": number between 0 and 100,
+    "analysis": "business case summary",
+    "revenueModel": ["model 1", "..."],
+    "competitiveAdvantage": "differentiator description"
+  }
+}`;
   }
 
   /**

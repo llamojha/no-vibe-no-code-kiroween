@@ -1,3 +1,5 @@
+import { resolveMockModeFlag } from './config/mock-mode-flags';
+
 /**
  * Feature Flag Manager for Testing and Mock Mode
  * 
@@ -55,7 +57,9 @@ export class FeatureFlagManager {
     // Mock mode flag - never enabled in production
     this.flags.set(
       'USE_MOCK_API',
-      this.isProduction ? false : this.parseBoolean(process.env.FF_USE_MOCK_API)
+      resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
+        allowInProduction: false,
+      })
     );
 
     // Mock scenario configuration

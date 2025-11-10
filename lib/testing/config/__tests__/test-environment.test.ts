@@ -40,7 +40,7 @@ describe('TestEnvironmentConfig', () => {
       
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
-      expect(result.warnings).toContain('FF_USE_MOCK_API not set - mock mode disabled');
+      expect(result.warnings).toHaveLength(0);
     });
 
     it('should return valid when mock mode is enabled in test environment', () => {
@@ -107,13 +107,13 @@ describe('TestEnvironmentConfig', () => {
       expect(config.nodeEnv).toBe('test');
     });
 
-    it('should return correct configuration when mock mode is disabled', () => {
+    it('should return correct configuration when mock mode falls back to defaults', () => {
       delete process.env.FF_USE_MOCK_API;
       (process.env as Record<string, string>).NODE_ENV = 'development';
       
       const config = TestEnvironmentConfig.getCurrentConfig();
       
-      expect(config.mockMode).toBe(false);
+      expect(config.mockMode).toBe(true);
       expect(config.scenario).toBe('success');
       expect(config.simulateLatency).toBe(false);
       expect(config.nodeEnv).toBe('development');
@@ -128,7 +128,7 @@ describe('TestEnvironmentConfig', () => {
       
       const config = TestEnvironmentConfig.getCurrentConfig();
       
-      expect(config.mockMode).toBe(false);
+      expect(config.mockMode).toBe(true);
       expect(config.scenario).toBe('success');
       expect(config.simulateLatency).toBe(false);
       expect(config.nodeEnv).toBe('development');

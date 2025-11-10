@@ -1,5 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getDatabaseConfig, isDevelopment } from './environment';
+import { createClient, SupabaseClient, SupabaseClientOptions } from '@supabase/supabase-js';
+import { getDatabaseConfig } from './environment';
 
 /**
  * Database configuration and client creation
@@ -19,12 +19,17 @@ export function createSupabaseClient(): SupabaseClient {
 
   const config = getDatabaseConfig();
   
+  const enableAuthDebug = process.env.SUPABASE_AUTH_DEBUG === 'true';
+
+  const authOptions: SupabaseClientOptions['auth'] = {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    ...(enableAuthDebug ? { debug: true } : {}),
+  };
+
   supabaseClient = createClient(config.supabaseUrl, config.supabaseKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-    },
+    auth: authOptions,
     db: {
       schema: 'public',
     },
@@ -33,12 +38,6 @@ export function createSupabaseClient(): SupabaseClient {
         'x-application-name': 'no-vibe-no-code',
       },
     },
-    // Enable debug logging in development
-    ...(isDevelopment() && {
-      auth: {
-        debug: true,
-      },
-    }),
   });
 
   return supabaseClient;
