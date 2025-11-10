@@ -39,19 +39,37 @@ export class SupabaseUserRepository implements IUserRepository {
   /**
    * Helper method to fetch user email from auth.users
    * Returns null if email cannot be retrieved
+   *
+   * Note: Uses auth.getUser() instead of auth.admin.getUserById() because:
+   * - Server client uses anon key, not service role key
+   * - auth.getUser() validates the current session and returns the authenticated user
+   * - This only works for the currently authenticated user, not arbitrary users
    */
   private async getUserEmail(userId: string): Promise<string | null> {
     try {
-      // Fetch user from auth.users via admin API
-      const { data, error } = await this.client.auth.admin.getUserById(userId);
+      // Get the currently authenticated user from the session
+      const { data, error } = await this.client.auth.getUser();
 
       if (error || !data.user) {
         logger.warn(
           LogCategory.DATABASE,
-          "Could not fetch user email from auth.users",
+          "Could not fetch user email from auth session",
           {
-            userId,
+            requestedUserId: userId,
             error: error?.message,
+          }
+        );
+        return null;
+      }
+
+      // Verify the authenticated user matches the requested user
+      if (data.user.id !== userId) {
+        logger.warn(
+          LogCategory.DATABASE,
+          "Authenticated user does not match requested user",
+          {
+            authenticatedUserId: data.user.id,
+            requestedUserId: userId,
           }
         );
         return null;

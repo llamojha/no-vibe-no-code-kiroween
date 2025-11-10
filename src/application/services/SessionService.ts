@@ -1,7 +1,7 @@
-import { User } from '../../domain/entities/User';
-import { UserId } from '../../domain/value-objects/UserId';
-import { AuthenticationService } from './AuthenticationService';
-import type { UserTier } from '@/lib/supabase/types';
+import { User } from "../../domain/entities/User";
+import { UserId } from "../../domain/value-objects/UserId";
+import { AuthenticationService } from "./AuthenticationService";
+import type { UserTier } from "@/lib/supabase/types";
 
 /**
  * Session context information
@@ -21,9 +21,7 @@ export interface SessionContext {
  * Provides easy access to current user information and permissions
  */
 export class SessionService {
-  constructor(
-    private readonly authenticationService: AuthenticationService
-  ) {}
+  constructor(private readonly authenticationService: AuthenticationService) {}
 
   /**
    * Get current session context
@@ -43,9 +41,9 @@ export class SessionService {
       const tierResult = await this.getUserTier(userId);
       if (tierResult) {
         tier = tierResult;
-        isAdmin = tier === 'admin';
-        isPaid = tier === 'paid' || tier === 'admin';
-        isFree = tier === 'free';
+        isAdmin = tier === "admin";
+        isPaid = tier === "paid" || tier === "admin";
+        isFree = tier === "free";
       }
     }
 
@@ -56,7 +54,7 @@ export class SessionService {
       isAdmin,
       isPaid,
       isFree,
-      tier
+      tier,
     };
   }
 
@@ -66,11 +64,18 @@ export class SessionService {
   private async getUserTier(_userId: UserId): Promise<UserTier | null> {
     try {
       // Use the authentication service to get tier information
-      const authResult = await this.authenticationService.authenticateRequest({ allowFree: true });
-      return authResult.userTier || 'free';
+      const authResult = await this.authenticationService.authenticateRequest({
+        allowFree: true,
+      });
+      console.log("[SessionService] getUserTier result:", {
+        success: authResult.success,
+        userTier: authResult.userTier,
+        userId: authResult.userId,
+      });
+      return authResult.userTier || "free";
     } catch (error) {
-      console.error('Error getting user tier:', error);
-      return 'free';
+      console.error("Error getting user tier:", error);
+      return "free";
     }
   }
 
@@ -96,7 +101,7 @@ export class SessionService {
   async requireCurrentUser(): Promise<User> {
     const user = await this.authenticationService.getCurrentUser();
     if (!user) {
-      throw new Error('User must be authenticated');
+      throw new Error("User must be authenticated");
     }
     return user;
   }
@@ -107,7 +112,7 @@ export class SessionService {
   async requireCurrentUserId(): Promise<UserId> {
     const userId = await this.authenticationService.getCurrentUserId();
     if (!userId) {
-      throw new Error('User must be authenticated');
+      throw new Error("User must be authenticated");
     }
     return userId;
   }

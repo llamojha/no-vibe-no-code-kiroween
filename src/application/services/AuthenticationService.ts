@@ -78,8 +78,7 @@ export class AuthenticationService {
       // Use NODE_ENV for local development mode or test mode
       const nodeEnv = process.env.NODE_ENV || "development";
       const isLocalDevMode =
-        nodeEnv === "development" ||
-        process.env.FF_LOCAL_DEV_MODE === "true";
+        nodeEnv === "development" || process.env.FF_LOCAL_DEV_MODE === "true";
 
       if (isLocalDevMode) {
         logger.info(LogCategory.AUTH, "Using local dev mode authentication", {
@@ -168,28 +167,23 @@ export class AuthenticationService {
         await this.updateUserLastLoginUseCase.execute(userId);
       }
 
-      // Check tier requirements if needed
+      // Always check user tier to populate the userTier field
+      const tierCheckResult = await this.checkUserTier(userId, options);
+
+      // If tier requirements are specified, enforce them
       if (options.requirePaid || options.requireAdmin || !options.allowFree) {
-        const tierCheckResult = await this.checkUserTier(userId, options);
         if (!tierCheckResult.success) {
           return tierCheckResult;
         }
-
-        return {
-          success: true,
-          user,
-          userId: sessionResult.userId,
-          userEmail: sessionResult.userEmail,
-          userTier: tierCheckResult.userTier,
-        };
       }
 
-      // Basic authentication without tier checking
+      // Return authentication result with tier information
       return {
         success: true,
         user,
         userId: sessionResult.userId,
         userEmail: sessionResult.userEmail,
+        userTier: tierCheckResult.userTier,
       };
     } catch (error) {
       return {
@@ -321,7 +315,20 @@ export class AuthenticationService {
         .eq("id", userId.value)
         .maybeSingle();
 
+      logger.debug(LogCategory.AUTH, "Checking user tier", {
+        userId: userId.value,
+        profileData: profile,
+        profileError: profileError?.message,
+        hasProfile: !!profile,
+        tierValue: profile?.tier,
+      });
+
       if (profileError) {
+        logger.error(LogCategory.AUTH, "Profile query error", {
+          userId: userId.value,
+          error: profileError.message,
+          code: profileError.code,
+        });
         return {
           success: false,
           error: "Unable to verify user profile",
@@ -329,6 +336,12 @@ export class AuthenticationService {
       }
 
       const userTier: UserTier = (profile?.tier ?? "free") as UserTier;
+
+      logger.info(LogCategory.AUTH, "User tier determined", {
+        userId: userId.value,
+        tier: userTier,
+        wasDefaulted: !profile?.tier,
+      });
 
       // Check tier requirements
       if (options.requireAdmin && userTier !== "admin") {
