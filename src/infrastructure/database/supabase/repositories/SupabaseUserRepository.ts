@@ -16,7 +16,11 @@ import {
 } from "../../../../shared/types/common";
 import { AuthorizationError } from "../../../../shared/types/errors";
 import { Database } from "../../types";
-import { DatabaseQueryError, RecordNotFoundError, UniqueConstraintError } from "../../errors";
+import {
+  DatabaseQueryError,
+  RecordNotFoundError,
+  UniqueConstraintError,
+} from "../../errors";
 import { UserMapper } from "../mappers/UserMapper";
 import { logger, LogCategory } from "@/lib/logger";
 
@@ -31,6 +35,37 @@ export class SupabaseUserRepository implements IUserRepository {
     private readonly client: SupabaseClient<Database>,
     private readonly mapper: UserMapper
   ) {}
+
+  /**
+   * Helper method to fetch user email from auth.users
+   * Returns null if email cannot be retrieved
+   */
+  private async getUserEmail(userId: string): Promise<string | null> {
+    try {
+      // Fetch user from auth.users via admin API
+      const { data, error } = await this.client.auth.admin.getUserById(userId);
+
+      if (error || !data.user) {
+        logger.warn(
+          LogCategory.DATABASE,
+          "Could not fetch user email from auth.users",
+          {
+            userId,
+            error: error?.message,
+          }
+        );
+        return null;
+      }
+
+      return data.user.email || null;
+    } catch (error) {
+      logger.error(LogCategory.DATABASE, "Error fetching user email", {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
 
   // Command operations (write)
 
@@ -54,7 +89,10 @@ export class SupabaseUserRepository implements IUserRepository {
         );
       }
 
-      const savedUser = this.mapper.toDomain(data as any);
+      // Fetch email from auth.users for the saved user
+      const email = await this.getUserEmail(user.id.value);
+
+      const savedUser = this.mapper.toDomain(data as any, email || undefined);
       return success(savedUser);
     } catch (error) {
       return failure(
@@ -98,7 +136,10 @@ export class SupabaseUserRepository implements IUserRepository {
         return failure(new RecordNotFoundError("User", user.id.value));
       }
 
-      const updatedUser = this.mapper.toDomain(data as any);
+      // Fetch email from auth.users for the updated user
+      const email = await this.getUserEmail(user.id.value);
+
+      const updatedUser = this.mapper.toDomain(data as any, email || undefined);
       return success(updatedUser);
     } catch (error) {
       return failure(
@@ -340,7 +381,10 @@ export class SupabaseUserRepository implements IUserRepository {
         );
       }
 
-      const user = this.mapper.toDomain(data as any);
+      // Fetch email from auth.users
+      const email = await this.getUserEmail(id.value);
+
+      const user = this.mapper.toDomain(data as any, email || undefined);
       return success(user);
     } catch (error) {
       return failure(

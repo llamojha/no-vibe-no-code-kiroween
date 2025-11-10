@@ -1,7 +1,7 @@
-import { User, UserPreferences } from '../../../../domain/entities';
-import { UserId, Email, Locale } from '../../../../domain/value-objects';
-import { UserDAO } from '../../types/dao';
-import { ProfileRow, ProfileInsert, ProfileUpdate } from '../../types/database';
+import { User, UserPreferences } from "../../../../domain/entities";
+import { UserId, Email, Locale } from "../../../../domain/value-objects";
+import { UserDAO } from "../../types/dao";
+import { ProfileRow, ProfileInsert, ProfileUpdate } from "../../types/database";
 
 /**
  * Data Transfer Object for User API operations
@@ -15,7 +15,7 @@ export interface UserDTO {
     defaultLocale: string;
     emailNotifications: boolean;
     analysisReminders: boolean;
-    theme: 'light' | 'dark' | 'auto';
+    theme: "light" | "dark" | "auto";
   };
   createdAt: string;
   updatedAt: string;
@@ -33,30 +33,33 @@ export class UserMapper {
   toDAO(user: User): UserDAO {
     return {
       id: user.id.value,
-      tier: 'free', // Simplified mapping - would determine tier based on user properties
+      tier: "free", // Simplified mapping - would determine tier based on user properties
       created_at: user.createdAt.toISOString(),
     };
   }
 
   /**
    * Convert DAO from database to User domain entity
+   * Note: Email must be provided separately from auth.users as it's not stored in profiles table
    */
-  toDomain(dao: UserDAO): User {
+  toDomain(dao: UserDAO, email?: string): User {
     // Create default preferences since they're not stored in the current schema
     const defaultPreferences: UserPreferences = {
       defaultLocale: Locale.english(),
       emailNotifications: true,
       analysisReminders: true,
-      theme: 'auto'
+      theme: "auto",
     };
 
-    // Create a default email since it's not in the current schema
-    // In a real implementation, this would come from auth.users or a separate table
-    const defaultEmail = Email.create(`user-${dao.id}@example.com`);
+    // Use provided email or create a placeholder
+    // Email should be fetched from auth.users via supabase.auth.getUser()
+    const userEmail = email
+      ? Email.create(email)
+      : Email.create(`user-${dao.id}@example.com`);
 
     return User.reconstruct({
       id: UserId.reconstruct(dao.id),
-      email: defaultEmail,
+      email: userEmail,
       name: undefined, // Not stored in current schema
       createdAt: new Date(dao.created_at || Date.now()),
       updatedAt: new Date(dao.created_at || Date.now()),
@@ -137,46 +140,56 @@ export class UserMapper {
 
   /**
    * Convert Supabase row directly to domain entity
+   * Note: Email should be provided from auth.users if available
    */
-  fromSupabaseRowToDomain(row: ProfileRow): User {
+  fromSupabaseRowToDomain(row: ProfileRow, email?: string): User {
     const dao = this.fromSupabaseRow(row);
-    return this.toDomain(dao);
+    return this.toDomain(dao, email);
   }
 
   /**
    * Batch convert multiple Supabase rows to domain entities
+   * Note: For batch operations, emails should be fetched separately from auth.users
    */
-  fromSupabaseRowsToDomain(rows: ProfileRow[]): User[] {
-    return rows.map(row => this.fromSupabaseRowToDomain(row));
+  fromSupabaseRowsToDomain(
+    rows: ProfileRow[],
+    emailMap?: Map<string, string>
+  ): User[] {
+    return rows.map((row) => {
+      const email = emailMap?.get(row.id);
+      return this.fromSupabaseRowToDomain(row, email);
+    });
   }
 
   /**
    * Batch convert multiple domain entities to DTOs
    */
   toDTOs(users: User[]): UserDTO[] {
-    return users.map(user => this.toDTO(user));
+    return users.map((user) => this.toDTO(user));
   }
 
   /**
    * Map user tier from domain to database representation (unused in current implementation)
    */
-  private mapTierToDatabase(__user: User): 'free' | 'paid' | 'admin' {
+  private mapTierToDatabase(__user: User): "free" | "paid" | "admin" {
     // Simplified logic - in a real implementation, this would be based on user properties
     // For now, we'll default to 'free'
-    return 'free';
+    return "free";
   }
 
   /**
    * Map user tier from database to domain representation (unused in current implementation)
    */
-  private mapTierFromDatabase(__tier: 'free' | 'paid' | 'admin'): UserPreferences {
+  private mapTierFromDatabase(
+    __tier: "free" | "paid" | "admin"
+  ): UserPreferences {
     // Simplified logic - tier doesn't directly map to preferences in current domain model
     // In a real implementation, tier might affect default preferences
     return {
       defaultLocale: Locale.english(),
       emailNotifications: true,
       analysisReminders: true,
-      theme: 'auto'
+      theme: "auto",
     };
   }
 
@@ -194,8 +207,8 @@ export class UserMapper {
         defaultLocale: Locale.english(),
         emailNotifications: true,
         analysisReminders: true,
-        theme: 'auto'
-      }
+        theme: "auto",
+      },
     });
   }
 
@@ -203,29 +216,31 @@ export class UserMapper {
    * Validate DAO structure before conversion
    */
   private validateDAO(dao: UserDAO): void {
-    if (!dao.id || typeof dao.id !== 'string') {
-      throw new Error('Invalid DAO: id is required and must be a string');
+    if (!dao.id || typeof dao.id !== "string") {
+      throw new Error("Invalid DAO: id is required and must be a string");
     }
 
-    if (!dao.tier || !['free', 'paid', 'admin'].includes(dao.tier)) {
-      throw new Error('Invalid DAO: tier must be one of: free, paid, admin');
+    if (!dao.tier || !["free", "paid", "admin"].includes(dao.tier)) {
+      throw new Error("Invalid DAO: tier must be one of: free, paid, admin");
     }
   }
 
   /**
    * Handle user preferences mapping with defaults
    */
-  private mapPreferencesWithDefaults(preferences?: Partial<UserPreferences>): UserPreferences {
+  private mapPreferencesWithDefaults(
+    preferences?: Partial<UserPreferences>
+  ): UserPreferences {
     const defaults: UserPreferences = {
       defaultLocale: Locale.english(),
       emailNotifications: true,
       analysisReminders: true,
-      theme: 'auto'
+      theme: "auto",
     };
 
     return {
       ...defaults,
-      ...preferences
+      ...preferences,
     };
   }
 

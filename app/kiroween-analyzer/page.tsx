@@ -6,6 +6,7 @@ import {
   isCurrentUserPaid,
   isAuthenticated,
   getCurrentUser,
+  getSessionContext,
 } from "@/src/infrastructure/web/helpers/serverAuth";
 import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 import { generateMockUser } from "@/lib/mockData";
@@ -38,9 +39,21 @@ export default async function KiroweenAnalyzerPage() {
     redirect("/login");
   }
 
-  // Check if user has paid access using the new authentication helpers
+  // Check if user has paid or admin access
+  const sessionContext = await getSessionContext();
+  console.log("[Kiroween Analyzer Page] Session context:", {
+    isAuthenticated: sessionContext.isAuthenticated,
+    isPaid: sessionContext.isPaid,
+    isAdmin: sessionContext.isAdmin,
+    tier: sessionContext.tier,
+    userId: sessionContext.userId?.value,
+  });
+
   const hasPaidAccess = await isCurrentUserPaid();
   if (!hasPaidAccess) {
+    console.log(
+      "[Kiroween Analyzer Page] Access denied - redirecting to dashboard"
+    );
     redirect("/dashboard");
   }
 
