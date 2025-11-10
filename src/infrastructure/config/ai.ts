@@ -1,5 +1,5 @@
-import { GoogleGenAI } from '@google/genai';
-import { getAIConfig } from './environment';
+import { GoogleGenAI } from "@google/genai";
+import { getAIConfig } from "./environment";
 
 /**
  * AI service configuration and client creation
@@ -18,7 +18,7 @@ export function createGoogleAIClient(): GoogleGenAI {
   }
 
   const config = getAIConfig();
-  
+
   googleAIClient = new GoogleGenAI({ apiKey: config.geminiApiKey });
 
   return googleAIClient;
@@ -65,8 +65,9 @@ export const aiServiceConfig = {
  */
 export function getAIServiceConfig() {
   const config = getAIConfig();
-  const environment = process.env.NODE_ENV as keyof typeof aiServiceConfig || 'development';
-  
+  const environment =
+    (process.env.NODE_ENV as keyof typeof aiServiceConfig) || "development";
+
   return {
     ...aiServiceConfig[environment],
     timeout: config.timeout,
@@ -81,69 +82,76 @@ export function getAIServiceConfig() {
 export async function checkAIServiceConnection(): Promise<boolean> {
   try {
     const client = getGoogleAIClient();
-    
+    const config = getAIConfig();
+
     // Simple test prompt using the existing API
     const result = await client.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: [{ parts: [{ text: 'Hello' }] }],
+      model: config.model,
+      contents: [{ parts: [{ text: "Hello" }] }],
     });
-    
+
     return !!result.text;
   } catch (error) {
-    console.error('AI service connection check failed:', error);
+    console.error("AI service connection check failed:", error);
     return false;
   }
 }
 
 /**
  * Model configurations for different use cases
+ * Note: Model names are now configured via GEMINI_MODEL environment variable
  */
-export const modelConfigs = {
-  ideaAnalysis: {
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 2048,
+export function getModelConfigs() {
+  const config = getAIConfig();
+  const model = config.model;
+
+  return {
+    ideaAnalysis: {
+      model,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+      ],
     },
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+    hackathonAnalysis: {
+      model,
+      generationConfig: {
+        temperature: 0.8,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 3072,
       },
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-    ],
-  },
-  hackathonAnalysis: {
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      temperature: 0.8,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 3072,
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE",
+        },
+      ],
     },
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+    textToSpeech: {
+      model,
+      generationConfig: {
+        temperature: 0.3,
+        topK: 20,
+        topP: 0.8,
+        maxOutputTokens: 1024,
       },
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-      },
-    ],
-  },
-  textToSpeech: {
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      temperature: 0.3,
-      topK: 20,
-      topP: 0.8,
-      maxOutputTokens: 1024,
     },
-  },
-};
+  };
+}

@@ -13,6 +13,7 @@ import {
  */
 export interface GoogleAIConfig {
   apiKey: string;
+  model?: string;
   timeout?: number;
   maxRetries?: number;
 }
@@ -56,9 +57,12 @@ export class AIServiceError extends Error {
 export class GoogleAIAdapter {
   private readonly client: GoogleGenAI;
   private readonly config: GoogleAIConfig;
+  private readonly model: string;
 
   constructor(config: GoogleAIConfig) {
     this.config = config;
+    this.model =
+      config.model || process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
     this.client = new GoogleGenAI({ apiKey: config.apiKey });
   }
 
@@ -72,7 +76,7 @@ export class GoogleAIAdapter {
     logger.info(LogCategory.AI, "Starting idea analysis with Gemini", {
       ideaLength: idea.length,
       locale: locale.value,
-      model: "gemini-2.5-pro",
+      model: this.model,
     });
 
     const startTime = Date.now();
@@ -86,7 +90,7 @@ export class GoogleAIAdapter {
         });
 
         const response = await this.client.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: this.model,
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
@@ -99,7 +103,7 @@ export class GoogleAIAdapter {
         if (duration > 10000) {
           logger.warn(LogCategory.AI, "Slow AI response detected", {
             duration,
-            model: "gemini-2.5-pro",
+            model: this.model,
           });
         }
 
@@ -230,7 +234,7 @@ export class GoogleAIAdapter {
         );
 
         const response = await this.client.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: this.model,
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
@@ -708,7 +712,7 @@ export class GoogleAIAdapter {
   /**
    * Create a configured GoogleAIAdapter instance
    */
-  static create(apiKey?: string): GoogleAIAdapter {
+  static create(apiKey?: string, model?: string): GoogleAIAdapter {
     const key = apiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!key) {
       throw new Error(
@@ -718,6 +722,7 @@ export class GoogleAIAdapter {
 
     return new GoogleAIAdapter({
       apiKey: key,
+      model: model || process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
       timeout: 30000,
       maxRetries: 3,
     });

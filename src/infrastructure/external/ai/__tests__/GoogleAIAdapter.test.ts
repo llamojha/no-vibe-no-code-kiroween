@@ -93,7 +93,7 @@ describe("GoogleAIAdapter Integration Tests", () => {
 
       expect(mockGenerateContent).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gemini-2.5-pro",
+          model: expect.any(String), // Model is now configurable via env var
         })
       );
     });

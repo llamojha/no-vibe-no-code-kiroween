@@ -30,28 +30,32 @@ export interface FrankensteinIdeaResult {
 
 export async function generateFrankensteinIdea(
   elements: FrankensteinElement[],
-  mode: 'companies' | 'aws',
-  language: 'en' | 'es'
+  mode: "companies" | "aws",
+  language: "en" | "es"
 ): Promise<FrankensteinIdeaResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY not configured');
+    throw new Error("GEMINI_API_KEY not configured");
   }
 
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
   const genAI = new GoogleGenAI({ apiKey });
 
-  const elementsList = elements.map(e => 
-    e.description ? `${e.name} (${e.description})` : e.name
-  ).join(', ');
+  const elementsList = elements
+    .map((e) => (e.description ? `${e.name} (${e.description})` : e.name))
+    .join(", ");
 
-  const modeContext = mode === 'aws' 
-    ? 'focus more on infrastructure, cloud scalability, and developer productivity'
-    : 'focus more on product synergy, market potential, and user experience';
+  const modeContext =
+    mode === "aws"
+      ? "focus more on infrastructure, cloud scalability, and developer productivity"
+      : "focus more on product synergy, market potential, and user experience";
 
   const prompt = `You are the AI engine of "No Vibe No Code", an intelligent product analysis system. Your task is to act as the "Doctor Frankenstein Kiroween" module.
 
 Context:
-The user has just combined multiple existing technologies ${mode === 'aws' ? '(AWS services)' : '(tech companies)'} to create a new hybrid concept — a "Frankenstein Idea". You must bring that idea to life by generating a complete structured analysis report.
+The user has just combined multiple existing technologies ${
+    mode === "aws" ? "(AWS services)" : "(tech companies)"
+  } to create a new hybrid concept — a "Frankenstein Idea". You must bring that idea to life by generating a complete structured analysis report.
 
 ### Input:
 The following elements were combined to create the Frankenstein idea:
@@ -93,45 +97,49 @@ IMPORTANT: All fields except "metrics" must be STRING values, not objects or arr
 - Use vivid language and intelligent humor when appropriate.
 - Maintain professional clarity and actionable insights.
 - If the combination includes absurd or incompatible elements, make it work anyway — creatively justify it.
-- Respond in ${language === 'es' ? 'Spanish' : 'English'}.
+- Respond in ${language === "es" ? "Spanish" : "English"}.
 
 Now, generate the Frankenstein Idea Report as valid JSON only.`;
 
   const result = await genAI.models.generateContent({
-    model: 'gemini-2.5-pro',
+    model,
     contents: [{ parts: [{ text: prompt }] }],
     config: {
       temperature: 0.7, // Higher temperature for more creative ideas
     },
   });
-  
-  const response = result.text?.trim() || '';
-  
+
+  const response = result.text?.trim() || "";
+
   // Clean response to extract JSON
   let jsonText = response.trim();
-  if (jsonText.startsWith('```json')) {
-    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?$/g, '');
-  } else if (jsonText.startsWith('```')) {
-    jsonText = jsonText.replace(/```\n?/g, '');
+  if (jsonText.startsWith("```json")) {
+    jsonText = jsonText.replace(/```json\n?/g, "").replace(/```\n?$/g, "");
+  } else if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/```\n?/g, "");
   }
 
   const parsed = JSON.parse(jsonText);
-  
+
   // Ensure all fields are strings (convert objects to strings if needed)
   const ensureString = (value: unknown): string => {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === "string") return value;
+    if (typeof value === "object" && value !== null) {
       // If it's an object, convert to readable string
       if (Array.isArray(value)) {
-        return value.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join(', ');
+        return value
+          .map((item) =>
+            typeof item === "string" ? item : JSON.stringify(item)
+          )
+          .join(", ");
       }
       return Object.entries(value)
         .map(([key, val]) => `${key}: ${val}`)
-        .join(', ');
+        .join(", ");
     }
     return String(value);
   };
-  
+
   return {
     idea_title: ensureString(parsed.idea_title),
     idea_description: ensureString(parsed.idea_description),

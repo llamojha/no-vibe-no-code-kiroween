@@ -27,8 +27,8 @@ export interface AppConfig {
   database: DatabaseConfig;
   ai: AIConfig;
   features: FeatureConfig;
-  environment: 'development' | 'production' | 'test';
-  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  environment: "development" | "production" | "test";
+  logLevel: "debug" | "info" | "warn" | "error";
 }
 
 /**
@@ -49,7 +49,7 @@ export function getAppConfig(): AppConfig {
 
   if (missingVars.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missingVars.join(', ')}`
+      `Missing required environment variables: ${missingVars.join(", ")}`
     );
   }
 
@@ -61,19 +61,25 @@ export function getAppConfig(): AppConfig {
     },
     ai: {
       geminiApiKey: process.env.GEMINI_API_KEY!,
-      timeout: parseInt(process.env.AI_TIMEOUT || '30000'),
-      maxRetries: parseInt(process.env.AI_MAX_RETRIES || '3'),
-      model: process.env.AI_MODEL || 'gemini-1.5-flash',
+      timeout: parseInt(process.env.AI_TIMEOUT || "30000"),
+      maxRetries: parseInt(process.env.AI_MAX_RETRIES || "3"),
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash-lite",
     },
     features: {
-      enableHackathonAnalyzer: process.env.NEXT_PUBLIC_FF_HACKATHON_ANALYZER === 'true',
-      enableAudioFeatures: process.env.NEXT_PUBLIC_FF_AUDIO_FEATURES === 'true',
-      enableClassicAnalyzer: process.env.NEXT_PUBLIC_FF_CLASSIC_ANALYZER !== 'false', // Default true
+      enableHackathonAnalyzer:
+        process.env.NEXT_PUBLIC_FF_HACKATHON_ANALYZER === "true",
+      enableAudioFeatures: process.env.NEXT_PUBLIC_FF_AUDIO_FEATURES === "true",
+      enableClassicAnalyzer:
+        process.env.NEXT_PUBLIC_FF_CLASSIC_ANALYZER !== "false", // Default true
       // Local dev mode now follows NODE_ENV
-      localDevMode: ((process.env.NODE_ENV as string) || 'development') === 'development',
+      localDevMode:
+        ((process.env.NODE_ENV as string) || "development") === "development",
     },
-    environment: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
-    logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
+    environment:
+      (process.env.NODE_ENV as "development" | "production" | "test") ||
+      "development",
+    logLevel:
+      (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",
   };
 }
 
@@ -102,21 +108,21 @@ export function getFeatureConfig(): FeatureConfig {
  * Check if running in development mode
  */
 export function isDevelopment(): boolean {
-  return getAppConfig().environment === 'development';
+  return getAppConfig().environment === "development";
 }
 
 /**
  * Check if running in production mode
  */
 export function isProduction(): boolean {
-  return getAppConfig().environment === 'production';
+  return getAppConfig().environment === "production";
 }
 
 /**
  * Check if running in test mode
  */
 export function isTest(): boolean {
-  return getAppConfig().environment === 'test';
+  return getAppConfig().environment === "test";
 }
 
 /**
@@ -126,24 +132,24 @@ export function isTest(): boolean {
 export function validateConfiguration(): void {
   try {
     const config = getAppConfig();
-    
+
     // Validate database configuration
-    if (!config.database.supabaseUrl.startsWith('https://')) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_URL must be a valid HTTPS URL');
+    if (!config.database.supabaseUrl.startsWith("https://")) {
+      throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid HTTPS URL");
     }
-    
+
     // Validate AI configuration
     if (config.ai.timeout < 1000) {
-      throw new Error('AI_TIMEOUT must be at least 1000ms');
+      throw new Error("AI_TIMEOUT must be at least 1000ms");
     }
-    
+
     if (config.ai.maxRetries < 1 || config.ai.maxRetries > 10) {
-      throw new Error('AI_MAX_RETRIES must be between 1 and 10');
+      throw new Error("AI_MAX_RETRIES must be between 1 and 10");
     }
-    
-    console.log('✅ Configuration validation passed');
+
+    console.log("✅ Configuration validation passed");
   } catch (error) {
-    console.error('❌ Configuration validation failed:', error);
+    console.error("❌ Configuration validation failed:", error);
     throw error;
   }
 }
