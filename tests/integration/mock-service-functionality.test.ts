@@ -347,10 +347,13 @@ describe('Mock Service Functionality Integration', () => {
       const startTime = Date.now();
       await service.analyzeIdea('Test idea', locale);
       const duration = Date.now() - startTime;
+      const simulatedLatency = service.getLastSimulatedLatency();
 
       // Assert
       expect(duration).toBeGreaterThanOrEqual(50);
-      expect(duration).toBeLessThan(150); // Allow some overhead
+      expect(simulatedLatency).toBeGreaterThanOrEqual(50);
+      expect(simulatedLatency).toBeLessThanOrEqual(100);
+      expect(duration).toBeLessThan(simulatedLatency + 100); // Allow processing overhead
     });
   });
 

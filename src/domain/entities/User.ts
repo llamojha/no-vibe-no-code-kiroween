@@ -262,7 +262,8 @@ export class User extends Entity<UserId> {
   getDaysSinceCreation(): number {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - this._createdAt.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
   }
 
   /**
@@ -275,7 +276,8 @@ export class User extends Entity<UserId> {
 
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - this._lastLoginAt.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
   }
 
   /**

@@ -56,6 +56,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
   private readonly config: MockServiceConfig;
   private readonly requestLogs: MockRequestLog[] = [];
   private readonly performanceMetrics: Map<string, number[]> = new Map();
+  private lastSimulatedLatency = 0;
 
   constructor(
     testDataManager: TestDataManager,
@@ -596,13 +597,22 @@ export class MockAIAnalysisService implements IAIAnalysisService {
    */
   private async simulateLatency(): Promise<void> {
     if (!this.config.simulateLatency) {
+      this.lastSimulatedLatency = 0;
       return;
     }
 
     const { minLatency, maxLatency } = this.config;
     const latency = Math.floor(Math.random() * (maxLatency - minLatency + 1)) + minLatency;
+    this.lastSimulatedLatency = latency;
 
     await new Promise(resolve => setTimeout(resolve, latency));
+  }
+
+  /**
+   * Expose last simulated latency to tests/diagnostics.
+   */
+  getLastSimulatedLatency(): number {
+    return this.lastSimulatedLatency;
   }
 
   /**

@@ -76,9 +76,10 @@ export class AuthenticationService {
 
     try {
       // Use NODE_ENV for local development mode or test mode
-      const isLocalDevMode = (process.env.NODE_ENV || "development") === "development" || 
-                             process.env.NODE_ENV === "test" ||
-                             process.env.FF_LOCAL_DEV_MODE === "true";
+      const nodeEnv = process.env.NODE_ENV || "development";
+      const isLocalDevMode =
+        nodeEnv === "development" ||
+        process.env.FF_LOCAL_DEV_MODE === "true";
 
       if (isLocalDevMode) {
         logger.info(LogCategory.AUTH, "Using local dev mode authentication", {

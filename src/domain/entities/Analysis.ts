@@ -269,7 +269,8 @@ export class Analysis extends Entity<AnalysisId> {
   getAgeInDays(): number {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - this._createdAt.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, days);
   }
 
   // Getters

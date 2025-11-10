@@ -88,6 +88,13 @@ describe('AnalysisController API Integration Tests', () => {
       feedback: 'Excellent idea with strong market potential',
       suggestions: ['Consider mobile app development', 'Explore enterprise partnerships']
     });
+
+    mockCreateAnalysisHandler.handle.mockResolvedValue({
+      success: true,
+      data: {
+        analysis: testAnalysis
+      }
+    });
   });
 
   describe('POST /api/analyze', () => {
