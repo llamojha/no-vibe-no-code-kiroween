@@ -1,4 +1,6 @@
-import { createClient, SupabaseClient, SupabaseClientOptions } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient, SupabaseClientOptions } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
 import { getDatabaseConfig } from './environment';
 
 /**
@@ -6,13 +8,13 @@ import { getDatabaseConfig } from './environment';
  * Handles Supabase client instantiation with proper configuration
  */
 
-let supabaseClient: SupabaseClient | null = null;
+let supabaseClient: SupabaseClient<Database> | null = null;
 
 /**
  * Create and configure Supabase client
  * Uses singleton pattern to ensure single client instance
  */
-export function createSupabaseClient(): SupabaseClient {
+export function createSupabaseClient(): SupabaseClient<Database> {
   if (supabaseClient) {
     return supabaseClient;
   }
@@ -21,14 +23,14 @@ export function createSupabaseClient(): SupabaseClient {
   
   const enableAuthDebug = process.env.SUPABASE_AUTH_DEBUG === 'true';
 
-  const authOptions: SupabaseClientOptions['auth'] = {
+  const authOptions: SupabaseClientOptions<Database>['auth'] = {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
     ...(enableAuthDebug ? { debug: true } : {}),
   };
 
-  supabaseClient = createClient(config.supabaseUrl, config.supabaseKey, {
+  supabaseClient = createClient<Database>(config.supabaseUrl, config.supabaseKey, {
     auth: authOptions,
     db: {
       schema: 'public',
@@ -47,14 +49,14 @@ export function createSupabaseClient(): SupabaseClient {
  * Create Supabase client with service role key for admin operations
  * Should only be used in server-side contexts
  */
-export function createSupabaseServiceClient(): SupabaseClient {
+export function createSupabaseServiceClient(): SupabaseClient<Database> {
   const config = getDatabaseConfig();
   
   if (!config.supabaseServiceKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for service client');
   }
 
-  return createClient(config.supabaseUrl, config.supabaseServiceKey, {
+  return createClient<Database>(config.supabaseUrl, config.supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -74,7 +76,7 @@ export function createSupabaseServiceClient(): SupabaseClient {
  * Get the current Supabase client instance
  * Creates one if it doesn't exist
  */
-export function getSupabaseClient(): SupabaseClient {
+export function getSupabaseClient(): SupabaseClient<Database> {
   return supabaseClient || createSupabaseClient();
 }
 

@@ -1,10 +1,11 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { browserSupabase } from "@/lib/supabase/client";
 import {
   mapSavedAnalysesRow,
   mapSavedHackathonAnalysesRow,
   mapSavedFrankensteinIdea,
 } from "@/lib/supabase/mappers";
-import type { SavedAnalysesRow } from "@/lib/supabase/types";
+import type { Database, SavedAnalysesRow } from "@/lib/supabase/types";
 import type {
   UnifiedAnalysisRecord,
   SavedAnalysisRecord,
@@ -213,60 +214,37 @@ export async function loadUnifiedAnalyses(): Promise<{
   }
 
   try {
-    // Load startup idea analyses
-    const { data: startupData, error: startupError } = await supabase
+    // Single round-trip fetch for all analysis types; reduces latency by avoiding
+    // three sequential Supabase queries while keeping per-type transforms intact.
+    const { data, error: unifiedError } = await supabase
       .from("saved_analyses")
       .select("*")
       .eq("user_id", user.id)
-      .eq("analysis_type", "idea")
+      .in("analysis_type", ["idea", "hackathon", "frankenstein"])
       .order("created_at", { ascending: false })
       .returns<SavedAnalysesRow[]>();
 
-    if (startupError) {
-      console.error("Failed to load startup analyses", startupError);
-      throw new Error("Failed to load startup analyses");
+    if (unifiedError) {
+      console.error("Failed to load analyses", unifiedError);
+      throw new Error("Failed to load analyses");
     }
 
-    // Load hackathon analyses
-    const { data: hackathonData, error: hackathonError } = await supabase
-      .from("saved_analyses")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("analysis_type", "hackathon")
-      .order("created_at", { ascending: false })
-      .returns<SavedAnalysesRow[]>();
-
-    if (hackathonError) {
-      console.error("Failed to load hackathon analyses", hackathonError);
-      throw new Error("Failed to load hackathon analyses");
-    }
-
-    // Load Doctor Frankenstein ideas
-    const { data: frankensteinData, error: frankensteinError } = await supabase
-      .from("saved_analyses")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("analysis_type", "frankenstein")
-      .order("created_at", { ascending: false })
-      .returns<SavedAnalysesRow[]>();
-
-    if (frankensteinError) {
-      console.error(
-        "Failed to load Doctor Frankenstein ideas",
-        frankensteinError
-      );
-      throw new Error("Failed to load Doctor Frankenstein ideas");
-    }
+    const rows = data ?? [];
+    const startupRows = rows.filter((row) => row.analysis_type === "idea");
+    const hackathonRows = rows.filter((row) => row.analysis_type === "hackathon");
+    const frankensteinRows = rows.filter(
+      (row) => row.analysis_type === "frankenstein"
+    );
 
     // Transform to unified format
-    const startupAnalyses = (startupData ?? [])
+    const startupAnalyses = startupRows
       .map(mapSavedAnalysesRow)
       .map(transformStartupAnalysis);
 
-    const hackathonAnalyses = (hackathonData ?? [])
+    const hackathonAnalyses = hackathonRows
       .map(mapSavedHackathonAnalysesRow)
       .map(transformHackathonAnalysis);
-    const frankensteinAnalyses = (frankensteinData ?? [])
+    const frankensteinAnalyses = frankensteinRows
       .map(mapSavedFrankensteinIdea)
       .map(transformFrankensteinIdea);
 
@@ -302,65 +280,42 @@ export async function loadUnifiedAnalyses(): Promise<{
  */
 export async function loadUnifiedAnalysesServer(
   userId: string,
-  supabase: any
+  supabase: SupabaseClient<Database>
 ): Promise<{
   data: UnifiedAnalysisRecord[];
   counts: AnalysisCounts;
   error: string | null;
 }> {
   try {
-    // Load startup idea analyses
-    const { data: startupData, error: startupError } = await supabase
+    const { data, error: unifiedError } = await supabase
       .from("saved_analyses")
       .select("*")
       .eq("user_id", userId)
-      .eq("analysis_type", "idea")
-      .order("created_at", { ascending: false });
+      .in("analysis_type", ["idea", "hackathon", "frankenstein"])
+      .order("created_at", { ascending: false })
+      .returns<SavedAnalysesRow[]>();
 
-    if (startupError) {
-      console.error("Failed to load startup analyses", startupError);
-      throw new Error("Failed to load startup analyses");
+    if (unifiedError) {
+      console.error("Failed to load analyses", unifiedError);
+      throw new Error("Failed to load analyses");
     }
 
-    // Load hackathon analyses
-    const { data: hackathonData, error: hackathonError } = await supabase
-      .from("saved_analyses")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("analysis_type", "hackathon")
-      .order("created_at", { ascending: false });
-
-    if (hackathonError) {
-      console.error("Failed to load hackathon analyses", hackathonError);
-      throw new Error("Failed to load hackathon analyses");
-    }
-
-    // Load Doctor Frankenstein ideas
-    const { data: frankensteinData, error: frankensteinError } =
-      await supabase
-        .from("saved_analyses")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("analysis_type", "frankenstein")
-        .order("created_at", { ascending: false });
-
-    if (frankensteinError) {
-      console.error(
-        "Failed to load Doctor Frankenstein ideas",
-        frankensteinError
-      );
-      throw new Error("Failed to load Doctor Frankenstein ideas");
-    }
+    const rows = data ?? [];
+    const startupRows = rows.filter((row) => row.analysis_type === "idea");
+    const hackathonRows = rows.filter((row) => row.analysis_type === "hackathon");
+    const frankensteinRows = rows.filter(
+      (row) => row.analysis_type === "frankenstein"
+    );
 
     // Transform to unified format
-    const startupAnalyses = (startupData ?? [])
+    const startupAnalyses = startupRows
       .map(mapSavedAnalysesRow)
       .map(transformStartupAnalysis);
 
-    const hackathonAnalyses = (hackathonData ?? [])
+    const hackathonAnalyses = hackathonRows
       .map(mapSavedHackathonAnalysesRow)
       .map(transformHackathonAnalysis);
-    const frankensteinAnalyses = (frankensteinData ?? [])
+    const frankensteinAnalyses = frankensteinRows
       .map(mapSavedFrankensteinIdea)
       .map(transformFrankensteinIdea);
 
