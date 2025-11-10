@@ -37,7 +37,8 @@ export {
   getAIServiceConfig,
   checkAIServiceConnection,
   aiServiceConfig,
-  modelConfigs,
+  getModelConfigs,
+  getModelConfigs as modelConfigs,
 } from './ai';
 
 // Feature flag configuration
