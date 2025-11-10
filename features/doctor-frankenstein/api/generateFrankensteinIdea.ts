@@ -1,32 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
+import type { FrankensteinIdeaResult } from "@/lib/types";
 
 export interface FrankensteinElement {
   name: string;
   description?: string;
 }
 
-export interface FrankensteinIdeaResult {
-  idea_title: string;
-  idea_description: string;
-  core_concept: string;
-  problem_statement: string;
-  proposed_solution: string;
-  unique_value_proposition: string;
-  target_audience: string;
-  business_model: string;
-  growth_strategy: string;
-  tech_stack_suggestion: string;
-  risks_and_challenges: string;
-  metrics: {
-    originality_score: number;
-    feasibility_score: number;
-    impact_score: number;
-    scalability_score: number;
-    wow_factor: number;
-  };
-  summary: string;
-  language: string;
-}
+export type { FrankensteinIdeaResult };
 
 export async function generateFrankensteinIdea(
   elements: FrankensteinElement[],

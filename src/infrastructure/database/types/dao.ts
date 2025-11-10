@@ -60,6 +60,7 @@ export interface HackathonAnalysisDAO extends BaseDAO {
  */
 export interface IdeaAnalysisData {
   score: number;
+  finalScore?: number;
   detailedSummary: string;
   criteria: Array<{
     name: string;
@@ -92,6 +93,7 @@ export interface HackathonAnalysisData extends IdeaAnalysisData {
  */
 export interface AnalysisDataDAO {
   score: number;
+  finalScore?: number;
   detailedSummary: string;
   criteria: Array<{
     name: string;
@@ -107,6 +109,7 @@ export interface AnalysisDataDAO {
  */
 export interface HackathonAnalysisDataDAO {
   score: number;
+  finalScore?: number;
   detailedSummary: string;
   criteria: Array<{
     name: string;
@@ -136,10 +139,10 @@ export interface SupportingMaterialsDAO {
  * @param data - The analysis data to check
  * @returns true if the data is IdeaAnalysisData (not hackathon type)
  */
-export function isIdeaAnalysisData(data: any): data is IdeaAnalysisData {
+export function isIdeaAnalysisData(data: unknown): data is IdeaAnalysisData {
   return (
-    data &&
     typeof data === "object" &&
+    data !== null &&
     !("selectedCategory" in data)
   );
 }
@@ -150,11 +153,11 @@ export function isIdeaAnalysisData(data: any): data is IdeaAnalysisData {
  * @returns true if the data is HackathonAnalysisData
  */
 export function isHackathonAnalysisData(
-  data: any
+  data: unknown
 ): data is HackathonAnalysisData {
   return (
-    data &&
     typeof data === "object" &&
+    data !== null &&
     "selectedCategory" in data
   );
 }

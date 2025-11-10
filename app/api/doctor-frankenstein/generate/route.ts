@@ -4,6 +4,8 @@ import { MockModeHelper, MockConfigurationError } from "@/lib/testing/api/mock-m
 import { MockFrankensteinService } from "@/lib/testing/mocks/MockFrankensteinService";
 import { TestDataManager } from "@/lib/testing/TestDataManager";
 import { logger, LogCategory } from "@/lib/logger";
+import type { TestScenario } from "@/lib/testing/types";
+import { TestEnvironmentConfig } from "@/lib/testing/config/test-environment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,8 +49,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Route to mock service when enabled
     if (mockModeStatus.mockMode) {
       const testDataManager = new TestDataManager();
+      const defaultScenario: TestScenario = TestEnvironmentConfig.isValidScenario(config.scenario)
+        ? config.scenario
+        : "success";
       const mockServiceConfig = {
-        defaultScenario: config.scenario as any,
+        defaultScenario,
         enableVariability: false,
         simulateLatency: config.simulateLatency,
         minLatency: 100,

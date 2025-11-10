@@ -818,11 +818,14 @@ private isNewTypeAnalysis(analysis: Analysis): boolean {
 - Added `analysis_type` discriminator column
 - Migrated hackathon analyses to unified table
 - Updated mappers and repositories
-- Deployed to production
-- Verified data integrity
 
 ### 2024-01-16 - Post-Migration Cleanup
 
 - Dropped `saved_hackathon_analyses` table
 - Updated documentation
 - Archived old schema definitions
+
+### 2025-02-21 - Doctor Frankenstein Support
+
+- Added `frankenstein` to the `analysis_type` constraint to allow Doctor Frankenstein reports
+- Created migration `supabase/migrations/202502211200_add_frankenstein_analysis_type.sql`

@@ -5,6 +5,7 @@ import type {
 } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
+import { deriveFivePointScore } from "./scoreUtils";
 
 function transformFrankensteinIdea(
   idea: SavedFrankensteinIdea
@@ -75,7 +76,9 @@ export async function loadUnifiedAnalysesV2(): Promise<{
         category: "idea" as const,
         title: analysis.idea.split("\n")[0].trim() || analysis.idea.trim(),
         createdAt: analysis.createdAt,
-        finalScore: analysis.analysis.finalScore,
+        finalScore: deriveFivePointScore(
+          analysis.analysis as unknown as { finalScore?: number; score?: number }
+        ),
         summary:
           analysis.analysis.viabilitySummary ||
           analysis.analysis.detailedSummary,
@@ -92,7 +95,9 @@ export async function loadUnifiedAnalysesV2(): Promise<{
             analysis.projectDescription.split("\n")[0].trim() ||
             analysis.projectDescription.trim(),
           createdAt: analysis.createdAt,
-          finalScore: analysis.analysis.finalScore,
+          finalScore: deriveFivePointScore(
+            analysis.analysis as unknown as { finalScore?: number; score?: number }
+          ),
           summary:
             analysis.analysis.viabilitySummary ||
             analysis.analysis.detailedSummary,
@@ -164,7 +169,7 @@ export async function loadUnifiedAnalysesV2(): Promise<{
         category: analysis.category || "idea",
         title: analysis.title || "Untitled",
         createdAt: analysis.createdAt,
-        finalScore: analysis.score,
+        finalScore: deriveFivePointScore({ score: analysis.score }),
         summary: analysis.summary || "No summary available",
         audioBase64: undefined, // Not included in optimized response
         originalData: analysis,
@@ -227,7 +232,7 @@ export async function loadUnifiedAnalysesServerV2(baseUrl: string): Promise<{
         category: analysis.category || "idea",
         title: analysis.title || "Untitled",
         createdAt: analysis.createdAt,
-        finalScore: analysis.score,
+        finalScore: deriveFivePointScore({ score: analysis.score }),
         summary: analysis.summary || "No summary available",
         audioBase64: undefined, // Not included in optimized response
         originalData: analysis,

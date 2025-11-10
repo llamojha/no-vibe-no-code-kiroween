@@ -252,8 +252,18 @@ export class AnalysisMapper {
 
     const analysisObj = analysis as Record<string, unknown>;
 
+    const score =
+      typeof analysisObj.score === "number" ? analysisObj.score : 0;
+    const finalScore =
+      typeof analysisObj.finalScore === "number"
+        ? analysisObj.finalScore
+        : score > 5
+        ? this.toFivePointScoreValue(score)
+        : score;
+
     return {
-      score: typeof analysisObj.score === "number" ? analysisObj.score : 0,
+      score,
+      finalScore,
       detailedSummary:
         typeof analysisObj.detailedSummary === "string"
           ? analysisObj.detailedSummary
@@ -270,6 +280,7 @@ export class AnalysisMapper {
   private mapAnalysisData(analysis: Analysis): AnalysisDataDAO {
     return {
       score: analysis.score.value,
+      finalScore: this.toFivePointScoreValue(analysis.score.value),
       detailedSummary: analysis.feedback || "",
       criteria: analysis.suggestions.map((suggestion, index) => ({
         name: `Suggestion ${index + 1}`,
@@ -295,6 +306,7 @@ export class AnalysisMapper {
   private mapIdeaAnalysisData(analysis: Analysis): IdeaAnalysisData {
     return {
       score: analysis.score.value,
+      finalScore: this.toFivePointScoreValue(analysis.score.value),
       detailedSummary: analysis.feedback || "",
       criteria: analysis.suggestions.map((suggestion, index) => ({
         name: `Criterion ${index + 1}`,
@@ -312,6 +324,7 @@ export class AnalysisMapper {
   private mapHackathonAnalysisData(analysis: Analysis): HackathonAnalysisData {
     return {
       score: analysis.score.value,
+      finalScore: this.toFivePointScoreValue(analysis.score.value),
       detailedSummary: analysis.feedback || "",
       criteria: analysis.suggestions.map((suggestion, index) => ({
         name: `Criterion ${index + 1}`,
@@ -321,5 +334,17 @@ export class AnalysisMapper {
       locale: analysis.locale.value,
       selectedCategory: (analysis.category?.value as any) || "costume-contest",
     };
+  }
+
+  /**
+   * Convert the domain's 0-100 score into a normalized 0-5 value.
+   */
+  private toFivePointScoreValue(rawScore: number): number {
+    if (!Number.isFinite(rawScore)) {
+      return 0;
+    }
+    const normalized = rawScore > 5 ? rawScore / 20 : rawScore;
+    const clamped = Math.max(0, Math.min(normalized, 5));
+    return Number(clamped.toFixed(1));
   }
 }

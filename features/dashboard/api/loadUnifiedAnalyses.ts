@@ -15,6 +15,7 @@ import type {
 } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
+import { deriveFivePointScore } from "./scoreUtils";
 
 /**
  * Transform a startup idea analysis to unified format
@@ -22,6 +23,10 @@ import { localStorageService } from "@/lib/localStorage";
 function transformStartupAnalysis(
   analysis: SavedAnalysisRecord
 ): UnifiedAnalysisRecord {
+  const finalScore = deriveFivePointScore(
+    analysis.analysis as unknown as { finalScore?: number; score?: number }
+  );
+
   // Extract title from idea text (first line or truncated)
   const ideaText = analysis.idea || "";
   const firstLine = ideaText.split("\n")[0].trim();
@@ -38,7 +43,7 @@ function transformStartupAnalysis(
     category: "idea",
     title: truncatedTitle,
     createdAt: analysis.createdAt,
-    finalScore: analysis.analysis.finalScore,
+    finalScore,
     summary:
       analysis.analysis.viabilitySummary || analysis.analysis.detailedSummary,
     audioBase64: analysis.audioBase64,
@@ -52,6 +57,10 @@ function transformStartupAnalysis(
 function transformHackathonAnalysis(
   analysis: SavedHackathonAnalysis
 ): UnifiedAnalysisRecord {
+  const finalScore = deriveFivePointScore(
+    analysis.analysis as unknown as { finalScore?: number; score?: number }
+  );
+
   // Extract title from project description (first line or truncated)
   const projectText = analysis.projectDescription || "";
   const firstLine = projectText.split("\n")[0].trim();
@@ -68,7 +77,7 @@ function transformHackathonAnalysis(
     category: "kiroween",
     title: truncatedTitle,
     createdAt: analysis.createdAt,
-    finalScore: analysis.analysis.finalScore,
+    finalScore,
     summary:
       analysis.analysis.viabilitySummary || analysis.analysis.detailedSummary,
     audioBase64: analysis.audioBase64,

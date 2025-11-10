@@ -13,32 +13,33 @@ interface AnalysisCardProps {
 }
 
 const ScoreRing: React.FC<{ score: number; t: (key: string, params?: Record<string, string | number>) => string }> = ({ score, t }) => {
+  const normalizedScore = Number.isFinite(score) ? Math.min(Math.max(score, 0), 5) : 0;
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 5) * circumference;
+  const offset = circumference - (normalizedScore / 5) * circumference;
 
   const scoreColorClass =
-    score >= 4
+    normalizedScore >= 4
       ? "text-green-400"
-      : score >= 2.5
+      : normalizedScore >= 2.5
       ? "text-yellow-400"
       : "text-red-400";
   const ringColorClass =
-    score >= 4
+    normalizedScore >= 4
       ? "stroke-green-400"
-      : score >= 2.5
+      : normalizedScore >= 2.5
       ? "stroke-yellow-400"
       : "stroke-red-400";
 
   const scoreCategory =
-    score >= 4 ? t('scoreExcellent') : score >= 2.5 ? t('scoreGood') : t('scoreNeedsImprovement');
+    normalizedScore >= 4 ? t('scoreExcellent') : normalizedScore >= 2.5 ? t('scoreGood') : t('scoreNeedsImprovement');
 
   return (
     <div
       className={`relative flex-shrink-0 w-16 h-16 flex items-center justify-center font-mono ${scoreColorClass}`}
       data-testid="analysis-score"
       role="img"
-      aria-label={t('analysisScoreLabel', { score: score.toFixed(1), category: scoreCategory })}
+      aria-label={t('analysisScoreLabel', { score: normalizedScore.toFixed(1), category: scoreCategory })}
     >
       <svg
         className="absolute w-full h-full"
@@ -67,7 +68,7 @@ const ScoreRing: React.FC<{ score: number; t: (key: string, params?: Record<stri
         />
       </svg>
       <span className="text-lg font-bold" aria-hidden="true">
-        {score.toFixed(1)}
+        {normalizedScore.toFixed(1)}
       </span>
     </div>
   );

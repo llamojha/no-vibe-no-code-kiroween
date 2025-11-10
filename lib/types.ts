@@ -189,6 +189,29 @@ export interface TechItem {
   category: string;
 }
 
+export interface FrankensteinIdeaResult {
+  idea_title: string;
+  idea_description: string;
+  core_concept: string;
+  problem_statement: string;
+  proposed_solution: string;
+  unique_value_proposition: string;
+  target_audience: string;
+  business_model: string;
+  growth_strategy: string;
+  tech_stack_suggestion: string;
+  risks_and_challenges: string;
+  metrics: {
+    originality_score: number;
+    feasibility_score: number;
+    impact_score: number;
+    scalability_score: number;
+    wow_factor: number;
+  };
+  summary: string;
+  language: string;
+}
+
 export interface FrankensteinAnalysis {
   ideaName: string;
   description: string;
@@ -196,7 +219,7 @@ export interface FrankensteinAnalysis {
   targetMarket: string;
   uniqueValueProposition: string;
   language: "en" | "es";
-  fullAnalysis?: any; // Store complete FrankensteinIdeaResult
+  fullAnalysis?: FrankensteinIdeaResult;
   allSelectedTechnologies?: TechItem[]; // Store all selected technologies
 }
 

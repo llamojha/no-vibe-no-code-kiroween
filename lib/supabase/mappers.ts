@@ -3,7 +3,6 @@ import type {
   SavedAnalysisRecord,
   SavedHackathonAnalysis,
   HackathonAnalysis,
-  ProjectSubmission,
   SavedFrankensteinIdea,
   FrankensteinAnalysis,
 } from "@/lib/types";
