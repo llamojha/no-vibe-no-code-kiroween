@@ -208,6 +208,32 @@ const KiroweenAnalyzerView: React.FC = () => {
     try {
       const analysisResult = await analyzeHackathonProject(submission, locale);
       setNewAnalysis(analysisResult);
+      
+      // If this came from a Frankenstein, update it automatically with the score
+      if (frankensteinId && sourceFromUrl === 'frankenstein') {
+        try {
+          const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
+          const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
+          
+          const score = deriveFivePointScore(analysisResult as any);
+          
+          console.log('Auto-updating Frankenstein with score:', {
+            frankensteinId,
+            score,
+            rawFinalScore: analysisResult.finalScore,
+          });
+          
+          await updateFrankensteinValidation(frankensteinId, 'kiroween', {
+            analysisId: 'temp-' + Date.now(), // Temporary ID since we're not saving the analysis
+            score,
+          });
+          
+          setIsReportSaved(true); // Mark as "saved" to show success message
+        } catch (err) {
+          console.error('Failed to update Frankenstein with score:', err);
+        }
+      }
+      
       if (savedId) {
         router.replace("/kiroween-analyzer");
       }
@@ -228,6 +254,8 @@ const KiroweenAnalyzerView: React.FC = () => {
     router,
     savedId,
     savedRecordAudio,
+    frankensteinId,
+    sourceFromUrl,
     savedRecordId,
   ]);
 
@@ -264,14 +292,20 @@ const KiroweenAnalyzerView: React.FC = () => {
       
       // If this came from a Frankenstein, update it with the validation
       if (frankensteinId && sourceFromUrl === 'frankenstein') {
-        console.log('Updating Frankenstein with validation:', {
-          frankensteinId,
-          analysisId: data.id,
-          score: analysisToSave.finalScore || 0,
-        });
         try {
           const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
-          const score = analysisToSave.finalScore || 0;
+          const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
+          
+          // Use deriveFivePointScore to get the correct 0-5 score
+          const score = deriveFivePointScore(analysisToSave as any);
+          
+          console.log('Updating Frankenstein with validation:', {
+            frankensteinId,
+            analysisId: data.id,
+            score,
+            rawFinalScore: analysisToSave.finalScore,
+          });
+          
           const result = await updateFrankensteinValidation(frankensteinId, 'kiroween', {
             analysisId: data.id,
             score,
@@ -423,18 +457,32 @@ const KiroweenAnalyzerView: React.FC = () => {
           
           {/* Frankenstein Origin Badge */}
           {sourceFromUrl === 'frankenstein' && !savedId && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-900/50 to-purple-900/50 border border-green-500 rounded-lg">
-              <span className="text-2xl">🧟</span>
-              <div className="text-left">
-                <p className="text-sm font-bold text-green-400">
-                  {locale === 'es' ? 'Remix de Doctor Frankenstein' : 'Remix from Doctor Frankenstein'}
-                </p>
-                <p className="text-xs text-green-300">
-                  {frankensteinMode === 'aws' 
-                    ? (locale === 'es' ? 'Combinación de AWS Services' : 'AWS Services Combination')
-                    : (locale === 'es' ? 'Combinación de Tech Companies' : 'Tech Companies Combination')}
-                </p>
+            <div className="mt-4 space-y-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-900/50 to-purple-900/50 border border-green-500 rounded-lg">
+                <span className="text-2xl">🧟</span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-green-400">
+                    {locale === 'es' ? 'Remix de Doctor Frankenstein' : 'Remix from Doctor Frankenstein'}
+                  </p>
+                  <p className="text-xs text-green-300">
+                    {frankensteinMode === 'aws' 
+                      ? (locale === 'es' ? 'Combinación de AWS Services' : 'AWS Services Combination')
+                      : (locale === 'es' ? 'Combinación de Tech Companies' : 'Tech Companies Combination')}
+                  </p>
+                </div>
               </div>
+              {isReportSaved && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 border border-green-600 rounded-lg">
+                  <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <p className="text-sm text-green-300">
+                    {locale === 'es' 
+                      ? '✓ Puntuación guardada en tu Frankenstein' 
+                      : '✓ Score saved to your Frankenstein'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </header>
@@ -507,7 +555,7 @@ const KiroweenAnalyzerView: React.FC = () => {
               </div>
               <HackathonAnalysisDisplay
                 analysis={analysisToDisplay}
-                onSave={handleSaveReport}
+                onSave={sourceFromUrl === 'frankenstein' ? undefined : handleSaveReport}
                 isSaved={isReportSaved}
                 savedAnalysisId={savedRecordId || undefined}
                 savedAudioBase64={generatedAudio}
