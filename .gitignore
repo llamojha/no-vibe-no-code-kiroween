@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo*
 #NEXTJS
 .next/*
 out/

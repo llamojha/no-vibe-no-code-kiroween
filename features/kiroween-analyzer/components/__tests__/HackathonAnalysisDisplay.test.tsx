@@ -1,8 +1,34 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 import HackathonAnalysisDisplay from "../HackathonAnalysisDisplay";
 import type { HackathonAnalysis } from "@/lib/types";
+
+// Mock the auth context
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: () => ({
+    session: null,
+    user: null,
+    loading: false,
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  }),
+}));
+
+// Mock the locale context
+vi.mock("@/features/locale/context/LocaleContext", () => ({
+  useLocale: () => ({
+    locale: "en",
+    setLocale: vi.fn(),
+    t: (key: string) => key,
+  }),
+}));
+
+// Mock feature flags
+vi.mock("@/lib/featureFlags", () => ({
+  isEnabled: () => false,
+}));
 
 const mockAnalysis: HackathonAnalysis = {
   finalScore: 4.2,
@@ -133,16 +159,16 @@ const mockAnalysis: HackathonAnalysis = {
 
 const mockProps = {
   analysis: mockAnalysis,
-  onRefineSuggestion: jest.fn(),
+  onRefineSuggestion: vi.fn(),
   addedSuggestions: [],
-  onSave: jest.fn(),
+  onSave: vi.fn(),
   isSaved: false,
-  onGoToDashboard: jest.fn(),
+  onGoToDashboard: vi.fn(),
 };
 
 describe("HackathonAnalysisDisplay", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders analysis results correctly", () => {
@@ -244,5 +270,74 @@ describe("HackathonAnalysisDisplay", () => {
     expect(screen.getByText(/category optimization/i)).toBeInTheDocument();
     expect(screen.getByText(/kiro integration tips/i)).toBeInTheDocument();
     expect(screen.getByText(/competition strategy/i)).toBeInTheDocument();
+  });
+
+  describe("ScoreGauge Integration", () => {
+    it("should render ScoreGauge with correct score prop", () => {
+      const { getByTestId } = render(
+        <HackathonAnalysisDisplay {...mockProps} />
+      );
+
+      const scoreValue = getByTestId("score-value");
+      expect(scoreValue).toBeInTheDocument();
+      expect(scoreValue).toHaveTextContent("4.2");
+    });
+
+    it("should render ScoreGauge with size={160}", () => {
+      const { container } = render(<HackathonAnalysisDisplay {...mockProps} />);
+
+      // Find the gauge container div
+      const gaugeContainer = container.querySelector(
+        ".relative.flex.items-center.justify-center.font-mono"
+      );
+      expect(gaugeContainer).toBeInTheDocument();
+      expect(gaugeContainer).toHaveStyle({ width: "160px", height: "160px" });
+    });
+
+    it("should display gauge within full analysis context", () => {
+      const { getByTestId, getByText } = render(
+        <HackathonAnalysisDisplay {...mockProps} />
+      );
+
+      // Verify gauge is present
+      const scoreValue = getByTestId("score-value");
+      expect(scoreValue).toBeInTheDocument();
+
+      // Verify it's within the Final Score section
+      expect(getByText(/viability summary/i)).toBeInTheDocument();
+      expect(getByText(/strong potential for success/i)).toBeInTheDocument();
+
+      // Verify gauge displays correct score
+      expect(scoreValue).toHaveTextContent("4.2");
+    });
+
+    it("should verify no layout regressions in Final Score section", () => {
+      const { container, getByTestId, getByText } = render(
+        <HackathonAnalysisDisplay {...mockProps} />
+      );
+
+      // Verify gauge is present
+      const scoreValue = getByTestId("score-value");
+      expect(scoreValue).toBeInTheDocument();
+
+      // Verify Final Score section structure
+      const finalScoreSection = container.querySelector(
+        ".bg-gradient-to-r.from-purple-500\\/20.to-orange-500\\/20"
+      );
+      expect(finalScoreSection).toBeInTheDocument();
+
+      // Verify gauge container is centered
+      const gaugeContainer = container.querySelector(
+        ".flex.flex-col.items-center.justify-center"
+      );
+      expect(gaugeContainer).toBeInTheDocument();
+
+      // Verify text labels are present
+      expect(getByText(/average of all criteria/i)).toBeInTheDocument();
+      expect(getByText(/out of five/i)).toBeInTheDocument();
+
+      // Verify viability summary is present
+      expect(getByText(/strong potential for success/i)).toBeInTheDocument();
+    });
   });
 });
