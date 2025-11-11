@@ -13,18 +13,26 @@ import { authenticateRequest } from "../middleware/AuthMiddleware";
 import { GoogleAIAdapter } from "../../external/ai/GoogleAIAdapter";
 import { Locale } from "@/src/domain/value-objects";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
+import { TestDataManager } from "@/lib/testing/TestDataManager";
+import { TestEnvironmentConfig } from "@/lib/testing/config/test-environment";
+import type { TestScenario } from "@/lib/testing/types";
+import type { HackathonAnalysis } from "@/lib/types";
 
 /**
  * Controller for hackathon analysis-related API endpoints
  * Handles HTTP requests and delegates to application layer handlers
  */
 export class HackathonController {
+  private readonly hackathonMockData: TestDataManager;
+
   constructor(
     private readonly createHackathonAnalysisHandler: CreateHackathonAnalysisHandler,
     private readonly updateHackathonAnalysisHandler: UpdateHackathonAnalysisHandler,
     private readonly getHackathonLeaderboardHandler: GetHackathonLeaderboardHandler,
     private readonly searchHackathonAnalysesHandler: SearchHackathonAnalysesHandler
-  ) {}
+  ) {
+    this.hackathonMockData = new TestDataManager();
+  }
 
   /**
    * Analyze hackathon project
@@ -73,53 +81,32 @@ export class HackathonController {
       );
     }
 
-    // Return mock hackathon analysis data
-    const mockAnalysis = {
-      score: 85,
-      strengths: [
-        "Innovative use of AI technology",
-        "Strong technical implementation",
-        "Clear problem-solution fit",
-        "Good use of Kiro for development"
-      ],
-      weaknesses: [
-        "Could benefit from more user testing",
-        "Documentation could be more comprehensive"
-      ],
-      opportunities: [
-        "Potential for scaling to enterprise",
-        "Could integrate with more platforms"
-      ],
-      threats: [
-        "Competitive market space",
-        "Rapid technology changes"
-      ],
-      recommendations: [
-        "Focus on user experience improvements",
-        "Build a strong community around the project",
-        "Consider monetization strategies early"
-      ],
-      categoryRecommendation: {
-        category: "best-use-of-ai",
-        confidence: 0.92,
-        reasoning: "Project demonstrates excellent AI integration and innovative problem-solving"
-      },
-      competitiveAdvantage: {
-        score: 78,
-        factors: [
-          "Unique approach to the problem",
-          "Strong technical execution",
-          "Good market timing"
-        ]
-      },
-      marketAnalysis: {
-        marketSize: "Large and growing",
-        competition: "Moderate",
-        barriers: "Low to medium"
-      }
-    };
+    const scenario = resolveMockScenario();
+    let mockResponse = this.hackathonMockData.getMockResponse<HackathonAnalysis>(
+      "hackathon",
+      scenario
+    );
 
-    return NextResponse.json(mockAnalysis);
+    mockResponse = this.hackathonMockData.customizeMockResponse(
+      mockResponse,
+      "hackathon",
+      {
+        locale,
+        input: {
+          projectDescription: submission.description,
+          supportingMaterials: submission.supportingMaterials,
+        },
+      }
+    );
+
+    if (mockResponse.delay && mockResponse.delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, mockResponse.delay));
+    }
+
+    return NextResponse.json(mockResponse.data, {
+      status: mockResponse.statusCode,
+      headers: mockResponse.headers,
+    });
   }
 
   /**
@@ -296,4 +283,16 @@ export class HackathonController {
       },
     });
   }
+
+}
+
+function resolveMockScenario(): TestScenario {
+  const config = TestEnvironmentConfig.getCurrentConfig();
+  const scenario = config.scenario;
+
+  if (TestEnvironmentConfig.isValidScenario(scenario)) {
+    return scenario as TestScenario;
+  }
+
+  return "success";
 }

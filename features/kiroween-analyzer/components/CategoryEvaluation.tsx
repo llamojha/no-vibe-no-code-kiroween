@@ -3,6 +3,7 @@
 import React from "react";
 import { CategoryAnalysis, KiroweenCategory } from "@/lib/types";
 import { useLocale } from "@/features/locale/context/LocaleContext";
+import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 
 interface CategoryEvaluationProps {
   categoryAnalysis: CategoryAnalysis;
@@ -40,86 +41,22 @@ const getCategoryInfo = (
   },
 });
 
-const FitScoreGauge: React.FC<{ score: number; color: string }> = ({
-  score,
-  color,
-}) => {
-  // Convert 0-10 input score to 0-5 scale with 0.5 increments
-  const fiveScaleRaw = score / 2;
-  const fiveScale = Math.round(fiveScaleRaw / 0.5) * 0.5;
-  const percentage = (fiveScale / 5) * 100;
-  const strokeColorClass =
-    fiveScale >= 4
-      ? "stroke-green-400"
-      : fiveScale >= 3.5
-      ? "stroke-yellow-400"
-      : fiveScale >= 2.5
-      ? "stroke-orange-400"
-      : "stroke-red-400";
-  const textColorClass =
-    fiveScale >= 4
-      ? "text-green-400"
-      : fiveScale >= 3.5
-      ? "text-yellow-400"
-      : fiveScale >= 2.5
-      ? "text-orange-400"
-      : "text-red-400";
-
-  return (
-    <div className="relative flex items-center justify-center w-24 h-24">
-      <div
-        className={`absolute text-2xl font-bold font-mono ${textColorClass}`}
-        style={{ textShadow: `0 0 10px currentColor` }}
-      >
-        {fiveScale.toFixed(1)}
-      </div>
-      <svg className="w-full h-full" viewBox="0 0 80 80">
-        {/* Background circle */}
-        <circle
-          cx="40"
-          cy="40"
-          r="32"
-          fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth="4"
-        />
-
-        {/* Progress circle */}
-        <circle
-          cx="40"
-          cy="40"
-          r="32"
-          fill="none"
-          strokeWidth="4"
-          strokeDasharray={`${(percentage / 100) * 201.06} 201.06`}
-          strokeDashoffset="50.27"
-          className={strokeColorClass}
-          strokeLinecap="round"
-          style={{
-            transition: "stroke-dasharray 1s ease-out",
-            transform: "rotate(-90deg)",
-            transformOrigin: "40px 40px",
-          }}
-        />
-      </svg>
-    </div>
-  );
-};
-
 const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
   categoryAnalysis,
 }) => {
   const { t } = useLocale();
-  
+
   // Handle undefined categoryAnalysis
   if (!categoryAnalysis) {
     return (
       <div className="bg-black/40 p-6 rounded-lg border border-slate-700">
-        <p className="text-slate-400 text-center">{t("noCategoryAnalysisAvailable") || "No category analysis available"}</p>
+        <p className="text-slate-400 text-center">
+          {t("noCategoryAnalysisAvailable") || "No category analysis available"}
+        </p>
       </div>
     );
   }
-  
+
   const { evaluations, bestMatch, bestMatchReason } = categoryAnalysis;
   const CATEGORY_INFO = getCategoryInfo(t);
 
@@ -157,26 +94,30 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
 
   // Ensure we always have all four categories represented
   const ALL_CATEGORIES: KiroweenCategory[] = [
-    'resurrection',
-    'frankenstein',
-    'skeleton-crew',
-    'costume-contest',
+    "resurrection",
+    "frankenstein",
+    "skeleton-crew",
+    "costume-contest",
   ];
 
   const normalizedEvaluations = Array.isArray(evaluations) ? evaluations : [];
-  const evalByCategory = new Map<KiroweenCategory, typeof normalizedEvaluations[number]>();
+  const evalByCategory = new Map<
+    KiroweenCategory,
+    (typeof normalizedEvaluations)[number]
+  >();
   for (const ev of normalizedEvaluations) {
     const norm = normalizeCategory(ev.category);
     if (norm) evalByCategory.set(norm, ev);
   }
 
-  const fullEvaluations = ALL_CATEGORIES.map((cat) =>
-    evalByCategory.get(cat) || {
-      category: cat,
-      fitScore: 0,
-      explanation: t('notEvaluated') || 'Not evaluated',
-      improvementSuggestions: [],
-    }
+  const fullEvaluations = ALL_CATEGORIES.map(
+    (cat) =>
+      evalByCategory.get(cat) || {
+        category: cat,
+        fitScore: 0,
+        explanation: t("notEvaluated") || "Not evaluated",
+        improvementSuggestions: [],
+      }
   );
 
   // Determine best match strictly by highest fitScore, normalizing category keys
@@ -225,15 +166,16 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {fullEvaluations.map((evaluation) => {
           const normalizedCategory = normalizeCategory(evaluation.category);
-          const categoryInfo =
-            (normalizedCategory && CATEGORY_INFO[normalizedCategory]) || {
-              emoji: "❓",
-              label: evaluation.category,
-              description: "Unknown category",
-              color: "text-gray-400",
-            };
+          const categoryInfo = (normalizedCategory &&
+            CATEGORY_INFO[normalizedCategory]) || {
+            emoji: "❓",
+            label: evaluation.category,
+            description: "Unknown category",
+            color: "text-gray-400",
+          };
           const isBestMatch =
-            normalizedCategory !== null && normalizedCategory === validBestMatch;
+            normalizedCategory !== null &&
+            normalizedCategory === validBestMatch;
 
           return (
             <div
@@ -284,10 +226,7 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
                   </p>
                   <p className="text-xs text-slate-500">{t("outOfFive")}</p>
                 </div>
-                <FitScoreGauge
-                  score={evaluation.fitScore}
-                  color={categoryInfo.color}
-                />
+                <ScoreGauge score={evaluation.fitScore / 2} size={96} />
               </div>
 
               {/* Explanation */}
