@@ -26,6 +26,10 @@ const KiroweenAnalyzerView: React.FC = () => {
   const searchParams = useSearchParams();
   const savedId = searchParams.get("savedId");
   const mode = searchParams.get("mode");
+  const ideaFromUrl = searchParams.get("idea");
+  const sourceFromUrl = searchParams.get("source");
+  const frankensteinMode = searchParams.get("mode"); // companies or aws
+  const frankensteinId = searchParams.get("frankensteinId"); // ID of the original Frankenstein
 
   const { locale, t } = useLocale();
   const { session, supabase, isLoading: isAuthLoading } = useAuth();
@@ -64,13 +68,26 @@ const KiroweenAnalyzerView: React.FC = () => {
     t("spookyLoaderMessage6"),
   ];
 
+  // Pre-fill idea from Doctor Frankenstein if provided
+  useEffect(() => {
+    if (ideaFromUrl && sourceFromUrl === 'frankenstein' && !savedId) {
+      setSubmission({
+        description: decodeURIComponent(ideaFromUrl),
+        supportingMaterials: {},
+      });
+    }
+  }, [ideaFromUrl, sourceFromUrl, savedId]);
+
   useEffect(() => {
     if (!savedId) {
       setSavedAnalysisRecord(null);
-      setSubmission({
-        description: "",
-        supportingMaterials: {},
-      });
+      // Don't reset if we have an idea from Frankenstein
+      if (!ideaFromUrl || sourceFromUrl !== 'frankenstein') {
+        setSubmission({
+          description: "",
+          supportingMaterials: {},
+        });
+      }
       setIsReportSaved(false);
       setGeneratedAudio(null);
       return;
@@ -244,6 +261,35 @@ const KiroweenAnalyzerView: React.FC = () => {
       setNewAnalysis(null);
       setAddedSuggestions([]);
       setGeneratedAudio(data.audioBase64 ?? null);
+      
+      // If this came from a Frankenstein, update it with the validation
+      if (frankensteinId && sourceFromUrl === 'frankenstein') {
+        console.log('Updating Frankenstein with validation:', {
+          frankensteinId,
+          analysisId: data.id,
+          score: analysisToSave.finalScore || 0,
+        });
+        try {
+          const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
+          const score = analysisToSave.finalScore || 0;
+          const result = await updateFrankensteinValidation(frankensteinId, 'kiroween', {
+            analysisId: data.id,
+            score,
+          });
+          console.log('Frankenstein update result:', result);
+        } catch (err) {
+          console.error('Failed to update Frankenstein with validation:', err);
+          // Don't show error to user, this is a background operation
+        }
+      } else {
+        console.log('Not updating Frankenstein:', {
+          frankensteinId,
+          sourceFromUrl,
+          hasId: !!frankensteinId,
+          isFromFrankenstein: sourceFromUrl === 'frankenstein',
+        });
+      }
+      
       router.replace(
         `/kiroween-analyzer?savedId=${encodeURIComponent(data.id)}&mode=view`
       );
@@ -374,6 +420,23 @@ const KiroweenAnalyzerView: React.FC = () => {
           <p className="mt-2 text-lg text-slate-400">
             {t("kiroweenAnalyzerSubtitle")}
           </p>
+          
+          {/* Frankenstein Origin Badge */}
+          {sourceFromUrl === 'frankenstein' && !savedId && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-900/50 to-purple-900/50 border border-green-500 rounded-lg">
+              <span className="text-2xl">🧟</span>
+              <div className="text-left">
+                <p className="text-sm font-bold text-green-400">
+                  {locale === 'es' ? 'Remix de Doctor Frankenstein' : 'Remix from Doctor Frankenstein'}
+                </p>
+                <p className="text-xs text-green-300">
+                  {frankensteinMode === 'aws' 
+                    ? (locale === 'es' ? 'Combinación de AWS Services' : 'AWS Services Combination')
+                    : (locale === 'es' ? 'Combinación de Tech Companies' : 'Tech Companies Combination')}
+                </p>
+              </div>
+            </div>
+          )}
         </header>
 
         <main className="w-full">

@@ -149,3 +149,94 @@ export async function loadFrankensteinIdea(
 
   return { data: mapSavedFrankensteinIdea(data as SavedAnalysesRow), error: null };
 }
+
+/**
+ * Update a Frankenstein idea with validation results
+ * Supports both production (Supabase) and local dev mode (localStorage)
+ */
+export async function updateFrankensteinValidation(
+  frankensteinId: string,
+  validationType: 'kiroween' | 'analyzer',
+  validationData: {
+    analysisId: string;
+    score: number;
+  }
+): Promise<{ success: boolean; error: string | null }> {
+  // Check if we're in local dev mode
+  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+
+  if (isLocalDevMode) {
+    try {
+      const idea = await localStorageService.getFrankensteinIdea(frankensteinId);
+      
+      if (!idea) {
+        return { success: false, error: "Frankenstein idea not found" };
+      }
+
+      // Update the validation data
+      const updatedAnalysis = {
+        ...idea.analysis,
+        ...(validationType === 'kiroween' 
+          ? { validatedWithKiroween: { ...validationData, validatedAt: new Date().toISOString() } }
+          : { validatedWithAnalyzer: { ...validationData, validatedAt: new Date().toISOString() } }
+        ),
+      };
+
+      const updatedIdea = { ...idea, analysis: updatedAnalysis };
+      await localStorageService.saveFrankensteinIdea(updatedIdea);
+
+      return { success: true, error: null };
+    } catch (error) {
+      console.error("Failed to update Frankenstein validation in local storage", error);
+      return {
+        success: false,
+        error: "Failed to update validation. Please try again.",
+      };
+    }
+  }
+
+  // Production: use Supabase
+  const supabase = browserSupabase();
+  
+  // First, get the current record
+  const { data: currentData, error: fetchError } = await supabase
+    .from("saved_analyses")
+    .select("*")
+    .eq("id", frankensteinId)
+    .eq("analysis_type", "frankenstein")
+    .single();
+
+  if (fetchError || !currentData) {
+    console.error("Failed to fetch Frankenstein idea for update", fetchError);
+    return {
+      success: false,
+      error: fetchError?.message || "Frankenstein idea not found",
+    };
+  }
+
+  // Update the analysis with validation data
+  const currentRow = currentData as SavedAnalysesRow;
+  const currentAnalysis = (currentRow.analysis || {}) as Record<string, unknown>;
+  const updatedAnalysis = {
+    ...currentAnalysis,
+    ...(validationType === 'kiroween' 
+      ? { validatedWithKiroween: { ...validationData, validatedAt: new Date().toISOString() } }
+      : { validatedWithAnalyzer: { ...validationData, validatedAt: new Date().toISOString() } }
+    ),
+  };
+
+  const { error: updateError } = await supabase
+    .from("saved_analyses")
+    .update({ analysis: updatedAnalysis as unknown as Json })
+    .eq("id", frankensteinId);
+
+  if (updateError) {
+    console.error("Failed to update Frankenstein validation", updateError);
+    return {
+      success: false,
+      error: updateError.message || "Failed to update validation",
+    };
+  }
+
+  return { success: true, error: null };
+}

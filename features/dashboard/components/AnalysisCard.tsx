@@ -214,13 +214,30 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
     }
   };
 
+  // Check if this is a Frankenstein idea without validation (no score)
+  const isFrankensteinWithoutScore = analysis.category === "frankenstein" && (!analysis.finalScore || analysis.finalScore === 0);
+
   return (
     <div
       className="bg-primary/40 border border-slate-700 p-4 flex flex-col sm:flex-row gap-4 sm:items-center animate-fade-in"
       data-testid="analysis-item"
       data-analysis-category={analysis.category}
     >
-      <ScoreRing score={analysis.finalScore} t={t} />
+      {isFrankensteinWithoutScore ? (
+        <div
+          className="relative flex-shrink-0 w-16 h-16 flex flex-col items-center justify-center font-mono text-purple-400 border-2 border-dashed border-purple-500 rounded-lg"
+          data-testid="analysis-no-score"
+          role="img"
+          aria-label={t('notValidatedYet') || 'Not validated yet'}
+        >
+          <span className="text-2xl" aria-hidden="true">🧟</span>
+          <span className="text-[8px] uppercase font-bold mt-0.5" aria-hidden="true">
+            {t('noScore') || 'No Score'}
+          </span>
+        </div>
+      ) : (
+        <ScoreRing score={analysis.finalScore} t={t} />
+      )}
 
       <div className="flex-1">
         <div className="flex items-start gap-2 mb-2">
