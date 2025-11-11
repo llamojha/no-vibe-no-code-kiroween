@@ -10,6 +10,7 @@ import CollapsibleSection from "@/features/analyzer/components/CollapsibleSectio
 import CategoryEvaluation from "./CategoryEvaluation";
 import CriteriaScoring from "./CriteriaScoring";
 import HackathonExportControl from "./HackathonExportControl";
+import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 
 interface HackathonAnalysisDisplayProps {
   analysis: HackathonAnalysis;
@@ -65,62 +66,6 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
   };
 
   const finalScore = computeFinalScore();
-
-  const ScoreGauge: React.FC<{ score: number }> = ({ score }) => {
-    const percentage = (score / 5) * 100;
-    const strokeColorClass =
-      score >= 4
-        ? "stroke-green-400"
-        : score >= 3.5
-        ? "stroke-yellow-400"
-        : score >= 2.5
-        ? "stroke-orange-400"
-        : "stroke-red-400";
-    const textColorClass =
-      score >= 4
-        ? "text-green-400"
-        : score >= 3.5
-        ? "text-yellow-400"
-        : score >= 2.5
-        ? "text-orange-400"
-        : "text-red-400";
-    return (
-      <div className="relative flex items-center justify-center w-40 h-40">
-        <div
-          className={`absolute text-5xl font-bold font-mono ${textColorClass}`}
-          style={{ textShadow: `0 0 14px currentColor` }}
-        >
-          {score.toFixed(1)}
-        </div>
-        <svg className="w-full h-full" viewBox="0 0 120 120">
-          <circle
-            cx="60"
-            cy="60"
-            r="48"
-            fill="none"
-            stroke="rgba(255,255,255,0.1)"
-            strokeWidth="5"
-          />
-          <circle
-            cx="60"
-            cy="60"
-            r="48"
-            fill="none"
-            strokeWidth="6"
-            strokeDasharray={`${(percentage / 100) * 301.59} 301.59`}
-            strokeDashoffset="75.4"
-            className={strokeColorClass}
-            strokeLinecap="round"
-            style={{
-              transition: "stroke-dasharray 1s ease-out",
-              transform: "rotate(-90deg)",
-              transformOrigin: "60px 60px",
-            }}
-          />
-        </svg>
-      </div>
-    );
-  };
 
   return (
     <div className="mt-8 space-y-8 animate-fade-in">
@@ -222,7 +167,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       >
         <div className="bg-gradient-to-r from-purple-500/20 to-orange-500/20 p-8 rounded-lg border border-orange-400/50">
           <div className="flex flex-col items-center justify-center mb-6">
-            <ScoreGauge score={finalScore} />
+            <ScoreGauge score={finalScore} size={160} />
             <div className="mt-3 text-center">
               <p className="text-slate-400 text-sm uppercase tracking-wider">
                 {t("averageOfAllCriteria")}
@@ -316,7 +261,8 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
       >
         <div className="space-y-6">
           {/* Category Optimization */}
-          {analysis.hackathonSpecificAdvice?.categoryOptimization?.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.categoryOptimization?.length >
+            0 && (
             <div className="bg-purple-500/20 p-4 rounded-lg border border-purple-400/50">
               <h4 className="font-bold text-lg text-purple-300 mb-3 flex items-center">
                 <span className="mr-2">🏆</span>
@@ -341,7 +287,8 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           )}
 
           {/* Kiro Integration Tips */}
-          {analysis.hackathonSpecificAdvice?.kiroIntegrationTips?.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.kiroIntegrationTips?.length >
+            0 && (
             <div className="bg-green-500/20 p-4 rounded-lg border border-green-400/50">
               <h4 className="font-bold text-lg text-green-300 mb-3 flex items-center">
                 <span className="mr-2">🤖</span>
@@ -366,7 +313,8 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           )}
 
           {/* Competition Strategy */}
-          {analysis.hackathonSpecificAdvice?.competitionStrategy?.length > 0 && (
+          {analysis.hackathonSpecificAdvice?.competitionStrategy?.length >
+            0 && (
             <div className="bg-orange-500/20 p-4 rounded-lg border border-orange-400/50">
               <h4 className="font-bold text-lg text-orange-300 mb-3 flex items-center">
                 <span className="mr-2">⚡</span>
