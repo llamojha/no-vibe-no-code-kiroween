@@ -71,8 +71,9 @@ const KiroweenAnalyzerView: React.FC = () => {
   // Pre-fill idea from Doctor Frankenstein if provided
   useEffect(() => {
     if (ideaFromUrl && sourceFromUrl === 'frankenstein' && !savedId) {
+      // useSearchParams().get() already returns decoded values, no need to decode again
       setSubmission({
-        description: decodeURIComponent(ideaFromUrl),
+        description: ideaFromUrl,
         supportingMaterials: {},
       });
     }

@@ -67,7 +67,8 @@ const AnalyzerView: React.FC = () => {
   // Pre-fill idea from Doctor Frankenstein if provided
   useEffect(() => {
     if (ideaFromUrl && sourceFromUrl === 'frankenstein' && !savedId) {
-      setIdea(decodeURIComponent(ideaFromUrl));
+      // useSearchParams().get() already returns decoded values, no need to decode again
+      setIdea(ideaFromUrl);
     }
   }, [ideaFromUrl, sourceFromUrl, savedId]);
 
