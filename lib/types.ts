@@ -201,7 +201,7 @@ export interface FrankensteinIdeaResult {
   growth_strategy: string;
   tech_stack_suggestion: string;
   risks_and_challenges: string;
-  metrics: {
+  metrics?: {
     originality_score: number;
     feasibility_score: number;
     impact_score: number;
@@ -221,6 +221,17 @@ export interface FrankensteinAnalysis {
   language: "en" | "es";
   fullAnalysis?: FrankensteinIdeaResult;
   allSelectedTechnologies?: TechItem[]; // Store all selected technologies
+  // Validation tracking
+  validatedWithKiroween?: {
+    analysisId: string;
+    score: number;
+    validatedAt: string;
+  };
+  validatedWithAnalyzer?: {
+    analysisId: string;
+    score: number;
+    validatedAt: string;
+  };
 }
 
 export interface SavedFrankensteinIdea {

@@ -283,5 +283,7 @@
   "exportAsPDF": "Export as PDF",
   "exportAsJSON": "Export as JSON",
   "saving": "Saving...",
-  "authRequired": "Please log in to save your idea"
+  "authRequired": "Please log in to save your idea",
+  "notValidatedYet": "Not validated yet",
+  "noScore": "No Score"
 }

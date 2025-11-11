@@ -48,7 +48,8 @@ ${elementsList}
 
 ### Output Format:
 Return a JSON object with the following structure (respond ONLY with valid JSON, no markdown).
-IMPORTANT: All fields except "metrics" must be STRING values, not objects or arrays:
+IMPORTANT: All fields must be STRING values, not objects or arrays.
+DO NOT include metrics or scores - this is just the creative idea report:
 {
   "idea_title": "creative and concise name of the new concept (STRING)",
   "idea_description": "3-5 sentences explaining what this new idea/product is (STRING)",
@@ -61,13 +62,6 @@ IMPORTANT: All fields except "metrics" must be STRING values, not objects or arr
   "growth_strategy": "how to scale (STRING)",
   "tech_stack_suggestion": "recommended technologies as a single paragraph (STRING, not object)",
   "risks_and_challenges": "potential obstacles as a single paragraph (STRING, not object)",
-  "metrics": {
-    "originality_score": 0-100,
-    "feasibility_score": 0-100,
-    "impact_score": 0-100,
-    "scalability_score": 0-100,
-    "wow_factor": 0-100
-  },
   "summary": "short final paragraph summarizing viability and creative potential (STRING)",
   "language": "${language}"
 }
@@ -132,13 +126,6 @@ Now, generate the Frankenstein Idea Report as valid JSON only.`;
     growth_strategy: ensureString(parsed.growth_strategy),
     tech_stack_suggestion: ensureString(parsed.tech_stack_suggestion),
     risks_and_challenges: ensureString(parsed.risks_and_challenges),
-    metrics: {
-      originality_score: Number(parsed.metrics?.originality_score) || 0,
-      feasibility_score: Number(parsed.metrics?.feasibility_score) || 0,
-      impact_score: Number(parsed.metrics?.impact_score) || 0,
-      scalability_score: Number(parsed.metrics?.scalability_score) || 0,
-      wow_factor: Number(parsed.metrics?.wow_factor) || 0,
-    },
     summary: ensureString(parsed.summary),
     language: parsed.language || language,
   } as FrankensteinIdeaResult;
