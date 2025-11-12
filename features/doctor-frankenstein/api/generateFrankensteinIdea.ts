@@ -35,7 +35,7 @@ export async function generateFrankensteinIdea(
 Context:
 The user has just combined multiple existing technologies ${
     mode === "aws" ? "(AWS services)" : "(tech companies)"
-  } to create a new hybrid concept — a "Frankenstein Idea". You must bring that idea to life by generating a complete structured analysis report.
+  } to create a new hybrid concept — a "Frankenstein Idea". You must bring that idea to life by generating a creative startup concept.
 
 ### Input:
 The following elements were combined to create the Frankenstein idea:
@@ -43,26 +43,16 @@ ${elementsList}
 
 ### Objective:
 1. Combine these elements into a coherent startup/product concept.
-2. Generate a detailed analysis report following the Kiroween Analyzer structure.
+2. Generate a creative idea with a title, description, and summary.
 3. ${modeContext}
 
 ### Output Format:
 Return a JSON object with the following structure (respond ONLY with valid JSON, no markdown).
-IMPORTANT: All fields must be STRING values, not objects or arrays.
-DO NOT include metrics or scores - this is just the creative idea report:
+IMPORTANT: All fields must be STRING values:
 {
   "idea_title": "creative and concise name of the new concept (STRING)",
-  "idea_description": "3-5 sentences explaining what this new idea/product is (STRING)",
-  "core_concept": "one-line elevator pitch (STRING)",
-  "problem_statement": "what problem does this solve (STRING)",
-  "proposed_solution": "how the combination solves it (STRING)",
-  "unique_value_proposition": "what makes this unique (STRING)",
-  "target_audience": "who would use this (STRING)",
-  "business_model": "how it makes money (STRING)",
-  "growth_strategy": "how to scale (STRING)",
-  "tech_stack_suggestion": "recommended technologies as a single paragraph (STRING, not object)",
-  "risks_and_challenges": "potential obstacles as a single paragraph (STRING, not object)",
-  "summary": "short final paragraph summarizing viability and creative potential (STRING)",
+  "idea_description": "2-4 paragraphs explaining what this new idea/product is, what problem it solves, and how it works (STRING)",
+  "summary": "1-2 paragraphs summarizing the viability, creative potential, and key value proposition (STRING)",
   "language": "${language}"
 }
 
@@ -117,15 +107,15 @@ Now, generate the Frankenstein Idea Report as valid JSON only.`;
   return {
     idea_title: ensureString(parsed.idea_title),
     idea_description: ensureString(parsed.idea_description),
-    core_concept: ensureString(parsed.core_concept),
-    problem_statement: ensureString(parsed.problem_statement),
-    proposed_solution: ensureString(parsed.proposed_solution),
-    unique_value_proposition: ensureString(parsed.unique_value_proposition),
-    target_audience: ensureString(parsed.target_audience),
-    business_model: ensureString(parsed.business_model),
-    growth_strategy: ensureString(parsed.growth_strategy),
-    tech_stack_suggestion: ensureString(parsed.tech_stack_suggestion),
-    risks_and_challenges: ensureString(parsed.risks_and_challenges),
+    core_concept: "", // No longer generated
+    problem_statement: "", // No longer generated
+    proposed_solution: "", // No longer generated
+    unique_value_proposition: "", // No longer generated
+    target_audience: "", // No longer generated
+    business_model: "", // No longer generated
+    growth_strategy: "", // No longer generated
+    tech_stack_suggestion: "", // No longer generated
+    risks_and_challenges: "", // No longer generated
     summary: ensureString(parsed.summary),
     language: parsed.language || language,
   } as FrankensteinIdeaResult;

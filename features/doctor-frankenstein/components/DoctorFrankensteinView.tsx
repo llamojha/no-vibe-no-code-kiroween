@@ -40,9 +40,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
   const savedId = searchParams.get("savedId");
 
   const { locale, t } = useLocale();
-  const { session, isLoading: isAuthLoading, isLocalDevMode } = useAuth();
+  const { session } = useAuth();
   const isLoggedIn = !!session;
   const shareLinksEnabled = isEnabled("ENABLE_SHARE_LINKS");
+  const classicAnalyzerEnabled = isEnabled("ENABLE_CLASSIC_ANALYZER");
+  const kiroweenAnalyzerEnabled = isEnabled("ENABLE_KIROWEEN_ANALYZER");
 
   // Credit system state
   const [credits, setCredits] = useState<number>(initialCredits);
@@ -562,13 +564,6 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     const reportLanguage = frankensteinIdea.language || "en";
     const currentLanguage = locale;
     const languageMismatch = reportLanguage !== currentLanguage;
-    const metrics = frankensteinIdea.metrics ?? {
-      originality_score: 0,
-      feasibility_score: 0,
-      impact_score: 0,
-      scalability_score: 0,
-      wow_factor: 0,
-    };
 
     const handleRegenerateInCurrentLanguage = async () => {
       setIsGenerating(true);
@@ -703,69 +698,6 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                 {frankensteinIdea.idea_description}
               </Section>
 
-              <Section title={t("coreConcept") || "Core Concept"}>
-                {frankensteinIdea.core_concept}
-              </Section>
-
-              <Section title={t("problemStatement") || "Problem Statement"}>
-                {frankensteinIdea.problem_statement}
-              </Section>
-
-              <Section title={t("proposedSolution") || "Proposed Solution"}>
-                {frankensteinIdea.proposed_solution}
-              </Section>
-
-              <Section
-                title={
-                  t("uniqueValueProposition") || "Unique Value Proposition"
-                }
-              >
-                {frankensteinIdea.unique_value_proposition}
-              </Section>
-
-              <Section title={t("targetAudience") || "Target Audience"}>
-                {frankensteinIdea.target_audience}
-              </Section>
-
-              <Section title={t("businessModel") || "Business Model"}>
-                {frankensteinIdea.business_model}
-              </Section>
-
-              <Section title={t("growthStrategy") || "Growth Strategy"}>
-                {frankensteinIdea.growth_strategy}
-              </Section>
-
-              <Section title={t("techStack") || "Tech Stack"}>
-                {frankensteinIdea.tech_stack_suggestion}
-              </Section>
-
-              <Section title={t("risksAndChallenges") || "Risks & Challenges"}>
-                {frankensteinIdea.risks_and_challenges}
-              </Section>
-
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 my-8">
-                <MetricCard
-                  label={t("originality") || "Originality"}
-                  value={metrics.originality_score}
-                />
-                <MetricCard
-                  label={t("feasibility") || "Feasibility"}
-                  value={metrics.feasibility_score}
-                />
-                <MetricCard
-                  label={t("impact") || "Impact"}
-                  value={metrics.impact_score}
-                />
-                <MetricCard
-                  label={t("scalability") || "Scalability"}
-                  value={metrics.scalability_score}
-                />
-                <MetricCard
-                  label={t("wowFactor") || "Wow Factor"}
-                  value={metrics.wow_factor}
-                />
-              </div>
-
               <Section title={t("summary") || "Summary"}>
                 {frankensteinIdea.summary}
               </Section>
@@ -817,8 +749,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       router.push(`/kiroween-analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
                     }
                   }}
-                  disabled={isSaving}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
+                  disabled={isSaving || !kiroweenAnalyzerEnabled}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
+                  title={!kiroweenAnalyzerEnabled ? (locale === 'es' ? 'Validador deshabilitado' : 'Validator disabled') : ''}
                 >
                   <span>🎃</span>
                   <span>{isSaving ? (locale === 'es' ? 'Guardando...' : 'Saving...') : (locale === 'es' ? 'Validar con Kiroween Hackathon' : 'Validate with Kiroween Hackathon')}</span>
@@ -849,8 +782,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       router.push(`/analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
                     }
                   }}
-                  disabled={isSaving}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
+                  disabled={isSaving || !classicAnalyzerEnabled}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
+                  title={!classicAnalyzerEnabled ? (locale === 'es' ? 'Validador deshabilitado' : 'Validator disabled') : ''}
                 >
                   <span>🔬</span>
                   <span>{isSaving ? (locale === 'es' ? 'Guardando...' : 'Saving...') : (locale === 'es' ? 'Validar con Analyzer' : 'Validate with Analyzer')}</span>
@@ -1225,12 +1159,4 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   );
 };
 
-const MetricCard: React.FC<{ label: string; value: number }> = ({
-  label,
-  value,
-}) => (
-  <div className="bg-purple-900/50 rounded-lg p-4 text-center border border-purple-600">
-    <div className="text-3xl font-bold text-orange-400">{value}</div>
-    <div className="text-sm text-purple-300 mt-1">{label}</div>
-  </div>
-);
+
