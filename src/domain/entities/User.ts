@@ -7,6 +7,7 @@ import {
   InvariantViolationError,
   InsufficientCreditsError,
 } from "../../shared/types/errors";
+import { getDefaultUserCredits } from "../../infrastructure/config/credits";
 
 /**
  * User preferences for the application
@@ -98,7 +99,7 @@ export class User extends Entity<UserId> {
       ...props.preferences,
     };
 
-    const credits = props.credits ?? 3; // Default 3 credits
+    const credits = props.credits ?? getDefaultUserCredits();
 
     return new User(
       id,

@@ -12,6 +12,7 @@ import {
   BusinessRuleViolationError,
   InvariantViolationError,
 } from "../../../shared/types/errors";
+import { getDefaultUserCredits } from "../../../infrastructure/config/credits";
 
 describe("User Entity", () => {
   const validEmail = Email.create("test@example.com");
@@ -227,9 +228,10 @@ describe("User Entity", () => {
     });
 
     describe("default credit initialization", () => {
-      it("should create user with 3 default credits when not specified", () => {
+      it("should create user with configured default credits when not specified", () => {
+        const expectedCredits = getDefaultUserCredits();
         const user = User.create(validProps);
-        expect(user.credits).toBe(3);
+        expect(user.credits).toBe(expectedCredits);
       });
 
       it("should create user with specified credits", () => {
@@ -240,6 +242,23 @@ describe("User Entity", () => {
       it("should create user with 0 credits if specified", () => {
         const user = User.create({ ...validProps, credits: 0 });
         expect(user.credits).toBe(0);
+      });
+
+      it("should use configured DEFAULT_USER_CREDITS when provided", () => {
+        const originalDefaultCredits = process.env.DEFAULT_USER_CREDITS;
+        process.env.DEFAULT_USER_CREDITS = "7";
+
+        try {
+          const expectedCredits = getDefaultUserCredits();
+          const user = User.create({ email: validEmail });
+          expect(user.credits).toBe(expectedCredits);
+        } finally {
+          if (originalDefaultCredits === undefined) {
+            delete process.env.DEFAULT_USER_CREDITS;
+          } else {
+            process.env.DEFAULT_USER_CREDITS = originalDefaultCredits;
+          }
+        }
       });
     });
 
