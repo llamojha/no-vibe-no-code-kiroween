@@ -10,6 +10,9 @@ import {
   getOrInitializeLocalDevCredits,
   isLocalDevModeEnabled,
 } from "../utils/localDevCredits";
+import { isCreditSystemEnabled } from "../../infrastructure/config/credits";
+
+const UNLIMITED_CREDITS = Number.MAX_SAFE_INTEGER;
 
 /**
  * Use case for checking if a user has sufficient credits to perform an analysis
@@ -32,6 +35,10 @@ export class CheckCreditsUseCase {
    */
   async execute(userId: UserId): Promise<Result<CreditCheckResult, Error>> {
     try {
+      if (!isCreditSystemEnabled()) {
+        return success(this.getUnlimitedCreditResult());
+      }
+
       // Check cache first
       const cacheKey = this.getCacheKey(userId);
       const cached = await this.cache.get<CreditCheckResult>(cacheKey);
@@ -107,6 +114,14 @@ export class CheckCreditsUseCase {
     // For now, all users are "free" tier
     // This will be enhanced when tier information is added to User entity
     return "free";
+  }
+
+  private getUnlimitedCreditResult(): CreditCheckResult {
+    return {
+      allowed: true,
+      credits: UNLIMITED_CREDITS,
+      tier: "free",
+    };
   }
 
   /**

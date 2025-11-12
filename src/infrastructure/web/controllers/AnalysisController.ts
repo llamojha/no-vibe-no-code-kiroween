@@ -41,6 +41,7 @@ import { DeductCreditUseCase } from "@/src/application/use-cases/DeductCreditUse
 import { DeductCreditCommand } from "@/src/application/types/commands/CreditCommands";
 import { AnalysisType } from "@/src/domain/value-objects/AnalysisType";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
+import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
 
 /**
  * Controller for analysis-related API endpoints
@@ -95,9 +96,13 @@ export class AnalysisController {
 
       const dto = validationResult.data as CreateAnalysisDTO;
 
-      // Check if user has sufficient credits before analysis
       const userId = UserId.fromString(authResult.userId);
-      await withCreditCheck(userId, this.checkCreditsUseCase);
+      const creditSystemEnabled = isCreditSystemEnabled();
+
+      // Check if user has sufficient credits before analysis
+      if (creditSystemEnabled) {
+        await withCreditCheck(userId, this.checkCreditsUseCase);
+      }
 
       // Build command and delegate to application handler to persist
       const command = new CreateAnalysisCommand(
@@ -118,26 +123,23 @@ export class AnalysisController {
 
       const analysis = result.data.analysis;
 
-      // Deduct credit after successful analysis
-      const deductCommand: DeductCreditCommand = {
-        userId: userId,
-        analysisType: AnalysisType.STARTUP_IDEA,
-        analysisId: analysis.id.value,
-      };
+      if (creditSystemEnabled) {
+        // Deduct credit after successful analysis
+        const deductCommand: DeductCreditCommand = {
+          userId: userId,
+          analysisType: AnalysisType.STARTUP_IDEA,
+          analysisId: analysis.id.value,
+        };
 
-      const deductResult = await this.deductCreditUseCase.execute(
-        deductCommand
-      );
+        const deductResult = await this.deductCreditUseCase.execute(
+          deductCommand
+        );
 
-      if (!deductResult.success) {
-        // Log error but don't fail the request since analysis was successful
-        console.error("Failed to deduct credit:", deductResult.error);
+        if (!deductResult.success) {
+          // Log error but don't fail the request since analysis was successful
+          console.error("Failed to deduct credit:", deductResult.error);
+        }
       }
-
-      // Fetch current credit balance to include in response
-      const creditBalanceResult = await this.getCreditBalanceUseCase.execute(
-        userId
-      );
 
       const responseDTO: AnalysisResponseDTO = {
         id: analysis.id.value,
@@ -150,12 +152,18 @@ export class AnalysisController {
         category: analysis.category?.value,
       };
 
-      // Include credit information if available
-      if (creditBalanceResult.success && creditBalanceResult.data) {
-        responseDTO.credits = {
-          remaining: creditBalanceResult.data.credits,
-          tier: creditBalanceResult.data.tier,
-        };
+      if (creditSystemEnabled) {
+        // Fetch current credit balance to include in response
+        const creditBalanceResult =
+          await this.getCreditBalanceUseCase.execute(userId);
+
+        // Include credit information if available
+        if (creditBalanceResult.success && creditBalanceResult.data) {
+          responseDTO.credits = {
+            remaining: creditBalanceResult.data.credits,
+            tier: creditBalanceResult.data.tier,
+          };
+        }
       }
 
       // Keep status 200 to match existing expectations/tests

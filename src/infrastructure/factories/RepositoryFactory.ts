@@ -10,6 +10,7 @@ import { UserMapper } from "../database/supabase/mappers/UserMapper";
 import { CreditTransactionMapper } from "../database/supabase/mappers/CreditTransactionMapper";
 import { MockAnalysisRepository } from "@/lib/testing/mocks/MockAnalysisRepository";
 import { FeatureFlagManager } from "@/lib/testing/FeatureFlagManager";
+import { createSupabaseServiceClient } from "../config";
 
 /**
  * Factory for creating database repository instances
@@ -28,9 +29,35 @@ export class RepositoryFactory {
     IAnalysisRepository | IUserRepository | ICreditTransactionRepository
   > = new Map();
   private featureFlagManager: FeatureFlagManager;
+  private readonly serviceSupabaseClient: SupabaseClient | null;
+  private static serviceClient: SupabaseClient | null = null;
+  private static serviceClientInitFailed = false;
 
   private constructor(private readonly supabaseClient: SupabaseClient) {
     this.featureFlagManager = new FeatureFlagManager();
+    this.serviceSupabaseClient = RepositoryFactory.getServiceSupabaseClient();
+  }
+
+  private static getServiceSupabaseClient(): SupabaseClient | null {
+    if (RepositoryFactory.serviceClient) {
+      return RepositoryFactory.serviceClient;
+    }
+
+    if (RepositoryFactory.serviceClientInitFailed) {
+      return null;
+    }
+
+    try {
+      RepositoryFactory.serviceClient = createSupabaseServiceClient();
+      return RepositoryFactory.serviceClient;
+    } catch (error) {
+      RepositoryFactory.serviceClientInitFailed = true;
+      console.warn(
+        "[RepositoryFactory] Supabase service client unavailable; credit transaction writes will use the request client.",
+        error instanceof Error ? error.message : String(error)
+      );
+      return null;
+    }
   }
 
   /**
@@ -124,7 +151,8 @@ export class RepositoryFactory {
       const mapper = new CreditTransactionMapper();
       const repository = new SupabaseCreditTransactionRepository(
         this.supabaseClient,
-        mapper
+        mapper,
+        this.serviceSupabaseClient ?? undefined
       );
       this.repositories.set(cacheKey, repository);
     }

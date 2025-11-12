@@ -22,6 +22,7 @@ import {
   isLocalDevModeEnabled,
   setLocalDevCredits,
 } from "../utils/localDevCredits";
+import { isCreditSystemEnabled } from "../../infrastructure/config/credits";
 
 /**
  * Use case for deducting credits from a user after successful analysis
@@ -46,6 +47,10 @@ export class DeductCreditUseCase {
    */
   async execute(command: DeductCreditCommand): Promise<Result<void, Error>> {
     try {
+      if (!isCreditSystemEnabled()) {
+        return success(undefined);
+      }
+
       if (this.isLocalDevMode()) {
         await this.handleLocalDevDeduction(command);
         return success(undefined);

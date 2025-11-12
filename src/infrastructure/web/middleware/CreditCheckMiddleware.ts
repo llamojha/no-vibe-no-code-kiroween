@@ -1,6 +1,7 @@
 import { UserId } from "@/src/domain/value-objects/UserId";
 import { CheckCreditsUseCase } from "@/src/application/use-cases/CheckCreditsUseCase";
 import { InsufficientCreditsError } from "@/src/shared/types/errors";
+import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
 
 /**
  * Middleware function to check if a user has sufficient credits to perform an analysis
@@ -14,6 +15,10 @@ export async function withCreditCheck(
   userId: UserId,
   checkCreditsUseCase: CheckCreditsUseCase
 ): Promise<void> {
+  if (!isCreditSystemEnabled()) {
+    return;
+  }
+
   // Execute credit check
   const result = await checkCreditsUseCase.execute(userId);
 

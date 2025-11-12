@@ -27,11 +27,27 @@ export class SupabaseCreditTransactionRepository
   implements ICreditTransactionRepository
 {
   private readonly tableName = "credit_transactions";
+  private readonly writeClient: SupabaseClient<Database>;
+  private static serviceClientWarningLogged = false;
 
   constructor(
     private readonly client: SupabaseClient<Database>,
-    private readonly mapper: CreditTransactionMapper
-  ) {}
+    private readonly mapper: CreditTransactionMapper,
+    serviceRoleClient?: SupabaseClient<Database>
+  ) {
+    this.writeClient = serviceRoleClient ?? client;
+
+    if (
+      !serviceRoleClient &&
+      !SupabaseCreditTransactionRepository.serviceClientWarningLogged
+    ) {
+      SupabaseCreditTransactionRepository.serviceClientWarningLogged = true;
+      logger.warn(
+        LogCategory.DATABASE,
+        "Supabase service client unavailable; falling back to request-scoped client for credit transaction writes. RLS may block inserts."
+      );
+    }
+  }
 
   // Command operations (write)
 
@@ -42,7 +58,7 @@ export class SupabaseCreditTransactionRepository
       const insertPayload =
         this.mapper.toSupabaseInsertFromDomain(transaction);
 
-      const { error } = await this.client
+      const { error } = await this.writeClient
         .from(this.tableName)
         .insert(insertPayload);
 
@@ -100,7 +116,7 @@ export class SupabaseCreditTransactionRepository
     try {
       const insertPayload = this.mapper.toSupabaseInsertFromDomain(entity);
 
-      const { data, error } = await this.client
+      const { data, error } = await this.writeClient
         .from(this.tableName)
         .insert(insertPayload)
         .select()
@@ -186,7 +202,7 @@ export class SupabaseCreditTransactionRepository
         this.mapper.toSupabaseInsertFromDomain(entity)
       );
 
-      const { data, error } = await this.client
+      const { data, error } = await this.writeClient
         .from(this.tableName)
         .insert(insertPayloads)
         .select();
