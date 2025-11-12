@@ -43,7 +43,7 @@ export function initFeatureFlags() {
     CREDIT_SYSTEM: defineBooleanFlag({
       key: "CREDIT_SYSTEM",
       description: "Enable credit-based rate limiting system",
-      default: process.env.FF_CREDIT_SYSTEM === "true",
+      default: process.env.FF_CREDIT_SYSTEM?.toLowerCase() !== "false",
       exposeToClient: false,
     }),
   });
