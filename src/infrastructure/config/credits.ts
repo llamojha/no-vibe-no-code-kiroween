@@ -22,7 +22,8 @@ export function getCreditConfig(): CreditConfig {
     process.env.ANALYSIS_CREDIT_COST || "1",
     10
   );
-  const enabled = process.env.FF_CREDIT_SYSTEM === "true";
+  const enabledFlag = process.env.FF_CREDIT_SYSTEM?.toLowerCase();
+  const enabled = enabledFlag !== "false";
 
   // Validate configuration
   if (defaultUserCredits < 0) {
