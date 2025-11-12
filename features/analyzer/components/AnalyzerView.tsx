@@ -222,6 +222,8 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
       
+      let newlySavedId: string | null = null;
+      
       // Auto-save if user is logged in (to preserve credits)
       if (session && !isLocalDevMode) {
         try {
@@ -231,6 +233,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           });
 
           if (!saveError && record) {
+            newlySavedId = record.id;
             setSavedAnalysisRecord(record);
             setIsReportSaved(true);
             capture("analysis_auto_saved", { analysis_id: record.id, locale });
@@ -273,7 +276,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
           const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
           
-          const score = deriveFivePointScore(analysisResult as any);
+          const score = deriveFivePointScore(analysisResult as unknown);
           
           await updateFrankensteinValidation(frankensteinId, 'analyzer', {
             analysisId: 'temp-' + Date.now(),
@@ -286,7 +289,8 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
         }
       }
       
-      if (savedId) {
+      // Only clean up URL if we had a savedId but didn't just create a new one
+      if (savedId && !newlySavedId) {
         router.replace("/analyzer");
       }
     } catch (err) {

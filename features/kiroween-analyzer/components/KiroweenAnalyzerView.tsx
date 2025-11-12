@@ -175,7 +175,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     };
 
     void fetchSavedAnalysis();
-  }, [mode, router, savedId, session, supabase, isAuthLoading]);
+  }, [mode, router, savedId, session, supabase, isAuthLoading, ideaFromUrl, sourceFromUrl]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -239,6 +239,8 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
       
+      let newlySavedId: string | null = null;
+      
       // Auto-save if user is logged in (to preserve credits)
       if (session) {
         try {
@@ -249,6 +251,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           });
 
           if (!saveError && record) {
+            newlySavedId = record.id;
             setSavedAnalysisRecord(record);
             setIsReportSaved(true);
             
@@ -303,7 +306,8 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         }
       }
       
-      if (savedId) {
+      // Only clean up URL if we had a savedId but didn't just create a new one
+      if (savedId && !newlySavedId) {
         router.replace("/kiroween-analyzer");
       }
     } catch (err) {
