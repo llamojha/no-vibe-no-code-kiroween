@@ -83,12 +83,17 @@ export const trackReportGeneration = (props: ReportGenerationProps): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture("report_generated", {
+    const eventData = {
       report_type: props.reportType,
       idea_length: props.ideaLength,
       user_id: props.userId,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Debug logging (remove in production)
+    console.log("[PostHog] 📊 report_generated", eventData);
+
+    posthog.capture("report_generated", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track report generation:", error);
   }
@@ -105,12 +110,17 @@ export const trackFrankensteinInteraction = (
 
   try {
     const eventName = `frankenstein_${props.action}`;
-    posthog.capture(eventName, {
+    const eventData = {
       mode: props.mode,
       slot_count: props.slotCount,
       roll_count: props.rollCount,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Debug logging (remove in production)
+    console.log(`[PostHog] 🧟 ${eventName}`, eventData);
+
+    posthog.capture(eventName, eventData);
   } catch (error) {
     console.error(
       "[Analytics] Failed to track Frankenstein interaction:",
@@ -129,12 +139,17 @@ export const trackHomepageInteraction = (
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture("homepage_interaction", {
+    const eventData = {
       action: props.action,
       animation_state: props.animationState,
       device_type: props.deviceType || getDeviceType(),
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Debug logging (remove in production)
+    console.log("[PostHog] 🏠 homepage_interaction", eventData);
+
+    posthog.capture("homepage_interaction", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track homepage interaction:", error);
   }
@@ -148,13 +163,18 @@ export const trackIdeaEnhancement = (props: IdeaEnhancementProps): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture("idea_enhancement", {
+    const eventData = {
       action: props.action,
       analysis_type: props.analysisType,
       suggestion_length: props.suggestionLength,
       change_type: props.changeType,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Debug logging (remove in production)
+    console.log("[PostHog] 💡 idea_enhancement", eventData);
+
+    posthog.capture("idea_enhancement", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track idea enhancement:", error);
   }
@@ -168,13 +188,18 @@ export const trackExport = (props: ExportProps): void => {
   if (!isPostHogAvailable()) return;
 
   try {
-    posthog.capture("report_exported", {
+    const eventData = {
       format: props.format,
       report_type: props.reportType,
       success: props.success,
       error_message: props.errorMessage,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Debug logging (remove in production)
+    console.log("[PostHog] 📤 report_exported", eventData);
+
+    posthog.capture("report_exported", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track export:", error);
   }
@@ -192,6 +217,9 @@ export const identifyUser = (
   if (!isPostHogAvailable()) return;
 
   try {
+    // Debug logging (remove in production)
+    console.log("[PostHog] 👤 identify", { userId, ...properties });
+
     posthog.identify(userId, properties);
   } catch (error) {
     console.error("[Analytics] Failed to identify user:", error);
