@@ -16,9 +16,9 @@ describe("CreditCounter", () => {
       expect(screen.getByTestId("credit-amount")).toHaveTextContent("5");
     });
 
-    it("should display infinity symbol for admin tier users", () => {
+    it("should display numeric credit count for admin tier users", () => {
       render(<CreditCounter credits={3} tier="admin" />);
-      expect(screen.getByTestId("credit-amount")).toHaveTextContent("∞");
+      expect(screen.getByTestId("credit-amount")).toHaveTextContent("3");
     });
 
     it("should display zero credits correctly", () => {
@@ -51,9 +51,9 @@ describe("CreditCounter", () => {
       expect(screen.queryByTestId("credit-warning")).not.toBeInTheDocument();
     });
 
-    it("should not show warning for admin users regardless of credit count", () => {
+    it("should show warning for admin users when credits are 1", () => {
       render(<CreditCounter credits={1} tier="admin" />);
-      expect(screen.queryByTestId("credit-warning")).not.toBeInTheDocument();
+      expect(screen.getByTestId("credit-warning")).toBeInTheDocument();
     });
   });
 
@@ -74,9 +74,9 @@ describe("CreditCounter", () => {
       expect(screen.queryByTestId("credit-empty")).not.toBeInTheDocument();
     });
 
-    it("should not show out of credits message for admin users", () => {
+    it("should show out of credits message for admin users when credits are 0", () => {
       render(<CreditCounter credits={0} tier="admin" />);
-      expect(screen.queryByTestId("credit-empty")).not.toBeInTheDocument();
+      expect(screen.getByTestId("credit-empty")).toBeInTheDocument();
     });
   });
 
@@ -91,9 +91,9 @@ describe("CreditCounter", () => {
       expect(screen.getByText("credits remaining")).toBeInTheDocument();
     });
 
-    it("should show 'unlimited credits' label for admin tier users", () => {
+    it("should show 'credits remaining' label for admin tier users", () => {
       render(<CreditCounter credits={3} tier="admin" />);
-      expect(screen.getByText("unlimited credits")).toBeInTheDocument();
+      expect(screen.getByText("credits remaining")).toBeInTheDocument();
     });
   });
 
@@ -119,11 +119,11 @@ describe("CreditCounter", () => {
       expect(creditCounter?.className).toContain("bg-purple-500/5");
     });
 
-    it("should apply normal styling for admin users", () => {
+    it("should apply error styling for admin users when credits are 0", () => {
       const { container } = render(<CreditCounter credits={0} tier="admin" />);
       const creditCounter = container.querySelector(".credit-counter");
-      expect(creditCounter?.className).toContain("border-purple-500/30");
-      expect(creditCounter?.className).toContain("bg-purple-500/5");
+      expect(creditCounter?.className).toContain("border-red-500");
+      expect(creditCounter?.className).toContain("bg-red-500/10");
     });
   });
 

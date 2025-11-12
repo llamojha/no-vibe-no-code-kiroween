@@ -10,16 +10,14 @@ export interface CreditCounterProps {
  * CreditCounter component displays the user's remaining credits
  * Shows warning styling when credits are low (<=1)
  * Shows "out of credits" message when credits reach 0
- * Displays infinity symbol for admin users
+ * All tiers (free, paid, admin) use credits
  */
 export const CreditCounter: React.FC<CreditCounterProps> = ({
   credits,
   tier,
 }) => {
-  // Admin users have unlimited credits
-  const isAdmin = tier === "admin";
-  const showWarning = !isAdmin && credits <= 1 && credits > 0;
-  const isOutOfCredits = !isAdmin && credits === 0;
+  const showWarning = credits <= 1 && credits > 0;
+  const isOutOfCredits = credits === 0;
 
   // Determine styling based on credit status
   const containerClasses = `
@@ -75,11 +73,9 @@ export const CreditCounter: React.FC<CreditCounterProps> = ({
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
             <span className={amountClasses} data-testid="credit-amount">
-              {isAdmin ? "∞" : credits}
+              {credits}
             </span>
-            <span className={labelClasses}>
-              {isAdmin ? "unlimited credits" : "credits remaining"}
-            </span>
+            <span className={labelClasses}>credits remaining</span>
           </div>
           {showWarning && (
             <div
