@@ -10,8 +10,12 @@ import {
 import { HackathonLeaderboardResponseDTO } from "../dto/HackathonDTO";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
+import { withCreditCheck } from "../middleware/CreditCheckMiddleware";
+import { CheckCreditsUseCase } from "@/src/application/use-cases/CheckCreditsUseCase";
+import { DeductCreditUseCase } from "@/src/application/use-cases/DeductCreditUseCase";
+import { DeductCreditCommand } from "@/src/application/types/commands/CreditCommands";
+import { UserId, AnalysisId, AnalysisType, Locale } from "@/src/domain/value-objects";
 import { GoogleAIAdapter } from "../../external/ai/GoogleAIAdapter";
-import { Locale } from "@/src/domain/value-objects";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 import { TestDataManager } from "@/lib/testing/TestDataManager";
 import { TestEnvironmentConfig } from "@/lib/testing/config/test-environment";
@@ -29,7 +33,9 @@ export class HackathonController {
     private readonly createHackathonAnalysisHandler: CreateHackathonAnalysisHandler,
     private readonly updateHackathonAnalysisHandler: UpdateHackathonAnalysisHandler,
     private readonly getHackathonLeaderboardHandler: GetHackathonLeaderboardHandler,
-    private readonly searchHackathonAnalysesHandler: SearchHackathonAnalysesHandler
+    private readonly searchHackathonAnalysesHandler: SearchHackathonAnalysesHandler,
+    private readonly checkCreditsUseCase: CheckCreditsUseCase,
+    private readonly deductCreditUseCase: DeductCreditUseCase
   ) {
     this.hackathonMockData = new TestDataManager();
   }
@@ -45,13 +51,28 @@ export class HackathonController {
         resolveMockModeFlag(process.env.FF_USE_MOCK_API) ||
         resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
 
+      // Authenticate request for both mock and production flows
+      const authResult = await authenticateRequest(request, {
+        requirePaid: true,
+        allowFree: false,
+      });
+
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      const userId = UserId.fromString(authResult.userId);
+
+      // Enforce credit policy before running analysis
+      await withCreditCheck(userId, this.checkCreditsUseCase);
+
       if (isMockMode) {
         // In mock mode, return mock data directly
-        return await this.mockAnalyzeHackathonProject(request);
+        return await this.mockAnalyzeHackathonProject(request, userId);
       }
 
       // Production mode: use the legacy implementation
-      return await this.legacyAnalyzeHackathonProject(request);
+      return await this.legacyAnalyzeHackathonProject(request, userId);
     } catch (error) {
       return handleApiError(error);
     }
@@ -60,7 +81,10 @@ export class HackathonController {
   /**
    * Mock implementation for testing without API calls
    */
-  private async mockAnalyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
+  private async mockAnalyzeHackathonProject(
+    request: NextRequest,
+    userId: UserId
+  ): Promise<NextResponse> {
     const body = await request.json();
     const { submission, locale } = body as {
       submission?: {
@@ -82,10 +106,11 @@ export class HackathonController {
     }
 
     const scenario = resolveMockScenario();
-    let mockResponse = this.hackathonMockData.getMockResponse<HackathonAnalysis>(
-      "hackathon",
-      scenario
-    );
+    let mockResponse =
+      this.hackathonMockData.getMockResponse<HackathonAnalysis>(
+        "hackathon",
+        scenario
+      );
 
     mockResponse = this.hackathonMockData.customizeMockResponse(
       mockResponse,
@@ -103,10 +128,14 @@ export class HackathonController {
       await new Promise((resolve) => setTimeout(resolve, mockResponse.delay));
     }
 
-    return NextResponse.json(mockResponse.data, {
+    const response = NextResponse.json(mockResponse.data, {
       status: mockResponse.statusCode,
       headers: mockResponse.headers,
     });
+
+    await this.recordCreditUsage(userId, AnalysisType.HACKATHON_PROJECT);
+
+    return response;
   }
 
   /**
@@ -114,20 +143,11 @@ export class HackathonController {
    * This maintains the existing functionality while we transition to full hexagonal architecture
    */
   private async legacyAnalyzeHackathonProject(
-    request: NextRequest
+    request: NextRequest,
+    userId: UserId
   ): Promise<NextResponse> {
     // Use the new GoogleAI adapter instead of legacy function
     const googleAI = GoogleAIAdapter.create();
-
-    // Use the new authentication middleware
-    const authResult = await authenticateRequest(request, {
-      requirePaid: true,
-      allowFree: false,
-    });
-
-    if (!authResult.success) {
-      return NextResponse.json({ error: authResult.error }, { status: 401 });
-    }
 
     const body = await request.json();
     const { submission, locale } = body as {
@@ -174,6 +194,9 @@ export class HackathonController {
       "costume-contest",
       Locale.fromString(locale)
     );
+    if (analysis?.success) {
+      await this.recordCreditUsage(userId, AnalysisType.HACKATHON_PROJECT);
+    }
     return NextResponse.json(analysis);
   }
 
@@ -202,6 +225,26 @@ export class HackathonController {
       return NextResponse.json(responseDTO);
     } catch (error) {
       return handleApiError(error);
+    }
+  }
+
+  private async recordCreditUsage(
+    userId: UserId,
+    analysisType: AnalysisType
+  ): Promise<void> {
+    const deductCommand: DeductCreditCommand = {
+      userId,
+      analysisType,
+      analysisId: AnalysisId.generate().value,
+    };
+
+    const deductResult = await this.deductCreditUseCase.execute(deductCommand);
+
+    if (!deductResult.success) {
+      console.error("Failed to deduct credit for hackathon analysis", {
+        userId: userId.value,
+        error: deductResult.error?.message,
+      });
     }
   }
 
@@ -283,7 +326,6 @@ export class HackathonController {
       },
     });
   }
-
 }
 
 function resolveMockScenario(): TestScenario {

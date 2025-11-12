@@ -88,3 +88,17 @@ export class AuthorizationError extends DomainError {
     super(message, cause);
   }
 }
+
+/**
+ * Error thrown when a user has insufficient credits to perform an action
+ */
+export class InsufficientCreditsError extends DomainError {
+  readonly code = "INSUFFICIENT_CREDITS";
+
+  constructor(public readonly userId: string, cause?: Error) {
+    super(
+      `User ${userId} has insufficient credits to perform this action.`,
+      cause
+    );
+  }
+}

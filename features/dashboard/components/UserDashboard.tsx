@@ -12,9 +12,11 @@ import type {
   UnifiedAnalysisRecord,
   AnalysisCounts,
   DashboardFilterState,
+  UserTier,
 } from "@/lib/types";
 import { capture } from "@/features/analytics/posthogClient";
 import { isEnabled } from "@/lib/featureFlags";
+import { CreditCounter } from "@/features/shared/components/CreditCounter";
 
 type SortOption = "newest" | "oldest" | "az";
 
@@ -22,12 +24,16 @@ interface UserDashboardProps {
   initialAnalyses: UnifiedAnalysisRecord[];
   initialCounts: AnalysisCounts;
   sessionUserId: string;
+  initialCredits: number;
+  userTier: UserTier;
 }
 
 const UserDashboard: React.FC<UserDashboardProps> = ({
   initialAnalyses,
   initialCounts,
   sessionUserId,
+  initialCredits,
+  userTier,
 }) => {
   const router = useRouter();
   const { t } = useLocale();
@@ -197,26 +203,31 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       </header>
 
       <main className="max-w-4xl mx-auto">
-      {(showClassicAnalyzer || showKiroweenAnalyzer) && (
-        <div className="mb-12 animate-slide-in-up">
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {showClassicAnalyzer && (
+        {/* Credit Counter */}
+        <div className="mb-8 animate-slide-in-up">
+          <CreditCounter credits={initialCredits} tier={userTier} />
+        </div>
+
+        {(showClassicAnalyzer || showKiroweenAnalyzer) && (
+          <div className="mb-12 animate-slide-in-up">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {showClassicAnalyzer && (
+                <button
+                  onClick={() => router.push("/analyzer")}
+                  className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+                >
+                  💡 {t("analyzeStartupIdea")}
+                </button>
+              )}
+              {showKiroweenAnalyzer && (
+                <button
+                  onClick={() => router.push("/kiroween-analyzer")}
+                  className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
+                >
+                  🎃 {t("analyzeKiroweenProject")}
+                </button>
+              )}
               <button
-                onClick={() => router.push("/analyzer")}
-                className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-              >
-                💡 {t("analyzeStartupIdea")}
-              </button>
-            )}
-            {showKiroweenAnalyzer && (
-              <button
-                onClick={() => router.push("/kiroween-analyzer")}
-                className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-              >
-                🎃 {t("analyzeKiroweenProject")}
-              </button>
-            )}
-            <button
                 onClick={() => router.push("/doctor-frankenstein")}
                 className="px-8 py-4 bg-purple-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-purple-500/30 hover:bg-purple-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
               >
@@ -232,14 +243,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider">
-              {t('yourAnalyses')}
+              {t("yourAnalyses")}
             </h2>
             <button
               onClick={refreshAnalyses}
               disabled={isRefreshing}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-700 text-slate-300 hover:border-accent hover:text-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isRefreshing ? t('refreshing') : t('refresh')}
+              {isRefreshing ? t("refreshing") : t("refresh")}
             </button>
           </div>
 
@@ -253,7 +264,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-grow">
                 <label htmlFor="search-analyses" className="sr-only">
-                  {t('searchAnalysesLabel')}
+                  {t("searchAnalysesLabel")}
                 </label>
                 <span
                   className="absolute inset-y-0 left-0 flex items-center pl-3"
@@ -277,14 +288,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                 <input
                   id="search-analyses"
                   type="text"
-                  placeholder={t('searchAnalysesPlaceholder')}
+                  placeholder={t("searchAnalysesPlaceholder")}
                   value={filterState.searchQuery}
                   onChange={(event) => handleSearchChange(event.target.value)}
                   aria-describedby="search-help"
                   className="w-full pl-10 pr-4 py-2 bg-primary/50 border border-slate-700 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-slate-200 placeholder-slate-500 font-mono"
                 />
                 <div id="search-help" className="sr-only">
-                  {t('searchAnalysesHelp')}
+                  {t("searchAnalysesHelp")}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -292,7 +303,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   htmlFor="sort-analyses"
                   className="text-sm text-slate-400 uppercase tracking-wider"
                 >
-                  {t('sort')}
+                  {t("sort")}
                 </label>
                 <select
                   id="sort-analyses"
@@ -303,12 +314,12 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   aria-describedby="sort-help"
                   className="bg-primary/50 border border-slate-700 text-slate-200 px-3 py-2 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-sm uppercase tracking-wider"
                 >
-                  <option value="newest">{t('newest')}</option>
-                  <option value="oldest">{t('oldest')}</option>
-                  <option value="az">{t('alphabetical')}</option>
+                  <option value="newest">{t("newest")}</option>
+                  <option value="oldest">{t("oldest")}</option>
+                  <option value="az">{t("alphabetical")}</option>
                 </select>
                 <div id="sort-help" className="sr-only">
-                  {t('sortHelp')}
+                  {t("sortHelp")}
                 </div>
               </div>
             </div>
@@ -317,8 +328,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           {filteredAndSortedAnalyses.length === 0 ? (
             <div className="bg-primary/30 border border-dashed border-slate-700 p-8 text-center text-slate-500 font-mono uppercase tracking-widest">
               {analyses.length === 0
-                ? t('noAnalysesYet')
-                : t('noAnalysesMatch')}
+                ? t("noAnalysesYet")
+                : t("noAnalysesMatch")}
             </div>
           ) : (
             <div className="space-y-4" data-testid="analyses-list">
@@ -332,7 +343,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             </div>
           )}
         </div>
-
       </main>
 
       {analysisToDelete && (
@@ -348,26 +358,28 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               id="delete-dialog-title"
               className="text-xl font-bold text-red-400 uppercase tracking-wider"
             >
-              {t('deleteAnalysisTitle')}
+              {t("deleteAnalysisTitle")}
             </h3>
             <p id="delete-dialog-description" className="text-slate-300 mt-4">
-              {t('deleteAnalysisConfirm', { title: analysisToDelete.title })}
+              {t("deleteAnalysisConfirm", { title: analysisToDelete.title })}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 ref={cancelButtonRef}
                 onClick={() => setAnalysisToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800/50 border border-slate-700 rounded-none hover:bg-slate-700/50 transition-colors uppercase tracking-wider"
-                aria-label={t('cancelDeleteLabel')}
+                aria-label={t("cancelDeleteLabel")}
               >
-                {t('cancel')}
+                {t("cancel")}
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-none hover:bg-red-500 transition-colors uppercase tracking-wider"
-                aria-label={t('deleteAnalysisLabel', { title: analysisToDelete.title })}
+                aria-label={t("deleteAnalysisLabel", {
+                  title: analysisToDelete.title,
+                })}
               >
-                {t('delete')}
+                {t("delete")}
               </button>
             </div>
           </div>

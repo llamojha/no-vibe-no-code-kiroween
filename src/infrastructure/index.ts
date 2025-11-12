@@ -3,5 +3,6 @@
  * Contains all external adapters and implementations
  */
 
-export * from './database';
-export * from './external';
+export * from "./cache";
+export * from "./database";
+export * from "./external";

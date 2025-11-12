@@ -35,6 +35,7 @@ export class UserMapper {
       id: user.id.value,
       tier: "free", // Simplified mapping - would determine tier based on user properties
       created_at: user.createdAt.toISOString(),
+      credits: user.credits,
     };
   }
 
@@ -66,6 +67,7 @@ export class UserMapper {
       lastLoginAt: undefined, // Not stored in current schema
       isActive: true, // Simplified - all users considered active
       preferences: defaultPreferences,
+      credits: typeof dao.credits === "number" ? dao.credits : 0,
     });
   }
 
@@ -98,6 +100,7 @@ export class UserMapper {
       id: row.id,
       tier: row.tier,
       created_at: row.created_at,
+      credits: row.credits,
     };
   }
 
@@ -109,6 +112,7 @@ export class UserMapper {
       id: dao.id,
       tier: dao.tier,
       created_at: dao.created_at,
+      credits: dao.credits,
     };
   }
 
@@ -118,6 +122,7 @@ export class UserMapper {
   toSupabaseUpdate(dao: UserDAO): ProfileUpdate {
     return {
       tier: dao.tier,
+      credits: dao.credits,
       // Note: id and created_at are typically not updated
     };
   }
@@ -203,6 +208,7 @@ export class UserMapper {
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
+      credits: 3,
       preferences: {
         defaultLocale: Locale.english(),
         emailNotifications: true,

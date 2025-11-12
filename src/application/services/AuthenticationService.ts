@@ -96,6 +96,7 @@ export class AuthenticationService {
           createdAt: new Date(),
           updatedAt: new Date(),
           isActive: true,
+          credits: 999,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,

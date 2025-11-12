@@ -71,6 +71,13 @@ export interface IUserCommandRepository
   updateLastLogin(id: UserId, loginTime: Date): Promise<Result<void, Error>>;
 
   /**
+   * Update user's credit balance
+   * @param userId - The user ID to update credits for
+   * @param credits - The new credit balance
+   */
+  updateCredits(userId: UserId, credits: number): Promise<Result<void, Error>>;
+
+  /**
    * Bulk deactivate users that haven't logged in for specified days
    */
   deactivateInactiveUsers(days: number): Promise<Result<number, Error>>;

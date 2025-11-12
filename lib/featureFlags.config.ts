@@ -33,10 +33,17 @@ export function initFeatureFlags() {
     }),
     USE_MOCK_API: defineBooleanFlag({
       key: "USE_MOCK_API",
-      description: "Enable mock API mode for testing (never enabled in production)",
+      description:
+        "Enable mock API mode for testing (never enabled in production)",
       default: resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
         allowInProduction: false,
       }),
+      exposeToClient: false,
+    }),
+    CREDIT_SYSTEM: defineBooleanFlag({
+      key: "CREDIT_SYSTEM",
+      description: "Enable credit-based rate limiting system",
+      default: process.env.FF_CREDIT_SYSTEM?.toLowerCase() !== "false",
       exposeToClient: false,
     }),
   });

@@ -6,9 +6,11 @@ import {
   isCurrentUserPaid,
   isAuthenticated,
   getCurrentUser,
+  getSessionContext,
 } from "@/src/infrastructure/web/helpers/serverAuth";
 import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 import { generateMockUser } from "@/lib/mockData";
+import type { UserTier } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,7 @@ export default async function DoctorFrankensteinPage() {
         <Suspense
           fallback={<Loader message="Loading Doctor Frankenstein..." />}
         >
-          <DoctorFrankensteinView />
+          <DoctorFrankensteinView initialCredits={3} userTier="free" />
         </Suspense>
       </div>
     );
@@ -46,8 +48,11 @@ export default async function DoctorFrankensteinPage() {
     redirect("/dashboard");
   }
 
-  // Get user information for identity badge
+  // Get user information for identity badge and credits
   const user = await getCurrentUser();
+  const sessionContext = await getSessionContext();
+  const credits = user?.credits ?? 3;
+  const tier: UserTier = sessionContext.tier ?? "free";
 
   return (
     <div className="relative">
@@ -57,7 +62,7 @@ export default async function DoctorFrankensteinPage() {
         className="absolute top-4 right-4 z-20"
       />
       <Suspense fallback={<Loader message="Loading Doctor Frankenstein..." />}>
-        <DoctorFrankensteinView />
+        <DoctorFrankensteinView initialCredits={credits} userTier={tier} />
       </Suspense>
     </div>
   );

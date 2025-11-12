@@ -8,36 +8,73 @@ import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { FrankensteinSlotMachine } from "./FrankensteinSlotMachine";
 import { FrankensteinDiagram } from "./FrankensteinDiagram";
 import FrankensteinExportControl from "./FrankensteinExportControl";
-import { parseTechCompanies, parseAWSServices, selectRandom, type TechCompany, type AWSService } from "../utils/dataParser";
+import {
+  parseTechCompanies,
+  parseAWSServices,
+  selectRandom,
+  type TechCompany,
+  type AWSService,
+} from "../utils/dataParser";
 import { type FrankensteinIdeaResult } from "../api/generateFrankensteinIdea";
-import { saveFrankensteinIdea, loadFrankensteinIdea } from "../api/saveFrankensteinIdea";
-import type { SavedFrankensteinIdea, TechItem } from "@/lib/types";
+import {
+  saveFrankensteinIdea,
+  loadFrankensteinIdea,
+} from "../api/saveFrankensteinIdea";
+import type { SavedFrankensteinIdea, TechItem, UserTier } from "@/lib/types";
 import SpookyLoader from "@/features/kiroween-analyzer/components/SpookyLoader";
 import { isEnabled } from "@/lib/featureFlags";
+import { CreditCounter } from "@/features/shared/components/CreditCounter";
+import { getCreditBalance } from "@/features/shared/api";
 
-export const DoctorFrankensteinView: React.FC = () => {
+interface DoctorFrankensteinViewProps {
+  initialCredits: number;
+  userTier: UserTier;
+}
+
+export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
+  initialCredits,
+  userTier,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const savedId = searchParams.get("savedId");
-  
+
   const { locale, t } = useLocale();
-  const { session } = useAuth();
+  const { session, isLoading: isAuthLoading, isLocalDevMode } = useAuth();
   const isLoggedIn = !!session;
   const shareLinksEnabled = isEnabled("ENABLE_SHARE_LINKS");
-  
-  const [mode, setMode] = useState<'companies' | 'aws'>('companies');
+
+  // Credit system state
+  const [credits, setCredits] = useState<number>(initialCredits);
+  const [currentTier, setCurrentTier] = useState<UserTier>(userTier);
+  const refreshCredits = useCallback(async () => {
+    try {
+      const balance = await getCreditBalance();
+      setCredits(balance.credits);
+      setCurrentTier(balance.tier);
+    } catch (error) {
+      console.error("Failed to refresh credit balance", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCredits();
+  }, [refreshCredits]);
+
+  const [mode, setMode] = useState<"companies" | "aws">("companies");
   const [techCompanies, setTechCompanies] = useState<TechCompany[]>([]);
   const [awsServices, setAWSServices] = useState<AWSService[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Save/Share state
-  const [savedIdeaRecord, setSavedIdeaRecord] = useState<SavedFrankensteinIdea | null>(null);
+  const [savedIdeaRecord, setSavedIdeaRecord] =
+    useState<SavedFrankensteinIdea | null>(null);
   const [isReportSaved, setIsReportSaved] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
-  
+
   // Separate state for each mode
   const [companiesState, setCompaniesState] = useState<{
     selectedItems: string[];
@@ -50,7 +87,7 @@ export const DoctorFrankensteinView: React.FC = () => {
     slotSelectionLocked: false,
     slotCount: 4,
   });
-  
+
   const [awsState, setAWSState] = useState<{
     selectedItems: string[];
     frankensteinIdea: FrankensteinIdeaResult | null;
@@ -64,8 +101,9 @@ export const DoctorFrankensteinView: React.FC = () => {
   });
   
   // Get current state based on mode
-  const currentState = mode === 'companies' ? companiesState : awsState;
-  const setCurrentState = mode === 'companies' ? setCompaniesState : setAWSState;
+  const currentState = mode === "companies" ? companiesState : awsState;
+  const setCurrentState =
+    mode === "companies" ? setCompaniesState : setAWSState;
   const selectedItems = currentState.selectedItems;
   const frankensteinIdea = currentState.frankensteinIdea;
   const slotSelectionLocked = currentState.slotSelectionLocked;
@@ -80,10 +118,14 @@ export const DoctorFrankensteinView: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
-        console.log('Loading data sources...');
+        console.log("Loading data sources...");
         const [companiesRes, awsRes] = await Promise.all([
-          fetch('/doctor-frankenstein/well_known_unique_tech_companies_300_400_frankenstein_mashups_catalog.md'),
-          fetch('/doctor-frankenstein/aws_services_products_full_list_as_of_nov_5_2025.md')
+          fetch(
+            "/doctor-frankenstein/well_known_unique_tech_companies_300_400_frankenstein_mashups_catalog.md"
+          ),
+          fetch(
+            "/doctor-frankenstein/aws_services_products_full_list_as_of_nov_5_2025.md"
+          ),
         ]);
 
         if (!companiesRes.ok) {
@@ -99,13 +141,19 @@ export const DoctorFrankensteinView: React.FC = () => {
         const parsedCompanies = parseTechCompanies(companiesText);
         const parsedAWS = parseAWSServices(awsText);
 
-        console.log(`Loaded ${parsedCompanies.length} companies and ${parsedAWS.length} AWS services`);
+        console.log(
+          `Loaded ${parsedCompanies.length} companies and ${parsedAWS.length} AWS services`
+        );
 
         setTechCompanies(parsedCompanies);
         setAWSServices(parsedAWS);
       } catch (err) {
-        console.error('Failed to load data:', err);
-        setError(`Failed to load data sources: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        console.error("Failed to load data:", err);
+        setError(
+          `Failed to load data sources: ${
+            err instanceof Error ? err.message : "Unknown error"
+          }`
+        );
       }
     }
 
@@ -129,7 +177,9 @@ export const DoctorFrankensteinView: React.FC = () => {
           setSavedIdeaRecord(null);
           setIsReportSaved(false);
           if (loadError !== "Idea not found") {
-            setError("Unable to load the saved idea. It may have been removed.");
+            setError(
+              "Unable to load the saved idea. It may have been removed."
+            );
           }
           return;
         }
@@ -138,9 +188,10 @@ export const DoctorFrankensteinView: React.FC = () => {
         setSavedIdeaRecord(data);
         setMode(data.mode);
         setIsReportSaved(true);
-        
+
         // Use the complete analysis if available, otherwise create simplified version
-        const restoredIdea: FrankensteinIdeaResult = data.analysis.fullAnalysis || {
+        const restoredIdea: FrankensteinIdeaResult = data.analysis
+          .fullAnalysis || {
           idea_title: data.analysis.ideaName,
           idea_description: data.analysis.description,
           core_concept: data.analysis.description,
@@ -157,8 +208,8 @@ export const DoctorFrankensteinView: React.FC = () => {
         };
 
         // Use all selected technologies if available, otherwise fallback to tech1 and tech2
-        const selectedTechNames = data.analysis.allSelectedTechnologies 
-          ? data.analysis.allSelectedTechnologies.map(tech => tech.name)
+        const selectedTechNames = data.analysis.allSelectedTechnologies
+          ? data.analysis.allSelectedTechnologies.map((tech) => tech.name)
           : [data.tech1.name, data.tech2.name];
         
         // Determine slot count from number of selected technologies
@@ -179,7 +230,7 @@ export const DoctorFrankensteinView: React.FC = () => {
             slotCount: restoredSlotCount,
           });
         }
-        
+
         setError(null);
       } catch (err) {
         console.error("Error fetching saved idea:", err);
@@ -198,8 +249,8 @@ export const DoctorFrankensteinView: React.FC = () => {
     }
   }, [mode, savedId]);
 
-  const currentItems = mode === 'companies' ? techCompanies : awsServices;
-  const currentItemNames = currentItems.map(item => item.name);
+  const currentItems = mode === "companies" ? techCompanies : awsServices;
+  const currentItemNames = currentItems.map((item) => item.name);
 
   // Save report handler
   const handleSaveReport = useCallback(async (): Promise<string | null> => {
@@ -216,8 +267,8 @@ export const DoctorFrankensteinView: React.FC = () => {
 
     try {
       // Get tech items
-      const tech1Item = currentItems.find(i => i.name === selectedItems[0]);
-      const tech2Item = currentItems.find(i => i.name === selectedItems[1]);
+      const tech1Item = currentItems.find((i) => i.name === selectedItems[0]);
+      const tech2Item = currentItems.find((i) => i.name === selectedItems[1]);
 
       if (!tech1Item || !tech2Item) {
         throw new Error("Technology items not found");
@@ -225,23 +276,26 @@ export const DoctorFrankensteinView: React.FC = () => {
 
       const tech1: TechItem = {
         name: tech1Item.name,
-        description: tech1Item.description || `${tech1Item.category} technology`,
+        description:
+          tech1Item.description || `${tech1Item.category} technology`,
         category: tech1Item.category,
       };
 
       const tech2: TechItem = {
         name: tech2Item.name,
-        description: tech2Item.description || `${tech2Item.category} technology`,
+        description:
+          tech2Item.description || `${tech2Item.category} technology`,
         category: tech2Item.category,
       };
 
       // Store all selected technologies
-      const allSelectedTechs = selectedItems.map(name => {
-        const item = currentItems.find(i => i.name === name);
+      const allSelectedTechs = selectedItems.map((name) => {
+        const item = currentItems.find((i) => i.name === name);
         return {
           name,
-          description: item?.description || `${item?.category || ''} technology`,
-          category: item?.category || '',
+          description:
+            item?.description || `${item?.category || ""} technology`,
+          category: item?.category || "",
         };
       });
 
@@ -255,7 +309,7 @@ export const DoctorFrankensteinView: React.FC = () => {
           keyFeatures: [], // TODO: Extract from frankensteinIdea if available
           targetMarket: frankensteinIdea.target_audience,
           uniqueValueProposition: frankensteinIdea.unique_value_proposition,
-          language: (frankensteinIdea.language || locale) as 'en' | 'es',
+          language: (frankensteinIdea.language || locale) as "en" | "es",
           // Store the complete analysis and all technologies
           fullAnalysis: frankensteinIdea,
           allSelectedTechnologies: allSelectedTechs,
@@ -278,14 +332,22 @@ export const DoctorFrankensteinView: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [frankensteinIdea, selectedItems, isLoggedIn, mode, currentItems, locale, router]);
+  }, [
+    frankensteinIdea,
+    selectedItems,
+    isLoggedIn,
+    mode,
+    currentItems,
+    locale,
+    router,
+  ]);
 
   // Share handler
   const handleShare = useCallback(async () => {
     if (!shareLinksEnabled || !savedIdeaRecord) return;
 
     const url = `${window.location.origin}/doctor-frankenstein?savedId=${savedIdeaRecord.id}`;
-    
+
     try {
       await navigator.clipboard.writeText(url);
       setShareSuccess(true);
@@ -314,21 +376,21 @@ export const DoctorFrankensteinView: React.FC = () => {
       slotCount: currentState.slotCount,
     });
     setError(null);
-    
+
     // Reset saved state when generating a new idea
     setIsReportSaved(false);
     setSavedIdeaRecord(null);
-    
+
     // Remove savedId from URL if present
     if (savedId) {
-      router.replace('/doctor-frankenstein');
+      router.replace("/doctor-frankenstein");
     }
 
     // Simulate slot machine animation
     setTimeout(() => {
       const selected = selectRandom(currentItems, slotCount);
       setCurrentState({
-        selectedItems: selected.map(item => item.name),
+        selectedItems: selected.map((item) => item.name),
         frankensteinIdea: null,
         slotSelectionLocked: true,
         slotCount: currentState.slotCount,
@@ -344,26 +406,29 @@ export const DoctorFrankensteinView: React.FC = () => {
     setError(null);
 
     try {
-      const elements = selectedItems.map(name => {
-        const item = currentItems.find(i => i.name === name);
+      const elements = selectedItems.map((name) => {
+        const item = currentItems.find((i) => i.name === name);
         return {
           name,
-          description: 'description' in item! ? (item as TechCompany).description : undefined
+          description:
+            "description" in item!
+              ? (item as TechCompany).description
+              : undefined,
         };
       });
 
-      const response = await fetch('/api/doctor-frankenstein/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/doctor-frankenstein/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           elements,
           mode,
-          language: locale
-        })
+          language: locale,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate idea');
+        throw new Error("Failed to generate idea");
       }
 
       const result = await response.json();
@@ -373,9 +438,10 @@ export const DoctorFrankensteinView: React.FC = () => {
         slotSelectionLocked: true,
         slotCount: currentState.slotCount,
       });
+      await refreshCredits();
     } catch (err) {
-      console.error('Generation error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate idea');
+      console.error("Generation error:", err);
+      setError(err instanceof Error ? err.message : "Failed to generate idea");
     } finally {
       setIsGenerating(false);
     }
@@ -416,49 +482,64 @@ export const DoctorFrankensteinView: React.FC = () => {
     setError(null);
 
     if (savedId) {
-      router.replace('/doctor-frankenstein');
+      router.replace("/doctor-frankenstein");
     }
   }, [router, savedId, setCurrentState]);
 
   if (isGenerating) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black flex items-center justify-center">
-        <SpookyLoader message={t('generatingFrankensteinIdea') || 'Bringing your Frankenstein to life...'} />
+        <SpookyLoader
+          message={
+            t("generatingFrankensteinIdea") ||
+            "Bringing your Frankenstein to life..."
+          }
+        />
       </div>
     );
   }
 
   if (frankensteinIdea) {
     // Check if the report language matches current UI language
-    const reportLanguage = frankensteinIdea.language || 'en';
+    const reportLanguage = frankensteinIdea.language || "en";
     const currentLanguage = locale;
     const languageMismatch = reportLanguage !== currentLanguage;
+    const metrics = frankensteinIdea.metrics ?? {
+      originality_score: 0,
+      feasibility_score: 0,
+      impact_score: 0,
+      scalability_score: 0,
+      wow_factor: 0,
+    };
 
     const handleRegenerateInCurrentLanguage = async () => {
       setIsGenerating(true);
       setError(null);
 
       try {
-        const elements = selectedItems.map(name => {
-          const item = currentItems.find(i => i.name === name);
+        const elements = selectedItems.map((name) => {
+          const item = currentItems.find((i) => i.name === name);
           return {
             name,
-            description: 'description' in item! ? (item as TechCompany).description : undefined
+            description:
+              "description" in item!
+                ? (item as TechCompany).description
+                : undefined,
           };
         });
 
-        const response = await fetch('/api/doctor-frankenstein/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/doctor-frankenstein/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             elements,
             mode,
-            language: currentLanguage
-          })
+            language: currentLanguage,
+          }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to generate idea');
+          throw new Error("Failed to generate idea");
         }
 
         const result = await response.json();
@@ -468,9 +549,12 @@ export const DoctorFrankensteinView: React.FC = () => {
           slotSelectionLocked: true,
           slotCount: currentState.slotCount,
         });
+        await refreshCredits();
       } catch (err) {
-        console.error('Generation error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to generate idea');
+        console.error("Generation error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to generate idea"
+        );
       } finally {
         setIsGenerating(false);
       }
@@ -484,10 +568,16 @@ export const DoctorFrankensteinView: React.FC = () => {
               onClick={() => router.back()}
               className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
             >
-              ← {t('back') || 'Back'}
+              ← {t("back") || "Back"}
             </button>
             <LanguageToggle />
           </div>
+
+          {isLoggedIn && (
+            <div className="mb-6 max-w-xs ml-auto">
+              <CreditCounter credits={credits} tier={currentTier} />
+            </div>
+          )}
 
           {/* Language mismatch warning */}
           {languageMismatch && (
@@ -495,14 +585,14 @@ export const DoctorFrankensteinView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-yellow-200 font-semibold mb-1">
-                    {currentLanguage === 'es' 
-                      ? '⚠️ Este reporte está en inglés'
-                      : '⚠️ This report is in Spanish'}
+                    {currentLanguage === "es"
+                      ? "⚠️ Este reporte está en inglés"
+                      : "⚠️ This report is in Spanish"}
                   </p>
                   <p className="text-yellow-300 text-sm">
-                    {currentLanguage === 'es'
-                      ? 'El contenido fue generado en otro idioma. ¿Quieres regenerarlo en español?'
-                      : 'The content was generated in another language. Do you want to regenerate it in English?'}
+                    {currentLanguage === "es"
+                      ? "El contenido fue generado en otro idioma. ¿Quieres regenerarlo en español?"
+                      : "The content was generated in another language. Do you want to regenerate it in English?"}
                   </p>
                 </div>
                 <button
@@ -510,9 +600,13 @@ export const DoctorFrankensteinView: React.FC = () => {
                   disabled={isGenerating}
                   className="ml-4 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white font-bold rounded-lg transition-all whitespace-nowrap"
                 >
-                  {isGenerating 
-                    ? (currentLanguage === 'es' ? 'Regenerando...' : 'Regenerating...')
-                    : (currentLanguage === 'es' ? '🔄 Regenerar' : '🔄 Regenerate')}
+                  {isGenerating
+                    ? currentLanguage === "es"
+                      ? "Regenerando..."
+                      : "Regenerating..."
+                    : currentLanguage === "es"
+                    ? "🔄 Regenerar"
+                    : "🔄 Regenerate"}
                 </button>
               </div>
             </div>
@@ -525,68 +619,96 @@ export const DoctorFrankensteinView: React.FC = () => {
 
             {/* Frankenstein Diagram showing the combination */}
             <FrankensteinDiagram
-              elements={selectedItems.map(name => {
-                const item = currentItems.find(i => i.name === name);
+              elements={selectedItems.map((name) => {
+                const item = currentItems.find((i) => i.name === name);
                 // If no description, use category as fallback
                 let description = item?.description;
                 if (!description && item) {
-                  const categoryName = item.category || '';
+                  const categoryName = item.category || "";
                   if (categoryName) {
-                    description = mode === 'aws' 
-                      ? `${categoryName} service`
-                      : `${categoryName} technology`;
+                    description =
+                      mode === "aws"
+                        ? `${categoryName} service`
+                        : `${categoryName} technology`;
                   }
                 }
                 return {
                   name,
-                  description
+                  description,
                 };
               })}
               ideaTitle={frankensteinIdea.idea_title}
             />
 
             <div className="space-y-4 text-purple-100">
-              <Section title={t('ideaDescription') || 'Idea Description'}>
+              <Section title={t("ideaDescription") || "Idea Description"}>
                 {frankensteinIdea.idea_description}
               </Section>
 
-              <Section title={t('coreConcept') || 'Core Concept'}>
+              <Section title={t("coreConcept") || "Core Concept"}>
                 {frankensteinIdea.core_concept}
               </Section>
 
-              <Section title={t('problemStatement') || 'Problem Statement'}>
+              <Section title={t("problemStatement") || "Problem Statement"}>
                 {frankensteinIdea.problem_statement}
               </Section>
 
-              <Section title={t('proposedSolution') || 'Proposed Solution'}>
+              <Section title={t("proposedSolution") || "Proposed Solution"}>
                 {frankensteinIdea.proposed_solution}
               </Section>
 
-              <Section title={t('uniqueValueProposition') || 'Unique Value Proposition'}>
+              <Section
+                title={
+                  t("uniqueValueProposition") || "Unique Value Proposition"
+                }
+              >
                 {frankensteinIdea.unique_value_proposition}
               </Section>
 
-              <Section title={t('targetAudience') || 'Target Audience'}>
+              <Section title={t("targetAudience") || "Target Audience"}>
                 {frankensteinIdea.target_audience}
               </Section>
 
-              <Section title={t('businessModel') || 'Business Model'}>
+              <Section title={t("businessModel") || "Business Model"}>
                 {frankensteinIdea.business_model}
               </Section>
 
-              <Section title={t('growthStrategy') || 'Growth Strategy'}>
+              <Section title={t("growthStrategy") || "Growth Strategy"}>
                 {frankensteinIdea.growth_strategy}
               </Section>
 
-              <Section title={t('techStack') || 'Tech Stack'}>
+              <Section title={t("techStack") || "Tech Stack"}>
                 {frankensteinIdea.tech_stack_suggestion}
               </Section>
 
-              <Section title={t('risksAndChallenges') || 'Risks & Challenges'}>
+              <Section title={t("risksAndChallenges") || "Risks & Challenges"}>
                 {frankensteinIdea.risks_and_challenges}
               </Section>
 
-              <Section title={t('summary') || 'Summary'}>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 my-8">
+                <MetricCard
+                  label={t("originality") || "Originality"}
+                  value={metrics.originality_score}
+                />
+                <MetricCard
+                  label={t("feasibility") || "Feasibility"}
+                  value={metrics.feasibility_score}
+                />
+                <MetricCard
+                  label={t("impact") || "Impact"}
+                  value={metrics.impact_score}
+                />
+                <MetricCard
+                  label={t("scalability") || "Scalability"}
+                  value={metrics.scalability_score}
+                />
+                <MetricCard
+                  label={t("wowFactor") || "Wow Factor"}
+                  value={metrics.wow_factor}
+                />
+              </div>
+
+              <Section title={t("summary") || "Summary"}>
                 {frankensteinIdea.summary}
               </Section>
             </div>
@@ -705,36 +827,49 @@ export const DoctorFrankensteinView: React.FC = () => {
                   mode={mode}
                   tech1={{
                     name: selectedItems[0],
-                    description: currentItems.find(i => i.name === selectedItems[0])?.description || "",
-                    category: currentItems.find(i => i.name === selectedItems[0])?.category || "",
+                    description:
+                      currentItems.find((i) => i.name === selectedItems[0])
+                        ?.description || "",
+                    category:
+                      currentItems.find((i) => i.name === selectedItems[0])
+                        ?.category || "",
                   }}
                   tech2={{
                     name: selectedItems[1],
-                    description: currentItems.find(i => i.name === selectedItems[1])?.description || "",
-                    category: currentItems.find(i => i.name === selectedItems[1])?.category || "",
+                    description:
+                      currentItems.find((i) => i.name === selectedItems[1])
+                        ?.description || "",
+                    category:
+                      currentItems.find((i) => i.name === selectedItems[1])
+                        ?.category || "",
                   }}
                   analysis={{
                     ideaName: frankensteinIdea.idea_title,
                     description: frankensteinIdea.idea_description,
                     keyFeatures: [],
                     targetMarket: frankensteinIdea.target_audience,
-                    uniqueValueProposition: frankensteinIdea.unique_value_proposition,
-                    language: (frankensteinIdea.language || locale) as 'en' | 'es',
+                    uniqueValueProposition:
+                      frankensteinIdea.unique_value_proposition,
+                    language: (frankensteinIdea.language || locale) as
+                      | "en"
+                      | "es",
                   }}
                   fullAnalysis={frankensteinIdea}
-                  allTechnologies={selectedItems.map(name => {
-                    const item = currentItems.find(i => i.name === name);
+                  allTechnologies={selectedItems.map((name) => {
+                    const item = currentItems.find((i) => i.name === name);
                     return {
                       name,
-                      description: item?.description || `${item?.category || ''} technology`,
-                      category: item?.category || '',
+                      description:
+                        item?.description ||
+                        `${item?.category || ""} technology`,
+                      category: item?.category || "",
                     };
                   })}
                 />
               )}
 
-              {isLoggedIn && (
-                isReportSaved ? (
+              {isLoggedIn &&
+                (isReportSaved ? (
                   <>
                     <span className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-green-400 bg-green-900/20 border border-green-700 rounded cursor-default">
                       <svg
@@ -769,7 +904,11 @@ export const DoctorFrankensteinView: React.FC = () => {
                         >
                           <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
                         </svg>
-                        <span>{shareSuccess ? (t("linkCopied") || "Link Copied!") : (t("share") || "Share")}</span>
+                        <span>
+                          {shareSuccess
+                            ? t("linkCopied") || "Link Copied!"
+                            : t("share") || "Share"}
+                        </span>
                       </button>
                     )}
 
@@ -785,7 +924,9 @@ export const DoctorFrankensteinView: React.FC = () => {
                       >
                         <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                       </svg>
-                      <span>{t("goToDashboardButton") || "Go to Dashboard"}</span>
+                      <span>
+                        {t("goToDashboardButton") || "Go to Dashboard"}
+                      </span>
                     </button>
                   </>
                 ) : (
@@ -802,10 +943,13 @@ export const DoctorFrankensteinView: React.FC = () => {
                     >
                       <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V4zm3 1h4a1 1 0 000-2H8a1 1 0 000 2z" />
                     </svg>
-                    <span>{isSaving ? (t("saving") || "Saving...") : (t("saveReportButton") || "Save Report")}</span>
+                    <span>
+                      {isSaving
+                        ? t("saving") || "Saving..."
+                        : t("saveReportButton") || "Save Report"}
+                    </span>
                   </button>
-                )
-              )}
+                ))}
             </div>
           </div>
         </div>
@@ -849,6 +993,13 @@ export const DoctorFrankensteinView: React.FC = () => {
           </div>
         </div>
 
+        {/* Credit Counter */}
+        {isLoggedIn && (
+          <div className="mb-8 max-w-2xl mx-auto">
+            <CreditCounter credits={credits} tier={currentTier} />
+          </div>
+        )}
+
         {/* Mode Toggle */}
         <div className="flex justify-center mb-8">
           <div className="bg-purple-900/50 rounded-lg p-1 flex gap-2">
@@ -862,7 +1013,7 @@ export const DoctorFrankensteinView: React.FC = () => {
                   : 'bg-transparent text-purple-300 hover:text-white'
               }`}
             >
-              🏢 {t('techCompanies') || 'Tech Companies'}
+              🏢 {t("techCompanies") || "Tech Companies"}
             </button>
             <button
               onClick={() => {
@@ -874,7 +1025,7 @@ export const DoctorFrankensteinView: React.FC = () => {
                   : 'bg-transparent text-purple-300 hover:text-white'
               }`}
             >
-              ☁️ {t('awsServices') || 'AWS Services'}
+              ☁️ {t("awsServices") || "AWS Services"}
             </button>
           </div>
         </div>
@@ -882,13 +1033,17 @@ export const DoctorFrankensteinView: React.FC = () => {
         {/* Description */}
         <div className="text-center mb-8 text-purple-200">
           <p className="text-lg">
-            {t('frankensteinDescription') || 
-              'Combine random technologies to create innovative startup ideas!'}
+            {t("frankensteinDescription") ||
+              "Combine random technologies to create innovative startup ideas!"}
           </p>
           <p className="text-sm mt-2 text-purple-400">
-            {mode === 'companies' 
-              ? `${techCompanies.length} ${t('companiesAvailable') || 'companies available'}`
-              : `${awsServices.length} ${t('awsServicesAvailable') || 'AWS services available'}`}
+            {mode === "companies"
+              ? `${techCompanies.length} ${
+                  t("companiesAvailable") || "companies available"
+                }`
+              : `${awsServices.length} ${
+                  t("awsServicesAvailable") || "AWS services available"
+                }`}
           </p>
           {currentItems.length === 0 && !error && (
             <p className="text-sm mt-2 text-yellow-400">
@@ -897,9 +1052,11 @@ export const DoctorFrankensteinView: React.FC = () => {
           )}
           {!hasActiveWork && (
             <p className="text-xs mt-2 text-purple-500 italic">
-              {mode === 'companies' 
-                ? t('readyToCombineCompanies') || 'Ready to combine tech companies into a new idea'
-                : t('readyToCombineAWS') || 'Ready to combine AWS services into a new idea'}
+              {mode === "companies"
+                ? t("readyToCombineCompanies") ||
+                  "Ready to combine tech companies into a new idea"
+                : t("readyToCombineAWS") ||
+                  "Ready to combine AWS services into a new idea"}
             </p>
           )}
           {hasActiveWork && (
@@ -966,7 +1123,7 @@ export const DoctorFrankensteinView: React.FC = () => {
             selectedItems={selectedItems}
             isSpinning={isSpinning}
             slotCount={slotCount}
-            itemsWithDetails={currentItems.map(item => ({
+            itemsWithDetails={currentItems.map((item) => ({
               name: item.name,
               description: item.description,
               category: item.category,
@@ -982,7 +1139,7 @@ export const DoctorFrankensteinView: React.FC = () => {
               disabled={isSpinning || currentItems.length === 0}
               className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-xl rounded-lg transition-all transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
             >
-              ⚡ {t('createFrankenstein') || 'Create Frankenstein'} ⚡
+              ⚡ {t("createFrankenstein") || "Create Frankenstein"} ⚡
             </button>
           ) : (
             <>
@@ -990,13 +1147,13 @@ export const DoctorFrankensteinView: React.FC = () => {
                 onClick={handleReject}
                 className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all"
               >
-                ❌ {t('reject') || 'Reject'}
+                ❌ {t("reject") || "Reject"}
               </button>
               <button
                 onClick={handleAcceptCombination}
                 className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-105"
               >
-                ✅ {t('acceptAndGenerate') || 'Accept & Generate Idea'}
+                ✅ {t("acceptAndGenerate") || "Accept & Generate Idea"}
               </button>
             </>
           )}
@@ -1006,13 +1163,20 @@ export const DoctorFrankensteinView: React.FC = () => {
   );
 };
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => {
   // Helper to safely render content (handle objects, arrays, etc.)
   const renderContent = (content: React.ReactNode): React.ReactNode => {
-    if (typeof content === 'string') {
+    if (typeof content === "string") {
       return content;
     }
-    if (typeof content === 'object' && content !== null && !Array.isArray(content)) {
+    if (
+      typeof content === "object" &&
+      content !== null &&
+      !Array.isArray(content)
+    ) {
       // If it's an object, convert to JSON string for display
       return JSON.stringify(content, null, 2);
     }
@@ -1020,7 +1184,9 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
       return (
         <ul className="list-disc list-inside space-y-1">
           {content.map((item, i) => (
-            <li key={i}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+            <li key={i}>
+              {typeof item === "string" ? item : JSON.stringify(item)}
+            </li>
           ))}
         </ul>
       );
@@ -1031,9 +1197,19 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   return (
     <div>
       <h3 className="text-xl font-bold text-orange-400 mb-2">{title}</h3>
-      <div className="text-purple-100 whitespace-pre-wrap">{renderContent(children)}</div>
+      <div className="text-purple-100 whitespace-pre-wrap">
+        {renderContent(children)}
+      </div>
     </div>
   );
 };
 
-
+const MetricCard: React.FC<{ label: string; value: number }> = ({
+  label,
+  value,
+}) => (
+  <div className="bg-purple-900/50 rounded-lg p-4 text-center border border-purple-600">
+    <div className="text-3xl font-bold text-orange-400">{value}</div>
+    <div className="text-sm text-purple-300 mt-1">{label}</div>
+  </div>
+);

@@ -105,6 +105,10 @@ export interface AnalysisResponseDTO {
   }>;
   viabilitySummary?: string;
   finalScoreExplanation?: string;
+  credits?: {
+    remaining: number;
+    tier: "free" | "paid" | "admin";
+  };
 }
 
 /**
