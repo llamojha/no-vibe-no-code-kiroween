@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { requestTranscription } from "@/features/analyzer/api/transcribeAudio";
+import { trackIdeaEnhancement } from "@/features/analytics/tracking";
 
 interface IdeaInputFormProps {
   idea: string;
   onIdeaChange: (idea: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
+  analysisType?: "startup" | "kiroween";
 }
 
 type RecordingStatus = "idle" | "recording" | "transcribing" | "error";
@@ -18,18 +20,62 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
   onIdeaChange,
   onAnalyze,
   isLoading,
+  analysisType = "startup",
 }) => {
   const { t, locale } = useLocale();
   const [recordingStatus, setRecordingStatus] =
     useState<RecordingStatus>("idle");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const previousIdeaRef = useRef<string>(idea);
+  const modificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetRecording = useCallback((stream?: MediaStream) => {
     setRecordingStatus("idle");
     audioChunksRef.current = [];
     stream?.getTracks().forEach((track) => track.stop());
   }, []);
+
+  // Track idea modifications with debouncing
+  useEffect(() => {
+    // Clear any existing timeout
+    if (modificationTimeoutRef.current) {
+      clearTimeout(modificationTimeoutRef.current);
+    }
+
+    // Don't track if idea is empty or hasn't changed
+    if (!idea || idea === previousIdeaRef.current) {
+      return;
+    }
+
+    // Debounce tracking to avoid tracking every keystroke
+    modificationTimeoutRef.current = setTimeout(() => {
+      const previousLength = previousIdeaRef.current.length;
+      const currentLength = idea.length;
+      const changeType =
+        currentLength > previousLength ? "addition" : "deletion";
+
+      trackIdeaEnhancement({
+        action: "modify_idea",
+        analysisType,
+        suggestionLength: Math.abs(currentLength - previousLength),
+        changeType,
+      });
+
+      previousIdeaRef.current = idea;
+    }, 2000); // Wait 2 seconds after user stops typing
+
+    return () => {
+      if (modificationTimeoutRef.current) {
+        clearTimeout(modificationTimeoutRef.current);
+      }
+    };
+  }, [idea, analysisType]);
+
+  // Update ref when idea changes externally (e.g., from suggestion)
+  useEffect(() => {
+    previousIdeaRef.current = idea;
+  }, [idea]);
 
   const handleMicClick = useCallback(async () => {
     if (recordingStatus === "recording") {

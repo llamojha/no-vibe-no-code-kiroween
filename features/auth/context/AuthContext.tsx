@@ -11,7 +11,7 @@ import React, {
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { browserSupabase } from "@/lib/supabase/client";
 import type { Database, ProfileRow, UserTier } from "@/lib/supabase/types";
-import { identify } from "@/features/analytics/posthogClient";
+import { identifyUser } from "@/features/analytics/tracking";
 import { isEnabled } from "@/lib/featureFlags";
 import {
   generateMockUser,
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchUserTierForId = useCallback(
     async (client: SupabaseClient<Database>, userId: string) => {
-      const { data, error} = await client
+      const { data, error } = await client
         .from("profiles")
         .select("tier")
         .eq("id", userId)
@@ -116,6 +116,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setSession(mockSession);
           setIsLoading(false);
 
+          // Identify user in PostHog for local dev mode
+          identifyUser(mockUser.id, {
+            email: mockUser.email,
+            created_at: mockUser.created_at,
+          });
+
           // Initialize mock data if needed
           await initializeMockData();
 
@@ -173,8 +179,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setSession(nextSession);
       setIsLoading(false);
       if (nextSession?.user?.id) {
-        identify(nextSession.user.id, {
+        // Identify user in PostHog with email and created_at
+        identifyUser(nextSession.user.id, {
           email: nextSession.user.email ?? undefined,
+          created_at: nextSession.user.created_at,
         });
       }
       const userId = nextSession?.user?.id;

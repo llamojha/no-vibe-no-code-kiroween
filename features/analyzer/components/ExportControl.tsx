@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
-import type { Analysis } from '@/lib/types';
-import { useLocale } from '@/features/locale/context/LocaleContext';
-import { generateReport } from '@/features/analyzer/utils/exportReport';
+import React, { useEffect, useRef, useState } from "react";
+import type { Analysis } from "@/lib/types";
+import { useLocale } from "@/features/locale/context/LocaleContext";
+import { generateReport } from "@/features/analyzer/utils/exportReport";
+import { trackExport } from "@/features/analytics/tracking";
 
 interface ExportControlProps {
   analysis: Analysis;
@@ -23,24 +24,43 @@ const ExportControl: React.FC<ExportControlProps> = ({ analysis }) => {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleExport = (format: 'md' | 'txt') => {
-    const content = generateReport(analysis, locale, format);
-    const blob = new Blob([content], {
-      type: 'text/plain;charset=utf-8',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `idea-analysis.${format}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setIsOpen(false);
+  const handleExport = (format: "md" | "txt") => {
+    try {
+      const content = generateReport(analysis, locale, format);
+      const blob = new Blob([content], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `idea-analysis.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsOpen(false);
+
+      // Track successful export
+      trackExport({
+        format: format === "md" ? "markdown" : "txt",
+        reportType: "startup",
+        success: true,
+      });
+    } catch (error) {
+      console.error("Export failed:", error);
+
+      // Track failed export
+      trackExport({
+        format: format === "md" ? "markdown" : "txt",
+        reportType: "startup",
+        success: false,
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   };
 
   return (
@@ -63,11 +83,11 @@ const ExportControl: React.FC<ExportControlProps> = ({ analysis }) => {
             clipRule="evenodd"
           />
         </svg>
-        <span>{t('exportButton')}</span>
+        <span>{t("exportButton")}</span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className={`h-4 w-4 transform transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
+            isOpen ? "rotate-180" : ""
           }`}
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -82,11 +102,11 @@ const ExportControl: React.FC<ExportControlProps> = ({ analysis }) => {
       {isOpen && (
         <div
           className="absolute right-0 bottom-full mb-2 w-56 origin-bottom-right bg-primary border border-slate-700 rounded-none shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10 animate-fade-in"
-          style={{ animationDuration: '150ms' }}
+          style={{ animationDuration: "150ms" }}
         >
           <div className="py-1">
             <button
-              onClick={() => handleExport('md')}
+              onClick={() => handleExport("md")}
               className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-accent/20 hover:text-accent transition-colors"
             >
               <svg
@@ -103,10 +123,10 @@ const ExportControl: React.FC<ExportControlProps> = ({ analysis }) => {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span>{t('exportAsMarkdown')}</span>
+              <span>{t("exportAsMarkdown")}</span>
             </button>
             <button
-              onClick={() => handleExport('txt')}
+              onClick={() => handleExport("txt")}
               className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-slate-300 hover:bg-accent/20 hover:text-accent transition-colors"
             >
               <svg
@@ -123,7 +143,7 @@ const ExportControl: React.FC<ExportControlProps> = ({ analysis }) => {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <span>{t('exportAsText')}</span>
+              <span>{t("exportAsText")}</span>
             </button>
           </div>
         </div>

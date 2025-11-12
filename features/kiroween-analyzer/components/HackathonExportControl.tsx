@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { HackathonAnalysis } from "@/lib/types";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { generateHackathonReport } from "../utils/exportHackathonReport";
+import { trackExport } from "@/features/analytics/tracking";
 
 interface HackathonExportControlProps {
   analysis: HackathonAnalysis;
@@ -30,19 +31,39 @@ const HackathonExportControl: React.FC<HackathonExportControlProps> = ({
   }, []);
 
   const handleExport = (format: "md" | "txt") => {
-    const content = generateHackathonReport(analysis, locale, format);
-    const blob = new Blob([content], {
-      type: "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `hackathon-analysis.${format}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setIsOpen(false);
+    try {
+      const content = generateHackathonReport(analysis, locale, format);
+      const blob = new Blob([content], {
+        type: "text/plain;charset=utf-8",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hackathon-analysis.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsOpen(false);
+
+      // Track successful export
+      trackExport({
+        format: format === "md" ? "markdown" : "txt",
+        reportType: "kiroween",
+        success: true,
+      });
+    } catch (error) {
+      console.error("[Export] Failed to export hackathon report:", error);
+
+      // Track failed export
+      trackExport({
+        format: format === "md" ? "markdown" : "txt",
+        reportType: "kiroween",
+        success: false,
+        errorMessage:
+          error instanceof Error ? error.message : "Unknown export error",
+      });
+    }
   };
 
   return (

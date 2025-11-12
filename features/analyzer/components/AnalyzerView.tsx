@@ -24,6 +24,11 @@ import Loader from "@/features/analyzer/components/Loader";
 import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { capture } from "@/features/analytics/posthogClient";
+import {
+  trackReportGeneration,
+  identifyUser,
+  trackIdeaEnhancement,
+} from "@/features/analytics/tracking";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
 
@@ -102,6 +107,15 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   useEffect(() => {
     void refreshCredits();
   }, [refreshCredits]);
+
+  // Identify user for analytics when session is available
+  useEffect(() => {
+    if (session?.user?.id) {
+      identifyUser(session.user.id, {
+        email: session.user.email,
+      });
+    }
+  }, [session]);
 
   useEffect(() => {
     if (!savedId) {
@@ -319,15 +333,44 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
           setIsReportSaved(true);
         } catch (err) {
+      // Track successful report generation
+      trackReportGeneration({
+        reportType: "startup",
+        ideaLength: idea.length,
+        userId: session?.user?.id,
+      });
+
+      // If this came from a Frankenstein, update it automatically with the score
+      if (frankensteinId && sourceFromUrl === "frankenstein") {
+        try {
+          const { updateFrankensteinValidation } = await import(
+            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+          );
+          const { deriveFivePointScore } = await import(
+            "@/features/dashboard/api/scoreUtils"
+          );
+
+          const score = deriveFivePointScore(analysisResult as any);
+
+          console.log("Auto-updating Frankenstein with score:", {
+            frankensteinId,
+            score,
+            rawFinalScore: analysisResult.finalScore,
+          });
+
+          await updateFrankensteinValidation(frankensteinId, "analyzer", {
+            analysisId: "temp-" + Date.now(), // Temporary ID since we're not saving the analysis
+            score,
+          });
+
+          setIsReportSaved(true); // Mark as "saved" to show success message
+        } catch (err) {
           console.error("Failed to update Frankenstein with score:", err);
         }
       }
 
       // Only clean up URL if we had a savedId but didn't just create a new one
       if (savedId && !newlySavedId) {
-        router.replace("/analyzer");
-      }
-    } catch (err) {
       console.error(err);
       setError(
         err instanceof Error
@@ -346,6 +389,78 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     savedId,
     t,
     refreshCredits,
+    frankensteinId,
+    sourceFromUrl,
+  ]);
+
+  const handleSaveReport = useCallback(async () => {
+    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
+    if (!analysisToSave || !idea) return;
+
+    // Check if authentication is required (not in local dev mode)
+    if (!isLocalDevMode && !session) {
+      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+
+    // Use the new save function that handles both local dev mode and production
+    const { data: record, error: saveError } = await saveAnalysis({
+      idea,
+      analysis: analysisToSave,
+      audioBase64: generatedAudio || undefined,
+    });
+
+    if (saveError || !record) {
+      setError(saveError || "Failed to save your analysis. Please try again.");
+      return;
+    }
+
+    setSavedAnalysisRecord(record);
+    setIsReportSaved(true);
+    setNewAnalysis(null);
+    setAddedSuggestions([]);
+    setGeneratedAudio(record.audioBase64 ?? null);
+    capture("analysis_saved", { analysis_id: record.id, locale });
+
+    // If this came from a Frankenstein, update it with the validation
+    if (frankensteinId && sourceFromUrl === "frankenstein") {
+      try {
+        const { updateFrankensteinValidation } = await import(
+          "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+        );
+        const { deriveFivePointScore } = await import(
+          "@/features/dashboard/api/scoreUtils"
+        );
+
+        // Use deriveFivePointScore to get the correct 0-5 score
+        const score = deriveFivePointScore(analysisToSave as any);
+
+        console.log("Updating Frankenstein with validation:", {
+          frankensteinId,
+          analysisId: record.id,
+          score,
+          rawFinalScore: analysisToSave.finalScore,
+        });
+
+        await updateFrankensteinValidation(frankensteinId, "analyzer", {
+          analysisId: record.id,
+          score,
+        });
+      } catch (err) {
+        console.error("Failed to update Frankenstein with validation:", err);
+        // Don't show error to user, this is a background operation
+      }
+    }
+
+    router.replace(
+      `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
+    );
+  }, [
+    generatedAudio,
+    idea,
+    newAnalysis,
+    router,
+    savedAnalysisRecord,
     session,
     isLocalDevMode,
     frankensteinId,
@@ -383,10 +498,20 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
   const handleRefineSuggestion = useCallback(
     (suggestionText: string, suggestionTitle: string, index: number) => {
-      setIdea(
-        (prev) => `${prev.trim()}\n\n— ${suggestionTitle}: ${suggestionText}`
-      );
-      setAddedSuggestions((prev) => [...prev, index]);
+      const suggestionContent = `— ${suggestionTitle}: ${suggestionText}`;
+      setIdea((prev) => `${prev.trim()}\n\n${suggestionContent}`);
+      setAddedSuggestions((prev) => {
+        const newSuggestions = [...prev, index];
+
+        // Track suggestion addition
+        trackIdeaEnhancement({
+          action: "add_suggestion",
+          analysisType: "startup",
+          suggestionLength: suggestionContent.length,
+        });
+
+        return newSuggestions;
+      });
       ideaInputRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -594,6 +719,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
                 onIdeaChange={setIdea}
                 onAnalyze={handleAnalyze}
                 isLoading={busy}
+                analysisType="startup"
               />
             </div>
           )}
@@ -668,9 +794,12 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               </div>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
+
+                onSave={
+                    : handleSaveReport
+                }
                 isSaved={isReportSaved}
                 savedAudioBase64={generatedAudio}
-                onAudioGenerated={handleAudioGenerated}
                 onGoToDashboard={handleBack}
                 onRefineSuggestion={
                   showInputForm ? handleRefineSuggestion : undefined
