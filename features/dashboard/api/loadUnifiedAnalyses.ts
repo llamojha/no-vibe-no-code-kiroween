@@ -105,25 +105,15 @@ function transformFrankensteinIdea(
       }
     | undefined;
 
-  const metricValues = fullAnalysis?.metrics
-    ? [
-        fullAnalysis.metrics.originality_score ?? 0,
-        fullAnalysis.metrics.feasibility_score ?? 0,
-        fullAnalysis.metrics.impact_score ?? 0,
-        fullAnalysis.metrics.scalability_score ?? 0,
-        fullAnalysis.metrics.wow_factor ?? 0,
-      ]
-    : [];
-
-  const average100 =
-    metricValues.length > 0
-      ? metricValues.reduce((sum, value) => sum + (value || 0), 0) /
-        metricValues.length
-      : 0;
-  const normalizedScore = Math.max(
-    0,
-    Math.min(5, Number((average100 / 20).toFixed(1)))
-  );
+  // Check if this Frankenstein has been validated
+  // Use the validation score if it exists, otherwise 0
+  let normalizedScore = 0;
+  
+  if (idea.analysis.validatedWithKiroween) {
+    normalizedScore = idea.analysis.validatedWithKiroween.score;
+  } else if (idea.analysis.validatedWithAnalyzer) {
+    normalizedScore = idea.analysis.validatedWithAnalyzer.score;
+  }
 
   return {
     id: idea.id,
@@ -131,7 +121,7 @@ function transformFrankensteinIdea(
     category: "frankenstein",
     title: idea.analysis.ideaName || `${idea.tech1.name} + ${idea.tech2.name}`,
     createdAt: idea.createdAt,
-    finalScore: normalizedScore,
+    finalScore: normalizedScore, // 0 if not validated, otherwise validation score
     summary:
       fullAnalysis?.summary ||
       fullAnalysis?.idea_description ||

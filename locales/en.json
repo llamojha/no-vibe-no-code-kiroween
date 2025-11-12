@@ -289,4 +289,6 @@
   "insufficientCreditsExplanation": "Each analysis consumes 1 credit. Get more credits to continue analyzing your ideas.",
   "getMoreCredits": "Get More Credits",
   "creditsWillRefresh": "Credits are refreshed periodically for all users."
+  "notValidatedYet": "Not validated yet",
+  "noScore": "No Score"
 }
