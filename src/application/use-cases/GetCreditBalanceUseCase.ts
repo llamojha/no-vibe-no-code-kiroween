@@ -4,11 +4,11 @@ import { ICache } from "../../infrastructure/cache/ICache";
 import { CreditBalance } from "../../domain/repositories/ICreditTransactionRepository";
 import { Result, success, failure } from "../../shared/types/common";
 import { EntityNotFoundError } from "../../shared/types/errors";
-import type { UserTier } from "../../infrastructure/database/types/database";
 import {
   getOrInitializeLocalDevCredits,
   isLocalDevModeEnabled,
 } from "../utils/localDevCredits";
+import { getUserTierFromDatabase } from "../utils/getUserTier";
 
 /**
  * Use case for retrieving a user's credit balance
@@ -65,9 +65,10 @@ export class GetCreditBalanceUseCase {
       const user = userResult.data;
 
       // Build balance result
+      const tier = await getUserTierFromDatabase(userId);
       const balance: CreditBalance = {
         credits: user.credits,
-        tier: this.getUserTier(user.credits),
+        tier,
       };
 
       // Cache the result
@@ -88,16 +89,6 @@ export class GetCreditBalanceUseCase {
    */
   private getCacheKey(userId: UserId): string {
     return `${this.CACHE_KEY_PREFIX}${userId.value}`;
-  }
-
-  /**
-   * Determine user tier based on credits
-   * This is a simplified implementation - in production, tier would come from user entity
-   */
-  private getUserTier(_credits: number): UserTier {
-    // For now, all users are "free" tier
-    // This will be enhanced when tier information is added to User entity
-    return "free";
   }
 
   private isLocalDevMode(): boolean {

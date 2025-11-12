@@ -5,12 +5,12 @@ import { ICache } from "../../infrastructure/cache/ICache";
 import { Result, success, failure } from "../../shared/types/common";
 import { CreditCheckResult } from "../types/commands/CreditCommands";
 import { EntityNotFoundError } from "../../shared/types/errors";
-import type { UserTier } from "../../infrastructure/database/types/database";
 import {
   getOrInitializeLocalDevCredits,
   isLocalDevModeEnabled,
 } from "../utils/localDevCredits";
 import { isCreditSystemEnabled } from "../../infrastructure/config/credits";
+import { getUserTierFromDatabase } from "../utils/getUserTier";
 
 const UNLIMITED_CREDITS = Number.MAX_SAFE_INTEGER;
 
@@ -80,10 +80,11 @@ export class CheckCreditsUseCase {
       const hasCredits = this.creditPolicy.canPerformAnalysis(user);
 
       // Build result
+      const tier = await getUserTierFromDatabase(userId);
       const result: CreditCheckResult = {
         allowed: hasCredits,
         credits: user.credits,
-        tier: this.getUserTier(user.credits),
+        tier,
       };
 
       // Cache the result
@@ -104,16 +105,6 @@ export class CheckCreditsUseCase {
    */
   private getCacheKey(userId: UserId): string {
     return `${this.CACHE_KEY_PREFIX}${userId.value}`;
-  }
-
-  /**
-   * Determine user tier based on credits
-   * This is a simplified implementation - in production, tier would come from user entity
-   */
-  private getUserTier(_credits: number): UserTier {
-    // For now, all users are "free" tier
-    // This will be enhanced when tier information is added to User entity
-    return "free";
   }
 
   private getUnlimitedCreditResult(): CreditCheckResult {
