@@ -1,32 +1,31 @@
 // Base repository interfaces
-export * from './base/IRepository';
+export * from "./base/IRepository";
 
 // Entity-specific repository interfaces
-export * from './IAnalysisRepository';
-export * from './IUserRepository';
-export * from './IHackathonAnalysisRepository';
-export * from './IDashboardRepository';
+export * from "./IAnalysisRepository";
+export * from "./IUserRepository";
+export * from "./IHackathonAnalysisRepository";
+export * from "./IDashboardRepository";
+export * from "./ICreditTransactionRepository";
 
 // Repository types and interfaces
 export type {
   AnalysisSearchCriteria,
-  AnalysisSortOptions
-} from './IAnalysisRepository';
+  AnalysisSortOptions,
+} from "./IAnalysisRepository";
 
-export type {
-  UserSearchCriteria,
-  UserSortOptions
-} from './IUserRepository';
+export type { UserSearchCriteria, UserSortOptions } from "./IUserRepository";
 
 export type {
   HackathonAnalysisData,
   HackathonAnalysisSearchCriteria,
-  HackathonLeaderboardEntry
-} from './IHackathonAnalysisRepository';
+  HackathonLeaderboardEntry,
+} from "./IHackathonAnalysisRepository";
 
 export type {
   DashboardAnalytics,
   UserActivitySummary,
   DashboardInsights,
-  TimeFilter
-} from './IDashboardRepository';
+  TimeFilter,
+} from "./IDashboardRepository";
+export type { CreditBalance } from "./ICreditTransactionRepository";

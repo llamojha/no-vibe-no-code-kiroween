@@ -35,6 +35,24 @@ export interface AnalysisDAO extends BaseDAO {
  */
 export interface UserDAO extends BaseDAO {
   tier: "free" | "paid" | "admin";
+  credits: number;
+}
+
+/**
+ * Transaction type for credit operations
+ */
+export type TransactionType = "deduct" | "add" | "refund" | "admin_adjustment";
+
+/**
+ * Credit Transaction DAO - represents credit_transactions table structure
+ */
+export interface CreditTransactionDAO extends BaseDAO {
+  user_id: string;
+  amount: number;
+  type: TransactionType;
+  description: string;
+  metadata: Json | null;
+  timestamp: string;
 }
 
 /**
@@ -141,9 +159,7 @@ export interface SupportingMaterialsDAO {
  */
 export function isIdeaAnalysisData(data: unknown): data is IdeaAnalysisData {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    !("selectedCategory" in data)
+    typeof data === "object" && data !== null && !("selectedCategory" in data)
   );
 }
 
@@ -156,8 +172,6 @@ export function isHackathonAnalysisData(
   data: unknown
 ): data is HackathonAnalysisData {
   return (
-    typeof data === "object" &&
-    data !== null &&
-    "selectedCategory" in data
+    typeof data === "object" && data !== null && "selectedCategory" in data
   );
 }

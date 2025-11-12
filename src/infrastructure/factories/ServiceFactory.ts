@@ -1,70 +1,81 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { AnalysisController } from '../web/controllers/AnalysisController';
-import { HackathonController } from '../web/controllers/HackathonController';
-import { DashboardController } from '../web/controllers/DashboardController';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { AnalysisController } from "../web/controllers/AnalysisController";
+import { HackathonController } from "../web/controllers/HackathonController";
+import { DashboardController } from "../web/controllers/DashboardController";
 
 // Import handlers
-import { 
+import {
   CreateAnalysisHandler,
   UpdateAnalysisHandler,
-  DeleteAnalysisHandler 
-} from '../../application/handlers/commands';
-import { 
+  DeleteAnalysisHandler,
+} from "../../application/handlers/commands";
+import {
   GetAnalysisHandler,
   ListAnalysesHandler,
-  SearchAnalysesHandler 
-} from '../../application/handlers/queries';
+  SearchAnalysesHandler,
+} from "../../application/handlers/queries";
 import {
   CreateHackathonAnalysisHandler,
-  UpdateHackathonAnalysisHandler
-} from '../../application/handlers/commands';
+  UpdateHackathonAnalysisHandler,
+} from "../../application/handlers/commands";
 import {
   GetHackathonLeaderboardHandler,
-  SearchHackathonAnalysesHandler
-} from '../../application/handlers/queries';
+  SearchHackathonAnalysesHandler,
+} from "../../application/handlers/queries";
 
 // Import factories
-import { RepositoryFactory } from './RepositoryFactory';
-import { UseCaseFactory } from './UseCaseFactory';
+import { RepositoryFactory } from "./RepositoryFactory";
+import { UseCaseFactory } from "./UseCaseFactory";
 
 // Import services
-import { AnalysisValidationService } from '../../domain/services/AnalysisValidationService';
-import { ScoreCalculationService } from '../../domain/services/ScoreCalculationService';
-import { NotificationService } from '../../application/services/NotificationService';
-import { AuthenticationService } from '../../application/services/AuthenticationService';
-import { SessionService } from '../../application/services/SessionService';
+import { AnalysisValidationService } from "../../domain/services/AnalysisValidationService";
+import { ScoreCalculationService } from "../../domain/services/ScoreCalculationService";
+import { NotificationService } from "../../application/services/NotificationService";
+import { AuthenticationService } from "../../application/services/AuthenticationService";
+import { SessionService } from "../../application/services/SessionService";
 
 // Import integration adapters
-import { SupabaseAdapter } from '../integration/SupabaseAdapter';
-import { FeatureFlagAdapter } from '../integration/FeatureFlagAdapter';
-import { LocaleAdapter } from '../integration/LocaleAdapter';
+import { SupabaseAdapter } from "../integration/SupabaseAdapter";
+import { FeatureFlagAdapter } from "../integration/FeatureFlagAdapter";
+import { LocaleAdapter } from "../integration/LocaleAdapter";
 
 // Import external service adapters
-import { TextToSpeechAdapter } from '../external/ai/TextToSpeechAdapter';
-import { TranscriptionAdapter } from '../external/ai/TranscriptionAdapter';
-import { GoogleAIAdapter } from '../external/ai/GoogleAIAdapter';
+import { TextToSpeechAdapter } from "../external/ai/TextToSpeechAdapter";
+import { TranscriptionAdapter } from "../external/ai/TranscriptionAdapter";
+import { GoogleAIAdapter } from "../external/ai/GoogleAIAdapter";
+
+// Import cache
+import { InMemoryCache } from "../cache/InMemoryCache";
+import { ICache } from "../cache/ICache";
 
 // Import mock services and testing utilities
-import { MockAIAnalysisService } from '@/lib/testing/mocks/MockAIAnalysisService';
-import { MockFrankensteinService } from '@/lib/testing/mocks/MockFrankensteinService';
-import { TestDataManager } from '@/lib/testing/TestDataManager';
-import { FeatureFlagManager } from '@/lib/testing/FeatureFlagManager';
-import { MockServiceConfig } from '@/lib/testing/types';
-import { IAIAnalysisService } from '../../application/services/IAIAnalysisService';
+import { MockAIAnalysisService } from "@/lib/testing/mocks/MockAIAnalysisService";
+import { MockFrankensteinService } from "@/lib/testing/mocks/MockFrankensteinService";
+import { TestDataManager } from "@/lib/testing/TestDataManager";
+import { FeatureFlagManager } from "@/lib/testing/FeatureFlagManager";
+import { MockServiceConfig } from "@/lib/testing/types";
+import { IAIAnalysisService } from "../../application/services/IAIAnalysisService";
 
 // Import use cases
-import { GetUserAnalysesUseCase, GetDashboardStatsUseCase } from '../../application/use-cases';
-import { GetUserByIdUseCase, CreateUserUseCase, UpdateUserLastLoginUseCase } from '../../application/use-cases/user';
+import {
+  GetUserAnalysesUseCase,
+  GetDashboardStatsUseCase,
+} from "../../application/use-cases";
+import {
+  GetUserByIdUseCase,
+  CreateUserUseCase,
+  UpdateUserLastLoginUseCase,
+} from "../../application/use-cases/user";
 
 /**
  * Service factory for creating configured service instances
- * 
+ *
  * ⚠️ SECURITY: No singleton pattern - creates fresh instance per request
- * 
+ *
  * This factory MUST be instantiated per request to prevent session leaks.
  * Each HTTP request needs its own factory with its own Supabase client
  * containing that request's user session.
- * 
+ *
  * @see docs/SECURITY.md for detailed explanation
  */
 export class ServiceFactory {
@@ -74,11 +85,11 @@ export class ServiceFactory {
   private featureFlagAdapter: FeatureFlagAdapter;
   private localeAdapter: LocaleAdapter;
   private mockFeatureFlagManager: FeatureFlagManager;
+  private cache: ICache;
 
-  private constructor(
-    private readonly supabaseClient: SupabaseClient
-  ) {
+  private constructor(private readonly supabaseClient: SupabaseClient) {
     this.repositoryFactory = RepositoryFactory.create(supabaseClient);
+    this.cache = new InMemoryCache();
     this.featureFlagAdapter = FeatureFlagAdapter.getInstance();
     this.localeAdapter = LocaleAdapter.getInstance();
     this.mockFeatureFlagManager = new FeatureFlagManager();
@@ -87,12 +98,12 @@ export class ServiceFactory {
 
   /**
    * Create a new ServiceFactory instance
-   * 
+   *
    * ✅ SAFE: Always creates fresh instance per request
-   * 
+   *
    * @param supabaseClient - Fresh Supabase client from current request
    * @returns New ServiceFactory instance
-   * 
+   *
    * @example
    * // In API Route
    * export async function GET(request: NextRequest) {
@@ -119,37 +130,42 @@ export class ServiceFactory {
    * Initialize the use case factory with all required dependencies
    */
   private initializeUseCaseFactory(): void {
-    const analysisRepository = this.repositoryFactory.createAnalysisRepository();
+    const analysisRepository =
+      this.repositoryFactory.createAnalysisRepository();
     const userRepository = this.repositoryFactory.createUserRepository();
-    
+    const creditTransactionRepository =
+      this.repositoryFactory.createCreditTransactionRepository();
+
     // Create domain services
     const analysisValidationService = new AnalysisValidationService();
     const scoreCalculationService = new ScoreCalculationService();
-    
+
     // Create application services
     const notificationService = new NotificationService({
-      emailProvider: 'sendgrid',
-      pushProvider: 'firebase',
-      smsProvider: 'twilio',
+      emailProvider: "sendgrid",
+      pushProvider: "firebase",
+      smsProvider: "twilio",
       apiKeys: {},
-      defaultFromEmail: 'noreply@novibenocode.com',
-      defaultFromName: 'No Vibe No Code',
+      defaultFromEmail: "noreply@novibenocode.com",
+      defaultFromName: "No Vibe No Code",
       timeout: 30000,
       maxRetries: 3,
       rateLimits: {
         email: 100,
         push: 200,
-        sms: 50
-      }
+        sms: 50,
+      },
     });
-    
+
     this.useCaseFactory = UseCaseFactory.create(
       analysisRepository,
       userRepository,
+      creditTransactionRepository,
       // aiAnalysisService, // Temporarily disabled
       notificationService,
       analysisValidationService,
-      scoreCalculationService
+      scoreCalculationService,
+      this.cache
     );
   }
 
@@ -157,8 +173,8 @@ export class ServiceFactory {
    * Create AnalysisController with all dependencies
    */
   createAnalysisController(): AnalysisController {
-    const cacheKey = 'analysisController';
-    
+    const cacheKey = "analysisController";
+
     if (!this.services.has(cacheKey)) {
       // Create handlers
       const createAnalysisHandler = this.createCreateAnalysisHandler();
@@ -168,13 +184,24 @@ export class ServiceFactory {
       const listAnalysesHandler = this.createListAnalysesHandler();
       const searchAnalysesHandler = this.createSearchAnalysesHandler();
 
+      // Create credit use cases
+      const checkCreditsUseCase =
+        this.useCaseFactory!.createCheckCreditsUseCase();
+      const getCreditBalanceUseCase =
+        this.useCaseFactory!.createGetCreditBalanceUseCase();
+      const deductCreditUseCase =
+        this.useCaseFactory!.createDeductCreditUseCase();
+
       const controller = new AnalysisController(
         createAnalysisHandler,
         updateAnalysisHandler,
         deleteAnalysisHandler,
         getAnalysisHandler,
         listAnalysesHandler,
-        searchAnalysesHandler
+        searchAnalysesHandler,
+        checkCreditsUseCase,
+        getCreditBalanceUseCase,
+        deductCreditUseCase
       );
 
       this.services.set(cacheKey, controller);
@@ -187,20 +214,32 @@ export class ServiceFactory {
    * Create HackathonController with all dependencies
    */
   createHackathonController(): HackathonController {
-    const cacheKey = 'hackathonController';
-    
+    const cacheKey = "hackathonController";
+
     if (!this.services.has(cacheKey)) {
       // Create handlers
-      const createHackathonAnalysisHandler = this.createCreateHackathonAnalysisHandler();
-      const updateHackathonAnalysisHandler = this.createUpdateHackathonAnalysisHandler();
-      const getHackathonLeaderboardHandler = this.createGetHackathonLeaderboardHandler();
-      const searchHackathonAnalysesHandler = this.createSearchHackathonAnalysesHandler();
+      const createHackathonAnalysisHandler =
+        this.createCreateHackathonAnalysisHandler();
+      const updateHackathonAnalysisHandler =
+        this.createUpdateHackathonAnalysisHandler();
+      const getHackathonLeaderboardHandler =
+        this.createGetHackathonLeaderboardHandler();
+      const searchHackathonAnalysesHandler =
+        this.createSearchHackathonAnalysesHandler();
+
+      // Create CheckCreditsUseCase
+      const checkCreditsUseCase =
+        this.useCaseFactory!.createCheckCreditsUseCase();
+      const deductCreditUseCase =
+        this.useCaseFactory!.createDeductCreditUseCase();
 
       const controller = new HackathonController(
         createHackathonAnalysisHandler,
         updateHackathonAnalysisHandler,
         getHackathonLeaderboardHandler,
-        searchHackathonAnalysesHandler
+        searchHackathonAnalysesHandler,
+        checkCreditsUseCase,
+        deductCreditUseCase
       );
 
       this.services.set(cacheKey, controller);
@@ -213,8 +252,8 @@ export class ServiceFactory {
    * Create DashboardController with all dependencies
    */
   createDashboardController(): DashboardController {
-    const cacheKey = 'dashboardController';
-    
+    const cacheKey = "dashboardController";
+
     if (!this.services.has(cacheKey)) {
       // Create handlers
       const listAnalysesHandler = this.createListAnalysesHandler();
@@ -245,7 +284,7 @@ export class ServiceFactory {
 
   private createCreateAnalysisHandler(): CreateAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     const analyzeIdeaUseCase = this.useCaseFactory.createAnalyzeIdeaUseCase();
     return new CreateAnalysisHandler(analyzeIdeaUseCase);
@@ -253,7 +292,7 @@ export class ServiceFactory {
 
   private createUpdateAnalysisHandler(): UpdateAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     const saveAnalysisUseCase = this.useCaseFactory.createSaveAnalysisUseCase();
     return new UpdateAnalysisHandler(saveAnalysisUseCase);
@@ -261,56 +300,63 @@ export class ServiceFactory {
 
   private createDeleteAnalysisHandler(): DeleteAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
-    const deleteAnalysisUseCase = this.useCaseFactory.createDeleteAnalysisUseCase();
+    const deleteAnalysisUseCase =
+      this.useCaseFactory.createDeleteAnalysisUseCase();
     return new DeleteAnalysisHandler(deleteAnalysisUseCase);
   }
 
   private createGetAnalysisHandler(): GetAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     const getAnalysisUseCase = this.useCaseFactory.createGetAnalysisUseCase();
     return new GetAnalysisHandler(getAnalysisUseCase);
   }
 
   private createListAnalysesHandler(): ListAnalysesHandler {
-    const analysisRepository = this.repositoryFactory.createAnalysisRepository();
+    const analysisRepository =
+      this.repositoryFactory.createAnalysisRepository();
     return new ListAnalysesHandler(analysisRepository);
   }
 
   private createSearchAnalysesHandler(): SearchAnalysesHandler {
-    const analysisRepository = this.repositoryFactory.createAnalysisRepository();
+    const analysisRepository =
+      this.repositoryFactory.createAnalysisRepository();
     return new SearchAnalysesHandler(analysisRepository);
   }
 
   private createCreateHackathonAnalysisHandler(): CreateHackathonAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
-    const analyzeHackathonProjectUseCase = this.useCaseFactory.createAnalyzeHackathonProjectUseCase();
+    const analyzeHackathonProjectUseCase =
+      this.useCaseFactory.createAnalyzeHackathonProjectUseCase();
     return new CreateHackathonAnalysisHandler(analyzeHackathonProjectUseCase);
   }
 
   private createUpdateHackathonAnalysisHandler(): UpdateHackathonAnalysisHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
-    const saveHackathonAnalysisUseCase = this.useCaseFactory.createSaveHackathonAnalysisUseCase();
+    const saveHackathonAnalysisUseCase =
+      this.useCaseFactory.createSaveHackathonAnalysisUseCase();
     return new UpdateHackathonAnalysisHandler(saveHackathonAnalysisUseCase);
   }
 
   private createGetHackathonLeaderboardHandler(): GetHackathonLeaderboardHandler {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
-    const getHackathonLeaderboardUseCase = this.useCaseFactory.createGetHackathonLeaderboardUseCase();
+    const getHackathonLeaderboardUseCase =
+      this.useCaseFactory.createGetHackathonLeaderboardUseCase();
     return new GetHackathonLeaderboardHandler(getHackathonLeaderboardUseCase);
   }
 
   private createSearchHackathonAnalysesHandler(): SearchHackathonAnalysesHandler {
-    const hackathonRepository = this.repositoryFactory.createAnalysisRepository();
+    const hackathonRepository =
+      this.repositoryFactory.createAnalysisRepository();
     // Cast to IHackathonAnalysisRepository - hackathon-specific repository not yet implemented
     // Using type assertion since SupabaseAnalysisRepository doesn't fully implement IHackathonAnalysisRepository yet
     return new SearchHackathonAnalysesHandler(hackathonRepository as any);
@@ -318,14 +364,14 @@ export class ServiceFactory {
 
   private createGetUserAnalysesUseCase(): GetUserAnalysesUseCase {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     return this.useCaseFactory.createGetUserAnalysesUseCase();
   }
 
   private createGetDashboardStatsUseCase(): GetDashboardStatsUseCase {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     return this.useCaseFactory.createGetDashboardStatsUseCase();
   }
@@ -342,7 +388,7 @@ export class ServiceFactory {
    */
   getUseCaseFactory(): UseCaseFactory {
     if (!this.useCaseFactory) {
-      throw new Error('Use case factory not initialized');
+      throw new Error("Use case factory not initialized");
     }
     return this.useCaseFactory;
   }
@@ -351,15 +397,17 @@ export class ServiceFactory {
    * Create AuthenticationService with all dependencies
    */
   createAuthenticationService(): AuthenticationService {
-    const cacheKey = 'authenticationService';
-    
+    const cacheKey = "authenticationService";
+
     if (!this.services.has(cacheKey)) {
       const userRepository = this.repositoryFactory.createUserRepository();
-      
+
       // Create user use cases
       const getUserByIdUseCase = new GetUserByIdUseCase(userRepository);
       const createUserUseCase = new CreateUserUseCase(userRepository);
-      const updateUserLastLoginUseCase = new UpdateUserLastLoginUseCase(userRepository);
+      const updateUserLastLoginUseCase = new UpdateUserLastLoginUseCase(
+        userRepository
+      );
 
       const authService = new AuthenticationService(
         this.supabaseClient,
@@ -378,8 +426,8 @@ export class ServiceFactory {
    * Create SessionService with all dependencies
    */
   createSessionService(): SessionService {
-    const cacheKey = 'sessionService';
-    
+    const cacheKey = "sessionService";
+
     if (!this.services.has(cacheKey)) {
       const authService = this.createAuthenticationService();
       const sessionService = new SessionService(authService);
@@ -421,8 +469,8 @@ export class ServiceFactory {
    * Create TextToSpeechAdapter with all dependencies
    */
   createTextToSpeechAdapter(): TextToSpeechAdapter {
-    const cacheKey = 'textToSpeechAdapter';
-    
+    const cacheKey = "textToSpeechAdapter";
+
     if (!this.services.has(cacheKey)) {
       const googleAI = this.createGoogleAIAdapter();
       const ttsAdapter = new TextToSpeechAdapter(googleAI, {
@@ -440,8 +488,8 @@ export class ServiceFactory {
    * Create TranscriptionAdapter with all dependencies
    */
   createTranscriptionAdapter(): TranscriptionAdapter {
-    const cacheKey = 'transcriptionAdapter';
-    
+    const cacheKey = "transcriptionAdapter";
+
     if (!this.services.has(cacheKey)) {
       const googleAI = this.createGoogleAIAdapter();
       const transcriptionAdapter = new TranscriptionAdapter(googleAI, {
@@ -460,8 +508,8 @@ export class ServiceFactory {
    * Create GoogleAIAdapter with configuration
    */
   private createGoogleAIAdapter(): GoogleAIAdapter {
-    const cacheKey = 'googleAIAdapter';
-    
+    const cacheKey = "googleAIAdapter";
+
     if (!this.services.has(cacheKey)) {
       const googleAI = GoogleAIAdapter.create();
       this.services.set(cacheKey, googleAI);
@@ -472,12 +520,12 @@ export class ServiceFactory {
 
   /**
    * Verify mock mode is properly configured
-   * 
+   *
    * This method validates that:
    * - TestDataManager can load mock responses
    * - Feature flags are properly set
    * - Configuration is valid for the current environment
-   * 
+   *
    * @throws Error if mock configuration is invalid
    * @private
    */
@@ -489,48 +537,63 @@ export class ServiceFactory {
     try {
       // Verify TestDataManager can load mock responses for each type
       const testDataManager = new TestDataManager();
-      
+
       // Test loading analyzer mock responses
       try {
-        testDataManager.getMockResponse('analyzer', 'success');
+        testDataManager.getMockResponse("analyzer", "success");
       } catch (error) {
         throw new Error(
-          `Mock mode is enabled but analyzer mock data cannot be loaded: ${(error as Error).message}`
+          `Mock mode is enabled but analyzer mock data cannot be loaded: ${
+            (error as Error).message
+          }`
         );
       }
 
       // Test loading hackathon mock responses
       try {
-        testDataManager.getMockResponse('hackathon', 'success');
+        testDataManager.getMockResponse("hackathon", "success");
       } catch (error) {
         throw new Error(
-          `Mock mode is enabled but hackathon mock data cannot be loaded: ${(error as Error).message}`
+          `Mock mode is enabled but hackathon mock data cannot be loaded: ${
+            (error as Error).message
+          }`
         );
       }
 
       // Test loading frankenstein mock responses
       try {
-        testDataManager.getMockResponse('frankenstein', 'success');
+        testDataManager.getMockResponse("frankenstein", "success");
       } catch (error) {
         throw new Error(
-          `Mock mode is enabled but frankenstein mock data cannot be loaded: ${(error as Error).message}`
+          `Mock mode is enabled but frankenstein mock data cannot be loaded: ${
+            (error as Error).message
+          }`
         );
       }
 
       // Verify feature flags are properly set
       const mockConfig = this.mockFeatureFlagManager.getMockServiceConfig();
-      const validScenarios = ['success', 'api_error', 'timeout', 'rate_limit', 'invalid_input', 'partial_response'];
-      
+      const validScenarios = [
+        "success",
+        "api_error",
+        "timeout",
+        "rate_limit",
+        "invalid_input",
+        "partial_response",
+      ];
+
       if (!validScenarios.includes(mockConfig.defaultScenario)) {
         console.warn(
           `[ServiceFactory] Invalid mock scenario "${mockConfig.defaultScenario}". ` +
-          `Valid scenarios: ${validScenarios.join(', ')}. Using "success" as fallback.`
+            `Valid scenarios: ${validScenarios.join(
+              ", "
+            )}. Using "success" as fallback.`
         );
       }
 
       // Log mock mode activation (only in non-production)
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[ServiceFactory] ✅ Mock mode verified and active', {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[ServiceFactory] ✅ Mock mode verified and active", {
           scenario: mockConfig.defaultScenario,
           simulateLatency: mockConfig.simulateLatency,
           minLatency: mockConfig.minLatency,
@@ -539,26 +602,27 @@ export class ServiceFactory {
       }
     } catch (error) {
       // Throw descriptive error if configuration is invalid
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(
         `Mock configuration verification failed: ${errorMessage}. ` +
-        `Please ensure mock data files exist and feature flags are properly configured.`
+          `Please ensure mock data files exist and feature flags are properly configured.`
       );
     }
   }
 
   /**
    * Create AI Analysis Service (mock or production based on feature flag)
-   * 
+   *
    * This method checks the mock mode feature flag and returns either:
    * - MockAIAnalysisService when mock mode is enabled
    * - GoogleAIAnalysisService when mock mode is disabled (production)
-   * 
+   *
    * @returns IAIAnalysisService implementation
    */
   createAIAnalysisService(): IAIAnalysisService {
-    const cacheKey = 'aiAnalysisService';
-    
+    const cacheKey = "aiAnalysisService";
+
     if (!this.services.has(cacheKey)) {
       // Verify mock configuration before creating service
       this.verifyMockConfiguration();
@@ -568,13 +632,16 @@ export class ServiceFactory {
         // Create mock service with configuration
         const testDataManager = new TestDataManager();
         const mockConfig = this.getMockServiceConfig();
-        const mockService = new MockAIAnalysisService(testDataManager, mockConfig);
-        
+        const mockService = new MockAIAnalysisService(
+          testDataManager,
+          mockConfig
+        );
+
         this.services.set(cacheKey, mockService);
-        
+
         // Log when mock service is created (only in non-production)
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('[ServiceFactory] ✅ Mock AI Analysis Service created', {
+        if (process.env.NODE_ENV !== "production") {
+          console.log("[ServiceFactory] ✅ Mock AI Analysis Service created", {
             scenario: mockConfig.defaultScenario,
             simulateLatency: mockConfig.simulateLatency,
           });
@@ -584,10 +651,10 @@ export class ServiceFactory {
         // TODO: Implement GoogleAIAnalysisService adapter
         // Improved error message for production service
         throw new Error(
-          'Production AI Analysis Service is not yet implemented. ' +
-          'To use the application in test mode, enable mock mode by setting ' +
-          'the environment variable FF_USE_MOCK_API=true. ' +
-          'For production deployment, implement GoogleAIAnalysisService adapter.'
+          "Production AI Analysis Service is not yet implemented. " +
+            "To use the application in test mode, enable mock mode by setting " +
+            "the environment variable FF_USE_MOCK_API=true. " +
+            "For production deployment, implement GoogleAIAnalysisService adapter."
         );
       }
     }
@@ -597,32 +664,35 @@ export class ServiceFactory {
 
   /**
    * Create Doctor Frankenstein service (currently mock-only)
-   * 
+   *
    * Returns a configured MockFrankensteinService when mock mode is enabled.
    * Throws a descriptive error if mock mode is disabled since the production
    * implementation has not been integrated yet.
    */
   createFrankensteinService(): MockFrankensteinService {
-    const cacheKey = 'frankensteinService';
+    const cacheKey = "frankensteinService";
 
     if (!this.services.has(cacheKey)) {
       this.verifyMockConfiguration();
 
       if (!this.mockFeatureFlagManager.isMockModeEnabled()) {
         throw new Error(
-          'Frankenstein service is only available in mock mode. ' +
-          'Enable FF_USE_MOCK_API or configure a mock scenario before calling this method.'
+          "Frankenstein service is only available in mock mode. " +
+            "Enable FF_USE_MOCK_API or configure a mock scenario before calling this method."
         );
       }
 
       const testDataManager = new TestDataManager();
       const mockConfig = this.getMockServiceConfig();
-      const mockService = new MockFrankensteinService(testDataManager, mockConfig);
+      const mockService = new MockFrankensteinService(
+        testDataManager,
+        mockConfig
+      );
 
       this.services.set(cacheKey, mockService);
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[ServiceFactory] ✅ Mock Frankenstein Service created', {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[ServiceFactory] ✅ Mock Frankenstein Service created", {
           scenario: mockConfig.defaultScenario,
           simulateLatency: mockConfig.simulateLatency,
         });
@@ -634,10 +704,10 @@ export class ServiceFactory {
 
   /**
    * Get mock service configuration from feature flags
-   * 
+   *
    * Reads mock configuration from environment variables via FeatureFlagManager
    * and provides sensible defaults for all settings.
-   * 
+   *
    * @returns MockServiceConfig with validated configuration
    * @private
    */
@@ -647,7 +717,7 @@ export class ServiceFactory {
 
   /**
    * Check if mock mode is currently enabled
-   * 
+   *
    * @returns true if mock mode is active, false otherwise
    */
   isMockModeEnabled(): boolean {
@@ -656,7 +726,7 @@ export class ServiceFactory {
 
   /**
    * Get the mock feature flag manager instance
-   * 
+   *
    * @returns FeatureFlagManager instance
    */
   getMockFeatureFlagManager(): FeatureFlagManager {
@@ -665,14 +735,14 @@ export class ServiceFactory {
 
   /**
    * Get diagnostic information about current service configuration
-   * 
+   *
    * This method provides detailed information about:
    * - Current mock mode status
    * - List of services that have been created
    * - Feature flag configuration
-   * 
+   *
    * Useful for debugging and verifying the service factory state.
-   * 
+   *
    * @returns Diagnostic information object
    */
   getDiagnostics(): {

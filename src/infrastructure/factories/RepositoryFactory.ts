@@ -1,39 +1,43 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { IAnalysisRepository } from '../../domain/repositories/IAnalysisRepository';
-import { IUserRepository } from '../../domain/repositories/IUserRepository';
-import { SupabaseAnalysisRepository } from '../database/supabase/repositories/SupabaseAnalysisRepository';
-import { SupabaseUserRepository } from '../database/supabase/repositories/SupabaseUserRepository';
-import { AnalysisMapper } from '../database/supabase/mappers/AnalysisMapper';
-import { UserMapper } from '../database/supabase/mappers/UserMapper';
-import { MockAnalysisRepository } from '@/lib/testing/mocks/MockAnalysisRepository';
-import { FeatureFlagManager } from '@/lib/testing/FeatureFlagManager';
+import { SupabaseClient } from "@supabase/supabase-js";
+import { IAnalysisRepository } from "../../domain/repositories/IAnalysisRepository";
+import { IUserRepository } from "../../domain/repositories/IUserRepository";
+import { ICreditTransactionRepository } from "../../domain/repositories/ICreditTransactionRepository";
+import { SupabaseAnalysisRepository } from "../database/supabase/repositories/SupabaseAnalysisRepository";
+import { SupabaseUserRepository } from "../database/supabase/repositories/SupabaseUserRepository";
+import { SupabaseCreditTransactionRepository } from "../database/supabase/repositories/SupabaseCreditTransactionRepository";
+import { AnalysisMapper } from "../database/supabase/mappers/AnalysisMapper";
+import { UserMapper } from "../database/supabase/mappers/UserMapper";
+import { CreditTransactionMapper } from "../database/supabase/mappers/CreditTransactionMapper";
+import { MockAnalysisRepository } from "@/lib/testing/mocks/MockAnalysisRepository";
+import { FeatureFlagManager } from "@/lib/testing/FeatureFlagManager";
 
 /**
  * Factory for creating database repository instances
  * Handles repository instantiation with proper dependencies
- * 
+ *
  * ⚠️ SECURITY: No singleton pattern - creates fresh instance per request
- * 
+ *
  * This factory MUST be instantiated per request to prevent session leaks.
  * Repositories depend on Supabase client which must be fresh per request.
- * 
+ *
  * @see docs/SECURITY.md for detailed explanation
  */
 export class RepositoryFactory {
-  private repositories: Map<string, IAnalysisRepository | IUserRepository> = new Map();
+  private repositories: Map<
+    string,
+    IAnalysisRepository | IUserRepository | ICreditTransactionRepository
+  > = new Map();
   private featureFlagManager: FeatureFlagManager;
 
-  private constructor(
-    private readonly supabaseClient: SupabaseClient
-  ) {
+  private constructor(private readonly supabaseClient: SupabaseClient) {
     this.featureFlagManager = new FeatureFlagManager();
   }
 
   /**
    * Create a new RepositoryFactory instance
-   * 
+   *
    * ✅ SAFE: Always creates fresh instance per request
-   * 
+   *
    * @param supabaseClient - Fresh Supabase client from current request
    * @returns New RepositoryFactory instance
    */
@@ -55,30 +59,35 @@ export class RepositoryFactory {
    * Returns MockAnalysisRepository when in mock mode, otherwise SupabaseAnalysisRepository
    */
   createAnalysisRepository(): IAnalysisRepository {
-    const cacheKey = 'analysisRepository';
-    
+    const cacheKey = "analysisRepository";
+
     if (!this.repositories.has(cacheKey)) {
       // Check if mock mode is enabled
       if (this.featureFlagManager.isMockModeEnabled()) {
         // Create mock repository for testing
         const mockRepository = new MockAnalysisRepository();
         this.repositories.set(cacheKey, mockRepository);
-        
+
         // Log when mock repository is created (only in non-production)
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('[RepositoryFactory] ✅ Mock Analysis Repository created');
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ Mock Analysis Repository created"
+          );
         }
       } else {
         // Create production Supabase repository
         const mapper = new AnalysisMapper();
-        const repository = new SupabaseAnalysisRepository(this.supabaseClient, mapper);
+        const repository = new SupabaseAnalysisRepository(
+          this.supabaseClient,
+          mapper
+        );
         this.repositories.set(cacheKey, repository);
       }
     }
 
     const repository = this.repositories.get(cacheKey);
     if (!repository) {
-      throw new Error('Failed to create AnalysisRepository');
+      throw new Error("Failed to create AnalysisRepository");
     }
     return repository as IAnalysisRepository;
   }
@@ -87,19 +96,44 @@ export class RepositoryFactory {
    * Create configured UserRepository instance
    */
   createUserRepository(): IUserRepository {
-    const cacheKey = 'userRepository';
-    
+    const cacheKey = "userRepository";
+
     if (!this.repositories.has(cacheKey)) {
       const mapper = new UserMapper();
-      const repository = new SupabaseUserRepository(this.supabaseClient, mapper);
+      const repository = new SupabaseUserRepository(
+        this.supabaseClient,
+        mapper
+      );
       this.repositories.set(cacheKey, repository);
     }
 
     const repository = this.repositories.get(cacheKey);
     if (!repository) {
-      throw new Error('Failed to create UserRepository');
+      throw new Error("Failed to create UserRepository");
     }
     return repository as IUserRepository;
+  }
+
+  /**
+   * Create configured CreditTransactionRepository instance
+   */
+  createCreditTransactionRepository(): ICreditTransactionRepository {
+    const cacheKey = "creditTransactionRepository";
+
+    if (!this.repositories.has(cacheKey)) {
+      const mapper = new CreditTransactionMapper();
+      const repository = new SupabaseCreditTransactionRepository(
+        this.supabaseClient,
+        mapper
+      );
+      this.repositories.set(cacheKey, repository);
+    }
+
+    const repository = this.repositories.get(cacheKey);
+    if (!repository) {
+      throw new Error("Failed to create CreditTransactionRepository");
+    }
+    return repository as ICreditTransactionRepository;
   }
 
   /**

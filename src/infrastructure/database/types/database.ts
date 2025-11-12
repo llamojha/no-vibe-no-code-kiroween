@@ -19,16 +19,19 @@ export type Database = {
           id: string;
           created_at: string | null;
           tier: "free" | "paid" | "admin";
+          credits: number;
         };
         Insert: {
           id: string;
           created_at?: string | null;
           tier?: "free" | "paid" | "admin";
+          credits?: number;
         };
         Update: {
           id?: string;
           created_at?: string | null;
           tier?: "free" | "paid" | "admin";
+          credits?: number;
         };
         Relationships: [];
       };
@@ -98,6 +101,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          type: "deduct" | "add" | "refund" | "admin_adjustment";
+          description: string;
+          metadata: Json | null;
+          timestamp: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          type: "deduct" | "add" | "refund" | "admin_adjustment";
+          description: string;
+          metadata?: Json | null;
+          timestamp?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount?: number;
+          type?: "deduct" | "add" | "refund" | "admin_adjustment";
+          description?: string;
+          metadata?: Json | null;
+          timestamp?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -126,3 +162,9 @@ export type SavedHackathonAnalysesInsert =
   Database["public"]["Tables"]["saved_hackathon_analyses"]["Insert"];
 export type SavedHackathonAnalysesUpdate =
   Database["public"]["Tables"]["saved_hackathon_analyses"]["Update"];
+export type CreditTransactionRow =
+  Database["public"]["Tables"]["credit_transactions"]["Row"];
+export type CreditTransactionInsert =
+  Database["public"]["Tables"]["credit_transactions"]["Insert"];
+export type CreditTransactionUpdate =
+  Database["public"]["Tables"]["credit_transactions"]["Update"];

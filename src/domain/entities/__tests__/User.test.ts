@@ -1,27 +1,35 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { User, CreateUserProps, ReconstructUserProps, UserPreferences } from '../User';
-import { UserId } from '../../value-objects/UserId';
-import { Email } from '../../value-objects/Email';
-import { Locale } from '../../value-objects/Locale';
-import { BusinessRuleViolationError, InvariantViolationError } from '../../../shared/types/errors';
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  User,
+  CreateUserProps,
+  ReconstructUserProps,
+  UserPreferences,
+} from "../User";
+import { UserId } from "../../value-objects/UserId";
+import { Email } from "../../value-objects/Email";
+import { Locale } from "../../value-objects/Locale";
+import {
+  BusinessRuleViolationError,
+  InvariantViolationError,
+} from "../../../shared/types/errors";
 
-describe('User Entity', () => {
-  const validEmail = Email.create('test@example.com');
+describe("User Entity", () => {
+  const validEmail = Email.create("test@example.com");
   const validProps: CreateUserProps = {
     email: validEmail,
-    name: 'John Doe',
+    name: "John Doe",
     preferences: {
       defaultLocale: Locale.english(),
       emailNotifications: true,
       analysisReminders: false,
-      theme: 'dark'
-    }
+      theme: "dark",
+    },
   };
 
-  describe('create', () => {
-    it('should create user with valid data', () => {
+  describe("create", () => {
+    it("should create user with valid data", () => {
       const user = User.create(validProps);
-      
+
       expect(user.id).toBeDefined();
       expect(user.email.equals(validProps.email)).toBe(true);
       expect(user.name).toBe(validProps.name);
@@ -29,211 +37,392 @@ describe('User Entity', () => {
       expect(user.createdAt).toBeInstanceOf(Date);
       expect(user.updatedAt).toBeInstanceOf(Date);
       expect(user.lastLoginAt).toBeUndefined();
-      
+
       const preferences = user.preferences;
-      expect(preferences.defaultLocale.equals(validProps.preferences!.defaultLocale!)).toBe(true);
-      expect(preferences.emailNotifications).toBe(validProps.preferences!.emailNotifications);
-      expect(preferences.analysisReminders).toBe(validProps.preferences!.analysisReminders);
+      expect(
+        preferences.defaultLocale.equals(validProps.preferences!.defaultLocale!)
+      ).toBe(true);
+      expect(preferences.emailNotifications).toBe(
+        validProps.preferences!.emailNotifications
+      );
+      expect(preferences.analysisReminders).toBe(
+        validProps.preferences!.analysisReminders
+      );
       expect(preferences.theme).toBe(validProps.preferences!.theme);
     });
 
-    it('should create user with minimal required data', () => {
+    it("should create user with minimal required data", () => {
       const minimalProps: CreateUserProps = {
-        email: validEmail
+        email: validEmail,
       };
 
       const user = User.create(minimalProps);
-      
+
       expect(user.id).toBeDefined();
       expect(user.email.equals(minimalProps.email)).toBe(true);
       expect(user.name).toBeUndefined();
       expect(user.isActive).toBe(true);
-      
+
       // Should have default preferences
       const preferences = user.preferences;
       expect(preferences.defaultLocale.equals(Locale.english())).toBe(true);
       expect(preferences.emailNotifications).toBe(true);
       expect(preferences.analysisReminders).toBe(true);
-      expect(preferences.theme).toBe('auto');
+      expect(preferences.theme).toBe("auto");
     });
 
-    it('should throw error for empty name', () => {
-      const invalidProps = { ...validProps, name: '   ' }; // Whitespace only
-      
+    it("should throw error for empty name", () => {
+      const invalidProps = { ...validProps, name: "   " }; // Whitespace only
+
       expect(() => User.create(invalidProps)).toThrow(InvariantViolationError);
-      expect(() => User.create(invalidProps)).toThrow('User name cannot be empty if provided');
+      expect(() => User.create(invalidProps)).toThrow(
+        "User name cannot be empty if provided"
+      );
     });
 
-    it('should throw error for name too long', () => {
-      const invalidProps = { ...validProps, name: 'x'.repeat(101) };
-      
+    it("should throw error for name too long", () => {
+      const invalidProps = { ...validProps, name: "x".repeat(101) };
+
       expect(() => User.create(invalidProps)).toThrow(InvariantViolationError);
-      expect(() => User.create(invalidProps)).toThrow('User name cannot exceed 100 characters');
+      expect(() => User.create(invalidProps)).toThrow(
+        "User name cannot exceed 100 characters"
+      );
     });
 
-    it('should throw error for name too short', () => {
-      const invalidProps = { ...validProps, name: 'x' };
-      
+    it("should throw error for name too short", () => {
+      const invalidProps = { ...validProps, name: "x" };
+
       expect(() => User.create(invalidProps)).toThrow(InvariantViolationError);
-      expect(() => User.create(invalidProps)).toThrow('User name must be at least 2 characters long');
+      expect(() => User.create(invalidProps)).toThrow(
+        "User name must be at least 2 characters long"
+      );
     });
   });
 
-  describe('reconstruct', () => {
-    it('should reconstruct user from persistence data', () => {
+  describe("reconstruct", () => {
+    it("should reconstruct user from persistence data", () => {
       const reconstructProps: ReconstructUserProps = {
         ...validProps,
         id: UserId.generate(),
-        createdAt: new Date('2023-01-01'),
-        updatedAt: new Date('2023-01-02'),
-        lastLoginAt: new Date('2023-01-03'),
+        createdAt: new Date("2023-01-01"),
+        updatedAt: new Date("2023-01-02"),
+        lastLoginAt: new Date("2023-01-03"),
         isActive: false,
+        credits: 5,
         preferences: {
           defaultLocale: Locale.spanish(),
           emailNotifications: false,
           analysisReminders: true,
-          theme: 'light'
-        }
+          theme: "light",
+        },
       };
 
       const user = User.reconstruct(reconstructProps);
-      
+
       expect(user.id.equals(reconstructProps.id)).toBe(true);
       expect(user.createdAt).toEqual(reconstructProps.createdAt);
       expect(user.updatedAt).toEqual(reconstructProps.updatedAt);
       expect(user.lastLoginAt).toEqual(reconstructProps.lastLoginAt);
       expect(user.isActive).toBe(reconstructProps.isActive);
       expect(user.preferences).toEqual(reconstructProps.preferences);
+      expect(user.credits).toBe(5);
     });
   });
 
-  describe('business methods', () => {
+  describe("credit management", () => {
+    describe("hasCredits", () => {
+      it("should return true when user has credits", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        expect(user.hasCredits()).toBe(true);
+      });
+
+      it("should return true when user has 1 credit", () => {
+        const user = User.create({ ...validProps, credits: 1 });
+        expect(user.hasCredits()).toBe(true);
+      });
+
+      it("should return false when user has 0 credits", () => {
+        const user = User.create({ ...validProps, credits: 0 });
+        expect(user.hasCredits()).toBe(false);
+      });
+    });
+
+    describe("deductCredit", () => {
+      it("should deduct credit successfully when credits available", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        user.deductCredit();
+        expect(user.credits).toBe(2);
+      });
+
+      it("should deduct credit from 1 to 0", () => {
+        const user = User.create({ ...validProps, credits: 1 });
+        user.deductCredit();
+        expect(user.credits).toBe(0);
+      });
+
+      it("should throw InsufficientCreditsError when no credits available", () => {
+        const user = User.create({ ...validProps, credits: 0 });
+        expect(() => user.deductCredit()).toThrow("insufficient credits");
+      });
+
+      it("should update updatedAt timestamp when deducting credit", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        const originalUpdatedAt = user.updatedAt;
+
+        // Wait a bit to ensure timestamp difference
+        setTimeout(() => {
+          user.deductCredit();
+          expect(user.updatedAt.getTime()).toBeGreaterThan(
+            originalUpdatedAt.getTime()
+          );
+        }, 10);
+      });
+    });
+
+    describe("addCredits", () => {
+      it("should add credits successfully", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        user.addCredits(5);
+        expect(user.credits).toBe(8);
+      });
+
+      it("should add credits to zero balance", () => {
+        const user = User.create({ ...validProps, credits: 0 });
+        user.addCredits(10);
+        expect(user.credits).toBe(10);
+      });
+
+      it("should throw error for zero amount", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        expect(() => user.addCredits(0)).toThrow(
+          "Credit amount must be positive"
+        );
+      });
+
+      it("should throw error for negative amount", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        expect(() => user.addCredits(-5)).toThrow(
+          "Credit amount must be positive"
+        );
+      });
+
+      it("should throw error for non-integer amount", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        expect(() => user.addCredits(2.5)).toThrow(
+          "Credit amount must be an integer"
+        );
+      });
+
+      it("should update updatedAt timestamp when adding credits", () => {
+        const user = User.create({ ...validProps, credits: 3 });
+        const originalUpdatedAt = user.updatedAt;
+
+        setTimeout(() => {
+          user.addCredits(5);
+          expect(user.updatedAt.getTime()).toBeGreaterThan(
+            originalUpdatedAt.getTime()
+          );
+        }, 10);
+      });
+    });
+
+    describe("default credit initialization", () => {
+      it("should create user with 3 default credits when not specified", () => {
+        const user = User.create(validProps);
+        expect(user.credits).toBe(3);
+      });
+
+      it("should create user with specified credits", () => {
+        const user = User.create({ ...validProps, credits: 10 });
+        expect(user.credits).toBe(10);
+      });
+
+      it("should create user with 0 credits if specified", () => {
+        const user = User.create({ ...validProps, credits: 0 });
+        expect(user.credits).toBe(0);
+      });
+    });
+
+    describe("credit invariants", () => {
+      it("should throw error when reconstructing with negative credits", () => {
+        expect(() => {
+          User.reconstruct({
+            ...validProps,
+            id: UserId.generate(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isActive: true,
+            credits: -1,
+            preferences: {
+              defaultLocale: Locale.english(),
+              emailNotifications: true,
+              analysisReminders: true,
+              theme: "auto",
+            },
+          });
+        }).toThrow("User credits cannot be negative");
+      });
+
+      it("should throw error when reconstructing with non-integer credits", () => {
+        expect(() => {
+          User.reconstruct({
+            ...validProps,
+            id: UserId.generate(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isActive: true,
+            credits: 3.5,
+            preferences: {
+              defaultLocale: Locale.english(),
+              emailNotifications: true,
+              analysisReminders: true,
+              theme: "auto",
+            },
+          });
+        }).toThrow("User credits must be an integer");
+      });
+    });
+  });
+
+  describe("business methods", () => {
     let user: User;
 
     beforeEach(() => {
       user = User.create(validProps);
     });
 
-    describe('updateName', () => {
-      it('should update name successfully', () => {
-        const newName = 'Jane Smith';
-        
+    describe("updateName", () => {
+      it("should update name successfully", () => {
+        const newName = "Jane Smith";
+
         user.updateName(newName);
-        
+
         expect(user.name).toBe(newName);
       });
 
-      it('should trim whitespace from name', () => {
-        user.updateName('  Trimmed Name  ');
-        expect(user.name).toBe('Trimmed Name');
+      it("should trim whitespace from name", () => {
+        user.updateName("  Trimmed Name  ");
+        expect(user.name).toBe("Trimmed Name");
       });
 
-      it('should throw error for empty name', () => {
-        expect(() => user.updateName('')).toThrow(BusinessRuleViolationError);
-        expect(() => user.updateName('')).toThrow('Name cannot be empty');
+      it("should throw error for empty name", () => {
+        expect(() => user.updateName("")).toThrow(BusinessRuleViolationError);
+        expect(() => user.updateName("")).toThrow("Name cannot be empty");
       });
 
-      it('should throw error for name too long', () => {
-        const longName = 'x'.repeat(101);
-        expect(() => user.updateName(longName)).toThrow(BusinessRuleViolationError);
-        expect(() => user.updateName(longName)).toThrow('Name cannot exceed 100 characters');
+      it("should throw error for name too long", () => {
+        const longName = "x".repeat(101);
+        expect(() => user.updateName(longName)).toThrow(
+          BusinessRuleViolationError
+        );
+        expect(() => user.updateName(longName)).toThrow(
+          "Name cannot exceed 100 characters"
+        );
       });
 
-      it('should throw error for name too short', () => {
-        expect(() => user.updateName('x')).toThrow(BusinessRuleViolationError);
-        expect(() => user.updateName('x')).toThrow('Name must be at least 2 characters long');
+      it("should throw error for name too short", () => {
+        expect(() => user.updateName("x")).toThrow(BusinessRuleViolationError);
+        expect(() => user.updateName("x")).toThrow(
+          "Name must be at least 2 characters long"
+        );
       });
     });
 
-    describe('clearName', () => {
-      it('should clear name successfully', () => {
+    describe("clearName", () => {
+      it("should clear name successfully", () => {
         user.clearName();
         expect(user.name).toBeUndefined();
       });
     });
 
-    describe('updatePreferences', () => {
-      it('should update preferences successfully', () => {
+    describe("updatePreferences", () => {
+      it("should update preferences successfully", () => {
         const newPreferences: Partial<UserPreferences> = {
           emailNotifications: false,
-          theme: 'light'
+          theme: "light",
         };
-        
+
         user.updatePreferences(newPreferences);
-        
+
         const preferences = user.preferences;
         expect(preferences.emailNotifications).toBe(false);
-        expect(preferences.theme).toBe('light');
+        expect(preferences.theme).toBe("light");
         // Other preferences should remain unchanged
-        expect(preferences.defaultLocale.equals(validProps.preferences!.defaultLocale!)).toBe(true);
-        expect(preferences.analysisReminders).toBe(validProps.preferences!.analysisReminders);
+        expect(
+          preferences.defaultLocale.equals(
+            validProps.preferences!.defaultLocale!
+          )
+        ).toBe(true);
+        expect(preferences.analysisReminders).toBe(
+          validProps.preferences!.analysisReminders
+        );
       });
     });
 
-    describe('updateDefaultLocale', () => {
-      it('should update default locale successfully', () => {
+    describe("updateDefaultLocale", () => {
+      it("should update default locale successfully", () => {
         const newLocale = Locale.spanish();
-        
+
         user.updateDefaultLocale(newLocale);
-        
+
         expect(user.preferences.defaultLocale.equals(newLocale)).toBe(true);
       });
     });
 
-    describe('setEmailNotifications', () => {
-      it('should enable email notifications', () => {
+    describe("setEmailNotifications", () => {
+      it("should enable email notifications", () => {
         user.setEmailNotifications(true);
         expect(user.preferences.emailNotifications).toBe(true);
       });
 
-      it('should disable email notifications', () => {
+      it("should disable email notifications", () => {
         user.setEmailNotifications(false);
         expect(user.preferences.emailNotifications).toBe(false);
       });
     });
 
-    describe('setAnalysisReminders', () => {
-      it('should enable analysis reminders', () => {
+    describe("setAnalysisReminders", () => {
+      it("should enable analysis reminders", () => {
         user.setAnalysisReminders(true);
         expect(user.preferences.analysisReminders).toBe(true);
       });
 
-      it('should disable analysis reminders', () => {
+      it("should disable analysis reminders", () => {
         user.setAnalysisReminders(false);
         expect(user.preferences.analysisReminders).toBe(false);
       });
     });
 
-    describe('updateTheme', () => {
-      it('should update theme to light', () => {
-        user.updateTheme('light');
-        expect(user.preferences.theme).toBe('light');
+    describe("updateTheme", () => {
+      it("should update theme to light", () => {
+        user.updateTheme("light");
+        expect(user.preferences.theme).toBe("light");
       });
 
-      it('should update theme to dark', () => {
-        user.updateTheme('dark');
-        expect(user.preferences.theme).toBe('dark');
+      it("should update theme to dark", () => {
+        user.updateTheme("dark");
+        expect(user.preferences.theme).toBe("dark");
       });
 
-      it('should update theme to auto', () => {
-        user.updateTheme('auto');
-        expect(user.preferences.theme).toBe('auto');
+      it("should update theme to auto", () => {
+        user.updateTheme("auto");
+        expect(user.preferences.theme).toBe("auto");
       });
     });
 
-    describe('recordLogin', () => {
-      it('should record login timestamp', () => {
+    describe("recordLogin", () => {
+      it("should record login timestamp", () => {
         expect(user.lastLoginAt).toBeUndefined();
-        
+
         user.recordLogin();
-        
+
         expect(user.lastLoginAt).toBeInstanceOf(Date);
         expect(user.lastLoginAt!.getTime()).toBeCloseTo(Date.now(), -2); // Within 100ms
       });
     });
 
-    describe('activate', () => {
-      it('should activate inactive user', () => {
+    describe("activate", () => {
+      it("should activate inactive user", () => {
         // Create inactive user
         const inactiveUser = User.reconstruct({
           ...validProps,
@@ -241,48 +430,49 @@ describe('User Entity', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
           isActive: false,
+          credits: 3,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
-        
+
         inactiveUser.activate();
         expect(inactiveUser.isActive).toBe(true);
       });
 
-      it('should throw error when activating already active user', () => {
+      it("should throw error when activating already active user", () => {
         expect(() => user.activate()).toThrow(BusinessRuleViolationError);
-        expect(() => user.activate()).toThrow('User is already active');
+        expect(() => user.activate()).toThrow("User is already active");
       });
     });
 
-    describe('deactivate', () => {
-      it('should deactivate active user', () => {
+    describe("deactivate", () => {
+      it("should deactivate active user", () => {
         user.deactivate();
         expect(user.isActive).toBe(false);
       });
 
-      it('should throw error when deactivating already inactive user', () => {
+      it("should throw error when deactivating already inactive user", () => {
         user.deactivate();
         expect(() => user.deactivate()).toThrow(BusinessRuleViolationError);
-        expect(() => user.deactivate()).toThrow('User is already inactive');
+        expect(() => user.deactivate()).toThrow("User is already inactive");
       });
     });
   });
 
-  describe('business queries', () => {
-    describe('hasRecentActivity', () => {
-      it('should return true for recent login', () => {
+  describe("business queries", () => {
+    describe("hasRecentActivity", () => {
+      it("should return true for recent login", () => {
         const user = User.create(validProps);
         user.recordLogin();
-        
+
         expect(user.hasRecentActivity()).toBe(true);
       });
 
-      it('should return false for old login', () => {
+      it("should return false for old login", () => {
         const oldLoginUser = User.reconstruct({
           ...validProps,
           id: UserId.generate(),
@@ -290,50 +480,52 @@ describe('User Entity', () => {
           updatedAt: new Date(),
           lastLoginAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000), // 31 days ago
           isActive: true,
+          credits: 3,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
-        
+
         expect(oldLoginUser.hasRecentActivity()).toBe(false);
       });
 
-      it('should return false for never logged in user', () => {
+      it("should return false for never logged in user", () => {
         const user = User.create(validProps);
         expect(user.hasRecentActivity()).toBe(false);
       });
     });
 
-    describe('isNewUser', () => {
-      it('should return true for recently created user', () => {
+    describe("isNewUser", () => {
+      it("should return true for recently created user", () => {
         const user = User.create(validProps);
         expect(user.isNewUser()).toBe(true);
       });
 
-      it('should return false for old user', () => {
+      it("should return false for old user", () => {
         const oldUser = User.reconstruct({
           ...validProps,
           id: UserId.generate(),
           createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), // 8 days ago
           updatedAt: new Date(),
           isActive: true,
+          credits: 3,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
-        
+
         expect(oldUser.isNewUser()).toBe(false);
       });
     });
 
-    describe('getDaysSinceCreation', () => {
-      it('should return correct days since creation', () => {
+    describe("getDaysSinceCreation", () => {
+      it("should return correct days since creation", () => {
         const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
         const oldUser = User.reconstruct({
           ...validProps,
@@ -341,20 +533,21 @@ describe('User Entity', () => {
           createdAt: threeDaysAgo,
           updatedAt: new Date(),
           isActive: true,
+          credits: 3,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
-        
+
         expect(oldUser.getDaysSinceCreation()).toBe(3);
       });
     });
 
-    describe('getDaysSinceLastLogin', () => {
-      it('should return correct days since last login', () => {
+    describe("getDaysSinceLastLogin", () => {
+      it("should return correct days since last login", () => {
         const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
         const user = User.reconstruct({
           ...validProps,
@@ -363,107 +556,111 @@ describe('User Entity', () => {
           updatedAt: new Date(),
           lastLoginAt: twoDaysAgo,
           isActive: true,
+          credits: 3,
           preferences: {
             defaultLocale: Locale.english(),
             emailNotifications: true,
             analysisReminders: true,
-            theme: 'auto'
-          }
+            theme: "auto",
+          },
         });
-        
+
         expect(user.getDaysSinceLastLogin()).toBe(2);
       });
 
-      it('should return null for never logged in user', () => {
+      it("should return null for never logged in user", () => {
         const user = User.create(validProps);
         expect(user.getDaysSinceLastLogin()).toBeNull();
       });
     });
 
-    describe('hasCompleteProfile', () => {
-      it('should return true for user with name', () => {
+    describe("hasCompleteProfile", () => {
+      it("should return true for user with name", () => {
         const user = User.create(validProps);
         expect(user.hasCompleteProfile()).toBe(true);
       });
 
-      it('should return false for user without name', () => {
+      it("should return false for user without name", () => {
         const user = User.create({ email: validEmail });
         expect(user.hasCompleteProfile()).toBe(false);
       });
     });
 
-    describe('belongsToEmailDomain', () => {
-      it('should return true for matching domain', () => {
+    describe("belongsToEmailDomain", () => {
+      it("should return true for matching domain", () => {
         const user = User.create(validProps);
-        expect(user.belongsToEmailDomain('example.com')).toBe(true);
+        expect(user.belongsToEmailDomain("example.com")).toBe(true);
       });
 
-      it('should return false for non-matching domain', () => {
+      it("should return false for non-matching domain", () => {
         const user = User.create(validProps);
-        expect(user.belongsToEmailDomain('other.com')).toBe(false);
+        expect(user.belongsToEmailDomain("other.com")).toBe(false);
       });
     });
   });
 
-  describe('getters', () => {
+  describe("getters", () => {
     let user: User;
 
     beforeEach(() => {
       user = User.create(validProps);
     });
 
-    describe('displayName', () => {
-      it('should return name when available', () => {
+    describe("displayName", () => {
+      it("should return name when available", () => {
         expect(user.displayName).toBe(validProps.name);
       });
 
-      it('should return email local part when name not available', () => {
+      it("should return email local part when name not available", () => {
         const userWithoutName = User.create({ email: validEmail });
         expect(userWithoutName.displayName).toBe(validEmail.localPart);
       });
     });
 
-    describe('preferences', () => {
-      it('should return copy of preferences', () => {
+    describe("preferences", () => {
+      it("should return copy of preferences", () => {
         const preferences = user.preferences;
         preferences.emailNotifications = !preferences.emailNotifications;
-        
+
         // Original should not be modified
-        expect(user.preferences.emailNotifications).toBe(validProps.preferences!.emailNotifications);
+        expect(user.preferences.emailNotifications).toBe(
+          validProps.preferences!.emailNotifications
+        );
       });
     });
   });
 
-  describe('getSummary', () => {
-    it('should return summary for active user with name', () => {
+  describe("getSummary", () => {
+    it("should return summary for active user with name", () => {
       const user = User.create(validProps);
       const summary = user.getSummary();
-      
+
       expect(summary).toContain(validProps.name!);
       expect(summary).toContain(validEmail.value);
-      expect(summary).toContain('Active');
+      expect(summary).toContain("Active");
     });
 
-    it('should return summary for inactive user without name', () => {
+    it("should return summary for inactive user without name", () => {
       const inactiveUser = User.reconstruct({
         email: validEmail,
         id: UserId.generate(),
         createdAt: new Date(),
         updatedAt: new Date(),
         isActive: false,
+        credits: 3,
         preferences: {
           defaultLocale: Locale.english(),
           emailNotifications: true,
           analysisReminders: true,
-          theme: 'auto'
-        }
+          theme: "auto",
+        },
       });
-      
+
       const summary = inactiveUser.getSummary();
-      
-      expect(summary).toContain('Unnamed');
+
+      expect(summary).toContain("Unnamed");
       expect(summary).toContain(validEmail.value);
-      expect(summary).toContain('Inactive');
+      expect(summary).toContain("Inactive");
     });
   });
 });

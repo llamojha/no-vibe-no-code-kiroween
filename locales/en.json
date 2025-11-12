@@ -92,7 +92,7 @@
   "projectDescriptionPlaceholder": "Describe your hackathon project in detail. What does it do? What problem does it solve? What makes it unique?",
   "categorySelectionLabel": "Competition Category",
   "categorySelectionPlaceholder": "Select the category that best fits your project",
-  
+
   "supportingMaterialsLabel": "Supporting Materials (Optional)",
   "screenshotsLabel": "Screenshots",
   "demoLinkLabel": "Demo Link",
@@ -132,7 +132,7 @@
   "competitionStrategy": "Competition Strategy",
   "projectDescriptionRequired": "Project description is required.",
   "categorySelectionRequired": "Please select a category.",
-  
+
   "spookyLoaderMessage1": "Summoning the spirits of evaluation...",
   "spookyLoaderMessage2": "Brewing category analysis potion...",
   "spookyLoaderMessage3": "Consulting the hackathon oracle...",
@@ -143,7 +143,7 @@
   "appliedSuggestions": "Applied Suggestions",
   "reEvaluateProject": "Re-evaluate Project",
   "projectDescriptionMinLength": "Project description must be at least 50 characters",
-  
+
   "brewingSpookyAnalysis": "Brewing spooky analysis...",
   "scoringGuide": "Scoring Guide",
   "excellentFit": "Excellent Fit",
@@ -283,5 +283,10 @@
   "exportAsPDF": "Export as PDF",
   "exportAsJSON": "Export as JSON",
   "saving": "Saving...",
-  "authRequired": "Please log in to save your idea"
+  "authRequired": "Please log in to save your idea",
+  "insufficientCreditsTitle": "Out of Credits",
+  "insufficientCreditsMessage": "You need credits to generate analyses. You currently have {credits} credits remaining.",
+  "insufficientCreditsExplanation": "Each analysis consumes 1 credit. Get more credits to continue analyzing your ideas.",
+  "getMoreCredits": "Get More Credits",
+  "creditsWillRefresh": "Credits are refreshed periodically for all users."
 }

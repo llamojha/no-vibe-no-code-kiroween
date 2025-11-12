@@ -1,21 +1,22 @@
 // Domain services
-export { AnalysisValidationService } from './AnalysisValidationService';
-export { ScoreCalculationService } from './ScoreCalculationService';
-export { HackathonAnalysisService } from './HackathonAnalysisService';
+export { AnalysisValidationService } from "./AnalysisValidationService";
+export { ScoreCalculationService } from "./ScoreCalculationService";
+export { HackathonAnalysisService } from "./HackathonAnalysisService";
+export { CreditPolicy } from "./CreditPolicy";
 
 // Service interfaces and types
 export type {
   AnalysisValidationResult,
-  AnalysisQualityMetrics
-} from './AnalysisValidationService';
+  AnalysisQualityMetrics,
+} from "./AnalysisValidationService";
 
 export type {
   ScoreBreakdown,
-  ScoreCalculationContext
-} from './ScoreCalculationService';
+  ScoreCalculationContext,
+} from "./ScoreCalculationService";
 
 export type {
   HackathonEvaluationResult,
   CategoryMatchingCriteria,
-  HackathonProjectMetadata
-} from './HackathonAnalysisService';
+  HackathonProjectMetadata,
+} from "./HackathonAnalysisService";

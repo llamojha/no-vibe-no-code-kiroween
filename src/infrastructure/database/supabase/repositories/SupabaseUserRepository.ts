@@ -274,6 +274,30 @@ export class SupabaseUserRepository implements IUserRepository {
     }
   }
 
+  async updateCredits(
+    userId: UserId,
+    credits: number
+  ): Promise<Result<void, Error>> {
+    try {
+      const { error } = await this.client
+        .from(this.tableName)
+        .update({ credits })
+        .eq("id", userId.value);
+
+      if (error) {
+        return failure(
+          new DatabaseQueryError("Failed to update credits", error, "UPDATE")
+        );
+      }
+
+      return success(undefined);
+    } catch (error) {
+      return failure(
+        new DatabaseQueryError("Unexpected error updating credits", error)
+      );
+    }
+  }
+
   async deactivateInactiveUsers(days: number): Promise<Result<number, Error>> {
     try {
       const cutoffDate = new Date();

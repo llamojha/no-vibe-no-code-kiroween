@@ -6,6 +6,7 @@ import type {
   HackathonAnalysis,
   ProjectSubmission,
   SavedHackathonAnalysis,
+  UserTier,
 } from "@/lib/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
@@ -20,15 +21,26 @@ import HackathonAnalysisDisplay from "./HackathonAnalysisDisplay";
 import SpookyLoader from "./SpookyLoader";
 import SpookyErrorMessage from "./SpookyErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import { CreditCounter } from "@/features/shared/components/CreditCounter";
+import { getCreditBalance } from "@/features/shared/api";
 
-const KiroweenAnalyzerView: React.FC = () => {
+interface KiroweenAnalyzerViewProps {
+  initialCredits: number;
+  userTier: UserTier;
+}
+
+const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
+  initialCredits,
+  userTier,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const savedId = searchParams.get("savedId");
   const mode = searchParams.get("mode");
 
   const { locale, t } = useLocale();
-  const { session, supabase, isLoading: isAuthLoading } = useAuth();
+  const { session, supabase, isLoading: isAuthLoading, isLocalDevMode } =
+    useAuth();
 
   const [submission, setSubmission] = useState<ProjectSubmission>({
     description: "",
@@ -46,6 +58,8 @@ const KiroweenAnalyzerView: React.FC = () => {
   const [savedAnalysisRecord, setSavedAnalysisRecord] =
     useState<SavedHackathonAnalysis | null>(null);
   const [isFetchingSaved, setIsFetchingSaved] = useState(false);
+  const [credits, setCredits] = useState<number>(initialCredits);
+  const [currentTier, setCurrentTier] = useState<UserTier>(userTier);
   const savedRecordId = savedAnalysisRecord?.id ?? null;
   const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
 
@@ -53,6 +67,20 @@ const KiroweenAnalyzerView: React.FC = () => {
 
   const showInputForm =
     !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
+
+  const refreshCredits = useCallback(async () => {
+    try {
+      const balance = await getCreditBalance();
+      setCredits(balance.credits);
+      setCurrentTier(balance.tier);
+    } catch (err) {
+      console.error("Failed to refresh credit balance", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCredits();
+  }, [refreshCredits]);
 
   // Loading messages for spooky theme
   const loadingMessages = [
@@ -191,6 +219,7 @@ const KiroweenAnalyzerView: React.FC = () => {
     try {
       const analysisResult = await analyzeHackathonProject(submission, locale);
       setNewAnalysis(analysisResult);
+      await refreshCredits();
       if (savedId) {
         router.replace("/kiroween-analyzer");
       }
@@ -212,6 +241,7 @@ const KiroweenAnalyzerView: React.FC = () => {
     savedId,
     savedRecordAudio,
     savedRecordId,
+    refreshCredits,
   ]);
 
   const handleSaveReport = useCallback(async () => {
@@ -377,6 +407,11 @@ const KiroweenAnalyzerView: React.FC = () => {
         </header>
 
         <main className="w-full">
+          {/* Credit Counter */}
+          <div className="mb-6">
+            <CreditCounter credits={credits} tier={currentTier} />
+          </div>
+
           {showInputForm && (
             <section
               ref={submissionFormRef}

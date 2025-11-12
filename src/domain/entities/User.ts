@@ -1,8 +1,12 @@
-import { Entity } from './shared/Entity';
-import { UserId } from '../value-objects/UserId';
-import { Email } from '../value-objects/Email';
-import { Locale } from '../value-objects/Locale';
-import { BusinessRuleViolationError, InvariantViolationError } from '../../shared/types/errors';
+import { Entity } from "./shared/Entity";
+import { UserId } from "../value-objects/UserId";
+import { Email } from "../value-objects/Email";
+import { Locale } from "../value-objects/Locale";
+import {
+  BusinessRuleViolationError,
+  InvariantViolationError,
+  InsufficientCreditsError,
+} from "../../shared/types/errors";
 
 /**
  * User preferences for the application
@@ -11,7 +15,7 @@ export interface UserPreferences {
   defaultLocale: Locale;
   emailNotifications: boolean;
   analysisReminders: boolean;
-  theme: 'light' | 'dark' | 'auto';
+  theme: "light" | "dark" | "auto";
 }
 
 /**
@@ -21,6 +25,7 @@ export interface CreateUserProps {
   email: Email;
   name?: string;
   preferences?: Partial<UserPreferences>;
+  credits?: number;
 }
 
 /**
@@ -33,6 +38,7 @@ export interface ReconstructUserProps extends CreateUserProps {
   lastLoginAt?: Date;
   isActive: boolean;
   preferences: UserPreferences;
+  credits: number;
 }
 
 /**
@@ -47,6 +53,7 @@ export class User extends Entity<UserId> {
   private _updatedAt: Date;
   private _lastLoginAt?: Date;
   private _isActive: boolean;
+  private _credits: number;
 
   private constructor(
     id: UserId,
@@ -55,6 +62,7 @@ export class User extends Entity<UserId> {
     updatedAt: Date,
     isActive: boolean,
     preferences: UserPreferences,
+    credits: number,
     name?: string,
     lastLoginAt?: Date
   ) {
@@ -66,6 +74,7 @@ export class User extends Entity<UserId> {
     this._updatedAt = updatedAt;
     this._lastLoginAt = lastLoginAt;
     this._isActive = isActive;
+    this._credits = credits;
 
     this.validateInvariants();
   }
@@ -81,13 +90,15 @@ export class User extends Entity<UserId> {
       defaultLocale: Locale.english(),
       emailNotifications: true,
       analysisReminders: true,
-      theme: 'auto'
+      theme: "auto",
     };
 
     const preferences: UserPreferences = {
       ...defaultPreferences,
-      ...props.preferences
+      ...props.preferences,
     };
+
+    const credits = props.credits ?? 3; // Default 3 credits
 
     return new User(
       id,
@@ -96,6 +107,7 @@ export class User extends Entity<UserId> {
       now,
       true,
       preferences,
+      credits,
       props.name
     );
   }
@@ -111,6 +123,7 @@ export class User extends Entity<UserId> {
       props.updatedAt,
       props.isActive,
       props.preferences,
+      props.credits,
       props.name,
       props.lastLoginAt
     );
@@ -121,15 +134,29 @@ export class User extends Entity<UserId> {
    */
   private validateInvariants(): void {
     if (this._name && this._name.trim().length === 0) {
-      throw new InvariantViolationError('User name cannot be empty if provided');
+      throw new InvariantViolationError(
+        "User name cannot be empty if provided"
+      );
     }
 
     if (this._name && this._name.length > 100) {
-      throw new InvariantViolationError('User name cannot exceed 100 characters');
+      throw new InvariantViolationError(
+        "User name cannot exceed 100 characters"
+      );
     }
 
     if (this._name && this._name.length < 2) {
-      throw new InvariantViolationError('User name must be at least 2 characters long');
+      throw new InvariantViolationError(
+        "User name must be at least 2 characters long"
+      );
+    }
+
+    if (this._credits < 0) {
+      throw new InvariantViolationError("User credits cannot be negative");
+    }
+
+    if (!Number.isInteger(this._credits)) {
+      throw new InvariantViolationError("User credits must be an integer");
     }
   }
 
@@ -138,15 +165,17 @@ export class User extends Entity<UserId> {
    */
   updateName(name: string): void {
     if (!name || name.trim().length === 0) {
-      throw new BusinessRuleViolationError('Name cannot be empty');
+      throw new BusinessRuleViolationError("Name cannot be empty");
     }
 
     if (name.length > 100) {
-      throw new BusinessRuleViolationError('Name cannot exceed 100 characters');
+      throw new BusinessRuleViolationError("Name cannot exceed 100 characters");
     }
 
     if (name.length < 2) {
-      throw new BusinessRuleViolationError('Name must be at least 2 characters long');
+      throw new BusinessRuleViolationError(
+        "Name must be at least 2 characters long"
+      );
     }
 
     this._name = name.trim();
@@ -167,7 +196,7 @@ export class User extends Entity<UserId> {
   updatePreferences(preferences: Partial<UserPreferences>): void {
     this._preferences = {
       ...this._preferences,
-      ...preferences
+      ...preferences,
     };
     this._updatedAt = new Date();
   }
@@ -199,7 +228,7 @@ export class User extends Entity<UserId> {
   /**
    * Update the theme preference
    */
-  updateTheme(theme: 'light' | 'dark' | 'auto'): void {
+  updateTheme(theme: "light" | "dark" | "auto"): void {
     this._preferences.theme = theme;
     this._updatedAt = new Date();
   }
@@ -213,11 +242,45 @@ export class User extends Entity<UserId> {
   }
 
   /**
+   * Check if the user has credits available
+   */
+  hasCredits(): boolean {
+    return this._credits > 0;
+  }
+
+  /**
+   * Deduct one credit from the user's balance
+   * Throws InsufficientCreditsError if no credits available
+   */
+  deductCredit(): void {
+    if (this._credits <= 0) {
+      throw new InsufficientCreditsError(this.id.value);
+    }
+    this._credits -= 1;
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Add credits to the user's balance
+   * @param amount - Number of credits to add (must be positive)
+   */
+  addCredits(amount: number): void {
+    if (amount <= 0) {
+      throw new BusinessRuleViolationError("Credit amount must be positive");
+    }
+    if (!Number.isInteger(amount)) {
+      throw new BusinessRuleViolationError("Credit amount must be an integer");
+    }
+    this._credits += amount;
+    this._updatedAt = new Date();
+  }
+
+  /**
    * Activate the user account
    */
   activate(): void {
     if (this._isActive) {
-      throw new BusinessRuleViolationError('User is already active');
+      throw new BusinessRuleViolationError("User is already active");
     }
 
     this._isActive = true;
@@ -229,7 +292,7 @@ export class User extends Entity<UserId> {
    */
   deactivate(): void {
     if (!this._isActive) {
-      throw new BusinessRuleViolationError('User is already inactive');
+      throw new BusinessRuleViolationError("User is already inactive");
     }
 
     this._isActive = false;
@@ -323,6 +386,10 @@ export class User extends Entity<UserId> {
     return this._lastLoginAt ? new Date(this._lastLoginAt) : undefined;
   }
 
+  get credits(): number {
+    return this._credits;
+  }
+
   get isActive(): boolean {
     return this._isActive;
   }
@@ -331,8 +398,8 @@ export class User extends Entity<UserId> {
    * Get a summary of the user
    */
   getSummary(): string {
-    const status = this._isActive ? 'Active' : 'Inactive';
-    const name = this._name || 'Unnamed';
+    const status = this._isActive ? "Active" : "Inactive";
+    const name = this._name || "Unnamed";
     return `${name} (${this._email.value}) - ${status}`;
   }
 }

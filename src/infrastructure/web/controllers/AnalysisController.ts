@@ -1,23 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { 
+import { NextRequest, NextResponse } from "next/server";
+import {
   CreateAnalysisHandler,
   UpdateAnalysisHandler,
-  DeleteAnalysisHandler 
-} from '@/src/application/handlers/commands';
-import { 
+  DeleteAnalysisHandler,
+} from "@/src/application/handlers/commands";
+import {
   GetAnalysisHandler,
   ListAnalysesHandler,
-  SearchAnalysesHandler 
-} from '@/src/application/handlers/queries';
-import { CreateAnalysisCommand, UpdateAnalysisCommand, DeleteAnalysisCommand } from '@/src/application/types/commands';
-import { GetAnalysisByIdQuery, GetAnalysesByUserQuery, SearchAnalysesQuery } from '@/src/application/types/queries';
-import { CreateAnalysisDTO, UpdateAnalysisDTO, AnalysisResponseDTO } from '../dto/AnalysisDTO';
-import { CreateAnalysisSchema, UpdateAnalysisSchema } from '../dto/AnalysisDTO';
-import { AnalysisId, UserId, Locale, Category } from '@/src/domain/value-objects';
-import { handleApiError } from '../middleware/ErrorMiddleware';
-import { validateRequest } from '../middleware/ValidationMiddleware';
-import { authenticateRequest } from '../middleware/AuthMiddleware';
-import { resolveMockModeFlag } from '@/lib/testing/config/mock-mode-flags';
+  SearchAnalysesHandler,
+} from "@/src/application/handlers/queries";
+import {
+  CreateAnalysisCommand,
+  UpdateAnalysisCommand,
+  DeleteAnalysisCommand,
+} from "@/src/application/types/commands";
+import {
+  GetAnalysisByIdQuery,
+  GetAnalysesByUserQuery,
+  SearchAnalysesQuery,
+} from "@/src/application/types/queries";
+import {
+  CreateAnalysisDTO,
+  UpdateAnalysisDTO,
+  AnalysisResponseDTO,
+} from "../dto/AnalysisDTO";
+import { CreateAnalysisSchema, UpdateAnalysisSchema } from "../dto/AnalysisDTO";
+import {
+  AnalysisId,
+  UserId,
+  Locale,
+  Category,
+} from "@/src/domain/value-objects";
+import { handleApiError } from "../middleware/ErrorMiddleware";
+import { validateRequest } from "../middleware/ValidationMiddleware";
+import { authenticateRequest } from "../middleware/AuthMiddleware";
+import { withCreditCheck } from "../middleware/CreditCheckMiddleware";
+import { CheckCreditsUseCase } from "@/src/application/use-cases/CheckCreditsUseCase";
+import { GetCreditBalanceUseCase } from "@/src/application/use-cases/GetCreditBalanceUseCase";
+import { DeductCreditUseCase } from "@/src/application/use-cases/DeductCreditUseCase";
+import { DeductCreditCommand } from "@/src/application/types/commands/CreditCommands";
+import { AnalysisType } from "@/src/domain/value-objects/AnalysisType";
+import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 
 /**
  * Controller for analysis-related API endpoints
@@ -30,7 +53,10 @@ export class AnalysisController {
     private readonly deleteAnalysisHandler: DeleteAnalysisHandler,
     private readonly getAnalysisHandler: GetAnalysisHandler,
     private readonly listAnalysesHandler: ListAnalysesHandler,
-    private readonly searchAnalysesHandler: SearchAnalysesHandler
+    private readonly searchAnalysesHandler: SearchAnalysesHandler,
+    private readonly checkCreditsUseCase: CheckCreditsUseCase,
+    private readonly getCreditBalanceUseCase: GetCreditBalanceUseCase,
+    private readonly deductCreditUseCase: DeductCreditUseCase
   ) {}
 
   /**
@@ -56,19 +82,27 @@ export class AnalysisController {
       }
 
       // Validate and parse request body
-      const validationResult = await validateRequest(request, CreateAnalysisSchema);
+      const validationResult = await validateRequest(
+        request,
+        CreateAnalysisSchema
+      );
       if (!validationResult.success) {
         return NextResponse.json(
-          { error: 'Validation failed', details: validationResult.errors },
+          { error: "Validation failed", details: validationResult.errors },
           { status: 400 }
         );
       }
 
       const dto = validationResult.data as CreateAnalysisDTO;
+
+      // Check if user has sufficient credits before analysis
+      const userId = UserId.fromString(authResult.userId);
+      await withCreditCheck(userId, this.checkCreditsUseCase);
+
       // Build command and delegate to application handler to persist
       const command = new CreateAnalysisCommand(
         dto.idea,
-        UserId.fromString(authResult.userId),
+        userId,
         Locale.fromString(dto.locale),
         dto.category ? Category.createGeneral(dto.category) : undefined
       );
@@ -77,22 +111,52 @@ export class AnalysisController {
 
       if (!result.success) {
         return NextResponse.json(
-          { error: result.error?.message || 'Failed to create analysis' },
+          { error: result.error?.message || "Failed to create analysis" },
           { status: 400 }
         );
       }
 
       const analysis = result.data.analysis;
+
+      // Deduct credit after successful analysis
+      const deductCommand: DeductCreditCommand = {
+        userId: userId,
+        analysisType: AnalysisType.STARTUP_IDEA,
+        analysisId: analysis.id.value,
+      };
+
+      const deductResult = await this.deductCreditUseCase.execute(
+        deductCommand
+      );
+
+      if (!deductResult.success) {
+        // Log error but don't fail the request since analysis was successful
+        console.error("Failed to deduct credit:", deductResult.error);
+      }
+
+      // Fetch current credit balance to include in response
+      const creditBalanceResult = await this.getCreditBalanceUseCase.execute(
+        userId
+      );
+
       const responseDTO: AnalysisResponseDTO = {
         id: analysis.id.value,
         idea: analysis.idea,
         score: analysis.score.value,
-        detailedSummary: analysis.feedback || '',
+        detailedSummary: analysis.feedback || "",
         criteria: [],
         createdAt: analysis.createdAt.toISOString(),
         locale: analysis.locale.value,
-        category: analysis.category?.value
+        category: analysis.category?.value,
       };
+
+      // Include credit information if available
+      if (creditBalanceResult.success && creditBalanceResult.data) {
+        responseDTO.credits = {
+          remaining: creditBalanceResult.data.credits,
+          tier: creditBalanceResult.data.tier,
+        };
+      }
 
       // Keep status 200 to match existing expectations/tests
       return NextResponse.json(responseDTO, { status: 200 });
@@ -104,7 +168,9 @@ export class AnalysisController {
   /**
    * Mock implementation for testing without API calls
    */
-  private async mockCreateAnalysis(request: NextRequest): Promise<NextResponse> {
+  private async mockCreateAnalysis(
+    request: NextRequest
+  ): Promise<NextResponse> {
     const body = await request.json();
     const { idea, locale } = body as { idea?: string; locale?: string };
 
@@ -119,102 +185,114 @@ export class AnalysisController {
     const mockAnalysis = {
       id: "12345678-1234-4234-8234-123456789012",
       idea: idea,
-      detailedSummary: "This is a comprehensive analysis of your startup idea. The concept shows strong market potential and addresses a real pain point in the industry.",
-      viabilitySummary: "This is a promising startup idea with strong market potential and clear value proposition.",
+      detailedSummary:
+        "This is a comprehensive analysis of your startup idea. The concept shows strong market potential and addresses a real pain point in the industry.",
+      viabilitySummary:
+        "This is a promising startup idea with strong market potential and clear value proposition.",
       finalScore: 4.1,
-      finalScoreExplanation: "The idea demonstrates strong viability with good market fit, feasible implementation, and clear monetization potential.",
+      finalScoreExplanation:
+        "The idea demonstrates strong viability with good market fit, feasible implementation, and clear monetization potential.",
       founderQuestions: [
         {
           question: "What is your unique value proposition?",
           why: "Understanding your differentiation is crucial for market positioning",
-          suggestedApproach: "Conduct competitor analysis and identify your key advantages"
+          suggestedApproach:
+            "Conduct competitor analysis and identify your key advantages",
         },
         {
           question: "Who is your target customer?",
           why: "Precise customer targeting enables effective marketing and product development",
-          suggestedApproach: "Create detailed customer personas based on market research"
-        }
+          suggestedApproach:
+            "Create detailed customer personas based on market research",
+        },
       ],
       swotAnalysis: {
         strengths: [
           "Clear problem-solution fit",
           "Strong value proposition",
           "Scalable business model",
-          "Growing market demand"
+          "Growing market demand",
         ],
         weaknesses: [
           "Competitive market space",
           "Requires significant initial investment",
-          "Technical complexity"
+          "Technical complexity",
         ],
         opportunities: [
           "Expand to adjacent markets",
           "Leverage emerging technologies",
-          "Strategic partnerships potential"
+          "Strategic partnerships potential",
         ],
         threats: [
           "New competitors entering market",
           "Changing regulations",
-          "Economic downturn impact"
-        ]
+          "Economic downturn impact",
+        ],
       },
       currentMarketTrends: [
         {
           trend: "Digital transformation acceleration",
           relevance: "High relevance to your solution",
-          impact: "Positive - increases market demand"
+          impact: "Positive - increases market demand",
         },
         {
           trend: "Remote work adoption",
           relevance: "Medium relevance",
-          impact: "Positive - expands addressable market"
-        }
+          impact: "Positive - expands addressable market",
+        },
       ],
       scoringRubric: [
         {
           name: "Market Demand",
           score: 4.5,
           maxScore: 5,
-          justification: "Strong market demand with clear pain points and growing interest"
+          justification:
+            "Strong market demand with clear pain points and growing interest",
         },
         {
           name: "Market Size",
           score: 4.2,
           maxScore: 5,
-          justification: "Large addressable market with significant growth potential"
+          justification:
+            "Large addressable market with significant growth potential",
         },
         {
           name: "Uniqueness",
           score: 3.8,
           maxScore: 5,
-          justification: "Novel approach with some unique features and differentiation"
+          justification:
+            "Novel approach with some unique features and differentiation",
         },
         {
           name: "Scalability",
           score: 4.3,
           maxScore: 5,
-          justification: "Highly scalable business model with low marginal costs"
+          justification:
+            "Highly scalable business model with low marginal costs",
         },
         {
           name: "Potential Profitability",
           score: 4.0,
           maxScore: 5,
-          justification: "Clear monetization path with multiple revenue streams"
-        }
+          justification:
+            "Clear monetization path with multiple revenue streams",
+        },
       ],
       competitors: [
         {
           name: "Competitor A",
           strengths: ["Established brand", "Large user base"],
           weaknesses: ["Legacy technology", "Poor user experience"],
-          differentiators: "Your solution offers better UX and modern tech stack"
+          differentiators:
+            "Your solution offers better UX and modern tech stack",
         },
         {
           name: "Competitor B",
           strengths: ["Strong funding", "Fast growth"],
           weaknesses: ["Limited features", "High pricing"],
-          differentiators: "Your solution provides more features at competitive pricing"
-        }
+          differentiators:
+            "Your solution provides more features at competitive pricing",
+        },
       ],
       monetizationStrategies: [
         {
@@ -222,15 +300,15 @@ export class AnalysisController {
           viability: "High",
           pros: ["Predictable revenue", "Customer retention"],
           cons: ["Requires ongoing value delivery"],
-          estimatedRevenue: "$50-100K MRR within 12 months"
+          estimatedRevenue: "$50-100K MRR within 12 months",
         },
         {
           strategy: "Freemium",
           viability: "Medium",
           pros: ["Low barrier to entry", "Viral growth potential"],
           cons: ["Conversion challenges"],
-          estimatedRevenue: "$30-60K MRR within 12 months"
-        }
+          estimatedRevenue: "$30-60K MRR within 12 months",
+        },
       ],
       improvementSuggestions: [
         {
@@ -238,42 +316,42 @@ export class AnalysisController {
           suggestion: "Focus on MVP with core features first",
           priority: "High",
           impact: "Faster time to market and early user feedback",
-          effort: "Medium"
+          effort: "Medium",
         },
         {
           area: "Market Strategy",
           suggestion: "Validate with target customers before full launch",
           priority: "High",
           impact: "Reduced risk and better product-market fit",
-          effort: "Low"
+          effort: "Low",
         },
         {
           area: "Team Building",
           suggestion: "Bring on technical co-founder or CTO",
           priority: "Medium",
           impact: "Stronger technical execution",
-          effort: "High"
-        }
+          effort: "High",
+        },
       ],
       nextSteps: [
         {
           step: "Validate assumptions with target customers",
           timeline: "Week 1-2",
-          resources: "Customer interviews, surveys"
+          resources: "Customer interviews, surveys",
         },
         {
           step: "Build MVP with core features",
           timeline: "Month 1-3",
-          resources: "Development team, design resources"
+          resources: "Development team, design resources",
         },
         {
           step: "Launch beta and gather feedback",
           timeline: "Month 3-4",
-          resources: "Beta users, analytics tools"
-        }
+          resources: "Beta users, analytics tools",
+        },
       ],
       createdAt: new Date().toISOString(),
-      locale: locale
+      locale: locale,
     };
 
     return NextResponse.json(mockAnalysis, { status: 200 });
@@ -283,7 +361,10 @@ export class AnalysisController {
    * Get analysis by ID
    * GET /api/analyze/[id]
    */
-  async getAnalysis(request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+  async getAnalysis(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+  ): Promise<NextResponse> {
     try {
       // Authenticate request
       const authResult = await authenticateRequest(request);
@@ -293,7 +374,7 @@ export class AnalysisController {
 
       // Create query
       const query = new GetAnalysisByIdQuery(
-        AnalysisId.fromString(params.id), 
+        AnalysisId.fromString(params.id),
         authResult.userId ? UserId.fromString(authResult.userId) : undefined
       );
 
@@ -301,11 +382,17 @@ export class AnalysisController {
       const result = await this.getAnalysisHandler.handle(query);
 
       if (!result.success) {
-        return NextResponse.json({ error: result.error?.message || 'Failed to retrieve analysis' }, { status: 400 });
+        return NextResponse.json(
+          { error: result.error?.message || "Failed to retrieve analysis" },
+          { status: 400 }
+        );
       }
 
       if (!result.data || !result.data.analysis) {
-        return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: "Analysis not found" },
+          { status: 404 }
+        );
       }
 
       const analysis = result.data.analysis;
@@ -313,11 +400,11 @@ export class AnalysisController {
         id: analysis.id.value,
         idea: analysis.idea,
         score: analysis.score.value,
-        detailedSummary: analysis.feedback || '',
+        detailedSummary: analysis.feedback || "",
         criteria: [], // TODO: Map from analysis data when available
         createdAt: analysis.createdAt.toISOString(),
         locale: analysis.locale.value,
-        category: analysis.category?.value
+        category: analysis.category?.value,
       };
       return NextResponse.json(responseDTO);
     } catch (error) {
@@ -339,12 +426,12 @@ export class AnalysisController {
 
       // Parse query parameters
       const url = new URL(request.url);
-      const page = parseInt(url.searchParams.get('page') || '1');
-      const limit = parseInt(url.searchParams.get('limit') || '10');
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "10");
 
       // Create query
       const query = new GetAnalysesByUserQuery(
-        UserId.fromString(authResult.userId), 
+        UserId.fromString(authResult.userId),
         { page, limit }
       );
 
@@ -352,25 +439,29 @@ export class AnalysisController {
       const result = await this.listAnalysesHandler.handle(query);
 
       if (result.success) {
-        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.items.map(analysis => ({
-          id: analysis.id.value,
-          idea: analysis.idea,
-          score: analysis.score.value,
-          detailedSummary: analysis.feedback || '',
-          criteria: [],
-          createdAt: analysis.createdAt.toISOString(),
-          locale: analysis.locale.value,
-          category: analysis.category?.value
-        }));
+        const responseDTOs: AnalysisResponseDTO[] =
+          result.data.analyses.items.map((analysis) => ({
+            id: analysis.id.value,
+            idea: analysis.idea,
+            score: analysis.score.value,
+            detailedSummary: analysis.feedback || "",
+            criteria: [],
+            createdAt: analysis.createdAt.toISOString(),
+            locale: analysis.locale.value,
+            category: analysis.category?.value,
+          }));
 
         return NextResponse.json({
           analyses: responseDTOs,
           total: result.data.analyses.total,
           page,
-          limit
+          limit,
         });
       } else {
-        return NextResponse.json({ error: result.error.message }, { status: 400 });
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: 400 }
+        );
       }
     } catch (error) {
       return handleApiError(error);
@@ -381,7 +472,10 @@ export class AnalysisController {
    * Update analysis
    * PUT /api/analyze/[id]
    */
-  async updateAnalysis(request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+  async updateAnalysis(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+  ): Promise<NextResponse> {
     try {
       // Authenticate request
       const authResult = await authenticateRequest(request);
@@ -390,10 +484,13 @@ export class AnalysisController {
       }
 
       // Validate and parse request body
-      const validationResult = await validateRequest(request, UpdateAnalysisSchema);
+      const validationResult = await validateRequest(
+        request,
+        UpdateAnalysisSchema
+      );
       if (!validationResult.success) {
         return NextResponse.json(
-          { error: 'Validation failed', details: validationResult.errors },
+          { error: "Validation failed", details: validationResult.errors },
           { status: 400 }
         );
       }
@@ -420,7 +517,7 @@ export class AnalysisController {
        * 4) Alternatively, expose a focused endpoint: PUT /api/analyze/[id]/audio that only
        *    updates audio and leaves other fields untouched.
        */
-      
+
       // Convert DTO to command
       const updates: { feedback?: string; category?: Category } = {};
       if (dto.idea) {
@@ -445,15 +542,18 @@ export class AnalysisController {
           id: analysis.id.value,
           idea: analysis.idea,
           score: analysis.score.value,
-          detailedSummary: analysis.feedback || '',
+          detailedSummary: analysis.feedback || "",
           criteria: [],
           createdAt: analysis.createdAt.toISOString(),
           locale: analysis.locale.value,
-          category: analysis.category?.value
+          category: analysis.category?.value,
         };
         return NextResponse.json(responseDTO);
       } else {
-        return NextResponse.json({ error: result.error.message }, { status: 400 });
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: 400 }
+        );
       }
     } catch (error) {
       return handleApiError(error);
@@ -464,7 +564,10 @@ export class AnalysisController {
    * Delete analysis
    * DELETE /api/analyze/[id]
    */
-  async deleteAnalysis(request: NextRequest, { params }: { params: { id: string } }): Promise<NextResponse> {
+  async deleteAnalysis(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+  ): Promise<NextResponse> {
     try {
       // Authenticate request
       const authResult = await authenticateRequest(request);
@@ -482,9 +585,12 @@ export class AnalysisController {
       const result = await this.deleteAnalysisHandler.handle(command);
 
       if (result.success) {
-        return NextResponse.json({ message: 'Analysis deleted successfully' });
+        return NextResponse.json({ message: "Analysis deleted successfully" });
       } else {
-        return NextResponse.json({ error: result.error.message }, { status: 400 });
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: 400 }
+        );
       }
     } catch (error) {
       return handleApiError(error);
@@ -505,16 +611,16 @@ export class AnalysisController {
 
       // Parse query parameters
       const url = new URL(request.url);
-      const searchTerm = url.searchParams.get('q') || '';
-      const page = parseInt(url.searchParams.get('page') || '1');
-      const limit = parseInt(url.searchParams.get('limit') || '10');
+      const searchTerm = url.searchParams.get("q") || "";
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "10");
 
       // Create query
       const query = new SearchAnalysesQuery(
         { page, limit },
-        { 
+        {
           userId: UserId.fromString(authResult.userId),
-          ideaContains: searchTerm 
+          ideaContains: searchTerm,
         },
         searchTerm
       );
@@ -523,26 +629,30 @@ export class AnalysisController {
       const result = await this.searchAnalysesHandler.handle(query);
 
       if (result.success) {
-        const responseDTOs: AnalysisResponseDTO[] = result.data.analyses.items.map(analysis => ({
-          id: analysis.id.value,
-          idea: analysis.idea,
-          score: analysis.score.value,
-          detailedSummary: analysis.feedback || '',
-          criteria: [],
-          createdAt: analysis.createdAt.toISOString(),
-          locale: analysis.locale.value,
-          category: analysis.category?.value
-        }));
+        const responseDTOs: AnalysisResponseDTO[] =
+          result.data.analyses.items.map((analysis) => ({
+            id: analysis.id.value,
+            idea: analysis.idea,
+            score: analysis.score.value,
+            detailedSummary: analysis.feedback || "",
+            criteria: [],
+            createdAt: analysis.createdAt.toISOString(),
+            locale: analysis.locale.value,
+            category: analysis.category?.value,
+          }));
 
         return NextResponse.json({
           analyses: responseDTOs,
           total: result.data.analyses.total,
           page,
           limit,
-          searchTerm
+          searchTerm,
         });
       } else {
-        return NextResponse.json({ error: result.error.message }, { status: 400 });
+        return NextResponse.json(
+          { error: result.error.message },
+          { status: 400 }
+        );
       }
     } catch (error) {
       return handleApiError(error);
@@ -557,10 +667,10 @@ export class AnalysisController {
     return new NextResponse(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Max-Age': '86400',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400",
       },
     });
   }
