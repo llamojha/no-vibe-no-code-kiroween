@@ -316,92 +316,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    generatedAudio,
-    submission,
-    locale,
-    router,
-    savedId,
-    savedRecordAudio,
-    frankensteinId,
-    sourceFromUrl,
-    savedRecordId,
-    refreshCredits,
-  ]);
-
-  const handleSaveReport = useCallback(async () => {
-    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
-    if (!analysisToSave || !submission.description) return;
-
-    if (!session) {
-      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
-      return;
-    }
-
-    try {
-      const { data, error: saveError } = await saveHackathonAnalysis({
-        projectDescription: submission.description,
-        analysis: analysisToSave,
-        supportingMaterials: submission.supportingMaterials,
-        audioBase64: generatedAudio || undefined,
-      });
-
-      if (saveError || !data) {
-        console.error("Failed to save hackathon analysis", saveError);
-        setError(
-          saveError || "Failed to save your analysis. Please try again."
-        );
-        return;
-      }
-
-      setSavedAnalysisRecord(data);
-      setIsReportSaved(true);
-      setNewAnalysis(null);
-      setAddedSuggestions([]);
-      setGeneratedAudio(data.audioBase64 ?? null);
-      
-      // If this came from a Frankenstein, update it with the validation
-      if (frankensteinId && sourceFromUrl === 'frankenstein') {
-        try {
-          const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
-          const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
-          
-          // Use deriveFivePointScore to get the correct 0-5 score
-          const score = deriveFivePointScore(analysisToSave as any);
-          
-          console.log('Updating Frankenstein with validation:', {
-            frankensteinId,
-            analysisId: data.id,
-            score,
-            rawFinalScore: analysisToSave.finalScore,
-          });
-          
-          const result = await updateFrankensteinValidation(frankensteinId, 'kiroween', {
-            analysisId: data.id,
-            score,
-          });
-          console.log('Frankenstein update result:', result);
-        } catch (err) {
-          console.error('Failed to update Frankenstein with validation:', err);
-          // Don't show error to user, this is a background operation
-        }
-      } else {
-        console.log('Not updating Frankenstein:', {
-          frankensteinId,
-          sourceFromUrl,
-          hasId: !!frankensteinId,
-          isFromFrankenstein: sourceFromUrl === 'frankenstein',
-        });
-      }
-      
-      router.replace(
-        `/kiroween-analyzer?savedId=${encodeURIComponent(data.id)}&mode=view`
-      );
-    } catch (err) {
-      console.error("Error saving analysis:", err);
-      setError("Failed to save your analysis. Please try again.");
-    }
-  }, [newAnalysis, savedAnalysisRecord?.analysis, submission.description, submission.supportingMaterials, session, router, generatedAudio, frankensteinId, sourceFromUrl]);
+  }, [submission, generatedAudio, savedRecordId, savedRecordAudio, locale, refreshCredits, session, frankensteinId, sourceFromUrl, savedId, router]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
@@ -623,7 +538,6 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               </div>
               <HackathonAnalysisDisplay
                 analysis={analysisToDisplay}
-                onSave={sourceFromUrl === 'frankenstein' ? undefined : handleSaveReport}
                 isSaved={isReportSaved}
                 savedAnalysisId={savedRecordId || undefined}
                 savedAudioBase64={generatedAudio}

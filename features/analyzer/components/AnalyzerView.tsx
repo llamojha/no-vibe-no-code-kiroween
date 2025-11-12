@@ -157,7 +157,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     };
 
     void fetchSavedAnalysis();
-  }, [mode, router, savedId, session, supabase, isAuthLoading, isLocalDevMode]);
+  }, [mode, router, savedId, session, supabase, isAuthLoading, isLocalDevMode, ideaFromUrl, sourceFromUrl]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -300,77 +300,6 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setIsLoading(false);
     }
   }, [idea, generatedAudio, savedRecordId, savedRecordAudio, locale, savedId, t, refreshCredits, session, isLocalDevMode, frankensteinId, sourceFromUrl, router]);
-
-  const handleSaveReport = useCallback(async () => {
-    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
-    if (!analysisToSave || !idea) return;
-
-    // Check if authentication is required (not in local dev mode)
-    if (!isLocalDevMode && !session) {
-      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
-      return;
-    }
-
-    // Use the new save function that handles both local dev mode and production
-    const { data: record, error: saveError } = await saveAnalysis({
-      idea,
-      analysis: analysisToSave,
-      audioBase64: generatedAudio || undefined,
-    });
-
-    if (saveError || !record) {
-      setError(saveError || "Failed to save your analysis. Please try again.");
-      return;
-    }
-
-    setSavedAnalysisRecord(record);
-    setIsReportSaved(true);
-    setNewAnalysis(null);
-    setAddedSuggestions([]);
-    setGeneratedAudio(record.audioBase64 ?? null);
-    capture("analysis_saved", { analysis_id: record.id, locale });
-    
-    // If this came from a Frankenstein, update it with the validation
-    if (frankensteinId && sourceFromUrl === 'frankenstein') {
-      try {
-        const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
-        const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
-        
-        // Use deriveFivePointScore to get the correct 0-5 score
-        const score = deriveFivePointScore(analysisToSave as any);
-        
-        console.log('Updating Frankenstein with validation:', {
-          frankensteinId,
-          analysisId: record.id,
-          score,
-          rawFinalScore: analysisToSave.finalScore,
-        });
-        
-        await updateFrankensteinValidation(frankensteinId, 'analyzer', {
-          analysisId: record.id,
-          score,
-        });
-      } catch (err) {
-        console.error('Failed to update Frankenstein with validation:', err);
-        // Don't show error to user, this is a background operation
-      }
-    }
-    
-    router.replace(
-      `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
-    );
-  }, [
-    generatedAudio,
-    idea,
-    newAnalysis,
-    router,
-    savedAnalysisRecord,
-    session,
-    isLocalDevMode,
-    locale,
-    frankensteinId,
-    sourceFromUrl,
-  ]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
@@ -561,7 +490,6 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               </div>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
-                onSave={sourceFromUrl === 'frankenstein' ? undefined : handleSaveReport}
                 isSaved={isReportSaved}
                 savedAudioBase64={generatedAudio}
                 onAudioGenerated={handleAudioGenerated}

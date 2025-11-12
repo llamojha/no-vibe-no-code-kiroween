@@ -926,53 +926,16 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                 />
               )}
 
-              {isLoggedIn &&
-                (isReportSaved ? (
-                  <>
-                    <span className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-green-400 bg-green-900/20 border border-green-700 rounded cursor-default">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>{t("reportSavedMessage") || "Report Saved"}</span>
-                    </span>
-
-                    {shareLinksEnabled && savedIdeaRecord && (
-                      <button
-                        onClick={handleShare}
-                        className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${
-                          shareSuccess
-                            ? "text-green-400 bg-green-900/20 border-green-700"
-                            : "text-slate-300 bg-black/50 border-purple-600 hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400"
-                        }`}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                        </svg>
-                        <span>
-                          {shareSuccess
-                            ? t("linkCopied") || "Link Copied!"
-                            : t("share") || "Share"}
-                        </span>
-                      </button>
-                    )}
-
+              {isLoggedIn && isReportSaved && (
+                <>
+                  {shareLinksEnabled && savedIdeaRecord && (
                     <button
-                      onClick={handleGoToDashboard}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors"
+                      onClick={handleShare}
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${
+                        shareSuccess
+                          ? "text-green-400 bg-green-900/20 border-green-700"
+                          : "text-slate-300 bg-black/50 border-purple-600 hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400"
+                      }`}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -980,18 +943,19 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                         viewBox="0 0 20 20"
                         fill="currentColor"
                       >
-                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
                       </svg>
                       <span>
-                        {t("goToDashboardButton") || "Go to Dashboard"}
+                        {shareSuccess
+                          ? t("linkCopied") || "Link Copied!"
+                          : t("share") || "Share"}
                       </span>
                     </button>
-                  </>
-                ) : (
+                  )}
+
                   <button
-                    onClick={handleSaveReport}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleGoToDashboard}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -999,15 +963,14 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       viewBox="0 0 20 20"
                       fill="currentColor"
                     >
-                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V4zm3 1h4a1 1 0 000-2H8a1 1 0 000 2z" />
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                     </svg>
                     <span>
-                      {isSaving
-                        ? t("saving") || "Saving..."
-                        : t("saveReportButton") || "Save Report"}
+                      {t("goToDashboardButton") || "Go to Dashboard"}
                     </span>
                   </button>
-                ))}
+                </>
+              )}
             </div>
           </div>
         </div>

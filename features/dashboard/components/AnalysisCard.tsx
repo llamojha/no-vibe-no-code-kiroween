@@ -306,7 +306,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, onDelete }) => {
           <span aria-hidden="true">{t('view')}</span>
         </button>
 
-        {analysis.category === "idea" && (
+        {(analysis.category === "idea" || analysis.category === "kiroween") && (
           <button
             onClick={handleEdit}
             disabled={!isAnalyzerEnabled}
