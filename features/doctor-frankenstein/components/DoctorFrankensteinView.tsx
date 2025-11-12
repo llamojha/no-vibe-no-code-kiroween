@@ -546,6 +546,12 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             <LanguageToggle />
           </div>
 
+          {isLoggedIn && (
+            <div className="mb-6 max-w-xs ml-auto">
+              <CreditCounter credits={credits} tier={currentTier} />
+            </div>
+          )}
+
           {/* Language mismatch warning */}
           {languageMismatch && (
             <div className="mb-6 p-4 bg-yellow-900/50 border border-yellow-500 rounded-lg">

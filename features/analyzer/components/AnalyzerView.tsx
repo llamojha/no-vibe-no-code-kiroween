@@ -69,19 +69,25 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   const ideaInputRef = useRef<HTMLDivElement>(null);
 
   const refreshCredits = useCallback(async () => {
-    if (isLocalDevMode) {
-      return;
-    }
     try {
       const balance = await getCreditBalance();
       setCredits(balance.credits);
     } catch (error) {
-      console.error("Failed to refresh credit balance", error);
+      const message = "Failed to refresh credit balance";
+      if (isLocalDevMode) {
+        console.warn(message, error);
+      } else {
+        console.error(message, error);
+      }
     }
   }, [isLocalDevMode]);
 
   const showInputForm =
     !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
+
+  useEffect(() => {
+    void refreshCredits();
+  }, [refreshCredits]);
 
   useEffect(() => {
     if (!savedId) {
