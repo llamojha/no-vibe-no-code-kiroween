@@ -39,7 +39,12 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
     const description = submission.description;
 
     // Don't track if description is empty or hasn't changed
-    if (!description || description === previousDescriptionRef.current) {
+    if (!description) {
+      previousDescriptionRef.current = description;
+      return;
+    }
+
+    if (description === previousDescriptionRef.current) {
       return;
     }
 
@@ -65,11 +70,6 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
         clearTimeout(modificationTimeoutRef.current);
       }
     };
-  }, [submission.description]);
-
-  // Update ref when description changes externally (e.g., from suggestion)
-  useEffect(() => {
-    previousDescriptionRef.current = submission.description;
   }, [submission.description]);
 
   const validateForm = useCallback((): boolean => {

@@ -44,7 +44,12 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
     }
 
     // Don't track if idea is empty or hasn't changed
-    if (!idea || idea === previousIdeaRef.current) {
+    if (!idea) {
+      previousIdeaRef.current = idea;
+      return;
+    }
+
+    if (idea === previousIdeaRef.current) {
       return;
     }
 
@@ -71,11 +76,6 @@ const IdeaInputForm: React.FC<IdeaInputFormProps> = ({
       }
     };
   }, [idea, analysisType]);
-
-  // Update ref when idea changes externally (e.g., from suggestion)
-  useEffect(() => {
-    previousIdeaRef.current = idea;
-  }, [idea]);
 
   const handleMicClick = useCallback(async () => {
     if (recordingStatus === "recording") {

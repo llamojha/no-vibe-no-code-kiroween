@@ -4,13 +4,51 @@ import { PostHog } from "posthog-node";
  * Server-side PostHog tracking utilities
  *
  * This module provides server-side event capture for API routes and server actions.
- * Events are sent immediately with proper shutdown to prevent memory leaks.
+ * Events are flushed aggressively and the shared client is only shut down when the process exits.
  *
  * @module server-tracking
  */
 
 // Singleton instance
 let posthogClient: PostHog | null = null;
+let shutdownHooksRegistered = false;
+let isClientShuttingDown = false;
+
+const processRef =
+  typeof globalThis.process !== "undefined" &&
+  typeof globalThis.process.on === "function"
+    ? (globalThis.process as NodeJS.Process)
+    : undefined;
+
+const registerShutdownHooks = (): void => {
+  if (!processRef || shutdownHooksRegistered) {
+    return;
+  }
+
+  const handleShutdown = (): void => {
+    if (!posthogClient || isClientShuttingDown) {
+      return;
+    }
+
+    isClientShuttingDown = true;
+
+    posthogClient
+      .shutdown()
+      .catch((error) =>
+        console.error("[PostHog Server] Failed to shutdown client:", error)
+      )
+      .finally(() => {
+        posthogClient = null;
+        isClientShuttingDown = false;
+      });
+  };
+
+  processRef.on("beforeExit", () => handleShutdown());
+  processRef.on("SIGINT", handleShutdown);
+  processRef.on("SIGTERM", handleShutdown);
+
+  shutdownHooksRegistered = true;
+};
 
 /**
  * Get or create PostHog client instance
@@ -34,6 +72,8 @@ const getPostHogClient = (): PostHog | null => {
       flushAt: 1, // Send events immediately
       flushInterval: 0, // No batching delay
     });
+
+    registerShutdownHooks();
   }
 
   return posthogClient;
@@ -49,10 +89,10 @@ export interface ServerEventProps {
 }
 
 /**
- * Capture a server-side event and ensure proper shutdown
+ * Capture a server-side event with the shared PostHog client
  *
  * @param props - Event properties including distinctId, event name, and custom properties
- * @returns Promise that resolves when eventaptured and client is shutdown
+ * @returns Promise that resolves once the event has been queued
  *
  * @example
  * ```typescript
@@ -79,9 +119,6 @@ export const captureServerEvent = async (
         source: "server",
       },
     });
-
-    // Ensure event is sent before shutdown
-    await client.shutdown();
   } catch (error) {
     console.error("[PostHog Server] Failed to capture event:", error);
   }
