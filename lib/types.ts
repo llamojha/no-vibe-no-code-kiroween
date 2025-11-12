@@ -191,7 +191,8 @@ export interface TechItem {
 
 export interface FrankensteinIdeaResult {
   idea_title: string;
-  idea_description: string;
+  idea_description: string; // Main content - detailed description of the idea
+  // Legacy fields - kept for backward compatibility but no longer generated
   core_concept: string;
   problem_statement: string;
   proposed_solution: string;
@@ -208,7 +209,7 @@ export interface FrankensteinIdeaResult {
     scalability_score: number;
     wow_factor: number;
   };
-  summary: string;
+  summary: string; // Main content - summary of viability and potential
   language: string;
 }
 
