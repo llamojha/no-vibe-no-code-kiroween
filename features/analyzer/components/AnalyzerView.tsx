@@ -222,26 +222,65 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
       
-      // If this came from a Frankenstein, update it automatically with the score
-      if (frankensteinId && sourceFromUrl === 'frankenstein') {
+      // Auto-save if user is logged in (to preserve credits)
+      if (session && !isLocalDevMode) {
+        try {
+          const { data: record, error: saveError } = await saveAnalysis({
+            idea,
+            analysis: analysisResult,
+          });
+
+          if (!saveError && record) {
+            setSavedAnalysisRecord(record);
+            setIsReportSaved(true);
+            capture("analysis_auto_saved", { analysis_id: record.id, locale });
+            
+            // If this came from a Frankenstein, update it with the validation
+            if (frankensteinId && sourceFromUrl === 'frankenstein') {
+              try {
+                const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
+                const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
+                
+                const score = deriveFivePointScore(analysisResult as any);
+                
+                console.log('Auto-updating Frankenstein with validation:', {
+                  frankensteinId,
+                  analysisId: record.id,
+                  score,
+                });
+                
+                await updateFrankensteinValidation(frankensteinId, 'analyzer', {
+                  analysisId: record.id,
+                  score,
+                });
+              } catch (err) {
+                console.error('Failed to update Frankenstein with validation:', err);
+              }
+            }
+            
+            // Update URL with saved ID
+            router.replace(`/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`);
+          } else {
+            console.error('Auto-save failed:', saveError);
+          }
+        } catch (err) {
+          console.error('Auto-save error:', err);
+          // Don't show error to user, analysis was still generated successfully
+        }
+      } else if (frankensteinId && sourceFromUrl === 'frankenstein') {
+        // If not logged in but came from Frankenstein, still update with temp score
         try {
           const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
           const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
           
           const score = deriveFivePointScore(analysisResult as any);
           
-          console.log('Auto-updating Frankenstein with score:', {
-            frankensteinId,
-            score,
-            rawFinalScore: analysisResult.finalScore,
-          });
-          
           await updateFrankensteinValidation(frankensteinId, 'analyzer', {
-            analysisId: 'temp-' + Date.now(), // Temporary ID since we're not saving the analysis
+            analysisId: 'temp-' + Date.now(),
             score,
           });
           
-          setIsReportSaved(true); // Mark as "saved" to show success message
+          setIsReportSaved(true);
         } catch (err) {
           console.error('Failed to update Frankenstein with score:', err);
         }
@@ -260,20 +299,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [
-    generatedAudio,
-    idea,
-    locale,
-    router,
-    savedId,
-    savedRecordAudio,
-    savedRecordId,
-    supabase,
-    t,
-    refreshCredits,
-    frankensteinId,
-    sourceFromUrl,
-  ]);
+  }, [idea, generatedAudio, savedRecordId, savedRecordAudio, locale, savedId, t, refreshCredits, session, isLocalDevMode, frankensteinId, sourceFromUrl, router]);
 
   const handleSaveReport = useCallback(async () => {
     const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;

@@ -239,26 +239,65 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
       
-      // If this came from a Frankenstein, update it automatically with the score
-      if (frankensteinId && sourceFromUrl === 'frankenstein') {
+      // Auto-save if user is logged in (to preserve credits)
+      if (session) {
+        try {
+          const { data: record, error: saveError } = await saveHackathonAnalysis({
+            projectDescription: submission.description,
+            analysis: analysisResult,
+            supportingMaterials: submission.supportingMaterials,
+          });
+
+          if (!saveError && record) {
+            setSavedAnalysisRecord(record);
+            setIsReportSaved(true);
+            
+            // If this came from a Frankenstein, update it with the validation
+            if (frankensteinId && sourceFromUrl === 'frankenstein') {
+              try {
+                const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
+                const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
+                
+                const score = deriveFivePointScore(analysisResult as any);
+                
+                console.log('Auto-updating Frankenstein with validation:', {
+                  frankensteinId,
+                  analysisId: record.id,
+                  score,
+                });
+                
+                await updateFrankensteinValidation(frankensteinId, 'kiroween', {
+                  analysisId: record.id,
+                  score,
+                });
+              } catch (err) {
+                console.error('Failed to update Frankenstein with validation:', err);
+              }
+            }
+            
+            // Update URL with saved ID
+            router.replace(`/kiroween-analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`);
+          } else {
+            console.error('Auto-save failed:', saveError);
+          }
+        } catch (err) {
+          console.error('Auto-save error:', err);
+          // Don't show error to user, analysis was still generated successfully
+        }
+      } else if (frankensteinId && sourceFromUrl === 'frankenstein') {
+        // If not logged in but came from Frankenstein, still update with temp score
         try {
           const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
           const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
           
           const score = deriveFivePointScore(analysisResult as any);
           
-          console.log('Auto-updating Frankenstein with score:', {
-            frankensteinId,
-            score,
-            rawFinalScore: analysisResult.finalScore,
-          });
-          
           await updateFrankensteinValidation(frankensteinId, 'kiroween', {
-            analysisId: 'temp-' + Date.now(), // Temporary ID since we're not saving the analysis
+            analysisId: 'temp-' + Date.now(),
             score,
           });
           
-          setIsReportSaved(true); // Mark as "saved" to show success message
+          setIsReportSaved(true);
         } catch (err) {
           console.error('Failed to update Frankenstein with score:', err);
         }
@@ -362,14 +401,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       console.error("Error saving analysis:", err);
       setError("Failed to save your analysis. Please try again.");
     }
-  }, [
-    generatedAudio,
-    submission,
-    newAnalysis,
-    router,
-    savedAnalysisRecord,
-    session,
-  ]);
+  }, [newAnalysis, savedAnalysisRecord?.analysis, submission.description, submission.supportingMaterials, session, router, generatedAudio, frankensteinId, sourceFromUrl]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {

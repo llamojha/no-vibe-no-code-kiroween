@@ -439,6 +439,64 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         slotCount: currentState.slotCount,
       });
       await refreshCredits();
+      
+      // Auto-save if user is logged in (to preserve credits)
+      if (isLoggedIn) {
+        try {
+          const tech1Item = currentItems.find((i) => i.name === selectedItems[0]);
+          const tech2Item = currentItems.find((i) => i.name === selectedItems[1]);
+
+          if (tech1Item && tech2Item) {
+            const tech1: TechItem = {
+              name: tech1Item.name,
+              description: tech1Item.description || `${tech1Item.category} technology`,
+              category: tech1Item.category,
+            };
+
+            const tech2: TechItem = {
+              name: tech2Item.name,
+              description: tech2Item.description || `${tech2Item.category} technology`,
+              category: tech2Item.category,
+            };
+
+            const allSelectedTechs = selectedItems.map((name) => {
+              const item = currentItems.find((i) => i.name === name);
+              return {
+                name,
+                description: item?.description || `${item?.category || ""} technology`,
+                category: item?.category || "",
+              };
+            });
+
+            const { data, error: saveError } = await saveFrankensteinIdea({
+              mode,
+              tech1,
+              tech2,
+              analysis: {
+                ideaName: result.idea_title,
+                description: result.idea_description,
+                keyFeatures: [],
+                targetMarket: result.target_audience,
+                uniqueValueProposition: result.unique_value_proposition,
+                language: (result.language || locale) as "en" | "es",
+                fullAnalysis: result,
+                allSelectedTechnologies: allSelectedTechs,
+              },
+            });
+
+            if (!saveError && data) {
+              setSavedIdeaRecord(data);
+              setIsReportSaved(true);
+              router.replace(`/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`);
+            } else {
+              console.error('Auto-save failed:', saveError);
+            }
+          }
+        } catch (err) {
+          console.error('Auto-save error:', err);
+          // Don't show error to user, idea was still generated successfully
+        }
+      }
     } catch (err) {
       console.error("Generation error:", err);
       setError(err instanceof Error ? err.message : "Failed to generate idea");

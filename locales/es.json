@@ -67,6 +67,7 @@
   "noSavedIdeas": "Aún no has guardado ninguna idea.",
   "saveReportButton": "Guardar Reporte",
   "reportSavedMessage": "Reporte Guardado",
+  "reportAutoSavedMessage": "Guardado Automático",
   "goToDashboardButton": "Ir al Panel",
   "searchPlaceholder": "Buscar por nombre de idea...",
   "sortLabel": "Ordenar por:",
