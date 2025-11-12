@@ -92,7 +92,6 @@
   "projectDescriptionPlaceholder": "Describe tu proyecto de hackathon en detalle. ¿Qué hace? ¿Qué problema resuelve? ¿Qué lo hace único?",
   "categorySelectionLabel": "Categoría Kiroween",
   "categorySelectionPlaceholder": "Selecciona la categoría que mejor se adapte a tu proyecto",
-  
   "supportingMaterialsLabel": "Materiales de Apoyo (Opcional)",
   "screenshotsLabel": "Capturas de Pantalla",
   "demoLinkLabel": "Enlace de Demo",
@@ -101,7 +100,6 @@
   "analyzingProjectButton": "Analizando Proyecto...",
   "categoryResurrection": "Resurrección",
   "categoryResurrectionDescription": "Revive tecnología obsoleta con innovaciones modernas",
-  "categoryFrankenstein": "Frankenstein",
   "categoryFrankensteinDescription": "Integra tecnologías aparentemente incompatibles",
   "categorySkeletonCrew": "Tripulación Esqueleto",
   "categorySkeletonCrewDescription": "Proporciona una base flexible con múltiples casos de uso",
@@ -132,7 +130,7 @@
   "competitionStrategy": "Estrategia de Competencia",
   "projectDescriptionRequired": "La descripción del proyecto es obligatoria.",
   "categorySelectionRequired": "Por favor selecciona una categoría.",
-  
+
   "spookyLoaderMessage1": "Invocando los espíritus de evaluación...",
   "spookyLoaderMessage2": "Preparando poción de análisis de categoría...",
   "spookyLoaderMessage3": "Consultando el oráculo del hackathon...",
@@ -143,7 +141,7 @@
   "appliedSuggestions": "Sugerencias Aplicadas",
   "reEvaluateProject": "Re-evaluar Proyecto",
   "projectDescriptionMinLength": "La descripción del proyecto debe tener al menos 50 caracteres",
-  
+
   "brewingSpookyAnalysis": "Preparando análisis espeluznante...",
   "scoringGuide": "Guía de Puntuación",
   "excellentFit": "Ajuste Excelente",
@@ -284,6 +282,11 @@
   "exportAsJSON": "Exportar como JSON",
   "saving": "Guardando...",
   "authRequired": "Por favor inicia sesión para guardar tu idea",
+  "insufficientCreditsTitle": "Sin Créditos",
+  "insufficientCreditsMessage": "Necesitas créditos para generar análisis. Actualmente tienes {credits} créditos restantes.",
+  "insufficientCreditsExplanation": "Cada análisis consume 1 crédito. Obtén más créditos para continuar analizando tus ideas.",
+  "getMoreCredits": "Obtener Más Créditos",
+  "creditsWillRefresh": "Los créditos se actualizan periódicamente para todos los usuarios.",
   "notValidatedYet": "Sin validar aún",
   "noScore": "Sin Puntuación"
 }

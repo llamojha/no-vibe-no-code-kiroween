@@ -14,7 +14,7 @@ import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 
 interface HackathonAnalysisDisplayProps {
   analysis: HackathonAnalysis;
-  onSave: () => void;
+  onSave?: () => void;
   isSaved: boolean;
   savedAnalysisId?: string;
   savedAudioBase64?: string | null;
@@ -565,7 +565,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                 <span>{t("goToDashboardButton")}</span>
               </button>
             </>
-          ) : (
+          ) : onSave ? (
             <button
               onClick={onSave}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-slate-600 rounded hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-400 transition-colors"
@@ -580,7 +580,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
               </svg>
               <span>{t("saveReportButton")}</span>
             </button>
-          ))}
+          ) : null)}
       </div>
     </div>
   );

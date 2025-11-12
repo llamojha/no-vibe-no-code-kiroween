@@ -4,12 +4,13 @@ import {
   getCurrentUserId,
   getCurrentUser,
   isAuthenticated,
+  getSessionContext,
 } from "@/src/infrastructure/web/helpers/serverAuth";
 import { getDashboardDataAction } from "@/app/actions/dashboard";
 import { isEnabled } from "@/lib/featureFlags";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
 import { generateMockUser } from "@/lib/mockData";
-import type { UnifiedAnalysisRecord } from "@/lib/types";
+import type { UnifiedAnalysisRecord, UserTier } from "@/lib/types";
 import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,8 @@ export default async function DashboardPage() {
           initialAnalyses={mockAnalyses}
           initialCounts={mockCounts}
           sessionUserId={mockUser.id}
+          initialCredits={3}
+          userTier="free"
         />
       </div>
     );
@@ -51,8 +54,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Get user information for identity badge
+  // Get user information for identity badge and credits
   const user = await getCurrentUser();
+  const sessionContext = await getSessionContext();
+  const credits = user?.credits ?? 3;
+  const tier: UserTier = sessionContext.tier ?? "free";
 
   // Use the new hexagonal architecture through server action
   const result = await getDashboardDataAction();
@@ -84,6 +90,8 @@ export default async function DashboardPage() {
         initialAnalyses={initialAnalyses}
         initialCounts={initialCounts}
         sessionUserId={userId.value}
+        initialCredits={credits}
+        userTier={tier}
       />
     </div>
   );

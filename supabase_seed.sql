@@ -1,6 +1,7 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  credits integer not null default 3
 );
 
 create table if not exists public.saved_analyses (
@@ -22,6 +23,19 @@ exception
 end $$;
 
 alter table profiles add column if not exists tier public.user_tier not null default 'free';
+alter table profiles add column if not exists credits integer not null default 3;
+
+-- Create credit_transactions table for audit trail
+create table if not exists public.credit_transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  amount integer not null,
+  type text not null check (type in ('deduct', 'add', 'refund', 'admin_adjustment')),
+  description text not null,
+  metadata jsonb,
+  timestamp timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
 
 alter table saved_analyses add column if not exists audio_base64 text;
 
@@ -48,6 +62,12 @@ create index if not exists idx_saved_analyses_type on saved_analyses(analysis_ty
 create index if not exists idx_saved_analyses_user_type on saved_analyses(user_id, analysis_type);
 create index if not exists idx_saved_analyses_created_at on saved_analyses(created_at desc);
 
+-- Credit system indexes
+create index if not exists idx_profiles_credits on profiles(credits);
+create index if not exists idx_credit_transactions_user_timestamp on credit_transactions(user_id, timestamp desc);
+create index if not exists idx_credit_transactions_type on credit_transactions(type);
+create index if not exists idx_credit_transactions_timestamp on credit_transactions(timestamp);
+
 create table if not exists public.saved_hackathon_analyses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -62,6 +82,7 @@ create table if not exists public.saved_hackathon_analyses (
 
 alter table profiles enable row level security;
 alter table saved_analyses enable row level security;
+alter table credit_transactions enable row level security;
 
 drop policy if exists "Profiles are self-readable" on profiles;
 create policy "Profiles are self-readable" on profiles
@@ -92,6 +113,24 @@ drop policy if exists "Saved analyses: owner delete" on saved_analyses;
 create policy "Saved analyses: owner delete" on saved_analyses
   for delete using (auth.uid() = user_id);
 
+-- Credit transactions RLS policies
+drop policy if exists "Credit transactions: owner access" on credit_transactions;
+create policy "Credit transactions: owner access" on credit_transactions
+  for select using (auth.uid() = user_id);
+
+-- Prevent direct user inserts/updates/deletes (system only via service role)
+drop policy if exists "Credit transactions: no user insert" on credit_transactions;
+create policy "Credit transactions: no user insert" on credit_transactions
+  for insert with check (false);
+
+drop policy if exists "Credit transactions: no user update" on credit_transactions;
+create policy "Credit transactions: no user update" on credit_transactions
+  for update using (false);
+
+drop policy if exists "Credit transactions: no user delete" on credit_transactions;
+create policy "Credit transactions: no user delete" on credit_transactions
+  for delete using (false);
+
 alter table saved_hackathon_analyses enable row level security;
 
 drop policy if exists "Saved hackathon analyses: owner access" on saved_hackathon_analyses;
@@ -119,9 +158,9 @@ set search_path = public
 as $$
 begin
   -- Insert a default profile for the new auth user.
-  -- `tier` defaults to 'free' via table default.
-  insert into public.profiles (id)
-  values (new.id)
+  -- `tier` defaults to 'free' and `credits` defaults to 3 via table defaults.
+  insert into public.profiles (id, credits)
+  values (new.id, 3)
   on conflict (id) do nothing;
   return new;
 end;

@@ -6,6 +6,12 @@ import { TestDataManager } from "@/lib/testing/TestDataManager";
 import { logger, LogCategory } from "@/lib/logger";
 import type { TestScenario } from "@/lib/testing/types";
 import { TestEnvironmentConfig } from "@/lib/testing/config/test-environment";
+import { NextJSBootstrap } from "@/src/infrastructure/bootstrap/nextjs";
+import { authenticateRequest } from "@/src/infrastructure/web/middleware/AuthMiddleware";
+import { withCreditCheck } from "@/src/infrastructure/web/middleware/CreditCheckMiddleware";
+import { UserId, AnalysisId, AnalysisType } from "@/src/domain/value-objects";
+import { handleApiError } from "@/src/infrastructure/web/middleware/ErrorMiddleware";
+
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,9 +20,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
   
   try {
+    await NextJSBootstrap.initialize();
+
     // Use MockModeHelper to get mock mode status and validate environment
     const mockModeStatus = MockModeHelper.getMockModeStatus();
     const config = MockModeHelper.getConfiguration();
+    const mockModeActive = MockModeHelper.isMockModeActive();
+
+    const serviceFactory = mockModeActive
+      ? MockModeHelper.createServiceFactory()
+      : await NextJSBootstrap.getServiceFactory();
+    const useCaseFactory = serviceFactory.getUseCaseFactory();
+    const checkCreditsUseCase =
+      useCaseFactory.createCheckCreditsUseCase();
+    const deductCreditUseCase =
+      useCaseFactory.createDeductCreditUseCase();
     
     logger.info(LogCategory.API, 'POST /api/doctor-frankenstein/generate - Generating idea', {
       method: 'POST',
@@ -27,6 +45,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const body = await request.json();
     const { elements, mode, language } = body;
+
+    const authResult = await authenticateRequest(request, {
+      requirePaid: true,
+      allowFree: false,
+    });
+
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
+    const userId = UserId.fromString(authResult.userId);
+    await withCreditCheck(userId, checkCreditsUseCase);
 
     if (!elements || !Array.isArray(elements) || elements.length === 0) {
       return NextResponse.json(
@@ -47,7 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let result;
     
     // Route to mock service when enabled
-    if (mockModeStatus.mockMode) {
+    if (mockModeActive) {
       const testDataManager = new TestDataManager();
       const defaultScenario: TestScenario = TestEnvironmentConfig.isValidScenario(config.scenario)
         ? config.scenario
@@ -79,6 +109,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         mode as 'companies' | 'aws',
         lang
       );
+    }
+
+    const deductResult = await deductCreditUseCase.execute({
+      userId,
+      analysisType: AnalysisType.FRANKENSTEIN_EXPERIMENT,
+      analysisId: AnalysisId.generate().value,
+    });
+
+    if (!deductResult.success) {
+      logger.error(LogCategory.API, "Failed to deduct credits after Frankenstein analysis", {
+        userId: userId.value,
+        error: deductResult.error?.message,
+      });
     }
 
     // Add mock mode status to response metadata
@@ -121,9 +164,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       duration
     });
     
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate idea" },
-      { status: 500 }
-    );
+    return handleApiError(error, "/api/doctor-frankenstein/generate");
   }
 }

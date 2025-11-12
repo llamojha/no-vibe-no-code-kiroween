@@ -12,7 +12,7 @@ import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 
 interface AnalysisDisplayProps {
   analysis: Analysis;
-  onSave: () => void;
+  onSave?: () => void;
   isSaved: boolean;
   savedAudioBase64?: string | null;
   onAudioGenerated?: (audio: string) => void;
@@ -809,7 +809,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                 <span>{t("goToDashboardButton")}</span>
               </button>
             </>
-          ) : (
+          ) : onSave ? (
             <button
               onClick={onSave}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-primary/50 border border-slate-600 rounded-none hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors"
@@ -824,7 +824,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
               </svg>
               <span>{t("saveReportButton")}</span>
             </button>
-          ))}
+          ) : null)}
         <ExportControl analysis={analysis} />
       </div>
     </div>

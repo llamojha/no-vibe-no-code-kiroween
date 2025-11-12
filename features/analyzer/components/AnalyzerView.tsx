@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { Analysis, SavedAnalysisRecord } from "@/lib/types";
+import type { Analysis, SavedAnalysisRecord, UserTier } from "@/lib/types";
 import { mapSavedAnalysesRow } from "@/lib/supabase/mappers";
 import type {
   SavedAnalysesInsert,
@@ -24,10 +24,20 @@ import Loader from "@/features/analyzer/components/Loader";
 import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { capture } from "@/features/analytics/posthogClient";
+import { CreditCounter } from "@/features/shared/components/CreditCounter";
+import { getCreditBalance } from "@/features/shared/api";
 
 type LoaderMessages = [string, string, string, string, string, string];
 
-const AnalyzerView: React.FC = () => {
+interface AnalyzerViewProps {
+  initialCredits: number;
+  userTier: UserTier;
+}
+
+const AnalyzerView: React.FC<AnalyzerViewProps> = ({
+  initialCredits,
+  userTier,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const savedId = searchParams.get("savedId");
@@ -56,10 +66,25 @@ const AnalyzerView: React.FC = () => {
   const [savedAnalysisRecord, setSavedAnalysisRecord] =
     useState<SavedAnalysisRecord | null>(null);
   const [isFetchingSaved, setIsFetchingSaved] = useState(false);
+  const [credits, setCredits] = useState<number>(initialCredits);
   const savedRecordId = savedAnalysisRecord?.id ?? null;
   const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
 
   const ideaInputRef = useRef<HTMLDivElement>(null);
+
+  const refreshCredits = useCallback(async () => {
+    try {
+      const balance = await getCreditBalance();
+      setCredits(balance.credits);
+    } catch (error) {
+      const message = "Failed to refresh credit balance";
+      if (isLocalDevMode) {
+        console.warn(message, error);
+      } else {
+        console.error(message, error);
+      }
+    }
+  }, [isLocalDevMode]);
 
   const showInputForm =
     !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
@@ -71,6 +96,10 @@ const AnalyzerView: React.FC = () => {
       setIdea(ideaFromUrl);
     }
   }, [ideaFromUrl, sourceFromUrl, savedId]);
+
+  useEffect(() => {
+    void refreshCredits();
+  }, [refreshCredits]);
 
   useEffect(() => {
     if (!savedId) {
@@ -191,6 +220,7 @@ const AnalyzerView: React.FC = () => {
     try {
       const analysisResult = await requestAnalysis(idea, locale);
       setNewAnalysis(analysisResult);
+      await refreshCredits();
       
       // If this came from a Frankenstein, update it automatically with the score
       if (frankensteinId && sourceFromUrl === 'frankenstein') {
@@ -240,6 +270,7 @@ const AnalyzerView: React.FC = () => {
     savedRecordId,
     supabase,
     t,
+    refreshCredits,
     frankensteinId,
     sourceFromUrl,
   ]);
@@ -454,6 +485,11 @@ const AnalyzerView: React.FC = () => {
         </header>
 
         <main id="main-content" className="w-full">
+          {/* Credit Counter */}
+          <div className="mb-6">
+            <CreditCounter credits={credits} tier={userTier} />
+          </div>
+
           {showInputForm && (
             <div ref={ideaInputRef}>
               <IdeaInputForm
