@@ -110,7 +110,7 @@ export class CheckCreditsUseCase {
    * Determine user tier based on credits
    * This is a simplified implementation - in production, tier would come from user entity
    */
-  private getUserTier(credits: number): UserTier {
+  private getUserTier(_credits: number): UserTier {
     // For now, all users are "free" tier
     // This will be enhanced when tier information is added to User entity
     return "free";

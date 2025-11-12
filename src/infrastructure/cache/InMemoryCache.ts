@@ -13,7 +13,7 @@ interface CacheEntry<T> {
  * Provides automatic cleanup of expired entries
  */
 export class InMemoryCache implements ICache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private cleanupInterval: NodeJS.Timeout | null = null;
   private readonly CLEANUP_INTERVAL_MS = 60000; // Run cleanup every 60 seconds
 

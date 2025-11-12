@@ -188,7 +188,6 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         setSavedIdeaRecord(data);
         setMode(data.mode);
         setIsReportSaved(true);
-        setSlotSelectionLocked(true);
 
         // Use the complete analysis if available, otherwise create simplified version
         const restoredIdea: FrankensteinIdeaResult = data.analysis
@@ -468,17 +467,6 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
   };
 
   const handleGenerateNewIdea = useCallback(() => {
-    if (mode === "companies") {
-      setCompaniesState({
-        selectedItems: [],
-        frankensteinIdea: null,
-      });
-    } else {
-      setAWSState({
-        selectedItems: [],
-        frankensteinIdea: null,
-      });
-    }
     // Only reset the current mode's state and unlock slots (keep slotCount)
     setCurrentState((prev) => ({
       selectedItems: [],
@@ -516,6 +504,13 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     const reportLanguage = frankensteinIdea.language || "en";
     const currentLanguage = locale;
     const languageMismatch = reportLanguage !== currentLanguage;
+    const metrics = frankensteinIdea.metrics ?? {
+      originality_score: 0,
+      feasibility_score: 0,
+      impact_score: 0,
+      scalability_score: 0,
+      wow_factor: 0,
+    };
 
     const handleRegenerateInCurrentLanguage = async () => {
       setIsGenerating(true);
@@ -693,23 +688,23 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 my-8">
                 <MetricCard
                   label={t("originality") || "Originality"}
-                  value={frankensteinIdea.metrics.originality_score}
+                  value={metrics.originality_score}
                 />
                 <MetricCard
                   label={t("feasibility") || "Feasibility"}
-                  value={frankensteinIdea.metrics.feasibility_score}
+                  value={metrics.feasibility_score}
                 />
                 <MetricCard
                   label={t("impact") || "Impact"}
-                  value={frankensteinIdea.metrics.impact_score}
+                  value={metrics.impact_score}
                 />
                 <MetricCard
                   label={t("scalability") || "Scalability"}
-                  value={frankensteinIdea.metrics.scalability_score}
+                  value={metrics.scalability_score}
                 />
                 <MetricCard
                   label={t("wowFactor") || "Wow Factor"}
-                  value={frankensteinIdea.metrics.wow_factor}
+                  value={metrics.wow_factor}
                 />
               </div>
 

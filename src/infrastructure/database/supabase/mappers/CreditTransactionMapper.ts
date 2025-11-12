@@ -26,7 +26,8 @@ export class CreditTransactionMapper {
       amount: transaction.amount,
       type: transaction.type as CreditTransactionDAO["type"],
       description: transaction.description,
-      metadata: transaction.metadata || null,
+      metadata:
+        (transaction.metadata ?? null) as CreditTransactionDAO["metadata"],
       timestamp: transaction.timestamp.toISOString(),
       created_at: transaction.createdAt.toISOString(),
     };
@@ -45,7 +46,7 @@ export class CreditTransactionMapper {
       type: this.mapTransactionType(dao.type),
       description: dao.description,
       metadata: dao.metadata
-        ? (dao.metadata as Record<string, any>)
+        ? (dao.metadata as Record<string, unknown>)
         : undefined,
       timestamp: new Date(dao.timestamp),
       createdAt: new Date(createdAtIso),

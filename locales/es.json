@@ -92,7 +92,6 @@
   "projectDescriptionPlaceholder": "Describe tu proyecto de hackathon en detalle. ¿Qué hace? ¿Qué problema resuelve? ¿Qué lo hace único?",
   "categorySelectionLabel": "Categoría Kiroween",
   "categorySelectionPlaceholder": "Selecciona la categoría que mejor se adapte a tu proyecto",
-
   "supportingMaterialsLabel": "Materiales de Apoyo (Opcional)",
   "screenshotsLabel": "Capturas de Pantalla",
   "demoLinkLabel": "Enlace de Demo",
@@ -101,7 +100,6 @@
   "analyzingProjectButton": "Analizando Proyecto...",
   "categoryResurrection": "Resurrección",
   "categoryResurrectionDescription": "Revive tecnología obsoleta con innovaciones modernas",
-  "categoryFrankenstein": "Frankenstein",
   "categoryFrankensteinDescription": "Integra tecnologías aparentemente incompatibles",
   "categorySkeletonCrew": "Tripulación Esqueleto",
   "categorySkeletonCrewDescription": "Proporciona una base flexible con múltiples casos de uso",
@@ -288,7 +286,7 @@
   "insufficientCreditsMessage": "Necesitas créditos para generar análisis. Actualmente tienes {credits} créditos restantes.",
   "insufficientCreditsExplanation": "Cada análisis consume 1 crédito. Obtén más créditos para continuar analizando tus ideas.",
   "getMoreCredits": "Obtener Más Créditos",
-  "creditsWillRefresh": "Los créditos se actualizan periódicamente para todos los usuarios."
+  "creditsWillRefresh": "Los créditos se actualizan periódicamente para todos los usuarios.",
   "notValidatedYet": "Sin validar aún",
   "noScore": "Sin Puntuación"
 }

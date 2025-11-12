@@ -12,7 +12,7 @@ export interface CreateCreditTransactionProps {
   amount: number;
   type: TransactionType;
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -36,7 +36,7 @@ export class CreditTransaction extends Entity<CreditTransactionId> {
   private readonly _description: string;
   private readonly _timestamp: Date;
   private readonly _createdAt: Date;
-  private readonly _metadata?: Record<string, any>;
+  private readonly _metadata?: Record<string, unknown>;
 
   private constructor(
     id: CreditTransactionId,
@@ -46,7 +46,7 @@ export class CreditTransaction extends Entity<CreditTransactionId> {
     description: string,
     timestamp: Date,
     createdAt: Date,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) {
     super(id);
     this._userId = userId;
@@ -191,7 +191,7 @@ export class CreditTransaction extends Entity<CreditTransactionId> {
     return new Date(this._createdAt);
   }
 
-  get metadata(): Record<string, any> | undefined {
+  get metadata(): Record<string, unknown> | undefined {
     return this._metadata ? { ...this._metadata } : undefined;
   }
 

@@ -20,7 +20,7 @@ export interface AddCreditsCommand {
   amount: number;
   type: TransactionType;
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

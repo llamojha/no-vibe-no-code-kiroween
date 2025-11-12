@@ -30,7 +30,7 @@ export class CreditPolicy {
    * @param analysisType - The type of analysis
    * @returns Credit cost (1)
    */
-  getAnalysisCost(analysisType: AnalysisType): number {
+  getAnalysisCost(_analysisType: AnalysisType): number {
     // All analysis types cost 1 credit
     // This method allows for future differentiation if needed
     return this.ANALYSIS_COST;

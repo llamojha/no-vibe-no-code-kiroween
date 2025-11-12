@@ -15,7 +15,7 @@ import {
   createPaginatedResult,
 } from "../../../../shared/types/common";
 import { Database } from "../../types";
-import { DatabaseQueryError, RecordNotFoundError } from "../../errors";
+import { DatabaseQueryError } from "../../errors";
 import { CreditTransactionMapper } from "../mappers/CreditTransactionMapper";
 import { logger, LogCategory } from "@/lib/logger";
 
