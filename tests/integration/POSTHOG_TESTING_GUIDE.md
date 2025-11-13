@@ -17,7 +17,7 @@ Add the following to your `.env.local` file:
 ```bash
 # PostHog Analytics Configuration
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_api_key_here
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 ```
 
 **Note**: Replace `phc_your_project_api_key_here` with your actual PostHog API key.

@@ -154,13 +154,13 @@ posthog.debug(false);
 
 1. **Open PostHog Dashboard**
 
-   - Go to: https://us.i.posthog.com (or your PostHog host)
+   - Go to: https://eu.i.posthog.com (or your PostHog host)
    - Log in to your account
 
 2. **Go to Events Tab**
 
    - Click "Events" in the left sidebar
-   - Or go to: https://us.i.posthog.com/events
+   - Or go to: https://eu.i.posthog.com/events
 
 3. **Perform Actions**
 
@@ -383,7 +383,7 @@ npm run dev
 # POST /ingest/batch - Status: 200 OK
 
 # 8. Check PostHog dashboard
-# Go to: https://us.i.posthog.com/events
+# Go to: https://eu.i.posthog.com/events
 # See: report_generated event within 10 seconds
 
 # ✅ Success! Event captured and sent to PostHog

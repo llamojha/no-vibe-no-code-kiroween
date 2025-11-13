@@ -43,7 +43,7 @@ if grep -q "NEXT_PUBLIC_POSTHOG_HOST=" .env.local; then
     fi
 else
     echo "❌ NEXT_PUBLIC_POSTHOG_HOST not found in .env.local"
-    echo "   Add: NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com"
+    echo "   Add: NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com"
 fi
 
 echo ""
@@ -78,7 +78,7 @@ else
     echo "To enable PostHog analytics, add to .env.local:"
     echo ""
     echo "NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_api_key"
-    echo "NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com"
+    echo "NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com"
 fi
 
 echo ""

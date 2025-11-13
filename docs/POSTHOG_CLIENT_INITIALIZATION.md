@@ -170,7 +170,7 @@ PostHog is configured with:
 ```typescript
 {
   api_host: "/ingest",              // Use reverse proxy
-  ui_host: "https://us.i.posthog.com",
+  ui_host: "https://eu.i.posthog.com",
   capture_pageview: true,           // Auto-track page views
   capture_pageleave: true,          // Track when users leave
   disable_session_recording: true,  // No session recording by default

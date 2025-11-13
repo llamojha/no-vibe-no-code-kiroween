@@ -62,7 +62,7 @@ The following environment variables need to be added to `.env.local` to enable P
 
 ```bash
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_project_api_key_here
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 ```
 
 **Note**: The integration is complete and will work once these variables are configured. Without them, tracking calls will fail silently without affecting the application.

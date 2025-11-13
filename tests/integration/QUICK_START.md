@@ -55,7 +55,7 @@ Open your browser to `http://localhost:3000` and perform these actions:
 
 ### 3. Verify in PostHog Dashboard
 
-1. Open your PostHog dashboard: https://us.i.posthog.com
+1. Open your PostHog dashboard: https://eu.i.posthog.com
 2. Go to **Events** tab
 3. You should see events appearing within 5-10 seconds:
 
@@ -154,7 +154,7 @@ When deploying to production:
 
    ```
    NEXT_PUBLIC_POSTHOG_KEY=phc_your_key
-   NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+   NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
    ```
 
 2. Verify the reverse proxy works in production

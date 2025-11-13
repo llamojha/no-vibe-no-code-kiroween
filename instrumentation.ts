@@ -49,11 +49,37 @@ export async function register() {
 }
 
 /**
- * Shutdown PostHog client gracefully
- * Ensures all pending events are flushed before shutdown
+ * Report request errors to PostHog without shutting down the shared client
  */
-export async function onRequestError() {
-  if (posthogClient) {
-    await posthogClient.shutdown();
+export async function onRequestError(error: unknown) {
+  if (!posthogClient) {
+    return;
+  }
+
+  const properties: Record<string, string> = {
+    message:
+      error instanceof Error
+        ? error.message
+        : error === undefined
+          ? "Unknown error"
+          : String(error),
+  };
+
+  if (error instanceof Error) {
+    properties.name = error.name;
+    if (error.stack) {
+      properties.stack = error.stack;
+    }
+  }
+
+  try {
+    // captureImmediate flushes the event before returning, keeping the client alive
+    await posthogClient.captureImmediate({
+      distinctId: "server",
+      event: "next_request_error",
+      properties,
+    });
+  } catch (captureError) {
+    console.error("Failed to capture PostHog request error:", captureError);
   }
 }
