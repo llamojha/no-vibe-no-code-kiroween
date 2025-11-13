@@ -282,6 +282,7 @@ Verify each event has the correct properties:
   "event": "server_analysis_request",
   "properties": {
     "analysis_type": "startup | kiroween | frankenstein",
+    "user_tier": "free | paid | admin",
     "timestamp": "ISO 8601",
     "source": "server"
   }
@@ -296,6 +297,7 @@ Verify each event has the correct properties:
   "properties": {
     "error_type": "string",
     "error_message": "string",
+    "user_tier": "free | paid | admin",
     "timestamp": "ISO 8601",
     "source": "server"
   }

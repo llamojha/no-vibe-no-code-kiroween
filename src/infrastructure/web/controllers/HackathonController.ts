@@ -21,6 +21,10 @@ import { TestDataManager } from "@/lib/testing/TestDataManager";
 import { TestEnvironmentConfig } from "@/lib/testing/config/test-environment";
 import type { TestScenario } from "@/lib/testing/types";
 import type { HackathonAnalysis } from "@/lib/types";
+import {
+  trackServerAnalysisRequest,
+  trackServerError,
+} from "@/features/analytics/server-tracking";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -45,6 +49,9 @@ export class HackathonController {
    * POST /api/hackathon/analyze
    */
   async analyzeHackathonProject(request: NextRequest): Promise<NextResponse> {
+    let trackedUserId: string | null = null;
+    let trackedUserTier: Parameters<typeof trackServerAnalysisRequest>[2];
+
     try {
       // Check if we're in mock mode
       const isMockMode =
@@ -61,6 +68,17 @@ export class HackathonController {
         return NextResponse.json({ error: authResult.error }, { status: 401 });
       }
 
+      trackedUserId = authResult.userId || null;
+      trackedUserTier = authResult.userTier;
+
+      if (trackedUserId) {
+        void trackServerAnalysisRequest(
+          trackedUserId,
+          "kiroween",
+          trackedUserTier
+        );
+      }
+
       const userId = UserId.fromString(authResult.userId);
 
       // Enforce credit policy before running analysis
@@ -74,6 +92,15 @@ export class HackathonController {
       // Production mode: use the legacy implementation
       return await this.legacyAnalyzeHackathonProject(request, userId);
     } catch (error) {
+      if (trackedUserId) {
+        void trackServerError(
+          trackedUserId,
+          "hackathon_analysis_error",
+          error instanceof Error ? error.message : String(error),
+          trackedUserTier
+        );
+      }
+
       return handleApiError(error);
     }
   }

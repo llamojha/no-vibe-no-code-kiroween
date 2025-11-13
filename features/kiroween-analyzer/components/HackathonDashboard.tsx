@@ -13,7 +13,7 @@ import {
 } from "../utils/shareableLinks";
 import { isEnabled } from "@/lib/featureFlags";
 import type { SavedHackathonAnalysis, KiroweenCategory } from "@/lib/types";
-import { capture } from "@/features/analytics/posthogClient";
+import { trackHackathonDashboardView } from "@/features/analytics/tracking";
 
 const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
   const radius = 24;
@@ -128,7 +128,7 @@ const HackathonDashboard: React.FC<HackathonDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    capture("hackathon_dashboard_view");
+    trackHackathonDashboardView();
   }, []);
 
   const filteredAndSortedAnalyses = useMemo(() => {

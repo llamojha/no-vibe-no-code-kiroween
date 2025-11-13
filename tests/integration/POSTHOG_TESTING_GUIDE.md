@@ -327,13 +327,13 @@ For each event type, verify all properties are present and correct:
 - [ ] Make API calls to analysis endpoints
 - [ ] Check server logs for tracking events
 - [ ] Verify events appear in PostHog dashboard
-- [ ] Check for `source: "server"` property
+- [ ] Check for `source: "server"` and `user_tier` properties
 
 #### Test Error Tracking
 
 - [ ] Trigger an error in an API route (e.g., invalid input)
 - [ ] Check PostHog dashboard for `server_error` event
-- [ ] Verify error properties are captured
+- [ ] Verify error and `user_tier` properties are captured
 
 ## PostHog Dashboard Verification
 

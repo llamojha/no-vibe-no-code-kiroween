@@ -1,4 +1,5 @@
 import { PostHog } from "posthog-node";
+import type { UserTier } from "@/lib/types";
 
 /**
  * Server-side PostHog tracking utilities
@@ -86,6 +87,11 @@ export interface ServerEventProps {
   distinctId: string;
   event: string;
   properties?: Record<string, unknown>;
+  /**
+   * Optional tier information for the user tied to the event.
+   * Helps analyze feature usage by subscription level.
+   */
+  userTier?: UserTier;
 }
 
 /**
@@ -115,6 +121,7 @@ export const captureServerEvent = async (
       event: props.event,
       properties: {
         ...props.properties,
+        ...(props.userTier ? { user_tier: props.userTier } : {}),
         timestamp: new Date().toISOString(),
         source: "server",
       },
@@ -129,6 +136,7 @@ export const captureServerEvent = async (
  *
  * @param userId - User identifier
  * @param analysisType - Type of analysis being performed
+ * @param userTier - Optional user tier for segmentation
  * @returns Promise that resolves when event is captured
  *
  * @example
@@ -138,7 +146,8 @@ export const captureServerEvent = async (
  */
 export const trackServerAnalysisRequest = async (
   userId: string,
-  analysisType: "startup" | "kiroween" | "frankenstein"
+  analysisType: "startup" | "kiroween" | "frankenstein",
+  userTier?: UserTier
 ): Promise<void> => {
   await captureServerEvent({
     distinctId: userId,
@@ -146,6 +155,7 @@ export const trackServerAnalysisRequest = async (
     properties: {
       analysis_type: analysisType,
     },
+    userTier,
   });
 };
 
@@ -155,6 +165,7 @@ export const trackServerAnalysisRequest = async (
  * @param userId - User identifier
  * @param errorType - Type or category of error
  * @param errorMessage - Error message or description
+ * @param userTier - Optional user tier for segmentation
  * @returns Promise that resolves when event is captured
  *
  * @example
@@ -165,7 +176,8 @@ export const trackServerAnalysisRequest = async (
 export const trackServerError = async (
   userId: string,
   errorType: string,
-  errorMessage: string
+  errorMessage: string,
+  userTier?: UserTier
 ): Promise<void> => {
   await captureServerEvent({
     distinctId: userId,
@@ -174,5 +186,6 @@ export const trackServerError = async (
       error_type: errorType,
       error_message: errorMessage,
     },
+    userTier,
   });
 };

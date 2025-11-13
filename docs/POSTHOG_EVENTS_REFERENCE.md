@@ -134,13 +134,15 @@ Events use **snake_case** naming convention:
 
 ---
 
-### 6. Legacy Events (Using posthogClient)
+### 6. Analyzer & Dashboard Events (Migrated from Legacy Client)
 
-These events use the legacy `posthogClient` instead of the new tracking utilities. Consider migrating them to use the tracking utilities for consistency.
+These events previously used the legacy `posthogClient` helper but now run through the shared tracking utilities, so they adopt the identified PostHog user and common telemetry patterns.
 
 #### `analysis_started`
 
 **Triggered when**: User clicks "Analyze" button
+
+**Tracking helper**: `trackAnalysisStarted()`
 
 **Properties**:
 
@@ -153,6 +155,8 @@ These events use the legacy `posthogClient` instead of the new tracking utilitie
 
 **Triggered when**: User saves an analysis report
 
+**Tracking helper**: `trackAnalysisSaved()`
+
 **Properties**:
 
 - `analysis_id`: string (UUID)
@@ -163,6 +167,8 @@ These events use the legacy `posthogClient` instead of the new tracking utilitie
 #### `tts_generated`
 
 **Triggered when**: Text-to-speech audio is generated
+
+**Tracking helper**: `trackTTSGenerated()`
 
 **Properties**:
 
@@ -175,6 +181,8 @@ These events use the legacy `posthogClient` instead of the new tracking utilitie
 
 **Triggered when**: User views the main dashboard
 
+**Tracking helper**: `trackDashboardView()`
+
 **Properties**: None
 
 **Location**: `features/dashboard/components/UserDashboard.tsx`
@@ -182,6 +190,8 @@ These events use the legacy `posthogClient` instead of the new tracking utilitie
 #### `hackathon_dashboard_view`
 
 **Triggered when**: User views the hackathon dashboard
+
+**Tracking helper**: `trackHackathonDashboardView()`
 
 **Properties**: None
 
@@ -191,15 +201,17 @@ These events use the legacy `posthogClient` instead of the new tracking utilitie
 
 ## Event Categories Summary
 
-| Category              | Event Count | Events                                                                                              |
-| --------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
-| **Report Generation** | 1           | `report_generated`                                                                                  |
-| **Dr. Frankenstein**  | 3           | `frankenstein_roll`, `frankenstein_mode_select`, `frankenstein_slot_config`                         |
-| **Export**            | 1           | `report_exported`                                                                                   |
-| **Homepage**          | 1           | `homepage_interaction`                                                                              |
-| **Idea Enhancement**  | 1           | `idea_enhancement`                                                                                  |
-| **Legacy Events**     | 5           | `analysis_started`, `analysis_saved`, `tts_generated`, `dashboard_view`, `hackathon_dashboard_view` |
-| **Total**             | **12**      |                                                                                                     |
+| Category               | Event Count | Events                                                                                              |
+| ---------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| **Report Generation**  | 1           | `report_generated`                                                                                  |
+| **Dr. Frankenstein**   | 3           | `frankenstein_roll`, `frankenstein_mode_select`, `frankenstein_slot_config`                         |
+| **Export**             | 1           | `report_exported`                                                                                   |
+| **Homepage**           | 1           | `homepage_interaction`                                                                              |
+| **Idea Enhancement**   | 1           | `idea_enhancement`                                                                                  |
+| **Analyzer Lifecycle** | 2           | `analysis_started`, `analysis_saved`                                                                |
+| **Text-to-Speech**     | 1           | `tts_generated`                                                                                     |
+| **Dashboards**         | 2           | `dashboard_view`, `hackathon_dashboard_view`                                                        |
+| **Total**              | **12**      |                                                                                                     |
 
 ---
 
@@ -229,6 +241,7 @@ These events are captured on the server side using `posthog-node`.
 **Properties**:
 
 - `analysis_type`: `"startup"` | `"kiroween"` | `"frankenstein"`
+- `user_tier`: `"free"` | `"paid"` | `"admin"` (when available)
 - `timestamp`: ISO 8601 timestamp
 - `source`: `"server"`
 
@@ -242,6 +255,7 @@ These events are captured on the server side using `posthog-node`.
 
 - `error_type`: string
 - `error_message`: string
+- `user_tier`: `"free"` | `"paid"` | `"admin"` (when available)
 - `timestamp`: ISO 8601 timestamp
 - `source`: `"server"`
 
@@ -262,23 +276,25 @@ Properties use **snake_case** naming:
 
 ## Migration Recommendations
 
-### Legacy Events to Migrate
+### Legacy Event Migration Status
 
-Consider creating tracking utility functions for these legacy events:
+All events that previously relied on `features/analytics/posthogClient.ts` now use helpers in `features/analytics/tracking.ts`, ensuring they share user identity and consistent typing:
 
-1. **`analysis_started`** → Create `trackAnalysisStarted()` in `tracking.ts`
-2. **`analysis_saved`** → Create `trackAnalysisSaved()` in `tracking.ts`
-3. **`tts_generated`** → Create `trackTTSGenerated()` in `tracking.ts`
-4. **`dashboard_view`** → Create `trackDashboardView()` in `tracking.ts`
-5. **`hackathon_dashboard_view`** → Create `trackHackathonDashboardView()` in `tracking.ts`
+- **`analysis_started`** → `trackAnalysisStarted()`
+- **`analysis_saved`** → `trackAnalysisSaved()`
+- **`tts_generated`** → `trackTTSGenerated()`
+- **`dashboard_view`** → `trackDashboardView()`
+- **`hackathon_dashboard_view`** → `trackHackathonDashboardView()`
 
-### Benefits of Migration
+When introducing new events, add a typed helper in `tracking.ts` so properties, logging, and error handling stay consistent.
 
-- **Type Safety**: TypeScript interfaces for all properties
-- **Consistency**: All events use the same tracking pattern
-- **Error Handling**: Centralized error handling
-- **Testing**: Easier to test with utility functions
-- **Documentation**: Self-documenting with JSDoc comments
+### Helper Benefits
+
+- **Type Safety**: TypeScript interfaces document required properties
+- **Consistency**: Shared availability checks and logging
+- **Error Handling**: Centralized try/catch logic
+- **Testing**: Helpers are easy to mock in unit tests
+- **Documentation**: JSDoc doubles as reference for analytics consumers
 
 ---
 
@@ -307,16 +323,16 @@ See `tests/integration/QUICK_START.md` for detailed testing instructions.
    → (no event)
 
 3. User enters idea and clicks "Analyze"
-   → capture("analysis_started", { locale, has_saved_id })
+   → trackAnalysisStarted({ locale, hasSavedId })
 
 4. Analysis completes
-   → capture("report_generated", { report_type: "startup", idea_length, user_id })
+   → trackReportGeneration({ reportType: "startup", ideaLength, userId })
 
 5. User clicks "Save Report"
-   → capture("analysis_saved", { analysis_id, locale })
+   → trackAnalysisSaved({ analysisId, locale })
 
 6. User clicks "Export as Markdown"
-   → capture("report_exported", { format: "markdown", report_type: "startup", success: true })
+   → trackExport({ format: "markdown", reportType: "startup", success: true })
 ```
 
 ### Example 2: Dr. Frankenstein Flow
@@ -326,19 +342,19 @@ See `tests/integration/QUICK_START.md` for detailed testing instructions.
    → (no event)
 
 2. User switches to AWS mode
-   → capture("frankenstein_mode_select", { mode: "aws" })
+   → trackFrankensteinInteraction({ action: "mode_select", mode: "aws" })
 
 3. User changes to 3 slots
-   → capture("frankenstein_slot_config", { slot_count: 3 })
+   → trackFrankensteinInteraction({ action: "slot_config", slotCount: 3 })
 
 4. User clicks "Create Frankenstein"
-   → capture("frankenstein_roll", { mode: "aws", slot_count: 3 })
+   → trackFrankensteinInteraction({ action: "roll", mode: "aws", slotCount: 3 })
 
 5. User accepts combination and generates idea
-   → capture("report_generated", { report_type: "frankenstein", idea_length, user_id })
+   → trackReportGeneration({ reportType: "frankenstein", ideaLength, userId })
 
 6. User exports as PDF
-   → capture("report_exported", { format: "pdf", report_type: "frankenstein", success: true })
+   → trackExport({ format: "pdf", reportType: "frankenstein", success: true })
 ```
 
 ---

@@ -7,6 +7,27 @@ import posthog from "posthog-js";
  */
 
 /**
+ * Properties for analyzer lifecycle events
+ */
+export interface AnalysisStartedProps {
+  locale: string;
+  hasSavedId: boolean;
+}
+
+export interface AnalysisSavedProps {
+  analysisId: string;
+  locale: string;
+}
+
+/**
+ * Properties for TTS generation events
+ */
+export interface TTSGeneratedProps {
+  locale: string;
+  lengthChars: number;
+}
+
+/**
  * Properties for report generation events
  */
 export interface ReportGenerationProps {
@@ -76,6 +97,50 @@ const getDeviceType = (): "mobile" | "tablet" | "desktop" => {
 };
 
 /**
+ * Track analyzer lifecycle events
+ * @param props analyzer event properties
+ */
+export const trackAnalysisStarted = (
+  props: AnalysisStartedProps
+): void => {
+  if (!isPostHogAvailable()) return;
+
+  try {
+    const eventData = {
+      locale: props.locale,
+      has_saved_id: props.hasSavedId,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("[PostHog] 🚀 analysis_started", eventData);
+
+    posthog.capture("analysis_started", eventData);
+  } catch (error) {
+    console.error("[Analytics] Failed to track analysis start:", error);
+  }
+};
+
+export const trackAnalysisSaved = (
+  props: AnalysisSavedProps
+): void => {
+  if (!isPostHogAvailable()) return;
+
+  try {
+    const eventData = {
+      analysis_id: props.analysisId,
+      locale: props.locale,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("[PostHog] 💾 analysis_saved", eventData);
+
+    posthog.capture("analysis_saved", eventData);
+  } catch (error) {
+    console.error("[Analytics] Failed to track analysis save:", error);
+  }
+};
+
+/**
  * Track report generation events
  * @param props Report generation properties
  */
@@ -96,6 +161,28 @@ export const trackReportGeneration = (props: ReportGenerationProps): void => {
     posthog.capture("report_generated", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track report generation:", error);
+  }
+};
+
+/**
+ * Track text-to-speech generation events
+ * @param props TTS generation properties
+ */
+export const trackTTSGenerated = (props: TTSGeneratedProps): void => {
+  if (!isPostHogAvailable()) return;
+
+  try {
+    const eventData = {
+      locale: props.locale,
+      length_chars: props.lengthChars,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("[PostHog] 🔊 tts_generated", eventData);
+
+    posthog.capture("tts_generated", eventData);
+  } catch (error) {
+    console.error("[Analytics] Failed to track TTS generation:", error);
   }
 };
 
@@ -152,6 +239,39 @@ export const trackHomepageInteraction = (
     posthog.capture("homepage_interaction", eventData);
   } catch (error) {
     console.error("[Analytics] Failed to track homepage interaction:", error);
+  }
+};
+
+/**
+ * Track dashboard view
+ */
+export const trackDashboardView = (): void => {
+  if (!isPostHogAvailable()) return;
+
+  try {
+    const eventData = { timestamp: new Date().toISOString() };
+    console.log("[PostHog] 📊 dashboard_view", eventData);
+    posthog.capture("dashboard_view", eventData);
+  } catch (error) {
+    console.error("[Analytics] Failed to track dashboard view:", error);
+  }
+};
+
+/**
+ * Track hackathon dashboard view
+ */
+export const trackHackathonDashboardView = (): void => {
+  if (!isPostHogAvailable()) return;
+
+  try {
+    const eventData = { timestamp: new Date().toISOString() };
+    console.log("[PostHog] 🎃 hackathon_dashboard_view", eventData);
+    posthog.capture("hackathon_dashboard_view", eventData);
+  } catch (error) {
+    console.error(
+      "[Analytics] Failed to track hackathon dashboard view:",
+      error
+    );
   }
 };
 

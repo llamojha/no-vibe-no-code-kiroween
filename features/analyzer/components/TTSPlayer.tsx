@@ -10,7 +10,7 @@ import {
   decodePcmToAudioBuffer,
   tryDecodeWithAudioContext,
 } from "@/features/analyzer/utils/audio";
-import { capture } from "@/features/analytics/posthogClient";
+import { trackTTSGenerated } from "@/features/analytics/tracking";
 
 interface TTSPlayerProps {
   analysis: Analysis;
@@ -149,7 +149,7 @@ const TTSPlayer: React.FC<TTSPlayerProps> = ({
       setAudioBuffer(buffer);
       setLoadedAudioBase64(base64Audio);
       onAudioGenerated?.(base64Audio);
-      capture("tts_generated", { locale, length_chars: reportText.length });
+      trackTTSGenerated({ locale, lengthChars: reportText.length });
     } catch (error) {
       console.error("Error generating audio:", error);
       setStatus("error");

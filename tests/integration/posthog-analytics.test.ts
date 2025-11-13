@@ -272,6 +272,7 @@ describe("PostHog Analytics Integration", () => {
             properties: {
               test_property: "test_value",
             },
+            userTier: "free",
           })
         ).resolves.not.toThrow();
       });
@@ -296,7 +297,7 @@ describe("PostHog Analytics Integration", () => {
 
         for (const analysisType of analysisTypes) {
           await expect(
-            trackServerAnalysisRequest("user-123", analysisType)
+            trackServerAnalysisRequest("user-123", analysisType, "paid")
           ).resolves.not.toThrow();
         }
       });
@@ -308,7 +309,8 @@ describe("PostHog Analytics Integration", () => {
           trackServerError(
             "user-123",
             "ai_service_error",
-            "Failed to generate analysis"
+            "Failed to generate analysis",
+            "admin"
           )
         ).resolves.not.toThrow();
       });
@@ -344,9 +346,10 @@ describe("PostHog Analytics Integration", () => {
           captureServerEvent({
             distinctId: "user-123",
             event: "test_event",
+            userTier: "free",
           }),
-          trackServerAnalysisRequest("user-123", "startup"),
-          trackServerError("user-123", "test_error", "Test error message"),
+          trackServerAnalysisRequest("user-123", "startup", "paid"),
+          trackServerError("user-123", "test_error", "Test error message", "admin"),
         ])
       ).resolves.not.toThrow();
     });

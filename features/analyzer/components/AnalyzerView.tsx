@@ -23,11 +23,12 @@ import AnalysisDisplay from "@/features/analyzer/components/AnalysisDisplay";
 import Loader from "@/features/analyzer/components/Loader";
 import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
-import { capture } from "@/features/analytics/posthogClient";
 import {
   trackReportGeneration,
   identifyUser,
   trackIdeaEnhancement,
+  trackAnalysisStarted,
+  trackAnalysisSaved,
 } from "@/features/analytics/tracking";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
@@ -237,7 +238,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     }
 
     setIsLoading(true);
-    capture("analysis_started", { locale, has_saved_id: Boolean(savedId) });
+    trackAnalysisStarted({ locale, hasSavedId: Boolean(savedId) });
     setError(null);
     setSaveError(null);
     setNewAnalysis(null);
@@ -420,7 +421,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     setNewAnalysis(null);
     setAddedSuggestions([]);
     setGeneratedAudio(record.audioBase64 ?? null);
-    capture("analysis_saved", { analysis_id: record.id, locale });
+    trackAnalysisSaved({ analysisId: record.id, locale });
 
     // If this came from a Frankenstein, update it with the validation
     if (frankensteinId && sourceFromUrl === "frankenstein") {

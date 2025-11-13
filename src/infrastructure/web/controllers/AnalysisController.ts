@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  trackServerAnalysisRequest,
+  trackServerError,
+} from "@/features/analytics/server-tracking";
+import {
   CreateAnalysisHandler,
   UpdateAnalysisHandler,
   DeleteAnalysisHandler,
@@ -65,6 +69,9 @@ export class AnalysisController {
    * POST /api/analyze
    */
   async createAnalysis(request: NextRequest): Promise<NextResponse> {
+    let trackedUserId: string | null = null;
+    let trackedUserTier: Parameters<typeof trackServerAnalysisRequest>[2];
+
     try {
       // Check if we're in mock mode
       const isMockMode =
@@ -80,6 +87,17 @@ export class AnalysisController {
       const authResult = await authenticateRequest(request);
       if (!authResult.success) {
         return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      trackedUserId = authResult.userId || null;
+      trackedUserTier = authResult.userTier;
+
+      if (trackedUserId) {
+        void trackServerAnalysisRequest(
+          trackedUserId,
+          "startup",
+          trackedUserTier
+        );
       }
 
       // Validate and parse request body
@@ -115,6 +133,15 @@ export class AnalysisController {
       const result = await this.createAnalysisHandler.handle(command);
 
       if (!result.success) {
+        if (trackedUserId) {
+          void trackServerError(
+            trackedUserId,
+            "analysis_create_failure",
+            result.error?.message || "Failed to create analysis",
+            trackedUserTier
+          );
+        }
+
         return NextResponse.json(
           { error: result.error?.message || "Failed to create analysis" },
           { status: 400 }
@@ -169,6 +196,15 @@ export class AnalysisController {
       // Keep status 200 to match existing expectations/tests
       return NextResponse.json(responseDTO, { status: 200 });
     } catch (error) {
+      if (trackedUserId) {
+        void trackServerError(
+          trackedUserId,
+          "analysis_create_error",
+          error instanceof Error ? error.message : String(error),
+          trackedUserTier
+        );
+      }
+
       return handleApiError(error);
     }
   }
