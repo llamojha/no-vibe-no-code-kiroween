@@ -93,7 +93,7 @@ export class AnalysisController {
       trackedUserTier = authResult.userTier;
 
       if (trackedUserId) {
-        void trackServerAnalysisRequest(
+        await trackServerAnalysisRequest(
           trackedUserId,
           "startup",
           trackedUserTier
@@ -134,7 +134,7 @@ export class AnalysisController {
 
       if (!result.success) {
         if (trackedUserId) {
-          void trackServerError(
+          await trackServerError(
             trackedUserId,
             "analysis_create_failure",
             result.error?.message || "Failed to create analysis",
@@ -197,7 +197,7 @@ export class AnalysisController {
       return NextResponse.json(responseDTO, { status: 200 });
     } catch (error) {
       if (trackedUserId) {
-        void trackServerError(
+        await trackServerError(
           trackedUserId,
           "analysis_create_error",
           error instanceof Error ? error.message : String(error),

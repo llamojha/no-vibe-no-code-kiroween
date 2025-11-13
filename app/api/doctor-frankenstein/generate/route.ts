@@ -65,7 +65,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     trackedUserTier = authResult.userTier;
 
     if (trackedUserId) {
-      void trackServerAnalysisRequest(
+      await trackServerAnalysisRequest(
         trackedUserId,
         "frankenstein",
         trackedUserTier
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const duration = Date.now() - startTime;
 
     if (trackedUserId) {
-      void trackServerError(
+      await trackServerError(
         trackedUserId,
         "frankenstein_generate_error",
         error instanceof Error ? error.message : String(error),

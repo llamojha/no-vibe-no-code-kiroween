@@ -72,7 +72,7 @@ export class HackathonController {
       trackedUserTier = authResult.userTier;
 
       if (trackedUserId) {
-        void trackServerAnalysisRequest(
+        await trackServerAnalysisRequest(
           trackedUserId,
           "kiroween",
           trackedUserTier
@@ -93,7 +93,7 @@ export class HackathonController {
       return await this.legacyAnalyzeHackathonProject(request, userId);
     } catch (error) {
       if (trackedUserId) {
-        void trackServerError(
+        await trackServerError(
           trackedUserId,
           "hackathon_analysis_error",
           error instanceof Error ? error.message : String(error),
