@@ -386,6 +386,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           if (savedId && !newlySavedId) {
             router.replace("/kiroween-analyzer");
           }
+      const newlySavedId: string | null = null;
     } catch (err) {
       console.error(err);
       setError(
@@ -491,12 +492,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       console.error("Error saving analysis:", err);
       setError("Failed to save your analysis. Please try again.");
     }
-  }, [
-    generatedAudio,
-    submission,
-    newAnalysis,
-    router,
-  ]);
+  }, [generatedAudio, submission, newAnalysis, router, frankensteinId, sourceFromUrl, session]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
