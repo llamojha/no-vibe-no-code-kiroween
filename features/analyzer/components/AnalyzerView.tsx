@@ -67,6 +67,8 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     useState<SavedAnalysisRecord | null>(null);
   const [isFetchingSaved, setIsFetchingSaved] = useState(false);
   const [credits, setCredits] = useState<number>(initialCredits);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const savedRecordId = savedAnalysisRecord?.id ?? null;
   const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
 
@@ -91,7 +93,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
   // Pre-fill idea from Doctor Frankenstein if provided
   useEffect(() => {
-    if (ideaFromUrl && sourceFromUrl === 'frankenstein' && !savedId) {
+    if (ideaFromUrl && sourceFromUrl === "frankenstein" && !savedId) {
       // useSearchParams().get() already returns decoded values, no need to decode again
       setIdea(ideaFromUrl);
     }
@@ -105,7 +107,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     if (!savedId) {
       setSavedAnalysisRecord(null);
       // Don't reset if we have an idea from Frankenstein
-      if (!ideaFromUrl || sourceFromUrl !== 'frankenstein') {
+      if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
         setIdea("");
       }
       setIsReportSaved(false);
@@ -157,7 +159,17 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     };
 
     void fetchSavedAnalysis();
-  }, [mode, router, savedId, session, supabase, isAuthLoading, isLocalDevMode]);
+  }, [
+    mode,
+    router,
+    savedId,
+    session,
+    supabase,
+    isAuthLoading,
+    isLocalDevMode,
+    ideaFromUrl,
+    sourceFromUrl,
+  ]);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -213,6 +225,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     setIsLoading(true);
     capture("analysis_started", { locale, has_saved_id: Boolean(savedId) });
     setError(null);
+    setSaveError(null);
     setNewAnalysis(null);
     setAddedSuggestions([]);
     setIsReportSaved(false);
@@ -221,33 +234,97 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       const analysisResult = await requestAnalysis(idea, locale);
       setNewAnalysis(analysisResult);
       await refreshCredits();
-      
-      // If this came from a Frankenstein, update it automatically with the score
-      if (frankensteinId && sourceFromUrl === 'frankenstein') {
+
+      let newlySavedId: string | null = null;
+
+      // Auto-save if user is logged in (to preserve credits)
+      if (session && !isLocalDevMode) {
         try {
-          const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
-          const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
-          
-          const score = deriveFivePointScore(analysisResult as any);
-          
-          console.log('Auto-updating Frankenstein with score:', {
-            frankensteinId,
-            score,
-            rawFinalScore: analysisResult.finalScore,
+          const { data: record, error: saveError } = await saveAnalysis({
+            idea,
+            analysis: analysisResult,
           });
-          
-          await updateFrankensteinValidation(frankensteinId, 'analyzer', {
-            analysisId: 'temp-' + Date.now(), // Temporary ID since we're not saving the analysis
-            score,
-          });
-          
-          setIsReportSaved(true); // Mark as "saved" to show success message
+
+          if (!saveError && record) {
+            newlySavedId = record.id;
+            setSavedAnalysisRecord(record);
+            setIsReportSaved(true);
+            capture("analysis_auto_saved", { analysis_id: record.id, locale });
+
+            // If this came from a Frankenstein, update it with the validation
+            if (frankensteinId && sourceFromUrl === "frankenstein") {
+              try {
+                const { updateFrankensteinValidation } = await import(
+                  "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+                );
+                const { deriveFivePointScore } = await import(
+                  "@/features/dashboard/api/scoreUtils"
+                );
+
+                const score = deriveFivePointScore(analysisResult);
+
+                console.log("Auto-updating Frankenstein with validation:", {
+                  frankensteinId,
+                  analysisId: record.id,
+                  score,
+                });
+
+                await updateFrankensteinValidation(frankensteinId, "analyzer", {
+                  analysisId: record.id,
+                  score,
+                });
+              } catch (err) {
+                console.error(
+                  "Failed to update Frankenstein with validation:",
+                  err
+                );
+              }
+            }
+
+            // Update URL with saved ID
+            router.replace(
+              `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
+            );
+          } else {
+            console.error("Auto-save failed:", saveError);
+            setSaveError(
+              saveError ||
+                "Failed to save analysis. Your credits were consumed but the analysis was not saved."
+            );
+          }
         } catch (err) {
-          console.error('Failed to update Frankenstein with score:', err);
+          console.error("Auto-save error:", err);
+          setSaveError(
+            err instanceof Error
+              ? err.message
+              : "Failed to save analysis. Your credits were consumed but the analysis was not saved."
+          );
+        }
+      } else if (frankensteinId && sourceFromUrl === "frankenstein") {
+        // If not logged in but came from Frankenstein, still update with temp score
+        try {
+          const { updateFrankensteinValidation } = await import(
+            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+          );
+          const { deriveFivePointScore } = await import(
+            "@/features/dashboard/api/scoreUtils"
+          );
+
+          const score = deriveFivePointScore(analysisResult);
+
+          await updateFrankensteinValidation(frankensteinId, "analyzer", {
+            analysisId: "temp-" + Date.now(),
+            score,
+          });
+
+          setIsReportSaved(true);
+        } catch (err) {
+          console.error("Failed to update Frankenstein with score:", err);
         }
       }
-      
-      if (savedId) {
+
+      // Only clean up URL if we had a savedId but didn't just create a new one
+      if (savedId && !newlySavedId) {
         router.replace("/analyzer");
       }
     } catch (err) {
@@ -261,89 +338,19 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setIsLoading(false);
     }
   }, [
-    generatedAudio,
     idea,
-    locale,
-    router,
-    savedId,
-    savedRecordAudio,
+    generatedAudio,
     savedRecordId,
-    supabase,
+    savedRecordAudio,
+    locale,
+    savedId,
     t,
     refreshCredits,
-    frankensteinId,
-    sourceFromUrl,
-  ]);
-
-  const handleSaveReport = useCallback(async () => {
-    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
-    if (!analysisToSave || !idea) return;
-
-    // Check if authentication is required (not in local dev mode)
-    if (!isLocalDevMode && !session) {
-      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
-      return;
-    }
-
-    // Use the new save function that handles both local dev mode and production
-    const { data: record, error: saveError } = await saveAnalysis({
-      idea,
-      analysis: analysisToSave,
-      audioBase64: generatedAudio || undefined,
-    });
-
-    if (saveError || !record) {
-      setError(saveError || "Failed to save your analysis. Please try again.");
-      return;
-    }
-
-    setSavedAnalysisRecord(record);
-    setIsReportSaved(true);
-    setNewAnalysis(null);
-    setAddedSuggestions([]);
-    setGeneratedAudio(record.audioBase64 ?? null);
-    capture("analysis_saved", { analysis_id: record.id, locale });
-    
-    // If this came from a Frankenstein, update it with the validation
-    if (frankensteinId && sourceFromUrl === 'frankenstein') {
-      try {
-        const { updateFrankensteinValidation } = await import('@/features/doctor-frankenstein/api/saveFrankensteinIdea');
-        const { deriveFivePointScore } = await import('@/features/dashboard/api/scoreUtils');
-        
-        // Use deriveFivePointScore to get the correct 0-5 score
-        const score = deriveFivePointScore(analysisToSave as any);
-        
-        console.log('Updating Frankenstein with validation:', {
-          frankensteinId,
-          analysisId: record.id,
-          score,
-          rawFinalScore: analysisToSave.finalScore,
-        });
-        
-        await updateFrankensteinValidation(frankensteinId, 'analyzer', {
-          analysisId: record.id,
-          score,
-        });
-      } catch (err) {
-        console.error('Failed to update Frankenstein with validation:', err);
-        // Don't show error to user, this is a background operation
-      }
-    }
-    
-    router.replace(
-      `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
-    );
-  }, [
-    generatedAudio,
-    idea,
-    newAnalysis,
-    router,
-    savedAnalysisRecord,
     session,
     isLocalDevMode,
-    locale,
     frankensteinId,
     sourceFromUrl,
+    router,
   ]);
 
   const handleAudioGenerated = useCallback(
@@ -388,6 +395,79 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     []
   );
 
+  const handleRetrySave = useCallback(async () => {
+    if (!newAnalysis || !session || isLocalDevMode) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const { data: record, error: saveError } = await saveAnalysis({
+        idea,
+        analysis: newAnalysis,
+      });
+
+      if (!saveError && record) {
+        setSavedAnalysisRecord(record);
+        setIsReportSaved(true);
+        setSaveError(null);
+        capture("analysis_manually_saved", { analysis_id: record.id, locale });
+
+        // If this came from a Frankenstein, update it with the validation
+        if (frankensteinId && sourceFromUrl === "frankenstein") {
+          try {
+            const { updateFrankensteinValidation } = await import(
+              "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+            );
+            const { deriveFivePointScore } = await import(
+              "@/features/dashboard/api/scoreUtils"
+            );
+
+            const score = deriveFivePointScore(newAnalysis);
+
+            await updateFrankensteinValidation(frankensteinId, "analyzer", {
+              analysisId: record.id,
+              score,
+            });
+          } catch (err) {
+            console.error(
+              "Failed to update Frankenstein with validation:",
+              err
+            );
+          }
+        }
+
+        // Update URL with saved ID
+        router.replace(
+          `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
+        );
+      } else {
+        console.error("Manual save failed:", saveError);
+        setSaveError(saveError || "Failed to save analysis. Please try again.");
+      }
+    } catch (err) {
+      console.error("Manual save error:", err);
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save analysis. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    newAnalysis,
+    session,
+    isLocalDevMode,
+    idea,
+    locale,
+    frankensteinId,
+    sourceFromUrl,
+    router,
+  ]);
+
   const handleStartNewAnalysis = useCallback(() => {
     setIdea("");
     setNewAnalysis(null);
@@ -396,6 +476,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     setGeneratedAudio(null);
     setAddedSuggestions([]);
     setError(null);
+    setSaveError(null);
 
     if (savedId) {
       router.replace("/analyzer");
@@ -447,38 +528,54 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             {t("appTitle")}
           </h1>
           <p className="mt-2 text-lg text-slate-400">{t("appSubtitle")}</p>
-          
+
           {/* Frankenstein Origin Badge */}
-          {sourceFromUrl === 'frankenstein' && !savedId && (
+          {sourceFromUrl === "frankenstein" && !savedId && (
             <div className="mt-4 space-y-2">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-900/50 to-purple-900/50 border border-green-500 rounded-lg">
                 <span className="text-2xl">🧟</span>
                 <div className="text-left">
                   <p className="text-sm font-bold text-green-400">
-                    {locale === 'es' ? 'Remix de Doctor Frankenstein' : 'Remix from Doctor Frankenstein'}
+                    {locale === "es"
+                      ? "Remix de Doctor Frankenstein"
+                      : "Remix from Doctor Frankenstein"}
                   </p>
                   <p className="text-xs text-green-300">
-                    {frankensteinMode === 'aws' 
-                      ? (locale === 'es' ? 'Combinación de AWS Services' : 'AWS Services Combination')
-                      : (locale === 'es' ? 'Combinación de Tech Companies' : 'Tech Companies Combination')}
+                    {frankensteinMode === "aws"
+                      ? locale === "es"
+                        ? "Combinación de AWS Services"
+                        : "AWS Services Combination"
+                      : locale === "es"
+                      ? "Combinación de Tech Companies"
+                      : "Tech Companies Combination"}
                   </p>
                 </div>
               </div>
               {isReportSaved && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 border border-green-600 rounded-lg">
-                  <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-5 w-5 text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   <p className="text-sm text-green-300">
-                    {locale === 'es' 
-                      ? '✓ Puntuación guardada en tu Frankenstein' 
-                      : '✓ Score saved to your Frankenstein'}
+                    {locale === "es"
+                      ? "✓ Puntuación guardada en tu Frankenstein"
+                      : "✓ Score saved to your Frankenstein"}
                   </p>
                 </div>
               )}
             </div>
           )}
-          
+
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
             <LanguageToggle />
           </div>
@@ -503,6 +600,42 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           {error && (
             <div role="alert" aria-live="assertive">
               <ErrorMessage message={error} />
+            </div>
+          )}
+          {saveError && (
+            <div role="alert" aria-live="assertive" className="mb-6">
+              <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-400 font-semibold mb-1">
+                      {t("saveFailedTitle") || "Save Failed"}
+                    </h3>
+                    <p className="text-yellow-200 text-sm mb-3">{saveError}</p>
+                    <button
+                      onClick={handleRetrySave}
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 disabled:cursor-not-allowed text-white rounded font-semibold text-sm transition-colors"
+                    >
+                      {isSaving
+                        ? t("saving") || "Saving..."
+                        : t("retrySave") || "Retry Save"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
           {busy && (
@@ -535,7 +668,6 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               </div>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
-                onSave={sourceFromUrl === 'frankenstein' ? undefined : handleSaveReport}
                 isSaved={isReportSaved}
                 savedAudioBase64={generatedAudio}
                 onAudioGenerated={handleAudioGenerated}

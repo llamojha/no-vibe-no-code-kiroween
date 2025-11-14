@@ -76,6 +76,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     useState<SavedFrankensteinIdea | null>(null);
   const [isReportSaved, setIsReportSaved] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Separate state for each mode
   const [companiesState, setCompaniesState] = useState<{
@@ -101,7 +102,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     slotSelectionLocked: false,
     slotCount: 4,
   });
-  
+
   // Get current state based on mode
   const currentState = mode === "companies" ? companiesState : awsState;
   const setCurrentState =
@@ -112,7 +113,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
   const slotCount = currentState.slotCount;
 
   const slotOptions: Array<3 | 4> = [3, 4];
-  
+
   // Check if current mode has active work (selected items or generated idea)
   const hasActiveWork = selectedItems.length > 0 || frankensteinIdea !== null;
 
@@ -213,11 +214,13 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         const selectedTechNames = data.analysis.allSelectedTechnologies
           ? data.analysis.allSelectedTechnologies.map((tech) => tech.name)
           : [data.tech1.name, data.tech2.name];
-        
+
         // Determine slot count from number of selected technologies
-        const restoredSlotCount = (selectedTechNames.length === 3 ? 3 : 4) as 3 | 4;
-        
-        if (data.mode === 'companies') {
+        const restoredSlotCount = (selectedTechNames.length === 3 ? 3 : 4) as
+          | 3
+          | 4;
+
+        if (data.mode === "companies") {
           setCompaniesState({
             selectedItems: selectedTechNames,
             frankensteinIdea: restoredIdea,
@@ -253,6 +256,96 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
   const currentItems = mode === "companies" ? techCompanies : awsServices;
   const currentItemNames = currentItems.map((item) => item.name);
+
+  // Retry save handler
+  const handleRetrySave = useCallback(async () => {
+    if (!frankensteinIdea || selectedItems.length < 2 || !isLoggedIn) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const tech1Item = currentItems.find((i) => i.name === selectedItems[0]);
+      const tech2Item = currentItems.find((i) => i.name === selectedItems[1]);
+
+      if (!tech1Item || !tech2Item) {
+        throw new Error("Technology items not found");
+      }
+
+      const tech1: TechItem = {
+        name: tech1Item.name,
+        description:
+          tech1Item.description || `${tech1Item.category} technology`,
+        category: tech1Item.category,
+      };
+
+      const tech2: TechItem = {
+        name: tech2Item.name,
+        description:
+          tech2Item.description || `${tech2Item.category} technology`,
+        category: tech2Item.category,
+      };
+
+      const allSelectedTechs = selectedItems.map((name) => {
+        const item = currentItems.find((i) => i.name === name);
+        return {
+          name,
+          description:
+            item?.description || `${item?.category || ""} technology`,
+          category: item?.category || "",
+        };
+      });
+
+      const { data, error: saveError } = await saveFrankensteinIdea({
+        mode,
+        tech1,
+        tech2,
+        analysis: {
+          ideaName: frankensteinIdea.idea_title,
+          description: frankensteinIdea.idea_description,
+          keyFeatures: [],
+          targetMarket: frankensteinIdea.target_audience,
+          uniqueValueProposition: frankensteinIdea.unique_value_proposition,
+          language: (frankensteinIdea.language || locale) as "en" | "es",
+          fullAnalysis: frankensteinIdea,
+          allSelectedTechnologies: allSelectedTechs,
+        },
+      });
+
+      if (saveError || !data) {
+        setSaveError(
+          saveError || "Failed to save your idea. Please try again."
+        );
+        return;
+      }
+
+      setSavedIdeaRecord(data);
+      setIsReportSaved(true);
+      setSaveError(null);
+      router.replace(
+        `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+      );
+    } catch (err) {
+      console.error("Retry save error:", err);
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save idea. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    frankensteinIdea,
+    selectedItems,
+    isLoggedIn,
+    currentItems,
+    mode,
+    locale,
+    router,
+  ]);
 
   // Save report handler
   const handleSaveReport = useCallback(async (): Promise<string | null> => {
@@ -325,7 +418,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
       setSavedIdeaRecord(data);
       setIsReportSaved(true);
-      router.replace(`/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`);
+      router.replace(
+        `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+      );
       return data.id;
     } catch (err) {
       console.error("Save error:", err);
@@ -369,7 +464,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     if (currentItems.length === 0 || isSpinning) return;
 
     setIsSpinning(true);
-    
+
     // Reset the current mode's state and lock slots (keep slotCount)
     setCurrentState({
       selectedItems: [],
@@ -406,6 +501,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
     setIsGenerating(true);
     setError(null);
+    setSaveError(null);
 
     try {
       const elements = selectedItems.map((name) => {
@@ -441,6 +537,82 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         slotCount: currentState.slotCount,
       });
       await refreshCredits();
+
+      // Auto-save if user is logged in (to preserve credits)
+      if (isLoggedIn) {
+        try {
+          const tech1Item = currentItems.find(
+            (i) => i.name === selectedItems[0]
+          );
+          const tech2Item = currentItems.find(
+            (i) => i.name === selectedItems[1]
+          );
+
+          if (tech1Item && tech2Item) {
+            const tech1: TechItem = {
+              name: tech1Item.name,
+              description:
+                tech1Item.description || `${tech1Item.category} technology`,
+              category: tech1Item.category,
+            };
+
+            const tech2: TechItem = {
+              name: tech2Item.name,
+              description:
+                tech2Item.description || `${tech2Item.category} technology`,
+              category: tech2Item.category,
+            };
+
+            const allSelectedTechs = selectedItems.map((name) => {
+              const item = currentItems.find((i) => i.name === name);
+              return {
+                name,
+                description:
+                  item?.description || `${item?.category || ""} technology`,
+                category: item?.category || "",
+              };
+            });
+
+            const { data, error: saveError } = await saveFrankensteinIdea({
+              mode,
+              tech1,
+              tech2,
+              analysis: {
+                ideaName: result.idea_title,
+                description: result.idea_description,
+                keyFeatures: [],
+                targetMarket: result.target_audience,
+                uniqueValueProposition: result.unique_value_proposition,
+                language: (result.language || locale) as "en" | "es",
+                fullAnalysis: result,
+                allSelectedTechnologies: allSelectedTechs,
+              },
+            });
+
+            if (!saveError && data) {
+              setSavedIdeaRecord(data);
+              setIsReportSaved(true);
+              router.replace(
+                `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+              );
+              setSaveError(null);
+            } else {
+              console.error("Auto-save failed:", saveError);
+              setSaveError(
+                saveError ||
+                  "Failed to save your Frankenstein. Your credits were consumed but the idea was not saved."
+              );
+            }
+          }
+        } catch (err) {
+          console.error("Auto-save error:", err);
+          setSaveError(
+            err instanceof Error
+              ? err.message
+              : "Failed to save your Frankenstein. Your credits were consumed but the idea was not saved."
+          );
+        }
+      }
     } catch (err) {
       console.error("Generation error:", err);
       setError(err instanceof Error ? err.message : "Failed to generate idea");
@@ -457,14 +629,14 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
       slotSelectionLocked: false,
       slotCount: currentState.slotCount,
     });
-    
+
     // Reset saved state
     setIsReportSaved(false);
     setSavedIdeaRecord(null);
-    
+
     // Remove savedId from URL if present
     if (savedId) {
-      router.replace('/doctor-frankenstein');
+      router.replace("/doctor-frankenstein");
     }
   };
 
@@ -482,6 +654,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     setSavedIdeaRecord(null);
     setShareSuccess(false);
     setError(null);
+    setSaveError(null);
 
     if (savedId) {
       router.replace("/doctor-frankenstein");
@@ -574,6 +747,44 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             </div>
           )}
 
+          {/* Save error warning */}
+          {saveError && (
+            <div role="alert" aria-live="assertive" className="mb-6">
+              <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-400 font-semibold mb-1">
+                      {t("saveFailedTitle") || "Save Failed"}
+                    </h3>
+                    <p className="text-yellow-200 text-sm mb-3">{saveError}</p>
+                    <button
+                      onClick={handleRetrySave}
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 disabled:cursor-not-allowed text-white rounded font-semibold text-sm transition-colors"
+                    >
+                      {isSaving
+                        ? t("saving") || "Saving..."
+                        : t("retrySave") || "Retry Save"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Language mismatch warning */}
           {languageMismatch && (
             <div className="mb-6 p-4 bg-yellow-900/50 border border-yellow-500 rounded-lg">
@@ -648,19 +859,21 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             {/* Validation Buttons */}
             <div className="mt-8 p-6 bg-purple-900/30 border border-purple-600 rounded-lg">
               <h3 className="text-xl font-bold text-orange-400 mb-4 text-center">
-                {locale === 'es' ? '🎯 Validar esta Idea' : '🎯 Validate This Idea'}
+                {locale === "es"
+                  ? "🎯 Validar esta Idea"
+                  : "🎯 Validate This Idea"}
               </h3>
               <p className="text-purple-200 text-sm text-center mb-6">
-                {locale === 'es' 
-                  ? 'Obtén una puntuación detallada analizando esta idea con nuestros validadores especializados'
-                  : 'Get a detailed score by analyzing this idea with our specialized validators'}
+                {locale === "es"
+                  ? "Obtén una puntuación detallada analizando esta idea con nuestros validadores especializados"
+                  : "Get a detailed score by analyzing this idea with our specialized validators"}
               </p>
               {!isLoggedIn && (
                 <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-600 rounded-lg">
                   <p className="text-yellow-200 text-sm text-center">
-                    {locale === 'es' 
-                      ? '💡 Inicia sesión para guardar automáticamente tu Frankenstein antes de validar'
-                      : '💡 Log in to automatically save your Frankenstein before validating'}
+                    {locale === "es"
+                      ? "💡 Inicia sesión para guardar automáticamente tu Frankenstein antes de validar"
+                      : "💡 Log in to automatically save your Frankenstein before validating"}
                   </p>
                 </div>
               )}
@@ -669,7 +882,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                   onClick={async () => {
                     try {
                       let frankensteinIdToUse = savedIdeaRecord?.id;
-                      
+
                       // Save first if not already saved and user is logged in
                       if (!isReportSaved && isLoggedIn) {
                         const savedId = await handleSaveReport();
@@ -677,32 +890,65 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                           frankensteinIdToUse = savedId;
                         }
                       }
-                      
+
                       // Navigate to Kiroween Hackathon analyzer with the idea
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = frankensteinIdToUse ? `&frankensteinId=${encodeURIComponent(frankensteinIdToUse)}` : '';
-                      console.log('Navigating to Kiroween with frankensteinId:', frankensteinIdToUse);
-                      router.push(`/kiroween-analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
+                      const frankensteinIdParam = frankensteinIdToUse
+                        ? `&frankensteinId=${encodeURIComponent(
+                            frankensteinIdToUse
+                          )}`
+                        : "";
+                      console.log(
+                        "Navigating to Kiroween with frankensteinId:",
+                        frankensteinIdToUse
+                      );
+                      router.push(
+                        `/kiroween-analyzer?idea=${encodeURIComponent(
+                          ideaText
+                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                      );
                     } catch (err) {
-                      console.error('Error saving before validation:', err);
+                      console.error("Error saving before validation:", err);
                       // Still navigate even if save fails
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = savedIdeaRecord?.id ? `&frankensteinId=${encodeURIComponent(savedIdeaRecord.id)}` : '';
-                      router.push(`/kiroween-analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
+                      const frankensteinIdParam = savedIdeaRecord?.id
+                        ? `&frankensteinId=${encodeURIComponent(
+                            savedIdeaRecord.id
+                          )}`
+                        : "";
+                      router.push(
+                        `/kiroween-analyzer?idea=${encodeURIComponent(
+                          ideaText
+                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                      );
                     }
                   }}
                   disabled={isSaving || !kiroweenAnalyzerEnabled}
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
-                  title={!kiroweenAnalyzerEnabled ? (locale === 'es' ? 'Validador deshabilitado' : 'Validator disabled') : ''}
+                  title={
+                    !kiroweenAnalyzerEnabled
+                      ? locale === "es"
+                        ? "Validador deshabilitado"
+                        : "Validator disabled"
+                      : ""
+                  }
                 >
                   <span>🎃</span>
-                  <span>{isSaving ? (locale === 'es' ? 'Guardando...' : 'Saving...') : (locale === 'es' ? 'Validar con Kiroween Hackathon' : 'Validate with Kiroween Hackathon')}</span>
+                  <span>
+                    {isSaving
+                      ? locale === "es"
+                        ? "Guardando..."
+                        : "Saving..."
+                      : locale === "es"
+                      ? "Validar con Kiroween Hackathon"
+                      : "Validate with Kiroween Hackathon"}
+                  </span>
                 </button>
                 <button
                   onClick={async () => {
                     try {
                       let frankensteinIdToUse = savedIdeaRecord?.id;
-                      
+
                       // Save first if not already saved and user is logged in
                       if (!isReportSaved && isLoggedIn) {
                         const savedId = await handleSaveReport();
@@ -710,26 +956,59 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                           frankensteinIdToUse = savedId;
                         }
                       }
-                      
+
                       // Navigate to Analyzer with the idea
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = frankensteinIdToUse ? `&frankensteinId=${encodeURIComponent(frankensteinIdToUse)}` : '';
-                      console.log('Navigating to Analyzer with frankensteinId:', frankensteinIdToUse);
-                      router.push(`/analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
+                      const frankensteinIdParam = frankensteinIdToUse
+                        ? `&frankensteinId=${encodeURIComponent(
+                            frankensteinIdToUse
+                          )}`
+                        : "";
+                      console.log(
+                        "Navigating to Analyzer with frankensteinId:",
+                        frankensteinIdToUse
+                      );
+                      router.push(
+                        `/analyzer?idea=${encodeURIComponent(
+                          ideaText
+                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                      );
                     } catch (err) {
-                      console.error('Error saving before validation:', err);
+                      console.error("Error saving before validation:", err);
                       // Still navigate even if save fails
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = savedIdeaRecord?.id ? `&frankensteinId=${encodeURIComponent(savedIdeaRecord.id)}` : '';
-                      router.push(`/analyzer?idea=${encodeURIComponent(ideaText)}&source=frankenstein&mode=${mode}${frankensteinIdParam}`);
+                      const frankensteinIdParam = savedIdeaRecord?.id
+                        ? `&frankensteinId=${encodeURIComponent(
+                            savedIdeaRecord.id
+                          )}`
+                        : "";
+                      router.push(
+                        `/analyzer?idea=${encodeURIComponent(
+                          ideaText
+                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                      );
                     }
                   }}
                   disabled={isSaving || !classicAnalyzerEnabled}
                   className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:opacity-50 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg"
-                  title={!classicAnalyzerEnabled ? (locale === 'es' ? 'Validador deshabilitado' : 'Validator disabled') : ''}
+                  title={
+                    !classicAnalyzerEnabled
+                      ? locale === "es"
+                        ? "Validador deshabilitado"
+                        : "Validator disabled"
+                      : ""
+                  }
                 >
                   <span>🔬</span>
-                  <span>{isSaving ? (locale === 'es' ? 'Guardando...' : 'Saving...') : (locale === 'es' ? 'Validar con Analyzer' : 'Validate with Analyzer')}</span>
+                  <span>
+                    {isSaving
+                      ? locale === "es"
+                        ? "Guardando..."
+                        : "Saving..."
+                      : locale === "es"
+                      ? "Validar con Analyzer"
+                      : "Validate with Analyzer"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -802,53 +1081,16 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                 />
               )}
 
-              {isLoggedIn &&
-                (isReportSaved ? (
-                  <>
-                    <span className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-green-400 bg-green-900/20 border border-green-700 rounded cursor-default">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span>{t("reportSavedMessage") || "Report Saved"}</span>
-                    </span>
-
-                    {shareLinksEnabled && savedIdeaRecord && (
-                      <button
-                        onClick={handleShare}
-                        className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${
-                          shareSuccess
-                            ? "text-green-400 bg-green-900/20 border-green-700"
-                            : "text-slate-300 bg-black/50 border-purple-600 hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400"
-                        }`}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-                        </svg>
-                        <span>
-                          {shareSuccess
-                            ? t("linkCopied") || "Link Copied!"
-                            : t("share") || "Share"}
-                        </span>
-                      </button>
-                    )}
-
+              {isLoggedIn && isReportSaved && (
+                <>
+                  {shareLinksEnabled && savedIdeaRecord && (
                     <button
-                      onClick={handleGoToDashboard}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors"
+                      onClick={handleShare}
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider border rounded transition-colors ${
+                        shareSuccess
+                          ? "text-green-400 bg-green-900/20 border-green-700"
+                          : "text-slate-300 bg-black/50 border-purple-600 hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400"
+                      }`}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -856,18 +1098,19 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                         viewBox="0 0 20 20"
                         fill="currentColor"
                       >
-                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
                       </svg>
                       <span>
-                        {t("goToDashboardButton") || "Go to Dashboard"}
+                        {shareSuccess
+                          ? t("linkCopied") || "Link Copied!"
+                          : t("share") || "Share"}
                       </span>
                     </button>
-                  </>
-                ) : (
+                  )}
+
                   <button
-                    onClick={handleSaveReport}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleGoToDashboard}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-purple-600 rounded hover:bg-purple-500/20 hover:text-purple-400 hover:border-purple-400 transition-colors"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -875,15 +1118,12 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       viewBox="0 0 20 20"
                       fill="currentColor"
                     >
-                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V4zm3 1h4a1 1 0 000-2H8a1 1 0 000 2z" />
+                      <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                     </svg>
-                    <span>
-                      {isSaving
-                        ? t("saving") || "Saving..."
-                        : t("saveReportButton") || "Save Report"}
-                    </span>
+                    <span>{t("goToDashboardButton") || "Go to Dashboard"}</span>
                   </button>
-                ))}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -939,24 +1179,24 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
           <div className="bg-purple-900/50 rounded-lg p-1 flex gap-2">
             <button
               onClick={() => {
-                setMode('companies');
+                setMode("companies");
               }}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
-                mode === 'companies'
-                  ? 'bg-orange-500 text-black'
-                  : 'bg-transparent text-purple-300 hover:text-white'
+                mode === "companies"
+                  ? "bg-orange-500 text-black"
+                  : "bg-transparent text-purple-300 hover:text-white"
               }`}
             >
               🏢 {t("techCompanies") || "Tech Companies"}
             </button>
             <button
               onClick={() => {
-                setMode('aws');
+                setMode("aws");
               }}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
-                mode === 'aws'
-                  ? 'bg-orange-500 text-black'
-                  : 'bg-transparent text-purple-300 hover:text-white'
+                mode === "aws"
+                  ? "bg-orange-500 text-black"
+                  : "bg-transparent text-purple-300 hover:text-white"
               }`}
             >
               ☁️ {t("awsServices") || "AWS Services"}
@@ -995,9 +1235,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
           )}
           {hasActiveWork && (
             <p className="text-xs mt-2 text-green-400 italic">
-              {mode === 'companies' 
-                ? '✓ Tech Companies combination in progress'
-                : '✓ AWS Services combination in progress'}
+              {mode === "companies"
+                ? "✓ Tech Companies combination in progress"
+                : "✓ AWS Services combination in progress"}
             </p>
           )}
         </div>
@@ -1137,5 +1377,3 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
     </div>
   );
 };
-
-

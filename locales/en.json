@@ -67,6 +67,7 @@
   "noSavedIdeas": "You haven't saved any ideas yet.",
   "saveReportButton": "Save Report",
   "reportSavedMessage": "Report Saved",
+  "reportAutoSavedMessage": "Auto-Saved",
   "goToDashboardButton": "Go to Dashboard",
   "searchPlaceholder": "Search by idea name...",
   "sortLabel": "Sort by:",
