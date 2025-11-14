@@ -23,7 +23,8 @@ const nextConfig = {
       },
     ];
   },
-  // Skip trailing slash redirect for PostHog endpoints
+  // Global trailing-slash redirect is disabled here; middleware.ts
+  // restores the default behavior for all routes except PostHog /ingest endpoints.
   skipTrailingSlashRedirect: true,
 };
 

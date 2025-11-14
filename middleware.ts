@@ -2,6 +2,22 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Allow PostHog ingest endpoints to bypass trailing slash redirects and auth
+  // so both `/ingest` and `/ingest/` work reliably for analytics.
+  if (pathname.startsWith("/ingest")) {
+    return NextResponse.next();
+  }
+
+  // Recreate Next.js's default trailing-slash redirect behavior for all
+  // non-PostHog routes: `/path/` → `/path` (excluding the root path).
+  if (pathname !== "/" && pathname.endsWith("/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = url.pathname.replace(/\/+$/, "");
+    return NextResponse.redirect(url);
+  }
+
   const response = NextResponse.next();
   const supabase = createMiddlewareClient({ req: request, res: response });
 
