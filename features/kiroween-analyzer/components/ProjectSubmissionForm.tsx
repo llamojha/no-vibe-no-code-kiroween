@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ProjectSubmission } from "@/lib/types";
 import { useLocale } from "@/features/locale/context/LocaleContext";
+import { trackIdeaEnhancement } from "@/features/analytics/tracking";
 
 interface ProjectSubmissionFormProps {
   submission: ProjectSubmission;
@@ -23,8 +24,53 @@ const ProjectSubmissionForm: React.FC<ProjectSubmissionFormProps> = ({
 }) => {
   const { t } = useLocale();
   const [errors, setErrors] = useState<FormErrors>({});
+  const previousDescriptionRef = useRef<string>(submission.description);
+  const modificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Category and Kiro usage have been removed from the form
+
+  // Track description modifications with debouncing
+  useEffect(() => {
+    // Clear any existing timeout
+    if (modificationTimeoutRef.current) {
+      clearTimeout(modificationTimeoutRef.current);
+    }
+
+    const description = submission.description;
+
+    // Don't track if description is empty or hasn't changed
+    if (!description) {
+      previousDescriptionRef.current = description;
+      return;
+    }
+
+    if (description === previousDescriptionRef.current) {
+      return;
+    }
+
+    // Debounce tracking to avoid tracking every keystroke
+    modificationTimeoutRef.current = setTimeout(() => {
+      const previousLength = previousDescriptionRef.current.length;
+      const currentLength = description.length;
+      const changeType =
+        currentLength > previousLength ? "addition" : "deletion";
+
+      trackIdeaEnhancement({
+        action: "modify_idea",
+        analysisType: "kiroween",
+        suggestionLength: Math.abs(currentLength - previousLength),
+        changeType,
+      });
+
+      previousDescriptionRef.current = description;
+    }, 2000); // Wait 2 seconds after user stops typing
+
+    return () => {
+      if (modificationTimeoutRef.current) {
+        clearTimeout(modificationTimeoutRef.current);
+      }
+    };
+  }, [submission.description]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};

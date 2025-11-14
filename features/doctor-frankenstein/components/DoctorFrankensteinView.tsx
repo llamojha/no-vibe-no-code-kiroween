@@ -25,6 +25,10 @@ import SpookyLoader from "@/features/kiroween-analyzer/components/SpookyLoader";
 import { isEnabled } from "@/lib/featureFlags";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
+import {
+  trackFrankensteinInteraction,
+  trackReportGeneration,
+} from "@/features/analytics/tracking";
 
 interface DoctorFrankensteinViewProps {
   initialCredits: number;
@@ -465,6 +469,13 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
     setIsSpinning(true);
 
+    // Track slot machine roll event
+    trackFrankensteinInteraction({
+      action: "roll",
+      mode: mode === "companies" ? "tech_companies" : "aws",
+      slotCount: currentState.slotCount,
+    });
+
     // Reset the current mode's state and lock slots (keep slotCount)
     setCurrentState({
       selectedItems: [],
@@ -536,6 +547,14 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         slotSelectionLocked: true,
         slotCount: currentState.slotCount,
       });
+
+      // Track successful Frankenstein idea generation
+      trackReportGeneration({
+        reportType: "frankenstein",
+        ideaLength: result.idea_description?.length,
+        userId: session?.user?.id,
+      });
+
       await refreshCredits();
 
       // Auto-save if user is logged in (to preserve credits)
@@ -1180,6 +1199,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             <button
               onClick={() => {
                 setMode("companies");
+                // Track mode selection
+                trackFrankensteinInteraction({
+                  action: "mode_select",
+                  mode: "tech_companies",
+                });
               }}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
                 mode === "companies"
@@ -1192,6 +1216,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             <button
               onClick={() => {
                 setMode("aws");
+                // Track mode selection
+                trackFrankensteinInteraction({
+                  action: "mode_select",
+                  mode: "aws",
+                });
               }}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
                 mode === "aws"
@@ -1265,6 +1294,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       if (isDisabled) return;
                       setCurrentState({
                         ...currentState,
+                        slotCount: option,
+                      });
+                      // Track slot count configuration
+                      trackFrankensteinInteraction({
+                        action: "slot_config",
                         slotCount: option,
                       });
                     }}

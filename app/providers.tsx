@@ -3,6 +3,7 @@
 import React from "react";
 import { LocaleProvider } from "@/features/locale/context/LocaleContext";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
+import { PostHogProvider } from "@/features/analytics/PostHogProvider";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
 import {
   validateEnhancedFeatureFlags,
@@ -26,8 +27,10 @@ export const Providers: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   return (
-    <LocaleProvider>
-      <AuthProvider>{children}</AuthProvider>
-    </LocaleProvider>
+    <PostHogProvider>
+      <LocaleProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </LocaleProvider>
+    </PostHogProvider>
   );
 };

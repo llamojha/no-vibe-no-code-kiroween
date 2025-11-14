@@ -2,6 +2,7 @@
 
 import React from "react";
 import { AnimationMode } from "@/features/home/hooks/useAnimationPreference";
+import { trackHomepageInteraction } from "@/features/analytics/tracking";
 
 interface AnimationToggleProps {
   currentMode: AnimationMode;
@@ -19,6 +20,12 @@ const AnimationToggle: React.FC<AnimationToggleProps> = ({
     const newMode: AnimationMode =
       currentMode === "normal" ? "spooky" : "normal";
     onToggle(newMode);
+
+    // Track animation toggle event
+    trackHomepageInteraction({
+      action: "animation_toggle",
+      animationState: newMode === "spooky" ? "enabled" : "disabled",
+    });
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {

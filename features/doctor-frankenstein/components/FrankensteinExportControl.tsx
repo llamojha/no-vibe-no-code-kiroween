@@ -11,6 +11,7 @@ import {
   downloadTextFile,
   type ExportData,
 } from "@/features/doctor-frankenstein/utils/exportFrankensteinIdea";
+import { trackExport } from "@/features/analytics/tracking";
 
 interface FrankensteinExportControlProps {
   mode: "companies" | "aws";
@@ -72,10 +73,10 @@ const FrankensteinExportControl: React.FC<FrankensteinExportControlProps> = ({
       // Sanitize the idea name for use in filename
       const sanitizedName = analysis.ideaName
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
-        .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+        .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric with hyphens
+        .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
         .substring(0, 50); // Limit length
-      
+
       switch (format) {
         case "pdf":
           await generatePDFReport(exportData, locale);
@@ -97,9 +98,28 @@ const FrankensteinExportControl: React.FC<FrankensteinExportControlProps> = ({
           );
           break;
       }
+
+      // Track successful export
+      trackExport({
+        format:
+          format === "md" ? "markdown" : format === "json" ? "json" : "pdf",
+        reportType: "frankenstein",
+        success: true,
+      });
+
       setIsOpen(false);
     } catch (error) {
       console.error("Export failed:", error);
+
+      // Track failed export
+      trackExport({
+        format:
+          format === "md" ? "markdown" : format === "json" ? "json" : "pdf",
+        reportType: "frankenstein",
+        success: false,
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      });
+
       // TODO: Show error message to user
     }
   };

@@ -14,7 +14,7 @@ import type {
   DashboardFilterState,
   UserTier,
 } from "@/lib/types";
-import { capture } from "@/features/analytics/posthogClient";
+import { trackDashboardView } from "@/features/analytics/tracking";
 import { isEnabled } from "@/lib/featureFlags";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 
@@ -74,7 +74,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    capture("dashboard_view");
+    trackDashboardView();
   }, []);
 
   useEffect(() => {

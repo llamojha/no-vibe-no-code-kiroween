@@ -11,6 +11,10 @@ import { authenticateRequest } from "@/src/infrastructure/web/middleware/AuthMid
 import { withCreditCheck } from "@/src/infrastructure/web/middleware/CreditCheckMiddleware";
 import { UserId, AnalysisId, AnalysisType } from "@/src/domain/value-objects";
 import { handleApiError } from "@/src/infrastructure/web/middleware/ErrorMiddleware";
+import {
+  trackServerAnalysisRequest,
+  trackServerError,
+} from "@/features/analytics/server-tracking";
 
 
 export const runtime = "nodejs";
@@ -18,6 +22,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
+  let trackedUserId: string | null = null;
+  let trackedUserTier: Parameters<typeof trackServerAnalysisRequest>[2];
   
   try {
     await NextJSBootstrap.initialize();
@@ -53,6 +59,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!authResult.success) {
       return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
+
+    trackedUserId = authResult.userId || null;
+    trackedUserTier = authResult.userTier;
+
+    if (trackedUserId) {
+      await trackServerAnalysisRequest(
+        trackedUserId,
+        "frankenstein",
+        trackedUserTier
+      );
     }
 
     const userId = UserId.fromString(authResult.userId);
@@ -139,6 +156,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(enhancedResult);
   } catch (error) {
     const duration = Date.now() - startTime;
+
+    if (trackedUserId) {
+      await trackServerError(
+        trackedUserId,
+        "frankenstein_generate_error",
+        error instanceof Error ? error.message : String(error),
+        trackedUserTier
+      );
+    }
     
     // Handle mock configuration errors specifically
     if (error instanceof MockConfigurationError) {

@@ -23,6 +23,10 @@ import SpookyErrorMessage from "./SpookyErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
+import {
+  trackReportGeneration,
+  trackIdeaEnhancement,
+} from "@/features/analytics/tracking";
 
 interface KiroweenAnalyzerViewProps {
   initialCredits: number;
@@ -255,6 +259,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
 
+      // Track successful report generation
+      trackReportGeneration({
+        reportType: "kiroween",
+        ideaLength: submission.description.length,
+        userId: session?.user?.id,
+      });
+
       let newlySavedId: string | null = null;
 
       // Auto-save if user is logged in (to preserve credits)
@@ -282,12 +293,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult);
+                const score = deriveFivePointScore(analysisResult as any);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
                   analysisId: record.id,
                   score,
+                  rawFinalScore: analysisResult.finalScore,
                 });
 
                 await updateFrankensteinValidation(frankensteinId, "kiroween", {
@@ -333,7 +345,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult);
+          const score = deriveFivePointScore(analysisResult as any);
+
+          console.log("Auto-updating Frankenstein with score:", {
+            frankensteinId,
+            score,
+            rawFinalScore: analysisResult.finalScore,
+          });
 
           await updateFrankensteinValidation(frankensteinId, "kiroween", {
             analysisId: "temp-" + Date.now(),
@@ -371,8 +389,91 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     savedId,
-    router,
+    savedRecordId,
+    refreshCredits,
   ]);
+
+  const handleSaveReport = useCallback(async () => {
+    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
+    if (!analysisToSave || !submission.description) return;
+
+    if (!session) {
+      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+
+    try {
+      const { data, error: saveError } = await saveHackathonAnalysis({
+        projectDescription: submission.description,
+        analysis: analysisToSave,
+        supportingMaterials: submission.supportingMaterials,
+        audioBase64: generatedAudio || undefined,
+      });
+
+      if (saveError || !data) {
+        console.error("Failed to save hackathon analysis", saveError);
+        setError(
+          saveError || "Failed to save your analysis. Please try again."
+        );
+        return;
+      }
+
+      setSavedAnalysisRecord(data);
+      setIsReportSaved(true);
+      setNewAnalysis(null);
+      setAddedSuggestions([]);
+      setGeneratedAudio(data.audioBase64 ?? null);
+
+      // If this came from a Frankenstein, update it with the validation
+      if (frankensteinId && sourceFromUrl === "frankenstein") {
+        try {
+          const { updateFrankensteinValidation } = await import(
+            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+          );
+          const { deriveFivePointScore } = await import(
+            "@/features/dashboard/api/scoreUtils"
+          );
+
+          // Use deriveFivePointScore to get the correct 0-5 score
+          const score = deriveFivePointScore(analysisToSave as any);
+
+          console.log("Updating Frankenstein with validation:", {
+            frankensteinId,
+            analysisId: data.id,
+            score,
+            rawFinalScore: analysisToSave.finalScore,
+          });
+
+          const result = await updateFrankensteinValidation(
+            frankensteinId,
+            "kiroween",
+            {
+              analysisId: data.id,
+              score,
+            }
+          );
+          console.log("Frankenstein update result:", result);
+        } catch (err) {
+          console.error("Failed to update Frankenstein with validation:", err);
+          // Don't show error to user, this is a background operation
+        }
+      } else {
+        console.log("Not updating Frankenstein:", {
+          frankensteinId,
+          sourceFromUrl,
+          hasId: !!frankensteinId,
+          isFromFrankenstein: sourceFromUrl === "frankenstein",
+        });
+      }
+
+      router.replace(
+        `/kiroween-analyzer?savedId=${encodeURIComponent(data.id)}&mode=view`
+      );
+    } catch (err) {
+      console.error("Error saving analysis:", err);
+      setError("Failed to save your analysis. Please try again.");
+    }
+  }, [generatedAudio, submission, newAnalysis, router, frankensteinId, sourceFromUrl, session]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
@@ -407,11 +508,23 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
   const handleRefineSuggestion = useCallback(
     (suggestionText: string, suggestionTitle: string, index: number) => {
+      const suggestionContent = `— ${suggestionTitle}: ${suggestionText}`;
       setSubmission((prev) => ({
         ...prev,
-        description: `${prev.description.trim()}\n\n— ${suggestionTitle}: ${suggestionText}`,
+        description: `${prev.description.trim()}\n\n${suggestionContent}`,
       }));
-      setAddedSuggestions((prev) => [...prev, index]);
+      setAddedSuggestions((prev) => {
+        const newSuggestions = [...prev, index];
+
+        // Track suggestion addition
+        trackIdeaEnhancement({
+          action: "add_suggestion",
+          analysisType: "kiroween",
+          suggestionLength: suggestionContent.length,
+        });
+
+        return newSuggestions;
+      });
       submissionFormRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "center",
