@@ -259,6 +259,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
 
+      // Track successful report generation
+      trackReportGeneration({
+        reportType: "kiroween",
+        ideaLength: submission.description.length,
+        userId: session?.user?.id,
+      });
+
       let newlySavedId: string | null = null;
 
       // Auto-save if user is logged in (to preserve credits)
@@ -286,12 +293,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult);
+                const score = deriveFivePointScore(analysisResult as any);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
                   analysisId: record.id,
                   score,
+                  rawFinalScore: analysisResult.finalScore,
                 });
 
                 await updateFrankensteinValidation(frankensteinId, "kiroween", {
@@ -337,32 +345,6 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult);
-
-          await updateFrankensteinValidation(frankensteinId, "kiroween", {
-            analysisId: "temp-" + Date.now(),
-            score,
-          });
-
-          setIsReportSaved(true);
-        } catch (err) {
-      // Track successful report generation
-      trackReportGeneration({
-        reportType: "kiroween",
-        ideaLength: submission.description.length,
-        userId: session?.user?.id,
-      });
-
-      // If this came from a Frankenstein, update it automatically with the score
-      if (frankensteinId && sourceFromUrl === "frankenstein") {
-        try {
-          const { updateFrankensteinValidation } = await import(
-            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
-          );
-          const { deriveFivePointScore } = await import(
-            "@/features/dashboard/api/scoreUtils"
-          );
-
           const score = deriveFivePointScore(analysisResult as any);
 
           console.log("Auto-updating Frankenstein with score:", {
@@ -372,21 +354,20 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           });
 
           await updateFrankensteinValidation(frankensteinId, "kiroween", {
-            analysisId: "temp-" + Date.now(), // Temporary ID since we're not saving the analysis
+            analysisId: "temp-" + Date.now(),
             score,
           });
 
-          setIsReportSaved(true); // Mark as "saved" to show success message
+          setIsReportSaved(true);
         } catch (err) {
           console.error("Failed to update Frankenstein with score:", err);
         }
       }
 
       // Only clean up URL if we had a savedId but didn't just create a new one
-          if (savedId && !newlySavedId) {
-            router.replace("/kiroween-analyzer");
-          }
-      const newlySavedId: string | null = null;
+      if (savedId && !newlySavedId) {
+        router.replace("/kiroween-analyzer");
+      }
     } catch (err) {
       console.error(err);
       setError(
@@ -845,11 +826,6 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               </div>
               <HackathonAnalysisDisplay
                 analysis={analysisToDisplay}
-                onSave={
-                  sourceFromUrl === "frankenstein"
-                    ? undefined
-                    : handleSaveReport
-                }
                 isSaved={isReportSaved}
                 savedAnalysisId={savedRecordId || undefined}
                 savedAudioBase64={generatedAudio}

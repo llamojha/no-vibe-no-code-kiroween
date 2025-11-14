@@ -1199,14 +1199,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             <button
               onClick={() => {
                 setMode("companies");
-<<<<<<< HEAD
-=======
                 // Track mode selection
                 trackFrankensteinInteraction({
                   action: "mode_select",
                   mode: "tech_companies",
                 });
->>>>>>> c9bda0f (feat(analytics): Implement comprehensive PostHog analytics integration)
               }}
               className={`px-6 py-3 rounded-lg font-bold transition-all ${
                 mode === "companies"

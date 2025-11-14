@@ -284,12 +284,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult);
+                const score = deriveFivePointScore(analysisResult as any);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
                   analysisId: record.id,
                   score,
+                  rawFinalScore: analysisResult.finalScore,
                 });
 
                 await updateFrankensteinValidation(frankensteinId, "analyzer", {
@@ -333,32 +334,6 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult);
-
-          await updateFrankensteinValidation(frankensteinId, "analyzer", {
-            analysisId: "temp-" + Date.now(),
-            score,
-          });
-
-          setIsReportSaved(true);
-        } catch (err) {
-      // Track successful report generation
-      trackReportGeneration({
-        reportType: "startup",
-        ideaLength: idea.length,
-        userId: session?.user?.id,
-      });
-
-      // If this came from a Frankenstein, update it automatically with the score
-      if (frankensteinId && sourceFromUrl === "frankenstein") {
-        try {
-          const { updateFrankensteinValidation } = await import(
-            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
-          );
-          const { deriveFivePointScore } = await import(
-            "@/features/dashboard/api/scoreUtils"
-          );
-
           const score = deriveFivePointScore(analysisResult as any);
 
           console.log("Auto-updating Frankenstein with score:", {
@@ -368,11 +343,11 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           });
 
           await updateFrankensteinValidation(frankensteinId, "analyzer", {
-            analysisId: "temp-" + Date.now(), // Temporary ID since we're not saving the analysis
+            analysisId: "temp-" + Date.now(),
             score,
           });
 
-          setIsReportSaved(true); // Mark as "saved" to show success message
+          setIsReportSaved(true);
         } catch (err) {
           console.error("Failed to update Frankenstein with score:", err);
         }
@@ -380,6 +355,9 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
       // Only clean up URL if we had a savedId but didn't just create a new one
       if (savedId && !newlySavedId) {
+        router.replace("/analyzer");
+      }
+    } catch (err) {
       console.error(err);
       setError(
         err instanceof Error
@@ -806,12 +784,10 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               </div>
               <AnalysisDisplay
                 analysis={analysisToDisplay}
-
-                onSave={
-                    : handleSaveReport
-                }
+                onSave={handleSaveReport}
                 isSaved={isReportSaved}
                 savedAudioBase64={generatedAudio}
+                onAudioGenerated={handleAudioGenerated}
                 onGoToDashboard={handleBack}
                 onRefineSuggestion={
                   showInputForm ? handleRefineSuggestion : undefined
