@@ -12,6 +12,7 @@ import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 
 interface AnalysisDisplayProps {
   analysis: Analysis;
+  onSave?: () => void;
   isSaved: boolean;
   savedAudioBase64?: string | null;
   onAudioGenerated?: (audio: string) => void;
@@ -168,6 +169,7 @@ const SWOTList: React.FC<{ title: string; items: string[]; color: string }> = ({
 
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
   analysis,
+  onSave,
   isSaved,
   savedAudioBase64,
   onAudioGenerated,
@@ -774,22 +776,55 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
         className="mt-8 flex flex-col sm:flex-row justify-end items-center gap-4 animate-slide-in-up"
         style={{ animationDelay: "650ms" }}
       >
-        {isLoggedIn && isSaved && (
-          <button
-            onClick={onGoToDashboard}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-primary/50 border border-slate-600 rounded-none hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+        {isLoggedIn &&
+          (isSaved ? (
+            <>
+              <span className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-green-400 bg-green-900/20 border border-green-700 rounded-none cursor-default">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{t("reportSavedMessage")}</span>
+              </span>
+              <button
+                onClick={onGoToDashboard}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-primary/50 border border-slate-600 rounded-none hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                </svg>
+                <span>{t("goToDashboardButton")}</span>
+              </button>
+            </>
+          ) : onSave ? (
+            <button
+              onClick={onSave}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-primary/50 border border-slate-600 rounded-none hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors"
             >
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-            </svg>
-            <span>{t("goToDashboardButton")}</span>
-          </button>
-        )}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V4zm3 1h4a1 1 0 000-2H8a1 1 0 000 2z" />
+              </svg>
+              <span>{t("saveReportButton")}</span>
+            </button>
+          ) : null)}
         <ExportControl analysis={analysis} />
       </div>
     </div>

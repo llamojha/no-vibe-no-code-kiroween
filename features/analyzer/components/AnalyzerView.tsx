@@ -30,6 +30,7 @@ import {
   trackAnalysisStarted,
   trackAnalysisSaved,
 } from "@/features/analytics/tracking";
+import { capture } from "@/features/analytics/posthogClient";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
 
@@ -250,6 +251,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setNewAnalysis(analysisResult);
       await refreshCredits();
 
+      // Track successful report generation
+      trackReportGeneration({
+        reportType: "startup",
+        ideaLength: idea.length,
+        userId: session?.user?.id,
+      });
+
       let newlySavedId: string | null = null;
 
       // Auto-save if user is logged in (to preserve credits)
@@ -390,8 +398,11 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     savedId,
     t,
     refreshCredits,
+    session,
+    isLocalDevMode,
     frankensteinId,
     sourceFromUrl,
+    router,
   ]);
 
   const handleSaveReport = useCallback(async () => {
