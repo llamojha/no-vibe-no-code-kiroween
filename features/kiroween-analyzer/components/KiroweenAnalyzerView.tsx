@@ -282,7 +282,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult as any);
+                const score = deriveFivePointScore(analysisResult);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
@@ -333,7 +333,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult as any);
+          const score = deriveFivePointScore(analysisResult);
 
           await updateFrankensteinValidation(frankensteinId, "kiroween", {
             analysisId: "temp-" + Date.now(),
@@ -450,7 +450,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               "@/features/dashboard/api/scoreUtils"
             );
 
-            const score = deriveFivePointScore(newAnalysis as any);
+            const score = deriveFivePointScore(newAnalysis);
 
             await updateFrankensteinValidation(frankensteinId, "kiroween", {
               analysisId: record.id,

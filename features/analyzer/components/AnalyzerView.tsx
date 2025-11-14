@@ -261,7 +261,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult as any);
+                const score = deriveFivePointScore(analysisResult);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
@@ -310,7 +310,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult as unknown);
+          const score = deriveFivePointScore(analysisResult);
 
           await updateFrankensteinValidation(frankensteinId, "analyzer", {
             analysisId: "temp-" + Date.now(),
@@ -425,7 +425,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               "@/features/dashboard/api/scoreUtils"
             );
 
-            const score = deriveFivePointScore(newAnalysis as any);
+            const score = deriveFivePointScore(newAnalysis);
 
             await updateFrankensteinValidation(frankensteinId, "analyzer", {
               analysisId: record.id,
