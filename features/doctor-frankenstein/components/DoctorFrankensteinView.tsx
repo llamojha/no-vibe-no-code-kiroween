@@ -21,7 +21,6 @@ import {
   loadFrankensteinIdea,
 } from "../api/saveFrankensteinIdea";
 import type { SavedFrankensteinIdea, TechItem, UserTier } from "@/lib/types";
-import SpookyLoader from "@/features/kiroween-analyzer/components/SpookyLoader";
 import { isEnabled } from "@/lib/featureFlags";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 import { getCreditBalance } from "@/features/shared/api";
@@ -29,6 +28,7 @@ import {
   trackFrankensteinInteraction,
   trackReportGeneration,
 } from "@/features/analytics/tracking";
+import LoadingOverlay from "@/features/shared/components/LoadingOverlay";
 
 interface DoctorFrankensteinViewProps {
   initialCredits: number;
@@ -680,19 +680,6 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     }
   }, [router, savedId, setCurrentState]);
 
-  if (isGenerating) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black flex items-center justify-center">
-        <SpookyLoader
-          message={
-            t("generatingFrankensteinIdea") ||
-            "Bringing your Frankenstein to life..."
-          }
-        />
-      </div>
-    );
-  }
-
   if (frankensteinIdea) {
     // Check if the report language matches current UI language
     const reportLanguage = frankensteinIdea.language || "en";
@@ -762,7 +749,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
           {isLoggedIn && (
             <div className="mb-6 max-w-xs ml-auto">
-              <CreditCounter credits={credits} tier={currentTier} />
+              <CreditCounter
+                credits={credits}
+                tier={currentTier}
+                userEmail={session?.user?.email}
+              />
             </div>
           )}
 
@@ -1189,7 +1180,11 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         {/* Credit Counter */}
         {isLoggedIn && (
           <div className="mb-8 max-w-2xl mx-auto">
-            <CreditCounter credits={credits} tier={currentTier} />
+            <CreditCounter
+              credits={credits}
+              tier={currentTier}
+              userEmail={session?.user?.email}
+            />
           </div>
         )}
 
@@ -1367,6 +1362,16 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
           )}
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      {isGenerating && (
+        <LoadingOverlay
+          message={
+            t("generatingFrankensteinIdea") ||
+            "Bringing your Frankenstein to life..."
+          }
+        />
+      )}
     </div>
   );
 };

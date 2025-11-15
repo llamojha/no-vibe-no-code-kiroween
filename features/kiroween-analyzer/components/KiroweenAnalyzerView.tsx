@@ -18,10 +18,10 @@ import {
 } from "@/features/kiroween-analyzer/api";
 import ProjectSubmissionForm from "./ProjectSubmissionForm";
 import HackathonAnalysisDisplay from "./HackathonAnalysisDisplay";
-import SpookyLoader from "./SpookyLoader";
 import SpookyErrorMessage from "./SpookyErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
+import LoadingOverlay from "@/features/shared/components/LoadingOverlay";
 import { getCreditBalance } from "@/features/shared/api";
 import {
   trackReportGeneration,
@@ -293,7 +293,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult as any);
+                const score = deriveFivePointScore(analysisResult);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
@@ -345,7 +345,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult as any);
+          const score = deriveFivePointScore(analysisResult);
 
           console.log("Auto-updating Frankenstein with score:", {
             frankensteinId,
@@ -389,8 +389,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     savedId,
-    savedRecordId,
-    refreshCredits,
+    router,
   ]);
 
   const handleSaveReport = useCallback(async () => {
@@ -435,7 +434,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           );
 
           // Use deriveFivePointScore to get the correct 0-5 score
-          const score = deriveFivePointScore(analysisToSave as any);
+          const score = deriveFivePointScore(analysisToSave);
 
           console.log("Updating Frankenstein with validation:", {
             frankensteinId,
@@ -473,7 +472,17 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       console.error("Error saving analysis:", err);
       setError("Failed to save your analysis. Please try again.");
     }
-  }, [generatedAudio, submission, newAnalysis, router, frankensteinId, sourceFromUrl, session]);
+  }, [
+    newAnalysis,
+    savedAnalysisRecord?.analysis,
+    submission.description,
+    submission.supportingMaterials,
+    session,
+    router,
+    generatedAudio,
+    frankensteinId,
+    sourceFromUrl,
+  ]);
 
   const handleAudioGenerated = useCallback(
     async (audioBase64: string) => {
@@ -720,7 +729,11 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         <main className="w-full">
           {/* Credit Counter */}
           <div className="mb-6">
-            <CreditCounter credits={credits} tier={currentTier} />
+            <CreditCounter
+              credits={credits}
+              tier={currentTier}
+              userEmail={session?.user?.email}
+            />
           </div>
 
           {showInputForm && (
@@ -783,18 +796,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               </div>
             </div>
           )}
-          {busy && (
-            <section
-              aria-labelledby="loading-heading"
-              aria-live="polite"
-              aria-busy="true"
-            >
-              <h2 id="loading-heading" className="sr-only">
-                {t("loading")}
-              </h2>
-              <SpookyLoader message={busyMessage} />
-            </section>
-          )}
+          {busy && <LoadingOverlay message={busyMessage} />}
           {analysisToDisplay && !busy && (
             <section
               className={showInputForm ? "mt-8" : ""}

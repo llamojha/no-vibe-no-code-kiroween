@@ -8,7 +8,6 @@ import {
   getCurrentUser,
   getSessionContext,
 } from "@/src/infrastructure/web/helpers/serverAuth";
-import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 import { generateMockUser } from "@/lib/mockData";
 import type { UserTier } from "@/lib/types";
 
@@ -22,15 +21,9 @@ export default async function KiroweenAnalyzerPage() {
     // In development mode, bypass authentication and tier checks
     const mockUser = generateMockUser();
     return (
-      <div className="relative">
-        <UserIdentityBadge
-          userEmail={mockUser.email}
-          className="absolute top-4 right-4 z-20"
-        />
-        <Suspense fallback={<Loader message="Loading Kiroween analyzer..." />}>
-          <KiroweenAnalyzerView initialCredits={3} userTier="free" />
-        </Suspense>
-      </div>
+      <Suspense fallback={<Loader message="Loading Kiroween analyzer..." />}>
+        <KiroweenAnalyzerView initialCredits={3} userTier="free" />
+      </Suspense>
     );
   }
 
@@ -64,15 +57,8 @@ export default async function KiroweenAnalyzerPage() {
   const tier: UserTier = sessionContext.tier ?? "free";
 
   return (
-    <div className="relative">
-      <UserIdentityBadge
-        userEmail={user?.email.value}
-        userName={user?.name}
-        className="absolute top-4 right-4 z-20"
-      />
-      <Suspense fallback={<Loader message="Loading Kiroween analyzer..." />}>
-        <KiroweenAnalyzerView initialCredits={credits} userTier={tier} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<Loader message="Loading Kiroween analyzer..." />}>
+      <KiroweenAnalyzerView initialCredits={credits} userTier={tier} />
+    </Suspense>
   );
 }

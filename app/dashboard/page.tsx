@@ -11,7 +11,6 @@ import { isEnabled } from "@/lib/featureFlags";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
 import { generateMockUser } from "@/lib/mockData";
 import type { UnifiedAnalysisRecord, UserTier } from "@/lib/types";
-import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -27,19 +26,14 @@ export default async function DashboardPage() {
     const mockCounts = { total: 0, idea: 0, kiroween: 0, frankenstein: 0 };
 
     return (
-      <div className="relative">
-        <UserIdentityBadge
-          userEmail={mockUser.email}
-          className="absolute top-4 right-4 z-20"
-        />
-        <UserDashboard
-          initialAnalyses={mockAnalyses}
-          initialCounts={mockCounts}
-          sessionUserId={mockUser.id}
-          initialCredits={3}
-          userTier="free"
-        />
-      </div>
+      <UserDashboard
+        initialAnalyses={mockAnalyses}
+        initialCounts={mockCounts}
+        sessionUserId={mockUser.id}
+        initialCredits={3}
+        userTier="free"
+        userEmail={mockUser.email}
+      />
     );
   }
 
@@ -80,19 +74,13 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="relative">
-      <UserIdentityBadge
-        userEmail={user?.email.value}
-        userName={user?.name}
-        className="absolute top-4 right-4 z-20"
-      />
-      <UserDashboard
-        initialAnalyses={initialAnalyses}
-        initialCounts={initialCounts}
-        sessionUserId={userId.value}
-        initialCredits={credits}
-        userTier={tier}
-      />
-    </div>
+    <UserDashboard
+      initialAnalyses={initialAnalyses}
+      initialCounts={initialCounts}
+      sessionUserId={userId.value}
+      initialCredits={credits}
+      userTier={tier}
+      userEmail={user?.email.value}
+    />
   );
 }

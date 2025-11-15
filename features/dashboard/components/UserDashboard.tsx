@@ -26,6 +26,7 @@ interface UserDashboardProps {
   sessionUserId: string;
   initialCredits: number;
   userTier: UserTier;
+  userEmail?: string;
 }
 
 const UserDashboard: React.FC<UserDashboardProps> = ({
@@ -34,6 +35,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   sessionUserId,
   initialCredits,
   userTier,
+  userEmail,
 }) => {
   const router = useRouter();
   const { t } = useLocale();
@@ -205,7 +207,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
       <main className="max-w-4xl mx-auto">
         {/* Credit Counter */}
         <div className="mb-8 animate-slide-in-up">
-          <CreditCounter credits={initialCredits} tier={userTier} />
+          <CreditCounter
+            credits={initialCredits}
+            tier={userTier}
+            userEmail={userEmail}
+          />
         </div>
 
         {(showClassicAnalyzer || showKiroweenAnalyzer) && (

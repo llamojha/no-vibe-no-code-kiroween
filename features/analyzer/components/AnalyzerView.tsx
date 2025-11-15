@@ -3,12 +3,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Analysis, SavedAnalysisRecord, UserTier } from "@/lib/types";
-import { mapSavedAnalysesRow } from "@/lib/supabase/mappers";
-import type {
-  SavedAnalysesInsert,
-  SavedAnalysesRow,
-  SavedAnalysesUpdate,
-} from "@/lib/supabase/types";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { requestAnalysis } from "@/features/analyzer/api/analyzeIdea";
@@ -20,9 +14,9 @@ import {
 } from "@/features/analyzer/api/saveAnalysis";
 import IdeaInputForm from "@/features/analyzer/components/IdeaInputForm";
 import AnalysisDisplay from "@/features/analyzer/components/AnalysisDisplay";
-import Loader from "@/features/analyzer/components/Loader";
 import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import LoadingOverlay from "@/features/shared/components/LoadingOverlay";
 import {
   trackReportGeneration,
   identifyUser,
@@ -284,7 +278,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
                   "@/features/dashboard/api/scoreUtils"
                 );
 
-                const score = deriveFivePointScore(analysisResult as any);
+                const score = deriveFivePointScore(analysisResult);
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
@@ -334,7 +328,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             "@/features/dashboard/api/scoreUtils"
           );
 
-          const score = deriveFivePointScore(analysisResult as any);
+          const score = deriveFivePointScore(analysisResult);
 
           console.log("Auto-updating Frankenstein with score:", {
             frankensteinId,
@@ -423,7 +417,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
         );
 
         // Use deriveFivePointScore to get the correct 0-5 score
-        const score = deriveFivePointScore(analysisToSave as any);
+        const score = deriveFivePointScore(analysisToSave);
 
         console.log("Updating Frankenstein with validation:", {
           frankensteinId,
@@ -446,13 +440,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
     );
   }, [
-    generatedAudio,
-    idea,
     newAnalysis,
-    router,
-    savedAnalysisRecord,
-    session,
+    savedAnalysisRecord?.analysis,
+    idea,
     isLocalDevMode,
+    session,
+    generatedAudio,
+    locale,
     frankensteinId,
     sourceFromUrl,
     router,
@@ -699,7 +693,11 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
         <main id="main-content" className="w-full">
           {/* Credit Counter */}
           <div className="mb-6">
-            <CreditCounter credits={credits} tier={userTier} />
+            <CreditCounter
+              credits={credits}
+              tier={userTier}
+              userEmail={session?.user?.email}
+            />
           </div>
 
           {showInputForm && (
@@ -754,11 +752,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               </div>
             </div>
           )}
-          {busy && (
-            <div role="status" aria-live="polite" aria-atomic="true">
-              <Loader message={busyMessage} />
-            </div>
-          )}
+          {busy && <LoadingOverlay message={busyMessage} />}
           {analysisToDisplay && !busy && (
             <div className={showInputForm ? "mt-8" : ""}>
               <div className="flex justify-end mb-4">

@@ -308,58 +308,39 @@ theme: {
 
 ### 9. User Identity Display
 
-**Files to Update**:
+**Files Updated**:
 
 - `app/dashboard/page.tsx`
 - `app/analyzer/page.tsx`
+- `app/kiroween-analyzer/page.tsx`
+- `app/doctor-frankenstein/page.tsx`
 
-**Component**: Create new `UserIdentityBadge` component
+**Component**: User identity display integrated into `CreditCounter`
 
-**File**: `features/auth/components/UserIdentityBadge.tsx`
+**File**: `features/shared/components/CreditCounter.tsx`
+
+**Implementation**: User email is now displayed within the CreditCounter component as an optional prop. This consolidates user-related information (credits + identity) in a single, cohesive UI element.
 
 ```typescript
-interface UserIdentityBadgeProps {
-  userEmail?: string;
-  userName?: string;
-  className?: string;
+interface CreditCounterProps {
+  credits: number;
+  tier: UserTier;
+  userEmail?: string; // Optional user email display
 }
-
-export const UserIdentityBadge: React.FC<UserIdentityBadgeProps> = ({
-  userEmail,
-  userName,
-  className = "",
-}) => {
-  const displayName = userName || userEmail || "User";
-
-  return (
-    <div
-      className={`flex items-center gap-2 px-4 py-2 bg-slate-900/80 border border-accent/30
-                     rounded-lg text-sm ${className}`}
-    >
-      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-      <span className="text-slate-400">Logged in as</span>
-      <span className="text-accent font-semibold">{displayName}</span>
-    </div>
-  );
-};
 ```
 
 **Integration**:
 
 ```typescript
-// In dashboard/page.tsx and analyzer/page.tsx
-import { UserIdentityBadge } from "@/features/auth/components/UserIdentityBadge";
-
-// Get user info
-const user = await getCurrentUser();
-
-// Pass to component
-<UserIdentityBadge
-  userEmail={user?.email}
-  userName={user?.displayName}
-  className="absolute top-4 right-4 z-20"
-/>;
+// In all analyzer and dashboard pages
+<CreditCounter credits={credits} tier={tier} userEmail={session?.user?.email} />
 ```
+
+**Display**: The user email appears below the credit count with subtle styling:
+
+- "Logged in as" text in muted purple
+- Email address in bold cyan for visibility
+- Truncates long emails with hover tooltip
 
 ## Data Models
 

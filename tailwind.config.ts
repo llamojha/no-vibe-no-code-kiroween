@@ -39,6 +39,7 @@ const config: Config = {
         "spooky-float": "spookyFloat 3s ease-in-out infinite",
         "ghost-hover": "ghostHover 2s ease-in-out infinite alternate",
         "pumpkin-glow": "pumpkinGlow 2s ease-in-out infinite alternate",
+        "color-shift": "colorShift 3s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -80,6 +81,13 @@ const config: Config = {
           "100%": {
             boxShadow: "0 0 10px #ff6b35, 0 0 20px #ff6b35, 0 0 30px #ff6b35",
           },
+        },
+        colorShift: {
+          "0%": { color: "#4ade80" }, // green-400
+          "25%": { color: "#60a5fa" }, // blue-400
+          "50%": { color: "#a78bfa" }, // purple-400
+          "75%": { color: "#fbbf24" }, // yellow-400
+          "100%": { color: "#4ade80" }, // green-400
         },
       },
     },
