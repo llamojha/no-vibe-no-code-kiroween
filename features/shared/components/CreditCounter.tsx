@@ -4,6 +4,7 @@ import { UserTier } from "@/lib/types";
 export interface CreditCounterProps {
   credits: number;
   tier: UserTier;
+  userEmail?: string;
 }
 
 /**
@@ -11,10 +12,12 @@ export interface CreditCounterProps {
  * Shows warning styling when credits are low (<=1)
  * Shows "out of credits" message when credits reach 0
  * All tiers (free, paid, admin) use credits
+ * Optionally displays logged-in user email
  */
 export const CreditCounter: React.FC<CreditCounterProps> = ({
   credits,
   tier,
+  userEmail,
 }) => {
   const showWarning = credits <= 1 && credits > 0;
   const isOutOfCredits = credits === 0;
@@ -70,7 +73,7 @@ export const CreditCounter: React.FC<CreditCounterProps> = ({
     <div className={containerClasses}>
       <div className="flex items-center gap-3 flex-1">
         <span className={iconClasses}>⚡</span>
-        <div className="flex flex-col">
+        <div className="flex flex-col flex-1">
           <div className="flex items-baseline gap-2">
             <span className={amountClasses} data-testid="credit-amount">
               {credits}
@@ -83,6 +86,16 @@ export const CreditCounter: React.FC<CreditCounterProps> = ({
               data-testid="credit-warning"
             >
               You're running low on credits!
+            </div>
+          )}
+          {userEmail && (
+            <div
+              className="text-xs mt-1 truncate"
+              data-testid="user-email"
+              title={userEmail}
+            >
+              <span className="text-purple-300/60">Logged in as </span>
+              <span className="text-cyan-400 font-semibold">{userEmail}</span>
             </div>
           )}
         </div>

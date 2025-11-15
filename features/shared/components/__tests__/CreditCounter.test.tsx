@@ -169,4 +169,51 @@ describe("CreditCounter", () => {
       expect(screen.getByTestId("credit-warning")).toBeInTheDocument();
     });
   });
+
+  describe("User Email Display", () => {
+    it("should display user email when provided", () => {
+      render(
+        <CreditCounter credits={5} tier="free" userEmail="user@example.com" />
+      );
+      expect(screen.getByTestId("user-email")).toBeInTheDocument();
+      expect(screen.getByTestId("user-email")).toHaveTextContent(
+        "Logged in as user@example.com"
+      );
+    });
+
+    it("should not display user email when not provided", () => {
+      render(<CreditCounter credits={5} tier="free" />);
+      expect(screen.queryByTestId("user-email")).not.toBeInTheDocument();
+    });
+
+    it("should display user email with warning state", () => {
+      render(
+        <CreditCounter credits={1} tier="free" userEmail="user@example.com" />
+      );
+      expect(screen.getByTestId("user-email")).toBeInTheDocument();
+      expect(screen.getByTestId("credit-warning")).toBeInTheDocument();
+    });
+
+    it("should display user email with out of credits state", () => {
+      render(
+        <CreditCounter credits={0} tier="free" userEmail="user@example.com" />
+      );
+      expect(screen.getByTestId("user-email")).toBeInTheDocument();
+      expect(screen.getByTestId("credit-empty")).toBeInTheDocument();
+    });
+
+    it("should truncate long email addresses", () => {
+      const { container } = render(
+        <CreditCounter
+          credits={5}
+          tier="free"
+          userEmail="verylongemailaddress@example.com"
+        />
+      );
+      const emailElement = container.querySelector(
+        '[data-testid="user-email"]'
+      );
+      expect(emailElement?.className).toContain("truncate");
+    });
+  });
 });

@@ -38,7 +38,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   return (
     <div
       className={`
-        relative h-32 w-full rounded-lg border-4 
+        relative h-32 w-full rounded-lg border-4
         ${isSpinning ? "border-orange-500 animate-pulse" : "border-purple-600"}
         bg-gradient-to-br from-purple-900/50 to-black/50
         flex items-center justify-center
@@ -60,7 +60,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           <p
             className={`
               text-lg font-bold
-              ${isSpinning ? "text-orange-400 animate-bounce" : "text-green-400"}
+              ${
+                isSpinning ? "text-orange-400 animate-bounce" : "text-green-400"
+              }
               transition-all duration-300
             `}
           >
@@ -99,34 +101,43 @@ export const FrankensteinSlotMachine: React.FC<
   FrankensteinSlotMachineProps
 > = ({ allItems, selectedItems, isSpinning, slotCount, itemsWithDetails }) => {
   const { t } = useLocale();
-  
+
   // Find details for a selected item
   const getItemDetails = (itemName: string): ItemWithDetails | undefined => {
-    return itemsWithDetails?.find(item => item.name === itemName);
+    return itemsWithDetails?.find((item) => item.name === itemName);
   };
 
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
         <h3 className="text-2xl font-bold text-orange-500 mb-2">
-          🧪 {t('frankensteinLaboratory') || 'Frankenstein Laboratory'} 🧪
+          🧪 {t("frankensteinLaboratory") || "Frankenstein Laboratory"} 🧪
         </h3>
         <p className="text-purple-300 text-sm">
           {isSpinning
-            ? `⚡ ${t('combiningTechnologies') || 'Combining technologies...'} ⚡`
+            ? `⚡ ${
+                t("combiningTechnologies") || "Combining technologies..."
+              } ⚡`
             : selectedItems.length > 0
-            ? `✨ ${t('combinationReady') || 'Combination ready!'} ✨`
-            : t('awaitingActivation') || 'Awaiting activation...'}
+            ? `✨ ${t("combinationReady") || "Combination ready!"} ✨`
+            : t("awaitingActivation") || "Awaiting activation..."}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div
+        className={`grid gap-4 ${
+          slotCount === 3
+            ? "grid-cols-1 sm:grid-cols-3"
+            : "grid-cols-1 md:grid-cols-2"
+        }`}
+      >
         {Array.from({ length: slotCount }).map((_, index) => {
           const selectedItem = selectedItems[index];
-          const itemDetails = selectedItem ? getItemDetails(selectedItem) : undefined;
+          const itemDetails = selectedItem
+            ? getItemDetails(selectedItem)
+            : undefined;
           const showDetails = !isSpinning && selectedItem && itemDetails;
 
-          
           if (showDetails && itemDetails) {
             const totalSlots = slotCount;
             const isFirst = index === 0;
@@ -154,14 +165,18 @@ export const FrankensteinSlotMachine: React.FC<
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(selectedItem)}`;
+                      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(
+                        selectedItem
+                      )}`;
                       window.open(searchUrl, "_blank", "noopener,noreferrer");
                     }}
                     className="absolute top-2 right-2 w-6 h-6 bg-purple-700/90 rounded-full flex items-center justify-center text-xs border border-orange-500/40 hover:bg-orange-500 hover:border-orange-400 hover:scale-110 transition-all z-10"
                     aria-label={`Learn more about ${selectedItem}`}
                     title={t("learnMoreTooltip") || "Learn more"}
                   >
-                    <span className="opacity-80 group-hover:opacity-100">🔗</span>
+                    <span className="opacity-80 group-hover:opacity-100">
+                      🔗
+                    </span>
                   </button>
 
                   {/* Content */}
@@ -174,7 +189,9 @@ export const FrankensteinSlotMachine: React.FC<
                   {/* Info indicator */}
                   {itemDetails.description && (
                     <div className="absolute bottom-1 right-1 w-4 h-4 bg-purple-700/90 rounded-full flex items-center justify-center text-[8px] border border-orange-500/40 group-hover:bg-orange-500 group-hover:border-orange-400 transition-all">
-                      <span className="opacity-80 group-hover:opacity-100">ℹ</span>
+                      <span className="opacity-80 group-hover:opacity-100">
+                        ℹ
+                      </span>
                     </div>
                   )}
 

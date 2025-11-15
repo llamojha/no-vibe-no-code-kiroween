@@ -95,6 +95,24 @@ body {
   }
 }
 
+@keyframes color-shift {
+  0% {
+    color: #4ade80; /* green-400 */
+  }
+  25% {
+    color: #60a5fa; /* blue-400 */
+  }
+  50% {
+    color: #a78bfa; /* purple-400 */
+  }
+  75% {
+    color: #fbbf24; /* yellow-400 */
+  }
+  100% {
+    color: #4ade80; /* green-400 */
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
 }
@@ -109,6 +127,10 @@ body {
 
 .animate-spooky-float {
   animation: spooky-float 4s ease-in-out infinite;
+}
+
+.animate-color-shift {
+  animation: color-shift 3s ease-in-out infinite;
 }
 
 /* High contrast mode support */

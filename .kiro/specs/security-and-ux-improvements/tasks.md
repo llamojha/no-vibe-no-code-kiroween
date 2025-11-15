@@ -85,12 +85,13 @@
 
 - [x] 11. Implement user identity display
 
-  - Create `UserIdentityBadge` component in `features/auth/components/`
-  - Add component to dashboard page with user information
-  - Add component to analyzer page with user information
-  - Fetch user data using `getCurrentUser()` helper
-  - Style component with consistent positioning
+  - ~~Create `UserIdentityBadge` component~~ (Deprecated - integrated into CreditCounter)
+  - Add `userEmail` prop to `CreditCounter` component
+  - Update all analyzer pages to pass user email to CreditCounter
+  - Update dashboard page to pass user email to CreditCounter
+  - Style email display with bold cyan color for visibility
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - _Note: User identity is now displayed within the CreditCounter component for better UX consolidation_
 
 - [ ] 12. Add comprehensive tests
 - [ ] 12.1 Write unit tests for AuthenticationService changes
@@ -121,9 +122,12 @@
   - Test performance improvement
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 12.5 Write component tests
+- [x] 12.5 Write component tests
 
-  - Test `UserIdentityBadge` renders correctly
+  - ~~Test `UserIdentityBadge`~~ (Component removed - functionality integrated into CreditCounter)
+  - Test `CreditCounter` with `userEmail` prop renders correctly
+  - Test email display shows/hides based on prop presence
+  - Test email truncation for long addresses
   - Test login button interactions
   - Test form validation without deprecated fields
   - _Requirements: 1.5, 6.2, 7.3_
