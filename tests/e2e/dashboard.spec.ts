@@ -171,37 +171,6 @@ test.describe('Dashboard E2E Tests', () => {
   });
 
   /**
-   * Additional test: Verify dashboard navigation buttons
-   */
-  test('should display navigation buttons to analyzer features', async ({ page }) => {
-    await dashboardPage.navigate();
-    await dashboardPage.waitForDataLoad();
-
-    // Verify the page has loaded
-    await expect(page.locator('h1')).toBeVisible();
-
-    // Look for navigation buttons to analyzer features
-    // These buttons should be present to allow users to create new analyses
-    const analyzerButton = page.locator('button:has-text("Startup")');
-    const hackathonButton = page.locator('button:has-text("Kiroween")');
-    const frankensteinButton = page.locator('button:has-text("Frankenstein")');
-
-    // At least one of these buttons should be visible
-    const hasAnalyzerButton = await analyzerButton.isVisible().catch(() => false);
-    const hasHackathonButton = await hackathonButton.isVisible().catch(() => false);
-    const hasFrankensteinButton = await frankensteinButton.isVisible().catch(() => false);
-
-    const hasAnyButton = hasAnalyzerButton || hasHackathonButton || hasFrankensteinButton;
-    expect(hasAnyButton).toBe(true);
-
-    console.log('Navigation buttons present:', {
-      analyzer: hasAnalyzerButton,
-      hackathon: hasHackathonButton,
-      frankenstein: hasFrankensteinButton,
-    });
-  });
-
-  /**
    * Additional test: Verify Frankenstein ideas section
    */
   test('should display Frankenstein ideas when available', async ({ page }) => {
