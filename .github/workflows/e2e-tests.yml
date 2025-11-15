@@ -76,16 +76,6 @@ jobs:
         if: steps.changes.outputs.code_changed == 'true'
         run: npm ci
 
-      - name: Cache Next.js build
-        if: steps.changes.outputs.code_changed == 'true'
-        uses: actions/cache@v4
-        with:
-          path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-            nextjs-${{ runner.os }}-
-
       - name: Cache Playwright browsers
         if: steps.changes.outputs.code_changed == 'true'
         uses: actions/cache@v4
@@ -98,27 +88,14 @@ jobs:
         if: steps.changes.outputs.code_changed == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Build application
-        if: steps.changes.outputs.code_changed == 'true'
-        run: npm run build
-        env:
-          # Build with mock mode enabled for testing
-          FF_USE_MOCK_API: true
-          NEXT_PUBLIC_FF_USE_MOCK_API: true
-          FF_MOCK_SCENARIO: success
-          FF_SIMULATE_LATENCY: false
-          # Disable Supabase for build (not needed for E2E with mocks)
-          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
-
-      - name: Start application
+      - name: Start application in dev mode
         if: steps.changes.outputs.code_changed == 'true'
         run: |
           echo "=== Starting Application with Mock Mode ==="
           echo "Setting environment variables..."
 
-          # Start application in background and capture logs
-          npm run start > server.log 2>&1 &
+          # Start application in dev mode (no build needed, env vars work at runtime)
+          npm run dev > server.log 2>&1 &
           APP_PID=$!
           echo $APP_PID > .app-pid
 
