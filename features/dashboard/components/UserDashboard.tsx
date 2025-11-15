@@ -219,6 +219,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {showClassicAnalyzer && (
                 <button
+                  data-testid="dashboard-cta-startup"
                   onClick={() => router.push("/analyzer")}
                   className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
                 >
@@ -227,6 +228,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               )}
               {showKiroweenAnalyzer && (
                 <button
+                  data-testid="dashboard-cta-kiroween"
                   onClick={() => router.push("/kiroween-analyzer")}
                   className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
                 >
@@ -234,6 +236,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                 </button>
               )}
               <button
+                data-testid="dashboard-cta-frankenstein"
                 onClick={() => router.push("/doctor-frankenstein")}
                 className="px-8 py-4 bg-purple-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-purple-500/30 hover:bg-purple-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
               >

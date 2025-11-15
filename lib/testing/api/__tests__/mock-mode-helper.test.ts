@@ -16,7 +16,11 @@ describe('MockModeHelper', () => {
   beforeEach(() => {
     // Reset environment before each test
     Object.keys(process.env).forEach(key => {
-      if (key.startsWith('FF_') || key === 'NODE_ENV') {
+      if (
+        key.startsWith('FF_') ||
+        key === 'NODE_ENV' ||
+        key === 'ALLOW_TEST_MODE_IN_PRODUCTION'
+      ) {
         delete process.env[key];
       }
     });
@@ -31,7 +35,11 @@ describe('MockModeHelper', () => {
   afterEach(() => {
     // Restore original environment
     Object.keys(process.env).forEach(key => {
-      if (key.startsWith('FF_') || key === 'NODE_ENV') {
+      if (
+        key.startsWith('FF_') ||
+        key === 'NODE_ENV' ||
+        key === 'ALLOW_TEST_MODE_IN_PRODUCTION'
+      ) {
         delete process.env[key];
       }
     });
@@ -145,11 +153,23 @@ describe('MockModeHelper', () => {
     it('should return error for mock mode in production', () => {
       process.env.FF_USE_MOCK_API = 'true';
       (process.env as Record<string, string>).NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
       
       const validation = MockModeHelper.validateEnvironment();
       
       expect(validation.isValid).toBe(false);
       expect(validation.errors).toContain('Mock mode cannot be enabled in production');
+    });
+
+    it('should allow production mock mode when override is enabled', () => {
+      process.env.FF_USE_MOCK_API = 'true';
+      (process.env as Record<string, string>).NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      const validation = MockModeHelper.validateEnvironment();
+
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
     });
 
     it('should return warning for invalid scenario', () => {
@@ -188,6 +208,7 @@ describe('MockModeHelper', () => {
       // Set up invalid configuration (mock mode in production)
       process.env.FF_USE_MOCK_API = 'true';
       (process.env as Record<string, string>).NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
       
       expect(() => {
         MockModeHelper.createServiceFactory();
@@ -197,6 +218,7 @@ describe('MockModeHelper', () => {
     it('should throw error with correct error code', () => {
       process.env.FF_USE_MOCK_API = 'true';
       (process.env as Record<string, string>).NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
       
       try {
         MockModeHelper.createServiceFactory();
@@ -210,6 +232,7 @@ describe('MockModeHelper', () => {
     it('should include error details in thrown error', () => {
       process.env.FF_USE_MOCK_API = 'true';
       (process.env as Record<string, string>).NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
       
       try {
         MockModeHelper.createServiceFactory();
@@ -220,6 +243,16 @@ describe('MockModeHelper', () => {
         expect(configError.details).toBeDefined();
         expect(configError.details?.errors).toBeDefined();
       }
+    });
+
+    it('should allow service factory creation when override flag is set', () => {
+      process.env.FF_USE_MOCK_API = 'true';
+      (process.env as Record<string, string>).NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      expect(() => {
+        MockModeHelper.createServiceFactory();
+      }).not.toThrow();
     });
   });
 });

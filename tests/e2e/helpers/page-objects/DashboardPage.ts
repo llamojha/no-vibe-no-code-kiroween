@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 /**
  * Page Object Model for Dashboard feature
@@ -15,7 +15,7 @@ export class DashboardPage {
 
   constructor(page: Page) {
     this.page = page;
-    
+
     // Define locators for dashboard page elements
     this.analysesList = page.locator('[data-testid="analyses-list"]');
     this.emptyStateMessage = page.locator('[data-testid="empty-state"]');
@@ -26,39 +26,48 @@ export class DashboardPage {
   }
 
   async navigate(): Promise<void> {
-    await this.page.goto('/dashboard');
-    await this.page.waitForLoadState('networkidle');
+    // Use commit navigation strategy for better performance with slow pages
+    await this.page.goto("/dashboard", {
+      waitUntil: "commit",
+      timeout: 90000,
+    });
+    // Wait for page content to be ready
+    await this.page.waitForTimeout(2000);
   }
 
   async waitForDataLoad(): Promise<void> {
     // Wait for either analyses list or empty state to appear
     try {
       await Promise.race([
-        this.analysesList.waitFor({ state: 'visible', timeout: 10000 }),
-        this.emptyStateMessage.waitFor({ state: 'visible', timeout: 10000 }),
+        this.analysesList.waitFor({ state: "visible", timeout: 10000 }),
+        this.emptyStateMessage.waitFor({ state: "visible", timeout: 10000 }),
       ]);
     } catch {
       // If neither appears, the page might still be loading
-      await this.page.waitForLoadState('networkidle');
+      await this.page.waitForLoadState("networkidle");
     }
   }
 
   async waitForLoadingToComplete(): Promise<void> {
     // Wait for loading spinner to appear (if it does)
     try {
-      await this.loadingSpinner.waitFor({ state: 'visible', timeout: 1000 });
+      await this.loadingSpinner.waitFor({ state: "visible", timeout: 1000 });
       // Then wait for it to disappear
-      await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 30000 });
+      await this.loadingSpinner.waitFor({ state: "hidden", timeout: 30000 });
     } catch {
       // Loading spinner might not appear for fast operations
     }
   }
 
-  private analysisItems(category?: 'idea' | 'kiroween' | 'frankenstein'): Locator {
+  private analysisItems(
+    category?: "idea" | "kiroween" | "frankenstein"
+  ): Locator {
     if (!category) {
       return this.analysesList.locator('[data-testid="analysis-item"]');
     }
-    return this.analysesList.locator(`[data-testid="analysis-item"][data-analysis-category="${category}"]`);
+    return this.analysesList.locator(
+      `[data-testid="analysis-item"][data-analysis-category="${category}"]`
+    );
   }
 
   async getAnalysesCount(): Promise<number> {
@@ -72,7 +81,7 @@ export class DashboardPage {
 
   async getHackathonProjectsCount(): Promise<number> {
     try {
-      const items = await this.analysisItems('kiroween').count();
+      const items = await this.analysisItems("kiroween").count();
       return items;
     } catch {
       return 0;
@@ -81,7 +90,7 @@ export class DashboardPage {
 
   async getFrankensteinIdeasCount(): Promise<number> {
     try {
-      const items = await this.analysisItems('frankenstein').count();
+      const items = await this.analysisItems("frankenstein").count();
       return items;
     } catch {
       return 0;
@@ -93,11 +102,11 @@ export class DashboardPage {
   }
 
   async clickHackathonProject(index: number): Promise<void> {
-    await this.analysisItems('kiroween').nth(index).click();
+    await this.analysisItems("kiroween").nth(index).click();
   }
 
   async clickFrankensteinIdea(index: number): Promise<void> {
-    await this.analysisItems('frankenstein').nth(index).click();
+    await this.analysisItems("frankenstein").nth(index).click();
   }
 
   async isEmptyStateVisible(): Promise<boolean> {
@@ -117,20 +126,24 @@ export class DashboardPage {
   }
 
   async getErrorMessage(): Promise<string> {
-    return await this.errorMessage.textContent() || '';
+    return (await this.errorMessage.textContent()) || "";
   }
 
   async getUserGreeting(): Promise<string> {
-    return await this.userGreeting.textContent() || '';
+    return (await this.userGreeting.textContent()) || "";
   }
 
   async getAnalysisTitle(index: number): Promise<string> {
     const item = this.analysisItems().nth(index);
-    return await item.locator('[data-testid="analysis-title"]').textContent() || '';
+    return (
+      (await item.locator('[data-testid="analysis-title"]').textContent()) || ""
+    );
   }
 
   async getAnalysisScore(index: number): Promise<string> {
     const item = this.analysisItems().nth(index);
-    return await item.locator('[data-testid="analysis-score"]').textContent() || '';
+    return (
+      (await item.locator('[data-testid="analysis-score"]').textContent()) || ""
+    );
   }
 }

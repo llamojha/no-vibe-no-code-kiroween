@@ -14,6 +14,7 @@ GET /api/test/mock-status
 
 - **Production Protection**: Returns 403 Forbidden in production environments
 - **Test/Development Only**: Only accessible when `NODE_ENV` is not `production`
+- **CI Override**: Set `ALLOW_TEST_MODE_IN_PRODUCTION=true` to explicitly allow this endpoint (and mock mode) when running production builds in CI. Do not enable this flag in real production deployments.
 
 ## Response Format
 

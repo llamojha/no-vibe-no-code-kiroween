@@ -10,14 +10,17 @@ import {
 } from "@/src/infrastructure/web/helpers/serverAuth";
 import { generateMockUser } from "@/lib/mockData";
 import type { UserTier } from "@/lib/types";
+import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnalyzerPage() {
-  // In development mode, bypass authentication and tier checks
   const isDevelopment = process.env.NODE_ENV === "development";
+  const isMockMode =
+    resolveMockModeFlag(process.env.FF_USE_MOCK_API) ||
+    resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
 
-  if (isDevelopment) {
+  if (isDevelopment || isMockMode) {
     // In development mode, bypass authentication and tier checks
     const mockUser = generateMockUser();
     return (

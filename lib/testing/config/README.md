@@ -70,6 +70,7 @@ The module validates the following environment variables:
 - `FF_MOCK_SCENARIO`: Mock scenario to use (default: `'success'`)
 - `FF_SIMULATE_LATENCY`: Enable/disable latency simulation (`'true'` or `'false'`)
 - `NODE_ENV`: Node environment (`'development'`, `'test'`, `'production'`)
+- `ALLOW_TEST_MODE_IN_PRODUCTION`: Optional override (`'true'`) to allow mock mode when running production builds in CI
 
 ## Valid Scenarios
 
@@ -82,7 +83,7 @@ The module validates the following environment variables:
 
 ## Validation Rules
 
-1. Mock mode cannot be enabled in production (`NODE_ENV === 'production'`)
+1. Mock mode cannot be enabled in production (`NODE_ENV === 'production'`) unless `ALLOW_TEST_MODE_IN_PRODUCTION=true`
 2. Scenario must be one of the valid scenarios
 3. All environment variables must be properly formatted
 

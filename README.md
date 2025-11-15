@@ -22,6 +22,7 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 ### Documentation
 
 **Architecture & Development:**
+
 - **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
 - **[API Documentation](docs/API.md)**: Complete API reference
@@ -33,6 +34,7 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
 
 **Testing & Mocks:**
+
 - **[Sistema de Mocks](docs/SISTEMA_MOCKS_DOCUMENTACION.md)**: 🧪 Documentación completa del sistema de mocks para desarrollo sin costos de API
 - **[Guía de Ejecución de Tests](docs/GUIA_EJECUCION_TESTS.md)**: 📝 Paso a paso para ejecutar tests de integración y E2E
 - **[Mock Mode Guide](tests/MOCK_MODE_GUIDE.md)**: Technical guide for mock mode
@@ -311,20 +313,23 @@ npm run validate:mocks
 ### Adding New Mock Responses
 
 1. Add your mock response to the appropriate JSON file in `lib/testing/data/`:
+
    - `analyzer-mocks.json` - For analyzer responses
    - `hackathon-mocks.json` - For hackathon analyzer responses
    - `frankenstein-mocks.json` - For Doctor Frankenstein responses
 
 2. Validate the mock response:
+
    ```bash
    npm run validate:mocks
    ```
 
 3. Test the mock response:
+
    ```bash
    # Set the scenario in .env.local
    FF_MOCK_SCENARIO=your_scenario
-   
+
    # Restart dev server
    npm run dev
    ```
@@ -335,25 +340,25 @@ See the [Developer Guide](lib/testing/DEVELOPER_GUIDE.md) for detailed instructi
 
 #### Mock Mode Configuration
 
-| Variable | Description | Default | Values |
-|----------|-------------|---------|--------|
-| `FF_USE_MOCK_API` | Enable/disable mock mode | `false` | `true`, `false` |
-| `FF_MOCK_SCENARIO` | Default mock scenario | `success` | `success`, `api_error`, `timeout`, `rate_limit`, `invalid_input` |
-| `FF_MOCK_VARIABILITY` | Enable random response variants | `false` | `true`, `false` |
-| `FF_SIMULATE_LATENCY` | Simulate network latency | `false` | `true`, `false` |
-| `FF_MIN_LATENCY` | Minimum latency in ms | `500` | Any number |
-| `FF_MAX_LATENCY` | Maximum latency in ms | `2000` | Any number |
-| `FF_LOG_MOCK_REQUESTS` | Log all mock requests | `false` | `true`, `false` |
+| Variable               | Description                     | Default   | Values                                                           |
+| ---------------------- | ------------------------------- | --------- | ---------------------------------------------------------------- |
+| `FF_USE_MOCK_API`      | Enable/disable mock mode        | `false`   | `true`, `false`                                                  |
+| `FF_MOCK_SCENARIO`     | Default mock scenario           | `success` | `success`, `api_error`, `timeout`, `rate_limit`, `invalid_input` |
+| `FF_MOCK_VARIABILITY`  | Enable random response variants | `false`   | `true`, `false`                                                  |
+| `FF_SIMULATE_LATENCY`  | Simulate network latency        | `false`   | `true`, `false`                                                  |
+| `FF_MIN_LATENCY`       | Minimum latency in ms           | `500`     | Any number                                                       |
+| `FF_MAX_LATENCY`       | Maximum latency in ms           | `2000`    | Any number                                                       |
+| `FF_LOG_MOCK_REQUESTS` | Log all mock requests           | `false`   | `true`, `false`                                                  |
 
 #### E2E Testing Configuration
 
-| Variable | Description | Default | Values |
-|----------|-------------|---------|--------|
-| `E2E_BASE_URL` | Base URL for E2E tests | `http://localhost:3000` | Any URL |
-| `E2E_HEADLESS` | Run tests in headless mode | `true` | `true`, `false` |
-| `E2E_TIMEOUT` | Test timeout in ms | `30000` | Any number |
-| `E2E_SCREENSHOT_ON_FAILURE` | Capture screenshots on failure | `true` | `true`, `false` |
-| `E2E_VIDEO_ON_FAILURE` | Record video on failure | `false` | `true`, `false` |
+| Variable                    | Description                    | Default                 | Values          |
+| --------------------------- | ------------------------------ | ----------------------- | --------------- |
+| `E2E_BASE_URL`              | Base URL for E2E tests         | `http://localhost:3000` | Any URL         |
+| `E2E_HEADLESS`              | Run tests in headless mode     | `true`                  | `true`, `false` |
+| `E2E_TIMEOUT`               | Test timeout in ms             | `30000`                 | Any number      |
+| `E2E_SCREENSHOT_ON_FAILURE` | Capture screenshots on failure | `true`                  | `true`, `false` |
+| `E2E_VIDEO_ON_FAILURE`      | Record video on failure        | `false`                 | `true`, `false` |
 
 ### Troubleshooting
 
@@ -365,3 +370,109 @@ Common issues:
 - **E2E tests failing**: Ensure dev server is running and increase timeout if needed
 - **Slow test execution**: Disable latency simulation with `FF_SIMULATE_LATENCY=false`
 - **Schema validation errors**: Run `npm run validate:mocks` and fix reported issues
+
+## CI/CD Pipeline
+
+The project includes a comprehensive automated quality gate for all pull requests, ensuring code quality, test coverage, and accessibility compliance before merging.
+
+### Automated Quality Checks
+
+Every pull request automatically runs the following checks in parallel:
+
+#### 🔍 Code Quality (ESLint)
+
+- Lints all TypeScript and JavaScript files
+- **Blocks merge** if errors are found
+- Reports warnings without blocking
+- Execution time: ~1-2 minutes
+
+#### 🧪 Unit Tests (Vitest)
+
+- Runs all unit tests with coverage reporting
+- **Blocks merge** if any tests fail
+- Requires 70% code coverage (warning if below)
+- Execution time: ~3-5 minutes
+
+#### 🎭 E2E Tests (Playwright)
+
+- Runs end-to-end tests across key user flows
+- **Blocks merge** if any tests fail
+- Captures screenshots/videos on failure
+- Skips when only documentation changes
+- Execution time: ~8-12 minutes
+
+#### ♿ Accessibility (Lighthouse)
+
+- Audits accessibility, best practices, and SEO
+- **Blocks merge** if accessibility score < 90
+- Tests home, analyzer, dashboard, and login pages
+- Skips when only test files change
+- Execution time: ~5-7 minutes
+
+### Workflow Status Badges
+
+![Lint](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/lint.yml/badge.svg)
+![Unit Tests](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/unit-tests.yml/badge.svg)
+![E2E Tests](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/e2e-tests.yml/badge.svg)
+![Lighthouse](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/lighthouse.yml/badge.svg)
+
+### Unified PR Reporting
+
+All check results are automatically posted as a single unified comment on your pull request, including:
+
+- ✅/❌ Status for each check type
+- 📊 Code coverage percentage
+- ♿ Accessibility scores for each page
+- ⏱️ Workflow execution times
+- 🔧 Actionable recommendations for failures
+- 📦 Links to detailed reports and artifacts
+
+### Running Checks Locally
+
+Before pushing your changes, run these checks locally to catch issues early:
+
+```bash
+# Run all checks
+npm run lint              # ESLint code quality
+npm run test:coverage     # Unit tests with coverage
+npm run test:e2e          # E2E tests (requires built app)
+
+# Run E2E tests with built app
+npm run build
+npm start &
+npm run test:e2e
+
+# Run Lighthouse audits
+npm run build
+npm start &
+npx lhci autorun
+```
+
+### Performance Optimizations
+
+The CI/CD pipeline is optimized for speed:
+
+- **Parallel Execution**: All checks run simultaneously
+- **Smart Caching**: Dependencies and builds are cached
+- **Conditional Execution**: Skips unnecessary checks based on changed files
+- **Total Time**: ~8-12 minutes for typical PRs (vs. 30-40 minutes sequential)
+
+### CI/CD Documentation
+
+For detailed information about workflows, troubleshooting, and maintenance:
+
+- **[Workflow Documentation](.github/workflows/README.md)**: Complete workflow reference
+- **[CI/CD Completion Summary](.kiro/specs/ci-cd-enhancement/COMPLETION_SUMMARY.md)**: Implementation details and metrics
+- **[Lighthouse Configuration](.lighthouserc.json)**: Accessibility audit settings
+
+### Troubleshooting CI Issues
+
+Common CI/CD issues and solutions:
+
+- **Lint failures**: Run `npm run lint` locally and fix errors before pushing
+- **Test failures**: Run `npm run test:coverage` locally to debug failing tests
+- **E2E failures**: Check screenshots in workflow artifacts for visual debugging
+- **Lighthouse failures**: Review HTML reports in artifacts for specific WCAG violations
+- **Slow workflows**: Check duration metrics in PR comment; investigate if > 15 minutes
+
+For more troubleshooting guidance, see the [Workflow Documentation](.github/workflows/README.md#troubleshooting).

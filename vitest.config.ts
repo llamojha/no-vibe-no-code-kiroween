@@ -15,15 +15,19 @@ export default defineConfig({
     exclude: ["node_modules", "dist", ".next", "tests/e2e"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "json-summary"],
       exclude: [
         "node_modules/",
+        ".next/",
+        "dist/",
         "src/**/*.d.ts",
         "src/**/*.config.*",
         "src/**/*.test.*",
         "src/**/*.spec.*",
         "src/**/test-runner.ts",
       ],
+      all: false,
+      skipFull: false,
     },
   },
   resolve: {

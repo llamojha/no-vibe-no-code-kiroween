@@ -4,6 +4,16 @@
 import { registerFlags, defineBooleanFlag } from "./featureFlags";
 import { resolveMockModeFlag } from "./testing/config/mock-mode-flags";
 
+const TRUTHY = new Set(["1", "true", "yes", "on", "y", "t"]);
+
+function resolveBooleanEnvFlag(value?: string | null): boolean | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (TRUTHY.has(normalized)) return true;
+  if (["0", "false", "no", "off", "n", "f"].includes(normalized)) return false;
+  return undefined;
+}
+
 export function initFeatureFlags() {
   registerFlags({
     ENABLE_CLASSIC_ANALYZER: defineBooleanFlag({
@@ -22,7 +32,10 @@ export function initFeatureFlags() {
       key: "LOCAL_DEV_MODE",
       description:
         "Local development mode (derives from NODE_ENV === 'development')",
-      default: (process.env.NODE_ENV || "development") === "development",
+      default:
+        resolveBooleanEnvFlag(process.env.FF_LOCAL_DEV_MODE) ??
+        resolveBooleanEnvFlag(process.env.NEXT_PUBLIC_FF_LOCAL_DEV_MODE) ??
+        (process.env.NODE_ENV || "development") === "development",
       exposeToClient: false,
     }),
     ENABLE_SHARE_LINKS: defineBooleanFlag({
