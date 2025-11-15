@@ -282,4 +282,29 @@ test.describe('Doctor Frankenstein E2E Tests', () => {
     // Verify results are displayed (animation completed successfully)
     await expect(page.locator('text=Idea Description')).toBeVisible();
   });
+
+  /**
+   * Test 12.5: Error handling
+   * Forces an API error scenario to ensure the error banner is rendered
+   */
+  test('should surface API errors gracefully', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('FF_MOCK_SCENARIO', 'api_error');
+    });
+
+    await frankensteinPage.navigate();
+    await frankensteinPage.selectMode('companies');
+    await frankensteinPage.selectLanguage(TEST_LOCALES.english);
+
+    await page.locator('button:has-text("Create Frankenstein")').click();
+    await page.waitForTimeout(3500);
+    await expect(page.locator('button:has-text("Accept & Generate Idea")')).toBeVisible({ timeout: 5000 });
+    await page.locator('button:has-text("Accept & Generate Idea")').click();
+
+    const errorBanner = page.locator('.bg-red-900').first();
+    await expect(errorBanner).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.locator('h1').filter({ hasText: /Doctor Frankenstein/ })
+    ).toBeVisible();
+  });
 });

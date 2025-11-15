@@ -7,16 +7,14 @@
 - Post-run steps always generate human-readable coverage (`npm run test:e2e:coverage-report`), upload artifacts/results/coverage, produce a PR summary comment, and gate the job with a final JSON review to ensure failures fail the workflow.
 
 ## Suite Coverage Snapshot
+- `tests/e2e/analyzer.spec.ts` – Startup Analyzer happy path, section verification, mock error scenarios, latency/loading checks, and multi-language assertions.
 - `tests/e2e/hackathon.spec.ts` – Kiroween Analyzer flows for multiple project fixtures, category recommendations, mock failure scenarios (`api_error`, `timeout`, `rate_limit`), loading-state, and locale toggles.
-- `tests/e2e/frankenstein.spec.ts` – Doctor Frankenstein (companies + AWS modes), localization, animation gating, and error visibility.
-- `tests/e2e/dashboard.spec.ts` – Dashboard load, empty states, saved-analysis viewing, navigation buttons, and Frankenstein cards seeded via localStorage.
+- `tests/e2e/frankenstein.spec.ts` – Doctor Frankenstein (companies + AWS modes), localization, animation gating, and explicit API-error handling.
+- `tests/e2e/dashboard.spec.ts` – Dashboard load, empty states, navigation CTAs for Analyzer/Kiroween/Frankenstein, saved-analysis viewing, and Frankenstein cards seeded via localStorage.
 - `tests/e2e/setup.spec.ts` – Smoke verifications (home page load, viewport config, console logging) to catch catastrophic regressions quickly.
 - `tests/e2e/global-setup.ts` / `tests/e2e/setup/mock-mode-setup.ts` – Pre-flight directories + mock-mode enforcement; `tests/e2e/global-teardown.ts` merges Playwright coverage for reporting.
 
 ## Gaps & Issues
-- `tests/e2e/examples/example-test.spec.ts` is an instructional file but still matches `testMatch`. It references non-existent fixtures such as `TEST_IDEAS.VALID_STARTUP_IDEA` / `ANOTHER_IDEA`, so TypeScript or runtime errors will occur if the spec executes. Fix the fixtures or exclude the `examples/` directory from Playwright runs.
-- Analyzer E2E coverage is temporarily removed (file deleted) because the current mock-mode workflow still runs the full Supabase bootstrap, and we do not want to store real Supabase keys in GitHub secrets yet. Once we can safely provide those credentials (or make the database check optional), reintroduce the analyzer suite to regain UI coverage for that flow.
-- Dashboard navigation-button checks were dropped for now because the mocked dashboard doesn’t surface the CTA buttons in CI (feature-flag logic depends on real Supabase data). When Supabase credentials are available—or once the feature flag evaluation can be forced in mock mode—restore a CTA presence test.
 - Workflow triggers omit any non `main/develop` branches (e.g., release branches). If those need the same guardrail, extend the trigger list.
 - The “Generate coverage reports” step is marked `continue-on-error`. Coverage report failures currently don’t fail CI; ensure that’s intentional.
 
@@ -28,14 +26,11 @@
 - Store artifacts (screens, traces, reports) under `tests/e2e/artifacts`/`reports` to get them automatically uploaded by the workflow when failures happen.
 
 ## Improvements & Next Steps
-1. **Fix or exclude the example spec**  
-   - Option A: Add missing fixture keys (`VALID_STARTUP_IDEA`, `ANOTHER_IDEA`, etc.) and keep the sample runnable.  
-   - Option B: Set `testMatch` to ignore `tests/e2e/examples/**` so CI isn’t blocked by documentation-only specs.
-2. **Broaden workflow triggers**  
+1. **Broaden workflow triggers**  
    - If release/hotfix branches also need E2E coverage, add them to `on.pull_request.branches`/`on.push.branches`.
-3. **Treat coverage-report generation as required**  
+2. **Treat coverage-report generation as required**  
    - Remove `continue-on-error: true` once the script is stable so broken reports fail the job.
-4. **Add a nightly or scheduled run**  
+3. **Add a nightly or scheduled run**  
    - A `schedule:` trigger could catch regressions that slip through inactive periods and provides continuous coverage metrics.
-5. **Track flake rate**  
+4. **Track flake rate**  
    - Monitor retry counts in the Playwright summary; if certain specs retry often, prioritize stabilizing them (e.g., shorter waits, targeted mocks).

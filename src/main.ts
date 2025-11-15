@@ -18,6 +18,7 @@ import {
   isValidationPassed
 } from './infrastructure/bootstrap/validation';
 import { logger } from '@/lib/logger';
+import { resolveMockModeFlag } from '@/lib/testing/config/mock-mode-flags';
 
 /**
  * Application bootstrap class
@@ -67,8 +68,12 @@ export class Application {
 
       // Step 2: Verify database connection (but don't cache client)
       console.log('🗄️ Verifying database connection...');
-      // Verify connection works, don't cache the client
-      await checkDatabaseConnection();
+      if (!this.isMockModeEnabled()) {
+        // Verify connection works, don't cache the client
+        await checkDatabaseConnection();
+      } else {
+        console.log('⏭️ Mock mode detected - skipping database connection check');
+      }
 
       // Step 3: Perform environment-specific initialization
       await this.performEnvironmentSpecificInitialization();
@@ -177,6 +182,15 @@ export class Application {
     console.log('🧪 Test environment configured');
     
     // Additional test setup can go here
+  }
+
+  /**
+   * Determine if mock mode is enabled based on feature flag
+   */
+  private isMockModeEnabled(): boolean {
+    return resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
+      allowInProduction: false,
+    });
   }
 }
 

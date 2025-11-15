@@ -171,6 +171,18 @@ test.describe('Dashboard E2E Tests', () => {
   });
 
   /**
+   * Additional test: Verify dashboard navigation buttons
+   */
+  test('should display navigation buttons to analyzer features', async () => {
+    await dashboardPage.navigate();
+    await dashboardPage.waitForDataLoad();
+
+    await expect(dashboardPage.page.locator('[data-testid="dashboard-cta-startup"]')).toBeVisible();
+    await expect(dashboardPage.page.locator('[data-testid="dashboard-cta-kiroween"]')).toBeVisible();
+    await expect(dashboardPage.page.locator('[data-testid="dashboard-cta-frankenstein"]')).toBeVisible();
+  });
+
+  /**
    * Additional test: Verify Frankenstein ideas section
    */
   test('should display Frankenstein ideas when available', async ({ page }) => {
