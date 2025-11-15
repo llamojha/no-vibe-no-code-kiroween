@@ -136,7 +136,7 @@ jobs:
           NEXT_PUBLIC_FF_USE_MOCK_API: true
           FF_MOCK_SCENARIO: success
           FF_SIMULATE_LATENCY: false
-          NODE_ENV: production
+          NODE_ENV: test
           # Server configuration
           PORT: 3000
           # Disable Supabase for testing (not needed with mocks)
