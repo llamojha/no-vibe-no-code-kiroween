@@ -28,18 +28,89 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Download all artifacts
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=$(jq -r '.pull_request.number' <<< '${{ toJson(github.event.workflow_run.pull_requests[0]) }}')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "PR Number: $PR_NUMBER"
+
+      - name: Collect workflow run metadata
+        id: run-ids
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          declare -A WORKFLOWS=(
+            [lint]="lint.yml"
+            [unit]="unit-tests.yml"
+            [e2e]="e2e-tests.yml"
+            [lighthouse]="lighthouse.yml"
+          )
+
+          for key in "${!WORKFLOWS[@]}"; do
+            file="${WORKFLOWS[$key]}"
+            echo "Looking up latest completed run for ${file} (${HEAD_SHA})"
+            run_id=$(gh api repos/$REPO/actions/workflows/$file/runs \
+              -F event=pull_request \
+              -F head_sha=$HEAD_SHA \
+              -F status=completed \
+              -F per_page=1 \
+              --jq '.workflow_runs[0].id' 2>/dev/null || true)
+
+            output_name="${key}-run-id"
+            if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+              echo "No completed run for ${file} yet."
+              echo "${output_name}=" >> $GITHUB_OUTPUT
+            else
+              echo "Found run id ${run_id} for ${file}"
+              echo "${output_name}=${run_id}" >> $GITHUB_OUTPUT
+            fi
+          done
+
+      - name: Download lint artifacts
+        if: steps.run-ids.outputs.lint-run-id != ''
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          run-id: ${{ github.event.workflow_run.id }}
+          path: artifacts/lint
+          run-id: ${{ steps.run-ids.outputs.lint-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download unit test artifacts
+        if: steps.run-ids.outputs.unit-run-id != ''
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/unit
+          run-id: ${{ steps.run-ids.outputs.unit-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download E2E artifacts
+        if: steps.run-ids.outputs.e2e-run-id != ''
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/e2e
+          run-id: ${{ steps.run-ids.outputs.e2e-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download Lighthouse artifacts
+        if: steps.run-ids.outputs.lighthouse-run-id != ''
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/lighthouse
+          run-id: ${{ steps.run-ids.outputs.lighthouse-run-id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: List downloaded artifacts
         run: |
           echo "=== Downloaded Artifacts ==="
-          find artifacts -type f -name "*.json" -o -name "*.txt" || echo "No artifacts found"
+          find artifacts -type f \( -name "*.json" -o -name "*.txt" \) || echo "No artifacts found"
           echo "==========================="
 
       - name: Parse results and generate unified report
@@ -406,13 +477,6 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
-
-      - name: Get PR number
-        id: pr
-        run: |
-          PR_NUMBER=$(jq -r '.pull_request.number' <<< '${{ toJson(github.event.workflow_run.pull_requests[0]) }}')
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "PR Number: $PR_NUMBER"
 
       - name: Find existing comment
         uses: peter-evans/find-comment@v3
