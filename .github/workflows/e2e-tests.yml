@@ -143,7 +143,7 @@ jobs:
 
           # Try to check mock status endpoint (non-blocking)
           echo "Checking mock status endpoint..."
-          if curl -f -s http://localhost:3000/api/test/mock-status >2>&1; then
+          if curl -f -s http://localhost:3000/api/test/mock-status > /dev/null 2>&1; then
             echo "✅ Mock status endpoint is accessible"
           else
             echo "⚠️ Mock status endpoint not accessible, but continuing..."
