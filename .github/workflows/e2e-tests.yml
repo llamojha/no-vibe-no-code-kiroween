@@ -120,7 +120,7 @@ jobs:
           # Server configuration
           PORT: 3000
           # Disable Supabase for testing (not needed with mocks)
-          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
 
       - name: Wait for application to be ready
