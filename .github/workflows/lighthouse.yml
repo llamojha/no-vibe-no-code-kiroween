@@ -52,8 +52,8 @@ jobs:
         if: steps.changes.outputs.code_changed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
         if: steps.changes.outputs.code_changed == 'true'
@@ -142,7 +142,7 @@ jobs:
                       url: lhr.finalUrl || lhr.requestedUrl,
                       scores: {
                         accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
-      bestPractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
+                        bestPractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
                         seo: Math.round((lhr.categories.seo?.score || 0) * 100)
                       },
                       audits: Object.entries(lhr.audits)
