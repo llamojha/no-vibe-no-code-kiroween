@@ -1,0 +1,111 @@
+name: Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: ESLint Code Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Record start time
+        id: start-time
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint with JSON reporter
+        run: npm run lint -- --format json --output-file lint-results.json || true
+        continue-on-error: true
+
+      - name: Run ESLint with stylish reporter
+        run: npm run lint -- --format stylish > lint-summary.txt || true
+        continue-on-error: true
+
+      - name: Parse lint results and check for errors
+        id: lint-check
+        run: |
+          if [ -f lint-results.json ]; then
+            # Use jq to parse JSON and extract counts
+            ERROR_COUNT=$(jq '[.[] | .errorCount] | add // 0' lint-results.json)
+            WARNING_COUNT=$(jq '[.[] | .warningCount] | add // 0' lint-results.json)
+
+            echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+            echo "warning_count=$WARNING_COUNT" >> $GITHUB_OUTPUT
+
+            echo "### Lint Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- Errors: $ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "- Warnings: $WARNING_COUNT" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "❌ ESLint found $ERROR_COUNT error(s)"
+              exit 1
+            elif [ "$WARNING_COUNT" -gt 0 ]; then
+              echo "⚠️ ESLint found $WARNING_COUNT warning(s) but no errors"
+              exit 0
+            else
+              echo "✅ No lint errors or warnings found"
+              exit 0
+            fi
+          else
+            echo "❌ Lint results file not found"
+            exit 1
+          fi
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results-${{ github.run_number }}
+          path: |
+            lint-results.json
+            lint-summary.txt
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Calculate workflow duration
+        if: always()
+        run: |
+          START_TIME=${{ steps.start-time.outputs.start }}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          DURATION_MIN=$((DURATION / 60))
+          DURATION_SEC=$((DURATION % 60))
+
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "### ⏱️ Workflow Duration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total time: ${DURATION_MIN}m ${DURATION_SEC}s" >> $GITHUB_STEP_SUMMARY
+
+          # Log warning if duration exceeds 15 minutes
+          if [ $DURATION -gt 900 ]; then
+            echo "::warning::Workflow duration exceeded 15 minutes (${DURATION_MIN}m ${DURATION_SEC}s)"
+            echo "⚠️ Duration exceeded 15 minute threshold" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Save duration for PR comment
+          echo "{\"workflow\":\"lint\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
+
+      - name: Upload duration metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duration-lint-${{ github.run_number }}
+          path: workflow-duration.json
+          retention-days: 30
+          if-no-files-found: warn

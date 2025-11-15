@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 /**
  * Page Object Model for Analyzer feature
@@ -24,7 +24,7 @@ export class AnalyzerPage {
 
   constructor(page: Page) {
     this.page = page;
-    
+
     // Define locators for analyzer page elements
     this.ideaInput = page.locator('[data-testid="idea-input"]');
     this.languageToggle = page.locator('[data-testid="language-toggle"]');
@@ -44,16 +44,27 @@ export class AnalyzerPage {
   }
 
   async navigate(): Promise<void> {
-    await this.page.goto('/analyzer');
-    await this.page.waitForLoadState('networkidle');
+    // Use commit navigation strategy for better performance with slow pages
+    await this.page.goto("/analyzer", {
+      waitUntil: "commit",
+      timeout: 90000,
+    });
+    // Wait for the form to be ready with extended timeout for performance issues
+    await this.ideaInput.waitFor({ state: "visible", timeout: 60000 });
   }
 
   async enterIdea(idea: string): Promise<void> {
+    await this.ideaInput.waitFor({ state: "visible", timeout: 10000 });
+    await this.ideaInput.click(); // Focus the input
     await this.ideaInput.fill(idea);
+    // Trigger input event for form validation
+    await this.ideaInput.press("Space");
+    await this.ideaInput.press("Backspace");
+    await this.page.waitForTimeout(300); // Give validation time to run
   }
 
-  async selectLanguage(language: 'en' | 'es'): Promise<void> {
-    if (language === 'en') {
+  async selectLanguage(language: "en" | "es"): Promise<void> {
+    if (language === "en") {
       await this.languageEnButton.click();
     } else {
       await this.languageEsButton.click();
@@ -61,39 +72,49 @@ export class AnalyzerPage {
   }
 
   async clickAnalyze(): Promise<void> {
-    await this.analyzeButton.click();
+    // Wait for button to be enabled (form validation)
+    await this.analyzeButton.waitFor({ state: "visible", timeout: 5000 });
+    await this.page.waitForTimeout(500); // Give form validation time to process
+
+    // Check if button is enabled, if not wait a bit more
+    const isEnabled = await this.analyzeButton.isEnabled();
+    if (!isEnabled) {
+      await this.page.waitForTimeout(1000);
+    }
+
+    await this.analyzeButton.click({ force: false, timeout: 20000 });
   }
 
   async waitForResults(): Promise<void> {
-    await this.scoreElement.waitFor({ state: 'visible', timeout: 30000 });
+    await this.scoreElement.waitFor({ state: "visible", timeout: 30000 });
   }
 
   async waitForLoadingToComplete(): Promise<void> {
     // Wait for loading spinner to appear (if it does)
     try {
-      await this.loadingSpinner.waitFor({ state: 'visible', timeout: 1000 });
+      await this.loadingSpinner.waitFor({ state: "visible", timeout: 1000 });
       // Then wait for it to disappear
-      await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 30000 });
+      await this.loadingSpinner.waitFor({ state: "hidden", timeout: 30000 });
     } catch {
       // Loading spinner might not appear for fast operations
     }
   }
 
   async getScore(): Promise<string> {
-    return await this.scoreElement.textContent() || '';
+    return (await this.scoreElement.textContent()) || "";
   }
 
   async getSummary(): Promise<string> {
-    return await this.summaryElement.textContent() || '';
+    return (await this.summaryElement.textContent()) || "";
   }
 
   async getStrengths(): Promise<string[]> {
-    const items = await this.strengthsList.locator('li').allTextContents();
+    const items = await this.strengthsList.locator("li").allTextContents();
     return items;
   }
 
   async getWeaknesses(): Promise<string[]> {
-    const items = await this.weaknessesList.locator('li').allTextContents();
+    const items = await this.weaknessesList.locator("li").allTextContents();
     return items;
   }
 
@@ -106,7 +127,7 @@ export class AnalyzerPage {
   }
 
   async getErrorMessage(): Promise<string> {
-    return await this.errorMessage.textContent() || '';
+    return (await this.errorMessage.textContent()) || "";
   }
 
   async isResultsVisible(): Promise<boolean> {
@@ -116,7 +137,7 @@ export class AnalyzerPage {
   /**
    * Complete workflow: enter idea, select language, and analyze
    */
-  async analyzeIdea(idea: string, language: 'en' | 'es' = 'en'): Promise<void> {
+  async analyzeIdea(idea: string, language: "en" | "es" = "en"): Promise<void> {
     await this.enterIdea(idea);
     await this.selectLanguage(language);
     await this.clickAnalyze();

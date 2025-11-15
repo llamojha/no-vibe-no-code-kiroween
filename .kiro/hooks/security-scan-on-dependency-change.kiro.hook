@@ -1,18 +1,10 @@
 {
-  "enabled": false,
+  "enabled": true,
   "name": "Security Scan on Dependency Change",
   "description": "Run security audit when package files are modified following security best practices",
   "version": "1",
   "when": {
-    "type": "fileEdited",
-    "patterns": [
-      "package.json",
-      "package-lock.json",
-      "yarn.lock",
-      "requirements.txt",
-      "poetry.lock",
-      "Pipfile.lock"
-    ]
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",

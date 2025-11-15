@@ -1,0 +1,439 @@
+name: PR Comment Report
+
+on:
+  workflow_run:
+    workflows:
+      ["Lint", "Unit Tests", "E2E Tests", "Lighthouse Accessibility Audit"]
+    types:
+      - completed
+
+permissions:
+  pull-requests: write
+  checks: write
+  contents: read
+  actions: read
+
+jobs:
+  comment:
+    name: Generate Unified PR Comment
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: List downloaded artifacts
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find artifacts -type f -name "*.json" -o -name "*.txt" || echo "No artifacts found"
+          echo "==========================="
+
+      - name: Parse results and generate unified report
+        id: generate-report
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const { execSync } = require('child_process');
+
+          // Helper function to find files
+          function findFiles(pattern) {
+            try {
+              const result = execSync(`find artifacts -name '${pattern}' 2>/dev/null || true`).toString().trim();
+              return result ? result.split('\n').filter(Boolean) : [];
+            } catch (e) {
+              return [];
+            }
+          }
+
+          // Initialize report data
+          let totalChecks = 0;
+          let passedChecks = 0;
+          let failedChecks = 0;
+          const recommendations = [];
+          const checkDetails = [];
+
+          // ===== Parse Lint Results =====
+          console.log('Parsing lint results...');
+          const lintFiles = findFiles('lint-results.json');
+          if (lintFiles.length > 0) {
+            try {
+              const lintData = JSON.parse(fs.readFileSync(lintFiles[0], 'utf8'));
+              const errorCount = lintData.reduce((sum, file) => sum + file.errorCount, 0);
+              const warningCount = lintData.reduce((sum, file) => sum + file.warningCount, 0);
+
+              totalChecks++;
+              const passed = errorCount === 0;
+              if (passed) passedChecks++;
+              else failedChecks++;
+
+              let detail = '### 📝 Code Quality (ESLint)\n\n';
+              if (passed) {
+                detail += '✅ **Passed** - No errors found\n';
+                if (warningCount > 0) {
+                  detail += `⚠️ ${warningCount} warning(s)\n\n`;
+                  recommendations.push(`Address ${warningCount} ESLint warning(s) for improved code quality`);
+                } else {
+                  detail += '\n';
+                }
+              } else {
+                detail += `❌ **Failed** - ${errorCount} error(s) found\n`;
+                detail += `⚠️ ${warningCount} warning(s)\n\n`;
+
+                // Extract specific error details
+                const errorFiles = lintData.filter(f => f.errorCount > 0).slice(0, 5);
+                if (errorFiles.length > 0) {
+                  detail += '<details>\n<summary>Error Details</summary>\n\n';
+                  errorFiles.forEach(file => {
+                    const relativePath = file.filePath.replace(process.cwd() + '/', '');
+                    detail += `**${relativePath}** (${file.errorCount} error(s))\n`;
+                    file.messages.filter(m => m.severity === 2).slice(0, 3).forEach(msg => {
+                      detail += `- Line ${msg.line}:${msg.column} - ${msg.message} (${msg.ruleId})\n`;
+                    });
+                    detail += '\n';
+                  });
+                  detail += '</details>\n\n';
+                }
+
+                recommendations.push(`Fix ${errorCount} ESLint error(s) before merging`);
+              }
+
+              checkDetails.push(detail);
+              console.log(`✓ Lint: ${passed ? 'PASSED' : 'FAILED'} (${errorCount} errors, ${warningCount} warnings)`);
+            } catch (e) {
+              console.log('Error parsing lint results:', e.message);
+            }
+          } else {
+            console.log('⚠ Lint results not found');
+          }
+
+          // ===== Parse Unit Test Results =====
+          console.log('Parsing unit test results...');
+          const testFiles = findFiles('test-results.json');
+          if (testFiles.length > 0) {
+            try {
+              const testData = JSON.parse(fs.readFileSync(testFiles[0], 'utf8'));
+              const numTotal = testData.numTotalTests || 0;
+              const numPassed = testData.numPassedTests || 0;
+              const numFailed = testData.numFailedTests || 0;
+
+              totalChecks++;
+              const passed = numFailed === 0;
+              if (passed) passedChecks++;
+              else failedChecks++;
+
+              let detail = '### 🧪 Unit Tests\n\n';
+              if (passed) {
+                detail += `✅ **Passed** - ${numPassed}/${numTotal} tests\n`;
+              } else {
+                detail += `❌ **Failed** - ${numPassed}/${numTotal} tests passed\n\n`;
+
+                // Extract failed test names
+                if (testData.testResults) {
+                  const failedTests = testData.testResults
+                    .flatMap(suite => suite.assertionResults || [])
+                    .filter(test => test.status === 'failed')
+                    .slice(0, 5);
+
+                  if (failedTests.length > 0) {
+                    detail += '<details>\n<summary>Failed Tests</summary>\n\n';
+                    failedTests.forEach(test => {
+                      detail += `- ❌ ${test.fullName || test.title}\n`;
+                      if (test.failureMessages && test.failureMessages.length > 0) {
+                        const errorMsg = test.failureMessages[0].split('\n')[0];
+                        detail += `  ${errorMsg}\n`;
+                      }
+                    });
+                    detail += '\n</details>\n\n';
+                  }
+                }
+
+                recommendations.push(`Fix ${numFailed} failing unit test(s)`);
+              }
+
+              // Add coverage info
+              const coverageFiles = findFiles('coverage-summary.json');
+              if (coverageFiles.length > 0) {
+                try {
+                  const coverageData = JSON.parse(fs.readFileSync(coverageFiles[0], 'utf8'));
+                  const pct = coverageData.total.lines.pct.toFixed(1);
+                  const icon = pct >= 70 ? '✅' : '⚠️';
+                  detail += `📊 Coverage: ${icon} ${pct}%\n\n`;
+
+                  if (pct < 70) {
+                    recommendations.push(`Consider improving test coverage (current: ${pct}%, target: 70%)`);
+                  }
+                } catch (e) {
+                  console.log('Error parsing coverage:', e.message);
+                }
+              }
+
+              checkDetails.push(detail);
+              console.log(`✓ Unit Tests: ${passed ? 'PASSED' : 'FAILED'} (${numPassed}/${numTotal})`);
+            } catch (e) {
+              console.log('Error parsing unit test results:', e.message);
+            }
+          } else {
+            console.log('⚠ Unit test results not found');
+          }
+
+          // ===== Parse E2E Test Results =====
+          console.log('Parsing E2E test results...');
+          const e2eFiles = findFiles('results.json');
+          if (e2eFiles.length > 0) {
+            try {
+              const e2eData = JSON.parse(fs.readFileSync(e2eFiles[0], 'utf8'));
+
+              const stats = e2eData.suites.reduce((acc, suite) => {
+                suite.specs.forEach(spec => {
+                  spec.tests.forEach(test => {
+                    if (test.status === 'expected') acc.passed++;
+                    else if (test.status === 'unexpected') acc.failed++;
+                    else if (test.status === 'skipped') acc.skipped++;
+                  });
+                });
+                return acc;
+              }, { passed: 0, failed: 0, skipped: 0 });
+
+              const total = stats.passed + stats.failed + stats.skipped;
+
+              totalChecks++;
+              const passed = stats.failed === 0;
+              if (passed) passedChecks++;
+              else failedChecks++;
+
+              let detail = '### 🎭 E2E Tests\n\n';
+              if (passed) {
+                detail += `✅ **Passed** - ${stats.passed}/${total} tests\n`;
+                if (stats.skipped > 0) {
+                  detail += `⏭️ ${stats.skipped} skipped\n`;
+                }
+                detail += '\n';
+              } else {
+                detail += `❌ **Failed** - ${stats.passed}/${total} tests passed\n\n`;
+
+                // Extract failed test details
+                const failedTests = [];
+                e2eData.suites.forEach(suite => {
+                  suite.specs.forEach(spec => {
+                    spec.tests.forEach(test => {
+                      if (test.status === 'unexpected') {
+                        failedTests.push({
+                          name: spec.title,
+                          error: test.results[0]?.error?.message || 'Unknown error'
+                        });
+                      }
+                    });
+                  });
+                });
+
+                if (failedTests.length > 0) {
+                  detail += '<details>\n<summary>Failed Tests</summary>\n\n';
+                  failedTests.slice(0, 5).forEach(test => {
+                    const errorMsg = test.error.split('\n')[0];
+                    detail += `- ❌ ${test.name}\n`;
+                    detail += `  ${errorMsg}\n`;
+                  });
+                  if (failedTests.length > 5) {
+                    detail += `\n_...and ${failedTests.length - 5} more_\n`;
+                  }
+                  detail += '\n</details>\n\n';
+                }
+
+                recommendations.push(`Fix ${stats.failed} failing E2E test(s)`);
+              }
+
+              checkDetails.push(detail);
+              console.log(`✓ E2E Tests: ${passed ? 'PASSED' : 'FAILED'} (${stats.passed}/${total})`);
+            } catch (e) {
+              console.log('Error parsing E2E test results:', e.message);
+            }
+          } else {
+            console.log('⚠ E2E test results not found');
+          }
+
+          // ===== Parse Duration Metrics =====
+          console.log('Parsing duration metrics...');
+          const durationFiles = findFiles('workflow-duration.json');
+          const durations = [];
+          let totalDuration = 0;
+
+          durationFiles.forEach(file => {
+            try {
+              const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+              durations.push(data);
+              totalDuration += data.duration_seconds;
+              console.log(`✓ ${data.workflow}: ${data.duration_formatted}`);
+            } catch (e) {
+              console.log(`Error parsing duration file ${file}:`, e.message);
+            }
+          });
+
+          // ===== Parse Lighthouse Results =====
+          console.log('Parsing Lighthouse results...');
+          const lighthouseFiles = findFiles('lighthouse-results.json');
+          if (lighthouseFiles.length > 0) {
+            try {
+              const lighthouseData = JSON.parse(fs.readFileSync(lighthouseFiles[0], 'utf8'));
+
+              const failedPages = lighthouseData.pages.filter(p => p.scores.accessibility < 90);
+
+              totalChecks++;
+              const passed = failedPages.length === 0;
+              if (passed) passedChecks++;
+              else failedChecks++;
+
+              let detail = '### ♿ Accessibility (Lighthouse)\n\n';
+              if (passed) {
+                detail += '✅ **Passed** - All pages meet standards\n\n';
+                lighthouseData.pages.forEach(page => {
+                  const url = new URL(page.url).pathname;
+                  detail += `- ${url}: ${page.scores.accessibility}/100\n`;
+                });
+                detail += '\n';
+              } else {
+                detail += `❌ **Failed** - ${failedPages.length} page(s) below threshold\n\n`;
+                lighthouseData.pages.forEach(page => {
+                  const url = new URL(page.url).pathname;
+                  const icon = page.scores.accessibility >= 90 ? '✅' : '❌';
+                  detail += `${icon} ${url}: ${page.scores.accessibility}/100\n`;
+                });
+                detail += '\n';
+
+                // Extract WCAG violations
+                const violations = [];
+                failedPages.forEach(page => {
+                  const url = new URL(page.url).pathname;
+                  page.audits.filter(a => a.id.includes('accessibility') || a.score < 100).slice(0, 3).forEach(audit => {
+                    violations.push(`${url}: ${audit.title}`);
+                  });
+                });
+
+                if (violations.length > 0) {
+                  detail += '<details>\n<summary>WCAG Violations</summary>\n\n';
+                  violations.forEach(v => {
+                    detail += `- ${v}\n`;
+                  });
+                  detail += '\n</details>\n\n';
+                }
+
+                recommendations.push(`Improve accessibility scores for ${failedPages.length} page(s)`);
+              }
+
+              checkDetails.push(detail);
+              console.log(`✓ Lighthouse: ${passed ? 'PASSED' : 'FAILED'} (${failedPages.length} pages below threshold)`);
+            } catch (e) {
+              console.log('Error parsing Lighthouse results:', e.message);
+            }
+          } else {
+            console.log('⚠ Lighthouse results not found');
+          }
+
+          // ===== Build Final Report =====
+          console.log('\nBuilding final report...');
+
+          const summaryIcon = failedChecks === 0 ? '✅' : '❌';
+          const summaryText = failedChecks === 0
+            ? `All ${totalChecks} checks passed`
+            : `${failedChecks} of ${totalChecks} checks failed`;
+
+          let report = `## 🤖 CI/CD Quality Report\n\n`;
+          report += `### Summary\n\n`;
+          report += `${summaryIcon} **${summaryText}**\n\n`;
+          report += `---\n\n`;
+
+          // Add check details
+          checkDetails.forEach(detail => {
+            report += detail;
+            report += `---\n\n`;
+          });
+
+          // Add duration metrics
+          if (durations.length > 0) {
+            report += `### ⏱️ Workflow Performance\n\n`;
+
+            const totalMin = Math.floor(totalDuration / 60);
+            const totalSec = totalDuration % 60;
+            const totalFormatted = `${totalMin}m ${totalSec}s`;
+
+            report += `| Workflow | Duration |\n`;
+            report += `|----------|----------|\n`;
+            durations.forEach(d => {
+              const icon = d.duration_seconds > 900 ? '⚠️' : '✅';
+              report += `| ${icon} ${d.workflow} | ${d.duration_formatted} |\n`;
+            });
+            report += `| **Total** | **${totalFormatted}** |\n\n`;
+
+            if (totalDuration > 900) {
+              report += `⚠️ Total duration exceeded 15 minute threshold\n\n`;
+              recommendations.push('Investigate workflow performance - total duration exceeded 15 minutes');
+            }
+
+            report += `---\n\n`;
+          }
+
+          // Add recommendations
+          if (recommendations.length > 0) {
+            report += `### 🔧 Recommendations\n\n`;
+            recommendations.forEach((rec, i) => {
+              report += `${i + 1}. ${rec}\n`;
+            });
+            report += `\n---\n\n`;
+          }
+
+          // Add links
+          report += `📦 [View detailed reports and artifacts](https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})\n`;
+
+          // Write report to file
+          fs.writeFileSync('comment-body.md', report);
+          console.log('\n✓ Report generated successfully');
+          console.log(`Total checks: ${totalChecks}, Passed: ${passedChecks}, Failed: ${failedChecks}`);
+          EOF
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=$(jq -r '.pull_request.number' <<< '${{ toJson(github.event.workflow_run.pull_requests[0]) }}')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "PR Number: $PR_NUMBER"
+
+      - name: Find existing comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          issue-number: ${{ steps.pr.outputs.number }}
+          comment-author: "github-actions[bot]"
+          body-includes: "CI/CD Quality Report"
+
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ steps.pr.outputs.number }}
+          body-path: comment-body.md
+          edit-mode: replace
+
+      - name: Log completion
+        run: |
+          if [ -n "${{ steps.fc.outputs.comment-id }}" ]; then
+            echo "✓ Updated existing comment: ${{ steps.fc.outputs.comment-id }}"
+          else
+            echo "✓ Created new comment"
+          fi

@@ -1,0 +1,236 @@
+name: Lighthouse Accessibility Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    name: Lighthouse Accessibility Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Record start time
+        id: start-time
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check changed files
+        id: changes
+        run: |
+          # Get list of changed files
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check if only test files changed
+          if echo "$CHANGED_FILES" | grep -qvE '\.(test|spec)\.(ts|tsx|js|jsx)$|^tests/|^__tests__/'; then
+            echo "code_changed=true" >> $GITHUB_OUTPUT
+            echo "✓ Code files changed - will run Lighthouse"
+          else
+            echo "code_changed=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Only test files changed - skipping Lighthouse"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.code_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.changes.outputs.code_changed == 'true'
+        run: npm ci
+
+      - name: Cache Next.js build
+        if: steps.changes.outputs.code_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            nextjs-${{ runner.os }}-
+
+      - name: Install Lighthouse CI
+        if: steps.changes.outputs.code_changed == 'true'
+        run: npm install -g @lhci/cli@0.13.x
+
+      - name: Build application
+        if: steps.changes.outputs.code_changed == 'true'
+        run: npm run build
+        env:
+          # Build with mock mode for testing
+          FF_USE_MOCK_API: true
+          NEXT_PUBLIC_FF_USE_MOCK_API: true
+          FF_MOCK_SCENARIO: success
+          FF_SIMULATE_LATENCY: false
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
+
+      - name: Start production server
+        if: steps.changes.outputs.code_changed == 'true'
+        run: |
+          npm run start &
+          echo $! > .server-pid
+          echo "Server started with PID: $(cat .server-pid)"
+        env:
+          PORT: 3000
+          FF_USE_MOCK_API: true
+          NEXT_PUBLIC_FF_USE_MOCK_API: true
+          FF_MOCK_SCENARIO: success
+          FF_SIMULATE_LATENCY: false
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-key-for-build
+
+      - name: Wait for server to be ready
+        if: steps.changes.outputs.code_changed == 'true'
+        run: npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run Lighthouse audits
+        if: steps.changes.outputs.code_changed == 'true'
+        id: lighthouse
+        run: |
+          lhci autorun --config=.lighthouserc.json || echo "lighthouse_failed=true" >> $GITHUB_OUTPUT
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
+
+      - name: Parse Lighthouse results
+        id: lighthouse-results
+        if: always() && steps.changes.outputs.code_changed == 'true'
+        run: |
+          if [ -d ".lighthouseci" ]; then
+            # Find the most recent manifest file
+            MANIFEST=$(find .lighthouseci -name "manifest.json" | head -n 1)
+
+            if [ -f "$MANIFEST" ]; then
+              node -e "
+                const fs = require('fs');
+                const path = require('path');
+
+                const manifestPath = process.argv[1];
+                const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+
+                const results = {
+                  pages: []
+                };
+
+                manifest.forEach(entry => {
+                  const lhrPath = path.join(path.dirname(manifestPath), entry.jsonPath);
+                  if (fs.existsSync(lhrPath)) {
+                    const lhr = JSON.parse(fs.readFileSync(lhrPath, 'utf8'));
+
+                    results.pages.push({
+                      url: lhr.finalUrl || lhr.requestedUrl,
+                      scores: {
+                        accessibility: Math.round((lhr.categories.accessibility?.score || 0) * 100),
+      bestPractices: Math.round((lhr.categories['best-practices']?.score || 0) * 100),
+                        seo: Math.round((lhr.categories.seo?.score || 0) * 100)
+                      },
+                      audits: Object.entries(lhr.audits)
+                        .filter(([_, audit]) => audit.score !== null && audit.score < 1)
+                        .map(([id, audit]) => ({
+                          id,
+                          title: audit.title,
+                          score: Math.round((audit.score || 0) * 100),
+                          description: audit.description
+                        }))
+                    });
+                  }
+                });
+
+                fs.writeFileSync('lighthouse-results.json', JSON.stringify(results, null, 2));
+
+                // Check if any page failed accessibility threshold
+                const failedPages = results.pages.filter(p => p.scores.accessibility < 90);
+
+                console.log('### Lighthouse Results');
+                console.log('');
+                results.pages.forEach(page => {
+                  const url = new URL(page.url).pathname;
+                  const icon = page.scores.accessibility >= 90 ? '✅' : '❌';
+                  console.log(\`\${icon} \${url}: \${page.scores.accessibility}/100\`);
+                });
+
+                if (failedPages.length > 0) {
+                  console.error('');
+                  console.error('❌ ' + failedPages.length + ' page(s) failed accessibility threshold (90)');
+                  process.exit(1);
+                } else {
+                  console.log('');
+                  console.log('✅ All pages meet accessibility threshold');
+                  process.exit(0);
+                }
+              " "$MANIFEST"
+            else
+              echo "⚠️ Lighthouse manifest not found"
+              exit 1
+            fi
+          else
+            echo "⚠️ Lighthouse results directory not found"
+            exit 1
+          fi
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f .server-pid ]; then
+            kill $(cat .server-pid) || true
+            rm .server-pid
+          fi
+
+      - name: Upload Lighthouse reports
+        if: always() && steps.changes.outputs.code_changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports-${{ github.run_number }}
+          path: |
+            .lighthouseci
+            lighthouse-results.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Calculate workflow duration
+        if: always()
+        run: |
+          START_TIME=${{ steps.start-time.outputs.start }}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          DURATION_MIN=$((DURATION / 60))
+          DURATION_SEC=$((DURATION % 60))
+
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "### ⏱️ Workflow Duration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total time: ${DURATION_MIN}m ${DURATION_SEC}s" >> $GITHUB_STEP_SUMMARY
+
+          # Log warning if duration exceeds 15 minutes
+          if [ $DURATION -gt 900 ]; then
+            echo "::warning::Workflow duration exceeded 15 minutes (${DURATION_MIN}m ${DURATION_SEC}s)"
+            echo "⚠️ Duration exceeded 15 minute threshold" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Save duration for PR comment
+          echo "{\"workflow\":\"lighthouse\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
+
+      - name: Upload duration metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duration-lighthouse-${{ github.run_number }}
+          path: workflow-duration.json
+          retention-days: 30
+          if-no-files-found: warn

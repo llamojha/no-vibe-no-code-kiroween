@@ -1,225 +1,344 @@
-# GitHub Actions Workflows
+# CI/CD Workflows
 
-This directory contains GitHub Actions workflows for automated testing and CI/CD.
+This directory contains GitHub Actions workflows for automated quality checks on pull requests.
 
-## Available Workflows
+## Workflows Overview
 
-### E2E Tests (`e2e-tests.yml`)
+### 1. Lint (`lint.yml`)
 
-Automated end-to-end testing workflow that runs Playwright tests against the application.
+**Purpose**: Enforce code quality standards using ESLint
 
-#### Triggers
+**Triggers**: Pull request events (opened, synchronize, reopened), manual dispatch
 
-- **Pull Requests**: Runs on PRs targeting `main` or `develop` branches
-- **Push**: Runs on direct pushes to `main` branch
-- **Manual**: Can be triggered manually via `workflow_dispatch`
+**Timeout**: 10 minutes
 
-#### Workflow Steps
+**Key Features**:
 
-1. **Setup Environment**
-   - Checkout code
-   - Setup Node.js 18 with npm caching
-   - Install dependencies with `npm ci`
+- Runs ESLint with JSON and stylish reporters
+- Fails on errors, allows warnings
+- Uploads lint results as artifacts
+- Tracks workflow duration
 
-2. **Install Playwright**
-   - Installs Playwright browsers (Chromium only for speed)
-   - Includes system dependencies with `--with-deps`
+**Artifacts**:
 
-3. **Build Application**
-   - Builds Next.js application with mock mode enabled
-   - Uses dummy Supabase credentials for build (not needed with mocks)
+- `lint-results-{run_number}`: JSON and text lint results
+- `duration-lint-{run_number}`: Duration metrics
 
-4. **Start Application**
-   - Starts production server on port 3000
-   - Runs in background with mock mode enabled
-   - Waits for server to be ready (60s timeout)
+---
 
-5. **Run E2E Tests**
-   - Executes all Playwright tests
-   - Captures screenshots on failure
-   - Generates test reports (HTML, JSON, JUnit)
+### 2. Unit Tests (`unit-tests.yml`)
 
-6. **Upload Artifacts**
-   - **On Failure**: Uploads screenshots, videos, and full reports (7 days retention)
-   - **Always**: Uploads test results and reports (30 days retention)
+**Purpose**: Execute Vitest unit tests with coverage reporting
 
-7. **Generate Summary**
-   - Creates test summary in GitHub Actions UI
-   - Shows pass/fail counts and duration
-   - Lists failed tests with error messages
+**Triggers**: Pull request events (opened, synchronize, reopened), manual dispatch
 
-8. **Comment on PR**
-   - Posts test results as PR comment
-   - Updates existing comment if present
-   - Includes pass rate and links to artifacts
+**Timeout**: 15 minutes
 
-9. **Check Status**
-   - Fails the workflow if any tests failed
-   - Blocks PR merge when configured with branch protection
+**Key Features**:
 
-#### Environment Variables
+- Runs Vitest with coverage collection
+- Checks 70% coverage threshold (warning only)
+- Fails on test failures
+- Uploads coverage and test results
+- Tracks workflow duration
 
-The workflow uses the following environment variables:
+**Artifacts**:
 
-```bash
-# Mock Mode Configuration
-FF_USE_MOCK_API=true                    # Enable mock API mode
-NEXT_PUBLIC_FF_USE_MOCK_API=true        # Client-side mock mode flag
-FF_MOCK_SCENARIO=success                # Default test scenario
-FF_SIMULATE_LATENCY=false               # Disable latency simulation for speed
+- `coverage-reports-{run_number}`: Coverage reports (HTML, JSON, text)
+- `unit-test-results-{run_number}`: Test execution results
+- `duration-unit-tests-{run_number}`: Duration metrics
 
-# E2E Test Configuration
-E2E_BASE_URL=http://localhost:3000      # Application URL
-E2E_HEADLESS=true                       # Run in headless mode
-E2E_SCREENSHOT_ON_FAILURE=true          # Capture screenshots on failure
-E2E_VIDEO_ON_FAILURE=false              # Disable video recording for speed
-E2E_TIMEOUT=30000                       # Test timeout (30 seconds)
+---
 
-# Supabase (Dummy values for build)
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy-key-for-build
+### 3. E2E Tests (`e2e-tests.yml`)
+
+**Purpose**: Execute Playwright end-to-end tests with coverage
+
+**Triggers**: Pull request events, push to main, manual dispatch
+
+**Timeout**: 30 minutes
+
+**Key Features**:
+
+- Conditional execution (skips if only documentation changed)
+- Builds and starts Next.js application
+- Runs Playwright tests with mock mode
+- Captures screenshots/videos on failure
+- Generates coverage reports
+- Posts results as PR comment
+- Tracks workflow duration
+
+**Conditional Execution**:
+
+- Skips when only `.md` files, `docs/`, or `README` files change
+
+**Artifacts**:
+
+- `test-artifacts-{run_number}`: Screenshots and failure artifacts
+- `test-results-{run_number}`: Test reports (JSON, JUnit, HTML)
+- `coverage-reports-{run_number}`: E2E coverage data
+- `duration-e2e-tests-{run_number}`: Duration metrics
+
+---
+
+### 4. Lighthouse (`lighthouse.yml`)
+
+**Purpose**: Audit accessibility, best practices, and SEO
+
+**Triggers**: Pull request events (opened, synchronize, reopened), manual dispatch
+
+**Timeout**: 20 minutes
+
+**Key Features**:
+
+- Conditional execution (skips if only test files changed)
+- Audits key pages: home, analyzer, dashboard, login
+- Runs 3 audits per page for averaging
+- Fails if accessibility score < 90
+- Uploads HTML reports and aggregated results
+- Tracks workflow duration
+
+**Conditional Execution**:
+
+- Skips when only `.test.*`, `.spec.*` files, or `tests/` directory changes
+
+**Pages Audited**:
+
+- `/` (Home page)
+- `/analyzer` (Analyzer page)
+- `/dashboard` (Dashboard page)
+- `/login` (Login page)
+
+**Artifacts**:
+
+- `lighthouse-reports-{run_number}`: HTML reports and JSON results
+- `duration-lighthouse-{run_number}`: Duration metrics
+
+---
+
+### 5. PR Comment Report (`pr-comment.yml`)
+
+**Purpose**: Generate unified status report for all CI checks
+
+**Triggers**: Completion of Lint, Unit Tests, E2E Tests, or Lighthouse workflows
+
+**Key Features**:
+
+- Downloads artifacts from all workflows
+- Parses results from each check type
+- Generates unified markdown report
+- Updates existing PR comment (no duplicates)
+- Includes actionable recommendations
+- Displays workflow duration metrics
+
+**Report Sections**:
+
+1. Summary (total checks passed/failed)
+2. Code Quality (ESLint)
+3. Unit Tests (with coverage)
+4. E2E Tests
+5. Accessibility (Lighthouse)
+6. Workflow Performance (duration metrics)
+7. Recommendations
+
+---
+
+## Parallel Execution Strategy
+
+All check workflows (Lint, Unit Tests, E2E Tests, Lighthouse) run **in parallel** when triggered by pull request events. This minimizes total CI time.
+
+**Expected Timing** (parallel execution):
+
+- Lint: 1-2 minutes
+- Unit Tests: 3-5 minutes
+- E2E Tests: 8-12 minutes
+- Lighthouse: 5-7 minutes
+- **Total (parallel)**: 8-12 minutes
+
+The PR Comment workflow runs after any workflow completes and aggregates results from all completed workflows.
+
+---
+
+## Performance Optimizations
+
+### Caching
+
+All workflows implement caching to reduce execution time:
+
+1. **NPM Dependencies**: Cached via `setup-node` action with `cache: 'npm'`
+2. **Playwright Browsers**: Cached in E2E workflow (`~/.cache/ms-playwright`)
+3. **Next.js Build**: Cached in E2E and Lighthouse workflows (`.next/cache`)
+
+### Conditional Execution
+
+Workflows skip unnecessary steps based on changed files:
+
+- **Lighthouse**: Skips when only test files changed
+- **E2E Tests**: Skips when only documentation files changed
+
+This reduces CI time for documentation-only or test-only changes.
+
+### Duration Monitoring
+
+All workflows track execution time and:
+
+- Log duration in workflow summary
+- Warn if duration exceeds 15 minutes
+- Upload duration metrics for PR comment
+- Display performance metrics in unified report
+
+---
+
+## Workflow Dependencies
+
+```mermaid
+graph TD
+    A[PR Created/Updated] --> B[Lint]
+    A --> C[Unit Tests]
+    A --> D[E2E Tests]
+    A --> E[Lighthouse]
+
+    B --> F[PR Comment]
+    C --> F
+    D --> F
+    E --> F
+
+    F --> G[Unified Report Posted]
 ```
 
-#### Artifacts
+---
 
-The workflow produces the following artifacts:
+## Artifacts Retention
 
-1. **test-artifacts-{run_number}** (on failure only)
-   - Screenshots of failed tests
-   - Videos of failed tests (if enabled)
-   - Full test reports
-   - Retention: 7 days
+All artifacts are retained for **30 days** except:
 
-2. **test-results-{run_number}** (always)
-   - JSON test results
-   - JUnit XML report
-   - HTML test report
-   - Retention: 30 days
+- Test failure artifacts (E2E): **7 days**
 
-#### Performance Optimization
+---
 
-- Uses `npm ci` for faster, deterministic installs
-- Caches npm dependencies between runs
-- Only installs Chromium browser (not Firefox/WebKit)
-- Runs 2 parallel workers on CI
-- Disables video recording by default
-- Retries failed tests up to 2 times
+## Environment Variables
 
-#### Viewing Test Results
+### Build Environment
 
-1. **In GitHub Actions UI**
-   - Go to Actions tab → E2E Tests workflow
-   - Click on a workflow run
-   - View summary in the run page
-   - Download artifacts for detailed analysis
+- `FF_USE_MOCK_API`: Enable mock mode for testing
+- `NEXT_PUBLIC_FF_USE_MOCK_API`: Client-side mock mode flag
+- `FF_MOCK_SCENARIO`: Mock scenario (success/error)
+- `FF_SIMULATE_LATENCY`: Simulate API latency
+- `NODE_ENV`: Node environment (test/production)
 
-2. **In Pull Request**
-   - Test results are automatically posted as a comment
-   - Comment updates on each new run
-   - Includes pass/fail counts and links to artifacts
+### Supabase (Mock Values for CI)
 
-3. **HTML Report**
-   - Download `test-results` artifact
-   - Extract and open `html/index.html` in browser
-   - Interactive report with screenshots and traces
+- `NEXT_PUBLIC_SUPABASE_URL`: http://localhost:54321
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: dummy-key-for-build
 
-#### Troubleshooting
+---
 
-##### Workflow Fails to Start Application
+## Troubleshooting
 
-- Check that build step completed successfully
-- Verify environment variables are set correctly
-- Increase wait timeout if application is slow to start
-- Check application logs in workflow output
+### Workflow Fails to Start
 
-##### Tests Fail Intermittently
+- Check if workflow file syntax is valid (YAML)
+- Verify trigger conditions match event type
+- Check repository permissions
 
-- Review retry configuration (currently 2 retries)
-- Check for race conditions in tests
-- Verify mock data is deterministic
-- Consider increasing timeouts for slow operations
+### Caching Issues
 
-##### Artifacts Not Uploaded
+- Clear cache by updating `package-lock.json`
+- Check cache key patterns in workflow files
+- Verify cache paths exist
 
-- Ensure test reports are generated in correct location
-- Check file paths in upload-artifact steps
-- Verify tests actually ran (not skipped)
-- Review workflow logs for upload errors
+### Conditional Execution Not Working
 
-##### PR Comment Not Posted
+- Verify `fetch-depth: 0` in checkout step
+- Check file pattern matching in changed files detection
+- Review git diff command output in workflow logs
 
-- Verify `actions/github-script@v7` has permissions
-- Check that test results JSON file exists
-- Review script errors in workflow logs
-- Ensure PR number is available in context
+### Duration Warnings
 
-## Adding New Workflows
+- Review workflow logs for slow steps
+- Check for network issues or timeouts
+- Consider optimizing test suite or build process
 
-To add a new workflow:
+### PR Comment Not Posting
 
-1. Create a new `.yml` file in this directory
-2. Define triggers (`on:` section)
-3. Define jobs and steps
-4. Test locally with `act` (GitHub Actions local runner)
-5. Commit and push to trigger the workflow
+- Verify PR Comment workflow has correct permissions
+- Check that source workflows completed successfully
+- Ensure artifacts were uploaded correctly
+- Review PR Comment workflow logs for errors
 
-## Best Practices
-
-1. **Keep Workflows Fast**
-   - Use caching for dependencies
-   - Run only necessary tests
-   - Parallelize when possible
-
-2. **Make Workflows Reliable**
-   - Use specific action versions (not `@latest`)
-   - Add retries for flaky operations
-   - Handle errors gracefully
-
-3. **Provide Clear Feedback**
-   - Generate summaries and reports
-   - Upload artifacts for debugging
-   - Post results to PRs
-
-4. **Secure Workflows**
-   - Use secrets for sensitive data
-   - Limit permissions with `permissions:` key
-   - Validate inputs in `workflow_dispatch`
-
-5. **Monitor and Maintain**
-   - Review workflow run times regularly
-   - Update action versions periodically
-   - Clean up old artifacts
+---
 
 ## Local Testing
 
-To test the E2E workflow locally:
+### Run Checks Locally Before Pushing
 
 ```bash
-# Install dependencies
-npm ci
+# Lint
+npm run lint
 
-# Install Playwright browsers
-npx playwright install --with-deps
+# Unit tests with coverage
+npm run test:coverage
 
-# Build application
+# E2E tests (requires built app)
 npm run build
-
-# Start application with mock mode
-FF_USE_MOCK_API=true npm run start &
-
-# Wait for application
-npx wait-on http://localhost:3000
-
-# Run E2E tests
+npm start &
 npm run test:e2e
 
-# View HTML report
-npm run test:e2e:report
+# Lighthouse (requires built app)
+npm run build
+npm start &
+npx lhci autorun
 ```
 
-## Resources
+### Test Workflow Files Locally
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Playwright CI Documentation](https://playwright.dev/docs/ci)
-- [Branch Protection Setup](./../BRANCH_PROTECTION.md)
-- [E2E Test Documentation](../../tests/e2e/README.md)
+Use [act](https://github.com/nektos/act) to run GitHub Actions locally:
+
+```bash
+# Install act
+brew install act  # macOS
+# or download from https://github.com/nektos/act/releases
+
+# Run specific workflow
+act pull_request -W .github/workflows/lint.yml
+
+# Run all workflows
+act pull_request
+```
+
+---
+
+## Maintenance
+
+### Updating Workflows
+
+1. Make changes to workflow files
+2. Test locally with `act` if possible
+3. Create PR to test in CI environment
+4. Monitor workflow runs for issues
+5. Update this README if behavior changes
+
+### Updating Dependencies
+
+- Update action versions in workflow files
+- Test thoroughly before merging
+- Update documentation if new features are used
+
+### Adjusting Thresholds
+
+- Coverage threshold: Update in `unit-tests.yml`
+- Accessibility threshold: Update in `.lighthouserc.json`
+- Duration threshold: Update in duration monitoring steps (currently 900s = 15min)
+
+---
+
+## Related Documentation
+
+- [Playwright Configuration](../../playwright.config.ts)
+- [Vitest Configuration](../../vitest.config.ts)
+- [Lighthouse Configuration](../../.lighthouserc.json)
+- [ESLint Configuration](../../.eslintrc.json)
+
+---
+
+Last updated: November 15, 2025

@@ -1,351 +1,42 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
+- generic [ref=e1]:
   - generic [ref=e2]:
-    - status "Logged in as developer@localhost.dev" [ref=e3]:
-      - generic [ref=e5]: Logged in as
-      - generic [ref=e6]: developer@localhost.dev
-    - generic [ref=e7]:
-      - link "skipToMainContent" [ref=e8] [cursor=pointer]:
-        - /url: "#main-content"
-      - generic [ref=e9]:
-        - banner [ref=e10]:
-          - button "Go to Dashboard" [ref=e11] [cursor=pointer]:
-            - img [ref=e12]
-            - generic [ref=e14]: Go to Dashboard
-          - heading "Idea Analyzer" [level=1] [ref=e15]
-          - paragraph [ref=e16]: Let AI vet your next big idea.
-          - generic [ref=e18]:
-            - button "Set language to English" [pressed] [ref=e19] [cursor=pointer]:
-              - generic [ref=e20]: EN
-            - button "Set language to Spanish" [ref=e21] [cursor=pointer]:
-              - generic [ref=e22]: ES
-        - main [ref=e23]:
-          - generic [ref=e27]:
-            - generic [ref=e28]: Enter Your Idea
-            - generic [ref=e29]:
-              - textbox "Enter Your Idea" [ref=e30]:
-                - /placeholder: e.g., A subscription service for artisanal coffee beans delivered by drones...
-                - text: AI-powered task manager for remote teams
-              - button "Record idea with microphone" [ref=e31] [cursor=pointer]:
-                - img [ref=e32]
-            - button "Analyze Idea" [ref=e34] [cursor=pointer]:
-              - generic: Analyze Idea
-              - img
-          - generic [ref=e35]:
-            - button "Generate New Idea" [ref=e37] [cursor=pointer]:
-              - img [ref=e38]
-              - generic [ref=e40]: Generate New Idea
-            - generic [ref=e41]:
-              - region "audioPlayer" [ref=e42]:
-                - status [ref=e43]
-                - button "Generate Audio Report" [ref=e44] [cursor=pointer]
-              - generic [ref=e45]:
-                - button "Refine Your Idea" [ref=e46] [cursor=pointer]:
-                  - generic [ref=e47]:
-                    - img [ref=e48]
-                    - heading "Refine Your Idea" [level=2] [ref=e50]
-                  - img [ref=e52]
-                - generic [ref=e55]:
-                  - paragraph [ref=e56]: Click a suggestion below to append it to your idea. Then, analyze again to see how your score changes.
-                  - generic [ref=e57]:
-                    - generic [ref=e58]:
-                      - generic [ref=e59]:
-                        - heading [level=3]
-                        - paragraph
-                      - button "Add this suggestion to your idea" [ref=e60] [cursor=pointer]:
-                        - img [ref=e61]
-                    - generic [ref=e63]:
-                      - generic [ref=e64]:
-                        - heading [level=3]
-                        - paragraph
-                      - button "Add this suggestion to your idea" [ref=e65] [cursor=pointer]:
-                        - img [ref=e66]
-                    - generic [ref=e68]:
-                      - generic [ref=e69]:
-                        - heading [level=3]
-                        - paragraph
-                      - button "Add this suggestion to your idea" [ref=e70] [cursor=pointer]:
-                        - img [ref=e71]
-              - generic [ref=e73]:
-                - button "Final Score & Viability Summary" [expanded] [ref=e74] [cursor=pointer]:
-                  - generic [ref=e75]:
-                    - img [ref=e76]
-                    - heading "Final Score & Viability Summary" [level=2] [ref=e78]
-                  - img [ref=e80]
-                - generic [ref=e85]:
-                  - generic [ref=e86]:
-                    - generic [ref=e87]: "4.1"
-                    - img [ref=e88]
-                  - generic [ref=e95]:
-                    - heading "Viability Verdict" [level=3] [ref=e96]
-                    - paragraph [ref=e97]: This is a promising startup idea with strong market potential and clear value proposition.
-                    - paragraph [ref=e98]: The idea demonstrates strong viability with good market fit, feasible implementation, and clear monetization potential.
-              - generic [ref=e99]:
-                - button "Detailed Summary" [ref=e100] [cursor=pointer]:
-                  - generic [ref=e101]:
-                    - img [ref=e102]
-                    - heading "Detailed Summary" [level=2] [ref=e104]
-                  - img [ref=e106]
-                - paragraph [ref=e110]: This is a comprehensive analysis of your startup idea. The concept shows strong market potential and addresses a real pain point in the industry.
-              - generic [ref=e111]:
-                - button "Scoring Rubric" [ref=e112] [cursor=pointer]:
-                  - generic [ref=e113]:
-                    - img [ref=e114]
-                    - heading "Scoring Rubric" [level=2] [ref=e116]
-                  - img [ref=e118]
-                - generic [ref=e121]:
-                  - img [ref=e124]:
-                    - generic [ref=e136]: MarketDemand
-                    - generic [ref=e137]: MarketSize
-                    - generic [ref=e138]: Uniqueness
-                    - generic [ref=e139]: Scalability
-                    - generic [ref=e140]: PotentialProfitability
-                  - table [ref=e158]:
-                    - rowgroup [ref=e159]:
-                      - row "Criterion Score▲▼ Justification" [ref=e160]:
-                        - cell "Criterion" [ref=e161]
-                        - cell "Score▲▼" [ref=e162] [cursor=pointer]
-                        - cell "Justification" [ref=e163]
-                    - rowgroup [ref=e164]:
-                      - row "Market Demand (4.5/5.0) Strong market demand with clear pain points and growing interest" [ref=e165]:
-                        - cell "Market Demand" [ref=e166]
-                        - cell "(4.5/5.0)" [ref=e167]:
-                          - generic [ref=e168]:
-                            - img [ref=e169]
-                            - img [ref=e171]
-                            - img [ref=e173]
-                            - img [ref=e175]
-                            - generic [ref=e177]:
-                              - img [ref=e178]
-                              - img [ref=e180]
-                            - generic [ref=e182]: (4.5/5.0)
-                        - cell "Strong market demand with clear pain points and growing interest" [ref=e183]
-                      - row "Market Size (4.2/5.0) Large addressable market with significant growth potential" [ref=e184]:
-                        - cell "Market Size" [ref=e185]
-                        - cell "(4.2/5.0)" [ref=e186]:
-                          - generic [ref=e187]:
-                            - img [ref=e188]
-                            - img [ref=e190]
-                            - img [ref=e192]
-                            - img [ref=e194]
-                            - img [ref=e196]
-                            - generic [ref=e198]: (4.2/5.0)
-                        - cell "Large addressable market with significant growth potential" [ref=e199]
-                      - row "Uniqueness (3.8/5.0) Novel approach with some unique features and differentiation" [ref=e200]:
-                        - cell "Uniqueness" [ref=e201]
-                        - cell "(3.8/5.0)" [ref=e202]:
-                          - generic [ref=e203]:
-                            - img [ref=e204]
-                            - img [ref=e206]
-                            - img [ref=e208]
-                            - generic [ref=e210]:
-                              - img [ref=e211]
-                              - img [ref=e213]
-                            - img [ref=e215]
-                            - generic [ref=e217]: (3.8/5.0)
-                        - cell "Novel approach with some unique features and differentiation" [ref=e218]
-                      - row "Scalability (4.3/5.0) Highly scalable business model with low marginal costs" [ref=e219]:
-                        - cell "Scalability" [ref=e220]
-                        - cell "(4.3/5.0)" [ref=e221]:
-                          - generic [ref=e222]:
-                            - img [ref=e223]
-                            - img [ref=e225]
-                            - img [ref=e227]
-                            - img [ref=e229]
-                            - img [ref=e231]
-                            - generic [ref=e233]: (4.3/5.0)
-                        - cell "Highly scalable business model with low marginal costs" [ref=e234]
-                      - row "Potential Profitability (4.0/5.0) Clear monetization path with multiple revenue streams" [ref=e235]:
-                        - cell "Potential Profitability" [ref=e236]
-                        - cell "(4.0/5.0)" [ref=e237]:
-                          - generic [ref=e238]:
-                            - img [ref=e239]
-                            - img [ref=e241]
-                            - img [ref=e243]
-                            - img [ref=e245]
-                            - img [ref=e247]
-                            - generic [ref=e249]: (4.0/5.0)
-                        - cell "Clear monetization path with multiple revenue streams" [ref=e250]
-              - generic [ref=e251]:
-                - button "Founder's Checklist" [ref=e252] [cursor=pointer]:
-                  - generic [ref=e253]:
-                    - img [ref=e254]
-                    - heading "Founder's Checklist" [level=2] [ref=e256]
-                  - img [ref=e258]
-                - generic [ref=e262]:
-                  - generic [ref=e263]:
-                    - heading "What is your unique value proposition?" [level=3] [ref=e264]
-                    - blockquote [ref=e265]:
-                      - text: "\"\" -"
-                      - generic [ref=e266]: ()
-                    - paragraph [ref=e267]:
-                      - strong [ref=e268]: "Why it matters:"
-                      - text: Understanding your differentiation is crucial for market positioning
-                    - generic [ref=e269]:
-                      - paragraph
-                  - generic [ref=e270]:
-                    - heading "Who is your target customer?" [level=3] [ref=e271]
-                    - blockquote [ref=e272]:
-                      - text: "\"\" -"
-                      - generic [ref=e273]: ()
-                    - paragraph [ref=e274]:
-                      - strong [ref=e275]: "Why it matters:"
-                      - text: Precise customer targeting enables effective marketing and product development
-                    - generic [ref=e276]:
-                      - paragraph
-              - generic [ref=e277]:
-                - button "SWOT Analysis" [ref=e278] [cursor=pointer]:
-                  - generic [ref=e279]:
-                    - img [ref=e280]
-                    - heading "SWOT Analysis" [level=2] [ref=e282]
-                  - img [ref=e284]
-                - generic [ref=e288]:
-                  - generic [ref=e289]:
-                    - heading "Strengths" [level=3] [ref=e290]
-                    - list [ref=e291]:
-                      - listitem [ref=e292]:
-                        - img [ref=e293]
-                        - generic [ref=e295]: Clear problem-solution fit
-                      - listitem [ref=e296]:
-                        - img [ref=e297]
-                        - generic [ref=e299]: Strong value proposition
-                      - listitem [ref=e300]:
-                        - img [ref=e301]
-                        - generic [ref=e303]: Scalable business model
-                      - listitem [ref=e304]:
-                        - img [ref=e305]
-                        - generic [ref=e307]: Growing market demand
-                  - generic [ref=e308]:
-                    - heading "Weaknesses" [level=3] [ref=e309]
-                    - list [ref=e310]:
-                      - listitem [ref=e311]:
-                        - img [ref=e312]
-                        - generic [ref=e314]: Competitive market space
-                      - listitem [ref=e315]:
-                        - img [ref=e316]
-                        - generic [ref=e318]: Requires significant initial investment
-                      - listitem [ref=e319]:
-                        - img [ref=e320]
-                        - generic [ref=e322]: Technical complexity
-                  - generic [ref=e323]:
-                    - heading "Opportunities" [level=3] [ref=e324]
-                    - list [ref=e325]:
-                      - listitem [ref=e326]:
-                        - img [ref=e327]
-                        - generic [ref=e329]: Expand to adjacent markets
-                      - listitem [ref=e330]:
-                        - img [ref=e331]
-                        - generic [ref=e333]: Leverage emerging technologies
-                      - listitem [ref=e334]:
-                        - img [ref=e335]
-                        - generic [ref=e337]: Strategic partnerships potential
-                  - generic [ref=e338]:
-                    - heading "Threats" [level=3] [ref=e339]
-                    - list [ref=e340]:
-                      - listitem [ref=e341]:
-                        - img [ref=e342]
-                        - generic [ref=e344]: New competitors entering market
-                      - listitem [ref=e345]:
-                        - img [ref=e346]
-                        - generic [ref=e348]: Changing regulations
-                      - listitem [ref=e349]:
-                        - img [ref=e350]
-                        - generic [ref=e352]: Economic downturn impact
-              - generic [ref=e353]:
-                - button "Current Market Trends" [ref=e354] [cursor=pointer]:
-                  - generic [ref=e355]:
-                    - img [ref=e356]
-                    - heading "Current Market Trends" [level=2] [ref=e358]
-                  - img [ref=e360]
-                - generic [ref=e364]:
-                  - generic [ref=e365]:
-                    - heading "Digital transformation acceleration" [level=3] [ref=e366]
-                    - paragraph [ref=e367]: Positive - increases market demand
-                  - generic [ref=e368]:
-                    - heading "Remote work adoption" [level=3] [ref=e369]
-                    - paragraph [ref=e370]: Positive - expands addressable market
-              - generic [ref=e371]:
-                - button "Potential Competitors" [ref=e372] [cursor=pointer]:
-                  - generic [ref=e373]:
-                    - img [ref=e374]
-                    - heading "Potential Competitors" [level=2] [ref=e376]
-                  - img [ref=e378]
-                - generic [ref=e382]:
-                  - generic [ref=e383]:
-                    - heading "Competitor A" [level=3] [ref=e385]
-                    - paragraph
-                    - generic [ref=e386]:
-                      - generic [ref=e387]:
-                        - heading "Strengths" [level=4] [ref=e388]
-                        - list [ref=e389]:
-                          - listitem [ref=e390]: Established brand
-                          - listitem [ref=e391]: Large user base
-                      - generic [ref=e392]:
-                        - heading "Weaknesses" [level=4] [ref=e393]
-                        - list [ref=e394]:
-                          - listitem [ref=e395]: Legacy technology
-                          - listitem [ref=e396]: Poor user experience
-                  - generic [ref=e397]:
-                    - heading "Competitor B" [level=3] [ref=e399]
-                    - paragraph
-                    - generic [ref=e400]:
-                      - generic [ref=e401]:
-                        - heading "Strengths" [level=4] [ref=e402]
-                        - list [ref=e403]:
-                          - listitem [ref=e404]: Strong funding
-                          - listitem [ref=e405]: Fast growth
-                      - generic [ref=e406]:
-                        - heading "Weaknesses" [level=4] [ref=e407]
-                        - list [ref=e408]:
-                          - listitem [ref=e409]: Limited features
-                          - listitem [ref=e410]: High pricing
-              - generic [ref=e411]:
-                - button "Monetization Strategies" [ref=e412] [cursor=pointer]:
-                  - generic [ref=e413]:
-                    - img [ref=e414]
-                    - heading "Monetization Strategies" [level=2] [ref=e416]
-                  - img [ref=e418]
-                - generic [ref=e422]:
-                  - generic [ref=e423]:
-                    - heading [level=3]
-                    - paragraph
-                  - generic [ref=e424]:
-                    - heading [level=3]
-                    - paragraph
-              - generic [ref=e425]:
-                - button "Actionable Next Steps" [ref=e426] [cursor=pointer]:
-                  - generic [ref=e427]:
-                    - img [ref=e428]
-                    - heading "Actionable Next Steps" [level=2] [ref=e430]
-                  - img [ref=e432]
-                - list [ref=e436]:
-                  - listitem [ref=e437]:
-                    - generic [ref=e438]: "1"
-                    - generic:
-                      - heading [level=3]
-                      - paragraph
-                  - listitem [ref=e439]:
-                    - generic [ref=e440]: "2"
-                    - generic:
-                      - heading [level=3]
-                      - paragraph
-                  - listitem [ref=e441]:
-                    - generic [ref=e442]: "3"
-                    - generic:
-                      - heading [level=3]
-                      - paragraph
-              - generic [ref=e443]:
-                - button "Save Report" [ref=e444] [cursor=pointer]:
-                  - img [ref=e445]
-                  - generic [ref=e447]: Save Report
-                - button "Export Report" [ref=e449] [cursor=pointer]:
-                  - img [ref=e450]
-                  - generic [ref=e452]: Export Report
-                  - img [ref=e453]
-  - status "Mock mode is active" [ref=e455]:
-    - generic [ref=e456]: 🧪
-    - generic [ref=e457]: Mock Mode Active
-  - alert [ref=e458]
+    - link "skipToMainContent" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - button "Go to Dashboard" [ref=e6] [cursor=pointer]:
+          - img [ref=e7]
+          - generic [ref=e9]: Go to Dashboard
+        - heading "Idea Analyzer" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Let AI vet your next big idea.
+        - generic [ref=e13]:
+          - button "Set language to English" [active] [pressed] [ref=e14] [cursor=pointer]:
+            - generic [ref=e15]: EN
+          - button "Set language to Spanish" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]: ES
+      - main [ref=e18]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: ⚡
+          - generic [ref=e23]:
+            - generic [ref=e24]:
+              - generic [ref=e25]: "999"
+              - generic [ref=e26]: credits remaining
+            - generic "developer@localhost.dev" [ref=e27]: Logged in as developer@localhost.dev
+        - generic [ref=e31]:
+          - generic [ref=e32]: Enter Your Idea
+          - generic [ref=e33]:
+            - textbox "Enter Your Idea" [ref=e34]:
+              - /placeholder: e.g., A subscription service for artisanal coffee beans delivered by drones...
+            - button "Record idea with microphone" [ref=e35] [cursor=pointer]:
+              - img [ref=e36]
+          - button "Analyze Idea" [disabled] [ref=e38]:
+            - generic: Analyze Idea
+            - img
+  - status "Mock mode is active" [ref=e39]:
+    - generic [ref=e40]: 🧪
+    - generic [ref=e41]: Mock Mode Active
+  - alert [ref=e42]
 ```
