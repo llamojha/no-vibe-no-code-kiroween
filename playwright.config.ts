@@ -137,6 +137,7 @@ export default defineConfig({
           NODE_ENV: "test",
           FF_USE_MOCK_API: "true",
           NEXT_PUBLIC_FF_USE_MOCK_API: "true",
+          ALLOW_TEST_MODE_IN_PRODUCTION: "true",
           FF_MOCK_SCENARIO: process.env.FF_MOCK_SCENARIO || "success",
           FF_SIMULATE_LATENCY: process.env.FF_SIMULATE_LATENCY || "false",
           FF_LOG_MOCK_REQUESTS: process.env.FF_LOG_MOCK_REQUESTS || "true",

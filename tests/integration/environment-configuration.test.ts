@@ -27,6 +27,7 @@ describe('Environment Configuration Integration', () => {
       FF_MOCK_SCENARIO: process.env.FF_MOCK_SCENARIO,
       FF_SIMULATE_LATENCY: process.env.FF_SIMULATE_LATENCY,
       NODE_ENV: process.env.NODE_ENV,
+      ALLOW_TEST_MODE_IN_PRODUCTION: process.env.ALLOW_TEST_MODE_IN_PRODUCTION,
     };
   });
 
@@ -92,6 +93,7 @@ describe('Environment Configuration Integration', () => {
       // Arrange
       process.env.FF_USE_MOCK_API = 'true';
       process.env.NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
 
       // Act
       const result: ValidationResult = TestEnvironmentConfig.validateTestEnvironment();
@@ -99,6 +101,20 @@ describe('Environment Configuration Integration', () => {
       // Assert
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Mock mode cannot be enabled in production');
+    });
+
+    it('should allow production mock mode when override is enabled', () => {
+      // Arrange
+      process.env.FF_USE_MOCK_API = 'true';
+      process.env.NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      // Act
+      const result: ValidationResult = TestEnvironmentConfig.validateTestEnvironment();
+
+      // Assert
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should return warning for invalid scenario', () => {
@@ -315,3 +331,16 @@ describe('Environment Configuration Integration', () => {
     });
   });
 });
+    it('should respect production override when fetching current config', () => {
+      // Arrange
+      process.env.FF_USE_MOCK_API = 'true';
+      process.env.NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      // Act
+      const config = TestEnvironmentConfig.getCurrentConfig();
+
+      // Assert
+      expect(config.mockMode).toBe(true);
+      expect(config.nodeEnv).toBe('production');
+    });

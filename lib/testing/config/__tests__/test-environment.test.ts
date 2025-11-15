@@ -15,7 +15,11 @@ describe('TestEnvironmentConfig', () => {
   beforeEach(() => {
     // Reset environment before each test
     Object.keys(process.env).forEach(key => {
-      if (key.startsWith('FF_') || key === 'NODE_ENV') {
+      if (
+        key.startsWith('FF_') ||
+        key === 'NODE_ENV' ||
+        key === 'ALLOW_TEST_MODE_IN_PRODUCTION'
+      ) {
         delete process.env[key];
       }
     });
@@ -25,7 +29,11 @@ describe('TestEnvironmentConfig', () => {
   afterEach(() => {
     // Restore original environment
     Object.keys(process.env).forEach(key => {
-      if (key.startsWith('FF_') || key === 'NODE_ENV') {
+      if (
+        key.startsWith('FF_') ||
+        key === 'NODE_ENV' ||
+        key === 'ALLOW_TEST_MODE_IN_PRODUCTION'
+      ) {
         delete process.env[key];
       }
     });
@@ -57,11 +65,23 @@ describe('TestEnvironmentConfig', () => {
     it('should return error when mock mode is enabled in production', () => {
       process.env.FF_USE_MOCK_API = 'true';
       (process.env as Record<string, string>).NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
       
       const result = TestEnvironmentConfig.validateTestEnvironment();
       
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Mock mode cannot be enabled in production');
+    });
+
+    it('should allow mock mode in production when override is enabled', () => {
+      process.env.FF_USE_MOCK_API = 'true';
+      (process.env as Record<string, string>).NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      const result = TestEnvironmentConfig.validateTestEnvironment();
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
     it('should return warning for invalid scenario', () => {
@@ -198,3 +218,13 @@ describe('MockConfigurationError', () => {
     expect(error).toBeInstanceOf(MockConfigurationError);
   });
 });
+    it('should respect production override when returning config', () => {
+      process.env.FF_USE_MOCK_API = 'true';
+      (process.env as Record<string, string>).NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      const config = TestEnvironmentConfig.getCurrentConfig();
+
+      expect(config.mockMode).toBe(true);
+      expect(config.nodeEnv).toBe('production');
+    });

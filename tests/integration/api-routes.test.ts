@@ -316,6 +316,7 @@ describe('API Routes Integration', () => {
       // Arrange
       process.env.FF_USE_MOCK_API = 'true';
       process.env.NODE_ENV = 'production'; // Invalid configuration
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
 
       // Act & Assert
       expect(() => {
@@ -327,6 +328,7 @@ describe('API Routes Integration', () => {
       // Arrange
       process.env.FF_USE_MOCK_API = 'true';
       process.env.NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
 
       // Act & Assert
       try {
@@ -337,6 +339,18 @@ describe('API Routes Integration', () => {
         expect(error.code).toBeDefined();
       }
     });
+
+    it('should allow service creation when production override is enabled', () => {
+      // Arrange
+      process.env.FF_USE_MOCK_API = 'true';
+      process.env.NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      // Act & Assert
+      expect(() => {
+        MockModeHelper.createServiceFactory();
+      }).not.toThrow();
+    });
   });
 
   describe('Production mode behavior', () => {
@@ -344,6 +358,7 @@ describe('API Routes Integration', () => {
       // Arrange
       process.env.FF_USE_MOCK_API = 'false';
       process.env.NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
 
       // Act
       const isMockMode = MockModeHelper.isMockModeActive();
@@ -358,6 +373,7 @@ describe('API Routes Integration', () => {
       // Arrange
       process.env.FF_USE_MOCK_API = 'true';
       process.env.NODE_ENV = 'production';
+      delete process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
 
       // Act
       const validation = MockModeHelper.validateEnvironment();
@@ -365,6 +381,20 @@ describe('API Routes Integration', () => {
       // Assert
       expect(validation.isValid).toBe(false);
       expect(validation.errors).toContain('Mock mode cannot be enabled in production');
+    });
+
+    it('should permit mock mode in production when override flag is set', () => {
+      // Arrange
+      process.env.FF_USE_MOCK_API = 'true';
+      process.env.NODE_ENV = 'production';
+      process.env.ALLOW_TEST_MODE_IN_PRODUCTION = 'true';
+
+      // Act
+      const validation = MockModeHelper.validateEnvironment();
+
+      // Assert
+      expect(validation.isValid).toBe(true);
+      expect(validation.errors).toHaveLength(0);
     });
   });
 

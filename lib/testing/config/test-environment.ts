@@ -1,5 +1,21 @@
 import { resolveMockModeFlag } from './mock-mode-flags';
 
+const TRUTHY_FLAG_VALUES = new Set(['1', 'true', 'yes', 'on', 'y', 't']);
+
+/**
+ * Determine if test mode overrides should be permitted when NODE_ENV=production.
+ * This enables CI to run against production builds without exposing the endpoint
+ * by default in real production environments.
+ */
+export function isTestModeOverrideEnabled(): boolean {
+  const rawValue = process.env.ALLOW_TEST_MODE_IN_PRODUCTION;
+  if (typeof rawValue !== 'string') {
+    return false;
+  }
+
+  return TRUTHY_FLAG_VALUES.has(rawValue.trim().toLowerCase());
+}
+
 /**
  * Test Environment Configuration
  * 
@@ -86,12 +102,13 @@ export class TestEnvironmentConfig {
     // Check if mock mode is enabled
     const nodeEnv = process.env.NODE_ENV || 'development';
     const requestedMockValue = process.env.FF_USE_MOCK_API?.trim().toLowerCase();
+    const allowTestModeOverride = isTestModeOverrideEnabled();
     const mockModeEnabled = resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
-      allowInProduction: false,
+      allowInProduction: allowTestModeOverride,
     });
 
     // Check for production environment
-    if (nodeEnv === 'production' && requestedMockValue === 'true') {
+    if (nodeEnv === 'production' && requestedMockValue === 'true' && !allowTestModeOverride) {
       errors.push('Mock mode cannot be enabled in production');
     }
 
@@ -119,9 +136,11 @@ export class TestEnvironmentConfig {
    * @returns Current configuration values
    */
   static getCurrentConfig(): TestEnvironmentConfiguration {
+    const allowTestModeOverride = isTestModeOverrideEnabled();
+
     return {
       mockMode: resolveMockModeFlag(process.env.FF_USE_MOCK_API, {
-        allowInProduction: false,
+        allowInProduction: allowTestModeOverride,
       }),
       scenario: process.env.FF_MOCK_SCENARIO || 'success',
       simulateLatency: process.env.FF_SIMULATE_LATENCY === 'true',

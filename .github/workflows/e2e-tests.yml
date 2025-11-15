@@ -113,7 +113,10 @@ jobs:
           NEXT_PUBLIC_FF_USE_MOCK_API: true
           FF_MOCK_SCENARIO: success
           FF_SIMULATE_LATENCY: false
+          ALLOW_TEST_MODE_IN_PRODUCTION: true
           NODE_ENV: test
+          # AI configuration required during bootstrap
+          GEMINI_API_KEY: dummy-key-for-testing
           # Server configuration
           PORT: 3000
           # Disable Supabase for testing (not needed with mocks)
@@ -151,7 +154,9 @@ jobs:
           echo "NEXT_PUBLIC_FF_USE_MOCK_API: $NEXT_PUBLIC_FF_USE_MOCK_API"
           echo "FF_MOCK_SCENARIO: $FF_MOCK_SCENARIO"
           echo "FF_SIMULATE_LATENCY: $FF_SIMULATE_LATENCY"
+          echo "ALLOW_TEST_MODE_IN_PRODUCTION: $ALLOW_TEST_MODE_IN_PRODUCTION"
           echo "NODE_ENV: $NODE_ENV"
+          echo "GEMINI_API_KEY: ${GEMINI_API_KEY:+set}"
           echo "======================================="
 
           # Verify FF_USE_MOCK_API is set to true
@@ -175,7 +180,9 @@ jobs:
           NEXT_PUBLIC_FF_USE_MOCK_API: true
           FF_MOCK_SCENARIO: success
           FF_SIMULATE_LATENCY: false
+          ALLOW_TEST_MODE_IN_PRODUCTION: true
           NODE_ENV: test
+          GEMINI_API_KEY: dummy-key-for-testing
 
       - name: Verify mock mode is active
         if: steps.changes.outputs.code_changed == 'true'

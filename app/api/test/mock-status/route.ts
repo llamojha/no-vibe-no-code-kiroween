@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { TestEnvironmentConfig } from '@/lib/testing/config/test-environment';
+import { TestEnvironmentConfig, isTestModeOverrideEnabled } from '@/lib/testing/config/test-environment';
 
 /**
  * Test endpoint to verify mock mode status
@@ -13,7 +13,8 @@ import { TestEnvironmentConfig } from '@/lib/testing/config/test-environment';
  */
 export async function GET() {
   // Prevent access in production
-  if (process.env.NODE_ENV === 'production') {
+  const allowTestEndpointInProduction = isTestModeOverrideEnabled();
+  if (process.env.NODE_ENV === 'production' && !allowTestEndpointInProduction) {
     return NextResponse.json(
       { error: 'Not available in production' },
       { status: 403 }
