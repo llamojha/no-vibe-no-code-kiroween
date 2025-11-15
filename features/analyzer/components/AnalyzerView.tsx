@@ -118,7 +118,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setSavedAnalysisRecord(null);
       // Don't reset if we have an idea from Frankenstein
       if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
-        setIdea("");
+        setIdea((previous) => (previous && previous.length > 0 ? previous : ""));
       }
       setIsReportSaved(false);
       setGeneratedAudio(null);
