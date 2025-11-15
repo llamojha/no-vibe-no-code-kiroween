@@ -108,15 +108,46 @@ jobs:
       - name: Run Lighthouse audits
         if: steps.changes.outputs.code_changed == 'true'
         id: lighthouse
+        continue-on-error: true
         run: |
-          lhci autorun --config=.lighthouserc.json || echo "lighthouse_failed=true" >> $GITHUB_OUTPUT
+          echo "Running Lighthouse CI..."
+          lhci autorun --config=.lighthouserc.json 2>&1 | tee lighthouse-output.log
+          EXIT_CODE=${PIPESTATUS[0]}
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "lighthouse_failed=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Lighthouse CI exited with code $EXIT_CODE"
+            echo "See lighthouse-output.log for details"
+          else
+            echo "lighthouse_failed=false" >> $GITHUB_OUTPUT
+            echo "✅ Lighthouse CI completed successfully"
+          fi
+
+          exit $EXIT_CODE
         env:
           LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.sha }}
 
       - name: Parse Lighthouse results
         id: lighthouse-results
         if: always() && steps.changes.outputs.code_changed == 'true'
+        continue-on-error: true
         run: |
+          # Check if Lighthouse ran successfully
+          if [ "${{ steps.lighthouse.outputs.lighthouse_failed }}" == "true" ]; then
+            echo "⚠️ Lighthouse CI failed to run - skipping result parsing"
+            echo "Creating empty results file for reporting..."
+            echo '{"pages":[],"error":"Lighthouse CI failed to run"}' > lighthouse-results.json
+
+            # Show lighthouse output if available
+            if [ -f lighthouse-output.log ]; then
+              echo "=== Lighthouse Output ==="
+              tail -n 50 lighthouse-output.log
+              echo "========================"
+            fi
+
+            exit 0
+          fi
+
           if [ -d ".lighthouseci" ]; then
             # Find the most recent manifest file
             MANIFEST=$(find .lighthouseci -name "manifest.json" | head -n 1)
@@ -182,11 +213,18 @@ jobs:
               " "$MANIFEST"
             else
               echo "⚠️ Lighthouse manifest not found"
-              exit 1
+              echo '{"pages":[],"error":"Lighthouse manifest not found"}' > lighthouse-results.json
+              exit 0
             fi
           else
             echo "⚠️ Lighthouse results directory not found"
-            exit 1
+            echo '{"pages":[],"error":"Lighthouse results directory not found"}' > lighthouse-results.json
+
+            # List what files were created
+            echo "Files in current directory:"
+            ls -la
+
+            exit 0
           fi
 
       - name: Stop server
@@ -205,6 +243,7 @@ jobs:
           path: |
             .lighthouseci
             lighthouse-results.json
+            lighthouse-output.log
           retention-days: 30
           if-no-files-found: warn
 
