@@ -157,7 +157,9 @@ describe("generateHackathonProjectPrompt", () => {
       );
 
       expect(prompt).toContain("resurrection");
-      expect(prompt).toContain("Reviving obsolete technology");
+      expect(prompt).toContain(
+        "Bring your favorite dead technology back to life"
+      );
     });
 
     it("should handle frankenstein category", () => {
@@ -168,7 +170,7 @@ describe("generateHackathonProjectPrompt", () => {
       );
 
       expect(prompt).toContain("frankenstein");
-      expect(prompt).toContain("Integration of seemingly incompatible");
+      expect(prompt).toContain("Stitch together a chimera of technologies");
     });
 
     it("should handle skeleton-crew category", () => {
@@ -179,7 +181,9 @@ describe("generateHackathonProjectPrompt", () => {
       );
 
       expect(prompt).toContain("skeleton-crew");
-      expect(prompt).toContain("Flexible foundation");
+      expect(prompt).toContain(
+        "skeleton code template lean enough to be clear"
+      );
     });
 
     it("should handle costume-contest category", () => {
@@ -190,7 +194,7 @@ describe("generateHackathonProjectPrompt", () => {
       );
 
       expect(prompt).toContain("costume-contest");
-      expect(prompt).toContain("UI polish");
+      expect(prompt).toContain("haunting user interface");
     });
 
     it("should handle unknown category gracefully", () => {
