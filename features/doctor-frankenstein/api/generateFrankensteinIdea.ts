@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import type { FrankensteinIdeaResult } from "@/lib/types";
+import { generateFrankensteinPrompt } from "@/lib/prompts/frankenstein";
+import type { Locale } from "@/lib/prompts/constants";
 
 export interface FrankensteinElement {
   name: string;
@@ -21,49 +23,8 @@ export async function generateFrankensteinIdea(
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
   const genAI = new GoogleGenAI({ apiKey });
 
-  const elementsList = elements
-    .map((e) => (e.description ? `${e.name} (${e.description})` : e.name))
-    .join(", ");
-
-  const modeContext =
-    mode === "aws"
-      ? "focus more on infrastructure, cloud scalability, and developer productivity"
-      : "focus more on product synergy, market potential, and user experience";
-
-  const prompt = `You are the AI engine of "No Vibe No Code", an intelligent product analysis system. Your task is to act as the "Doctor Frankenstein Kiroween" module.
-
-Context:
-The user has just combined multiple existing technologies ${
-    mode === "aws" ? "(AWS services)" : "(tech companies)"
-  } to create a new hybrid concept — a "Frankenstein Idea". You must bring that idea to life by generating a creative startup concept.
-
-### Input:
-The following elements were combined to create the Frankenstein idea:
-${elementsList}
-
-### Objective:
-1. Combine these elements into a coherent startup/product concept.
-2. Generate a creative idea with a title, description, and summary.
-3. ${modeContext}
-
-### Output Format:
-Return a JSON object with the following structure (respond ONLY with valid JSON, no markdown).
-IMPORTANT: All fields must be STRING values:
-{
-  "idea_title": "creative and concise name of the new concept (STRING)",
-  "idea_description": "2-4 paragraphs explaining what this new idea/product is, what problem it solves, and how it works (STRING)",
-  "summary": "1-2 paragraphs summarizing the viability, creative potential, and key value proposition (STRING)",
-  "language": "${language}"
-}
-
-### Tone and Style:
-- Keep a slightly playful but analytical tone, in line with the Kiroween Halloween / creativity theme.
-- Use vivid language and intelligent humor when appropriate.
-- Maintain professional clarity and actionable insights.
-- If the combination includes absurd or incompatible elements, make it work anyway — creatively justify it.
-- Respond in ${language === "es" ? "Spanish" : "English"}.
-
-Now, generate the Frankenstein Idea Report as valid JSON only.`;
+  // Generate prompt using the new prompt module
+  const prompt = generateFrankensteinPrompt(elements, mode, language as Locale);
 
   const result = await genAI.models.generateContent({
     model,

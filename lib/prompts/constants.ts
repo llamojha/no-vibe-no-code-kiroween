@@ -6,14 +6,15 @@
  * Types of analysis available
  */
 export enum PromptType {
-  STARTUP_IDEA = 'startup_idea',
-  HACKATHON_PROJECT = 'hackathon_project'
+  STARTUP_IDEA = "startup_idea",
+  HACKATHON_PROJECT = "hackathon_project",
+  FRANKENSTEIN = "frankenstein",
 }
 
 /**
  * Supported locales for prompts
  */
-export type Locale = 'en' | 'es';
+export type Locale = "en" | "es";
 
 /**
  * Configuration for a prompt
@@ -34,4 +35,5 @@ export type PromptGenerator = (input: string, locale: Locale) => string;
 export interface PromptGenerators {
   [PromptType.STARTUP_IDEA]: PromptGenerator;
   [PromptType.HACKATHON_PROJECT]: PromptGenerator;
+  [PromptType.FRANKENSTEIN]: PromptGenerator;
 }
