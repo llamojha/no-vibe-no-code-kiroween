@@ -123,6 +123,17 @@ Para cada puntuación de criterios, asegúrate de:
 - Equilibra fortalezas y áreas de crecimiento
 - Cada crítica incluye una sugerencia constructiva
 
+GENERACIÓN DE SNIPPETS DE MEJORA:
+Los "improvementSuggestions" deben ser snippets de texto que el usuario puede AGREGAR directamente a su descripción del proyecto para mejorar el puntaje. Cada snippet debe:
+- Ser una extensión natural de la idea original (2-4 oraciones)
+- Abordar debilidades específicas identificadas en la evaluación
+- Agregar detalles concretos sobre implementación, características o uso de Kiro
+- Estar escrito en primera persona como si el usuario lo hubiera escrito
+- Ser lo suficientemente específico para aumentar el puntaje en la próxima evaluación
+- Enfocarse en los criterios con puntajes más bajos (Potential Value, Implementation, Quality and Design)
+
+Ejemplo de snippet: "El proyecto utilizará Kiro Hooks para automatizar las pruebas después de cada cambio de código, y Specs para documentar los requisitos de cada componente. La interfaz incluirá animaciones CSS personalizadas con tema de Halloween y efectos de sonido espeluznantes para mejorar la experiencia del usuario."
+
 Proporciona tu análisis en el siguiente formato JSON (todos los valores numéricos deben ser números, no strings):
 
 REQUISITO IMPORTANTE: El arreglo "evaluations" DEBE contener exactamente CUATRO objetos, uno por cada categoría de Kiroween ("resurrection", "frankenstein", "skeleton-crew", "costume-contest"). Cada objeto debe incluir "category", "fitScore", "explanation" y "improvementSuggestions".
@@ -227,7 +238,7 @@ REQUISITO IMPORTANTE: El arreglo "evaluations" DEBE contener exactamente CUATRO 
   "improvementSuggestions": [
     {
       "title": "Título de Mejora",
-      "description": "Sugerencia específica y accionable"
+      "snippet": "Texto específico que el usuario puede agregar a su descripción del proyecto para mejorar el puntaje. Este snippet debe ser una extensión natural de la idea que aborde las debilidades identificadas."
     }
   ],
   "nextSteps": [
@@ -429,7 +440,7 @@ IMPORTANT REQUIREMENT: The "evaluations" array MUST contain exactly FOUR objects
   "improvementSuggestions": [
     {
       "title": "Enhancement Title",
-      "description": "Specific actionable suggestion"
+      "snippet": "Specific text that the user can add to their project description to improve the score. This snippet should be a natural extension of the idea that addresses identified weaknesses."
     }
   ],
   "nextSteps": [
@@ -469,6 +480,17 @@ For each criteria score, ensure:
 - Improvement suggestions are actionable within hackathon constraints
 - Balance strengths and areas for growth
 - Every criticism includes a constructive suggestion
+
+IMPROVEMENT SNIPPET GENERATION:
+The "improvementSuggestions" must be text snippets that users can ADD directly to their project description to improve the score. Each snippet should:
+- Be a natural extension of the original idea (2-4 sentences)
+- Address specific weaknesses identified in the evaluation
+- Add concrete details about implementation, features, or Kiro usage
+- Be written in first person as if the user wrote it
+- Be specific enough to increase the score on the next evaluation
+- Focus on the criteria with lowest scores (Potential Value, Implementation, Quality and Design)
+
+Example snippet: "The project will use Kiro Hooks to automate testing after every code change, and Specs to document requirements for each component. The interface will include custom CSS animations with Halloween theming and spooky sound effects to enhance the user experience."
 
 EVALUATION GUIDELINES:
 Category Fit Scoring (1-10 scale):

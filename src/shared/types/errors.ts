@@ -95,9 +95,14 @@ export class AuthorizationError extends DomainError {
 export class InsufficientCreditsError extends DomainError {
   readonly code = "INSUFFICIENT_CREDITS";
 
-  constructor(public readonly userId: string, cause?: Error) {
+  constructor(
+    public readonly userId: string,
+    public readonly userEmail?: string,
+    cause?: Error
+  ) {
+    const identifier = userEmail || userId;
     super(
-      `User ${userId} has insufficient credits to perform this action.`,
+      `User ${identifier} has insufficient credits to perform this action.`,
       cause
     );
   }

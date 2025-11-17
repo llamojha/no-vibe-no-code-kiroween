@@ -46,7 +46,8 @@ export interface FounderQuestion {
 
 export interface ImprovementSuggestion {
   title: string;
-  description: string;
+  description?: string; // Legacy field for idea analyzer
+  snippet?: string; // Text snippet to add to project description (for hackathon analyzer)
 }
 
 export interface Analysis {
@@ -165,7 +166,10 @@ export interface UnifiedAnalysisRecord {
   summary: string;
   audioBase64?: string | null;
   // Original analysis data
-  originalData: SavedAnalysisRecord | SavedHackathonAnalysis | SavedFrankensteinIdea;
+  originalData:
+    | SavedAnalysisRecord
+    | SavedHackathonAnalysis
+    | SavedFrankensteinIdea;
 }
 
 export interface DashboardFilterState {

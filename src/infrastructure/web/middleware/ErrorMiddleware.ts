@@ -185,6 +185,7 @@ export function handleApiError(error: unknown, path?: string): NextResponse {
         credits: 0,
         tier: "free" as UserTier,
         userId: error.userId,
+        userEmail: error.userEmail,
         upgradeInfo: {
           message: "Get more credits to continue analyzing ideas",
           action: "upgrade",
