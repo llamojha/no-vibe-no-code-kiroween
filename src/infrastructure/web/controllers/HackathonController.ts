@@ -14,7 +14,12 @@ import { withCreditCheck } from "../middleware/CreditCheckMiddleware";
 import { CheckCreditsUseCase } from "@/src/application/use-cases/CheckCreditsUseCase";
 import { DeductCreditUseCase } from "@/src/application/use-cases/DeductCreditUseCase";
 import { DeductCreditCommand } from "@/src/application/types/commands/CreditCommands";
-import { UserId, AnalysisId, AnalysisType, Locale } from "@/src/domain/value-objects";
+import {
+  UserId,
+  AnalysisId,
+  AnalysisType,
+  Locale,
+} from "@/src/domain/value-objects";
 import { GoogleAIAdapter } from "../../external/ai/GoogleAIAdapter";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 import { TestDataManager } from "@/lib/testing/TestDataManager";
@@ -25,6 +30,7 @@ import {
   trackServerAnalysisRequest,
   trackServerError,
 } from "@/features/analytics/server-tracking";
+import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -39,7 +45,8 @@ export class HackathonController {
     private readonly getHackathonLeaderboardHandler: GetHackathonLeaderboardHandler,
     private readonly searchHackathonAnalysesHandler: SearchHackathonAnalysesHandler,
     private readonly checkCreditsUseCase: CheckCreditsUseCase,
-    private readonly deductCreditUseCase: DeductCreditUseCase
+    private readonly deductCreditUseCase: DeductCreditUseCase,
+    private readonly userRepository: IUserRepository
   ) {
     this.hackathonMockData = new TestDataManager();
   }
@@ -82,7 +89,11 @@ export class HackathonController {
       const userId = UserId.fromString(authResult.userId);
 
       // Enforce credit policy before running analysis
-      await withCreditCheck(userId, this.checkCreditsUseCase);
+      await withCreditCheck(
+        userId,
+        this.checkCreditsUseCase,
+        this.userRepository
+      );
 
       if (isMockMode) {
         // In mock mode, return mock data directly

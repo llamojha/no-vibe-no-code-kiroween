@@ -46,6 +46,7 @@ import { DeductCreditCommand } from "@/src/application/types/commands/CreditComm
 import { AnalysisType } from "@/src/domain/value-objects/AnalysisType";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
+import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
 /**
  * Controller for analysis-related API endpoints
@@ -61,7 +62,8 @@ export class AnalysisController {
     private readonly searchAnalysesHandler: SearchAnalysesHandler,
     private readonly checkCreditsUseCase: CheckCreditsUseCase,
     private readonly getCreditBalanceUseCase: GetCreditBalanceUseCase,
-    private readonly deductCreditUseCase: DeductCreditUseCase
+    private readonly deductCreditUseCase: DeductCreditUseCase,
+    private readonly userRepository: IUserRepository
   ) {}
 
   /**
@@ -119,7 +121,11 @@ export class AnalysisController {
 
       // Check if user has sufficient credits before analysis
       if (creditSystemEnabled) {
-        await withCreditCheck(userId, this.checkCreditsUseCase);
+        await withCreditCheck(
+          userId,
+          this.checkCreditsUseCase,
+          this.userRepository
+        );
       }
 
       // Build command and delegate to application handler to persist
@@ -181,8 +187,9 @@ export class AnalysisController {
 
       if (creditSystemEnabled) {
         // Fetch current credit balance to include in response
-        const creditBalanceResult =
-          await this.getCreditBalanceUseCase.execute(userId);
+        const creditBalanceResult = await this.getCreditBalanceUseCase.execute(
+          userId
+        );
 
         // Include credit information if available
         if (creditBalanceResult.success && creditBalanceResult.data) {

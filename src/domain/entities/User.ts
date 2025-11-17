@@ -255,7 +255,7 @@ export class User extends Entity<UserId> {
    */
   deductCredit(): void {
     if (this._credits <= 0) {
-      throw new InsufficientCreditsError(this.id.value);
+      throw new InsufficientCreditsError(this.id.value, this._email.value);
     }
     this._credits -= 1;
     this._updatedAt = new Date();

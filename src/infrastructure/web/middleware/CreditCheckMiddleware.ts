@@ -2,6 +2,7 @@ import { UserId } from "@/src/domain/value-objects/UserId";
 import { CheckCreditsUseCase } from "@/src/application/use-cases/CheckCreditsUseCase";
 import { InsufficientCreditsError } from "@/src/shared/types/errors";
 import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
+import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 
 /**
  * Middleware function to check if a user has sufficient credits to perform an analysis
@@ -9,11 +10,13 @@ import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
  *
  * @param userId - The user ID to check credits for
  * @param checkCreditsUseCase - The use case to execute the credit check
+ * @param userRepository - The user repository to fetch user email
  * @throws InsufficientCreditsError if user has no credits
  */
 export async function withCreditCheck(
   userId: UserId,
-  checkCreditsUseCase: CheckCreditsUseCase
+  checkCreditsUseCase: CheckCreditsUseCase,
+  userRepository: IUserRepository
 ): Promise<void> {
   if (!isCreditSystemEnabled()) {
     return;
@@ -29,6 +32,13 @@ export async function withCreditCheck(
 
   // Check if user is allowed to perform analysis
   if (!result.data.allowed) {
-    throw new InsufficientCreditsError(userId.value);
+    // Get user email for better error message
+    let userEmail: string | undefined;
+    const userResult = await userRepository.findById(userId);
+    if (userResult.success && userResult.data) {
+      userEmail = userResult.data.email.value;
+    }
+
+    throw new InsufficientCreditsError(userId.value, userEmail);
   }
 }

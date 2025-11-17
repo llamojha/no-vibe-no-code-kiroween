@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateFrankensteinIdea, type FrankensteinElement } from "@/features/doctor-frankenstein/api/generateFrankensteinIdea";
-import { MockModeHelper, MockConfigurationError } from "@/lib/testing/api/mock-mode-helper";
+import {
+  generateFrankensteinIdea,
+  type FrankensteinElement,
+} from "@/features/doctor-frankenstein/api/generateFrankensteinIdea";
+import {
+  MockModeHelper,
+  MockConfigurationError,
+} from "@/lib/testing/api/mock-mode-helper";
 import { MockFrankensteinService } from "@/lib/testing/mocks/MockFrankensteinService";
 import { TestDataManager } from "@/lib/testing/TestDataManager";
 import { logger, LogCategory } from "@/lib/logger";
@@ -16,7 +22,6 @@ import {
   trackServerError,
 } from "@/features/analytics/server-tracking";
 
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -24,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
   let trackedUserId: string | null = null;
   let trackedUserTier: Parameters<typeof trackServerAnalysisRequest>[2];
-  
+
   try {
     await NextJSBootstrap.initialize();
 
@@ -37,17 +42,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? MockModeHelper.createServiceFactory()
       : await NextJSBootstrap.getServiceFactory();
     const useCaseFactory = serviceFactory.getUseCaseFactory();
-    const checkCreditsUseCase =
-      useCaseFactory.createCheckCreditsUseCase();
-    const deductCreditUseCase =
-      useCaseFactory.createDeductCreditUseCase();
-    
-    logger.info(LogCategory.API, 'POST /api/doctor-frankenstein/generate - Generating idea', {
-      method: 'POST',
-      path: '/api/doctor-frankenstein/generate',
-      mockMode: mockModeStatus.mockMode,
-      scenario: mockModeStatus.scenario
-    });
+    const repositoryFactory = serviceFactory.getRepositoryFactory();
+    const checkCreditsUseCase = useCaseFactory.createCheckCreditsUseCase();
+    const deductCreditUseCase = useCaseFactory.createDeductCreditUseCase();
+    const userRepository = repositoryFactory.createUserRepository();
+
+    logger.info(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - Generating idea",
+      {
+        method: "POST",
+        path: "/api/doctor-frankenstein/generate",
+        mockMode: mockModeStatus.mockMode,
+        scenario: mockModeStatus.scenario,
+      }
+    );
 
     const body = await request.json();
     const { elements, mode, language } = body;
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const userId = UserId.fromString(authResult.userId);
-    await withCreditCheck(userId, checkCreditsUseCase);
+    await withCreditCheck(userId, checkCreditsUseCase, userRepository);
 
     if (!elements || !Array.isArray(elements) || elements.length === 0) {
       return NextResponse.json(
@@ -82,23 +91,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (!mode || !['companies', 'aws'].includes(mode)) {
+    if (!mode || !["companies", "aws"].includes(mode)) {
       return NextResponse.json(
         { error: "Mode must be 'companies' or 'aws'" },
         { status: 400 }
       );
     }
 
-    const lang = language === 'es' ? 'es' : 'en';
+    const lang = language === "es" ? "es" : "en";
 
     let result;
-    
+
     // Route to mock service when enabled
     if (mockModeActive) {
       const testDataManager = new TestDataManager();
-      const defaultScenario: TestScenario = TestEnvironmentConfig.isValidScenario(config.scenario)
-        ? config.scenario
-        : "success";
+      const defaultScenario: TestScenario =
+        TestEnvironmentConfig.isValidScenario(config.scenario)
+          ? config.scenario
+          : "success";
       const mockServiceConfig = {
         defaultScenario,
         enableVariability: false,
@@ -107,23 +117,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         maxLatency: 500,
         logRequests: false,
       };
-      const mockService = new MockFrankensteinService(testDataManager, mockServiceConfig);
-      
-      logger.info(LogCategory.API, 'Using MockFrankensteinService', {
+      const mockService = new MockFrankensteinService(
+        testDataManager,
+        mockServiceConfig
+      );
+
+      logger.info(LogCategory.API, "Using MockFrankensteinService", {
         scenario: mockServiceConfig.defaultScenario,
-        simulateLatency: mockServiceConfig.simulateLatency
+        simulateLatency: mockServiceConfig.simulateLatency,
       });
-      
+
       result = await mockService.generateFrankensteinIdea(
         elements as FrankensteinElement[],
-        mode as 'companies' | 'aws',
+        mode as "companies" | "aws",
         lang
       );
     } else {
       // Use production service
       result = await generateFrankensteinIdea(
         elements as FrankensteinElement[],
-        mode as 'companies' | 'aws',
+        mode as "companies" | "aws",
         lang
       );
     }
@@ -135,23 +148,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     if (!deductResult.success) {
-      logger.error(LogCategory.API, "Failed to deduct credits after Frankenstein analysis", {
-        userId: userId.value,
-        error: deductResult.error?.message,
-      });
+      logger.error(
+        LogCategory.API,
+        "Failed to deduct credits after Frankenstein analysis",
+        {
+          userId: userId.value,
+          error: deductResult.error?.message,
+        }
+      );
     }
 
     // Add mock mode status to response metadata
     const enhancedResult = {
       ...result,
-      _meta: mockModeStatus
+      _meta: mockModeStatus,
     };
 
     const duration = Date.now() - startTime;
-    logger.info(LogCategory.API, 'POST /api/doctor-frankenstein/generate - Completed', {
-      duration,
-      mockMode: mockModeStatus.mockMode
-    });
+    logger.info(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - Completed",
+      {
+        duration,
+        mockMode: mockModeStatus.mockMode,
+      }
+    );
 
     return NextResponse.json(enhancedResult);
   } catch (error) {
@@ -165,31 +186,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         trackedUserTier
       );
     }
-    
+
     // Handle mock configuration errors specifically
     if (error instanceof MockConfigurationError) {
-      logger.error(LogCategory.API, 'POST /api/doctor-frankenstein/generate - Mock configuration error', {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        duration
-      });
-      
-      return NextResponse.json(
-        { 
+      logger.error(
+        LogCategory.API,
+        "POST /api/doctor-frankenstein/generate - Mock configuration error",
+        {
           error: error.message,
           code: error.code,
-          details: error.details
+          details: error.details,
+          duration,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          details: error.details,
         },
         { status: 500 }
       );
     }
-    
-    logger.error(LogCategory.API, 'POST /api/doctor-frankenstein/generate - Failed', {
-      error: error instanceof Error ? error.message : String(error),
-      duration
-    });
-    
+
+    logger.error(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - Failed",
+      {
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      }
+    );
+
     return handleApiError(error, "/api/doctor-frankenstein/generate");
   }
 }

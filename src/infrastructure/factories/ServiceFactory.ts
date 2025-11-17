@@ -192,6 +192,9 @@ export class ServiceFactory {
       const deductCreditUseCase =
         this.useCaseFactory!.createDeductCreditUseCase();
 
+      // Get user repository
+      const userRepository = this.repositoryFactory!.createUserRepository();
+
       const controller = new AnalysisController(
         createAnalysisHandler,
         updateAnalysisHandler,
@@ -201,7 +204,8 @@ export class ServiceFactory {
         searchAnalysesHandler,
         checkCreditsUseCase,
         getCreditBalanceUseCase,
-        deductCreditUseCase
+        deductCreditUseCase,
+        userRepository
       );
 
       this.services.set(cacheKey, controller);
@@ -233,13 +237,17 @@ export class ServiceFactory {
       const deductCreditUseCase =
         this.useCaseFactory!.createDeductCreditUseCase();
 
+      // Get user repository
+      const userRepository = this.repositoryFactory!.createUserRepository();
+
       const controller = new HackathonController(
         createHackathonAnalysisHandler,
         updateHackathonAnalysisHandler,
         getHackathonLeaderboardHandler,
         searchHackathonAnalysesHandler,
         checkCreditsUseCase,
-        deductCreditUseCase
+        deductCreditUseCase,
+        userRepository
       );
 
       this.services.set(cacheKey, controller);

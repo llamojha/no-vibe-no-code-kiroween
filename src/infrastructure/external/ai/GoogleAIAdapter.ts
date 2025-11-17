@@ -672,7 +672,10 @@ export class GoogleAIAdapter {
       : Array.isArray(parsedObj.improvementSuggestions)
       ? parsedObj.improvementSuggestions.map((s: unknown) => {
           const suggestion = s as Record<string, unknown>;
-          return typeof suggestion.description === "string"
+          // Prefer snippet (for hackathon analyzer), fallback to description (for idea analyzer)
+          return typeof suggestion.snippet === "string"
+            ? suggestion.snippet
+            : typeof suggestion.description === "string"
             ? suggestion.description
             : String(s);
         })

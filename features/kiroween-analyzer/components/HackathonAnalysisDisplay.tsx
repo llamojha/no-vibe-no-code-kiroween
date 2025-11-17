@@ -105,13 +105,13 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                         {suggestion.title}
                       </h3>
                       <p className="text-slate-400 text-base mt-1">
-                        {suggestion.description}
+                        {suggestion.snippet || suggestion.description}
                       </p>
                     </div>
                     <button
                       onClick={() =>
                         onRefineSuggestion(
-                          suggestion.description,
+                          suggestion.snippet || suggestion.description || "",
                           suggestion.title,
                           index
                         )
@@ -455,7 +455,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                       {suggestion.title}
                     </h3>
                     <p className="text-base text-slate-400 mt-1">
-                      {suggestion.description}
+                      {suggestion.snippet || suggestion.description}
                     </p>
                   </div>
                 )

@@ -209,7 +209,7 @@ export const generateHackathonReport = (
     report += h2(dict.improvementSuggestionsTitle);
     analysis.improvementSuggestions.forEach((suggestion) => {
       report += `${bold(suggestion.title)}\n`;
-      report += `${suggestion.description}\n\n`;
+      report += `${suggestion.snippet || suggestion.description || ""}\n\n`;
     });
   }
 
