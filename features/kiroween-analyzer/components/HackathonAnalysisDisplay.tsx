@@ -455,7 +455,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                       {suggestion.title}
                     </h3>
                     <p className="text-base text-slate-400 mt-1">
-                      {suggestion.description}
+                      {suggestion.snippet || suggestion.description}
                     </p>
                   </div>
                 )

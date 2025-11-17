@@ -724,7 +724,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                       {suggestion.title}
                     </h3>
                     <p className="text-base text-slate-400 mt-1">
-                      {suggestion.description}
+                      {suggestion.description || suggestion.snippet}
                     </p>
                   </div>
                 )
