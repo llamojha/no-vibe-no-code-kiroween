@@ -283,13 +283,13 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({
                         {suggestion.title}
                       </h3>
                       <p className="text-slate-400 text-base mt-1">
-                        {suggestion.description}
+                        {suggestion.description || suggestion.snippet}
                       </p>
                     </div>
                     <button
                       onClick={() =>
                         onRefineSuggestion(
-                          suggestion.description,
+                          suggestion.description || suggestion.snippet || "",
                           suggestion.title,
                           index
                         )
