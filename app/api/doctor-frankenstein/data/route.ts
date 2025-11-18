@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { join } from "path";
 import type {
   TechCompany,
   AWSService,
 } from "@/features/doctor-frankenstein/utils/dataParser";
+import techCompaniesData from "./tech-companies.json";
+import awsServicesData from "./aws-services.json";
 
 export const dynamic = "force-static";
 export const revalidate = 3600; // Cache for 1 hour
@@ -25,21 +25,8 @@ interface JSONData {
 
 export async function GET() {
   try {
-    const dataDir = join(
-      process.cwd(),
-      "app",
-      "api",
-      "doctor-frankenstein",
-      "data"
-    );
-
-    const [companiesJSON, awsJSON] = await Promise.all([
-      readFile(join(dataDir, "tech-companies.json"), "utf-8"),
-      readFile(join(dataDir, "aws-services.json"), "utf-8"),
-    ]);
-
-    const companiesData: JSONData = JSON.parse(companiesJSON);
-    const awsData: JSONData = JSON.parse(awsJSON);
+    const companiesData = techCompaniesData as JSONData;
+    const awsData = awsServicesData as JSONData;
 
     // Flatten categories into arrays with category field
     const techCompanies: TechCompany[] = companiesData.categories.flatMap(
