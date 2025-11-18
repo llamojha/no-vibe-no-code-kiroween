@@ -1,0 +1,1463 @@
+{
+  "categories": [
+    {
+      "name": "Cloud, Infra & Platforms",
+      "items": [
+        {
+          "name": "Amazon Web Services (AWS)",
+          "description": "200+ services from compute to AI, largest cloud wit"
+        },
+        {
+          "name": "Google Cloud (GCP)",
+          "description": "BigQuery analytics, Vertex AI, and Kubernetes-nativ"
+        },
+        {
+          "name": "Microsoft Azure",
+          "description": "Enterprise cloud with Active Directory, Office 365,s"
+        },
+        {
+          "name": "Alibaba Cloud",
+          "description": "Dominant cloud in China with e-commerce and payment"
+        },
+        {
+          "name": "Oracle Cloud Infrastructure (OCI)",
+          "description": "High-performance cloud optimized for Oracle databaspps"
+        },
+        {
+          "name": "IBM Cloud",
+          "description": "Hybrid cloud with Watson AI, quantum computing, andn"
+        },
+        {
+          "name": "DigitalOcean",
+          "description": "Simple cloud for developers with predictable pricin"
+        },
+        {
+          "name": "Linode (Akamai Cloud)",
+          "description": "Developer-friendly VPS with global edge network int"
+        },
+        {
+          "name": "Heroku (Salesforce)",
+          "description": "Deploy apps from Git with zero infrastructure manag"
+        },
+        {
+          "name": "Cloudflare",
+          "description": "Global edge network with DDoS protection, Workers,"
+        },
+        {
+          "name": "Akamai",
+          "description": "CDN serving 30% of web traffic with edge compute an"
+        },
+        {
+          "name": "Fastly",
+          "description": "Real-time CDN with edge computing and instant cache"
+        },
+        {
+          "name": "Vercel",
+          "description": "Frontend cloud with instant deployments and edge fu"
+        },
+        {
+          "name": "Netlify",
+          "description": "Jamstack platform with atomic deploys and serverles"
+        },
+        {
+          "name": "HashiCorp",
+          "description": "Infrastructure automation with Terraform, Vault, Co"
+        },
+        {
+          "name": "Red Hat (IBM)",
+          "description": "Enterprise Linux and OpenShift Kubernetes with ente"
+        },
+        {
+          "name": "Canonical",
+          "description": "Ubuntu Linux with Snap packages and cloud-native to"
+        },
+        {
+          "name": "SUSE",
+          "description": "Enterprise Linux with Rancher for multi-cluster Kub"
+        },
+        {
+          "name": "VMware",
+          "description": "Virtualization leader with vSphere, NSX networking,"
+        },
+        {
+          "name": "Equinix",
+          "description": "Global interconnection platform with 240+ data cent"
+        },
+        {
+          "name": "Snowflake",
+          "description": "Cloud data warehouse with instant scaling and data ace"
+        },
+        {
+          "name": "Databricks",
+          "description": "Unified analytics platform combining data lakes and"
+        },
+        {
+          "name": "Confluent",
+          "description": "Enterprise Kafka platform for real-time data stream"
+        },
+        {
+          "name": "Elastic",
+          "description": "Search and observability with Elasticsearch, Kibana"
+        },
+        {
+          "name": "MongoDB Inc.",
+          "description": "Document database with flexible schema and Atlas cl"
+        },
+        {
+          "name": "Couchbase",
+          "description": "Distributed NoSQL with mobile sync and full-text se"
+        },
+        {
+          "name": "DataStax",
+          "description": "Enterprise Cassandra for always-on, globally distri"
+        },
+        {
+          "name": "Neo4j",
+          "description": "Native graph database for connected data and relati"
+        },
+        {
+          "name": "Redis Ltd.",
+          "description": "In-memory data store with sub-millisecond latency a"
+        },
+        {
+          "name": "InfluxData",
+          "description": "Purpose-built time-series database for metrics and"
+        },
+        {
+          "name": "Timescale",
+          "description": "Time-series database built on PostgreSQL with SQL s"
+        },
+        {
+          "name": "Cockroach Labs",
+          "description": "Distributed SQL database with automatic sharding an"
+        },
+        {
+          "name": "PlanetScale",
+          "description": "Serverless MySQL with branching workflows like Git"
+        },
+        {
+          "name": "SingleStore",
+          "description": "Real-time analytics database combining transactions"
+        },
+        {
+          "name": "Qdrant",
+          "description": "Vector database for semantic search and AI applicat"
+        },
+        {
+          "name": "Milvus (Zilliz)",
+          "description": "Open-source vector database for billion-scale simil"
+        },
+        {
+          "name": "Weaviate",
+          "description": "Vector search engine with built-in ML models and Gr"
+        },
+        {
+          "name": "Aiven",
+          "description": "Managed open-source data infrastructure across clou"
+        },
+        {
+          "name": "Planet",
+          "description": "Daily satellite imagery of entire Earth for monitor"
+        },
+        {
+          "name": "Cloudinary",
+          "description": "Media management with AI-powered transformations an"
+        }
+      ]
+    },
+    {
+      "name": "AI, ML & Foundation Models",
+      "items": [
+        {
+          "name": "OpenAI",
+          "description": "General‑purpose language & multimodal models"
+        },
+        {
+          "name": "Anthropic",
+          "description": "Safety‑aligned LLMs"
+        },
+        {
+          "name": "Google DeepMind",
+          "description": "Frontier AI research & products"
+        },
+        {
+          "name": "xAI",
+          "description": "Large‑scale LLM research & products"
+        },
+        {
+          "name": "Mistral AI",
+          "description": "Efficient open LLMs"
+        },
+        {
+          "name": "Cohere",
+          "description": "Enterprise LLMs & embeddings"
+        },
+        {
+          "name": "Hugging Face",
+          "description": "Open model hub & tooling"
+        },
+        {
+          "name": "Stability AI",
+          "description": "Open‑source image generation"
+        },
+        {
+          "name": "Midjourney",
+          "description": "Community‑driven generative visuals"
+        },
+        {
+          "name": "Runway",
+          "description": "AI video creation platform"
+        },
+        {
+          "name": "ElevenLabs",
+          "description": "AI voice synthesis"
+        },
+        {
+          "name": "Perplexity AI",
+          "description": "Answer engine with retrieval"
+        },
+        {
+          "name": "Adept AI",
+          "description": "Action models for software automation"
+        },
+        {
+          "name": "Inflection AI",
+          "description": "Personal AI agents (Pi)"
+        },
+        {
+          "name": "Scale AI",
+          "description": "Data labeling & model evaluation"
+        },
+        {
+          "name": "Cerebras Systems",
+          "description": "AI accelerator waferscale compute"
+        },
+        {
+          "name": "Graphcore",
+          "description": "Intelligence processing units (IPUs)"
+        },
+        {
+          "name": "SambaNova",
+          "description": "AI chips & systems"
+        },
+        {
+          "name": "Hazy",
+          "description": "Synthetic data for AI"
+        },
+        {
+          "name": "Snorkel AI",
+          "description": "Programmatic data labeling"
+        },
+        {
+          "name": "Landing AI",
+          "description": "Computer vision for industry"
+        },
+        {
+          "name": "Anyscale",
+          "description": "Ray platform for scalable AI"
+        },
+        {
+          "name": "Weights & Biases",
+          "description": "ML experiment tracking"
+        },
+        {
+          "name": "OctoML",
+          "description": "Model optimization & deployment"
+        }
+      ]
+    },
+    {
+      "name": "Dev Tools, Code & Collaboration",
+      "items": [
+        {
+          "name": "GitHub (Microsoft)",
+          "description": "Code hosting & actions CI/CD"
+        },
+        {
+          "name": "GitLab",
+          "description": "DevSecOps platform"
+        },
+        {
+          "name": "Atlassian",
+          "description": "Jira, Confluence, Bitbucket"
+        },
+        {
+          "name": "JetBrains",
+          "description": "Developer IDEs"
+        },
+        {
+          "name": "Docker Inc.",
+          "description": "Containers for developers"
+        },
+        {
+          "name": "CircleCI",
+          "description": "Continuous integration/delivery"
+        },
+        {
+          "name": "Travis CI",
+          "description": "CI for open source"
+        },
+        {
+          "name": "CloudBees",
+          "description": "Enterprise Jenkins & CI/CD"
+        },
+        {
+          "name": "Snyk",
+          "description": "Developer security"
+        },
+        {
+          "name": "SonarSource",
+          "description": "Code quality & analysis"
+        },
+        {
+          "name": "Postman",
+          "description": "API design & testing"
+        },
+        {
+          "name": "Kong Inc.",
+          "description": "API gateway/services"
+        },
+        {
+          "name": "Tyk",
+          "description": "API management platform"
+        },
+        {
+          "name": "NGINX (F5)",
+          "description": "Web server & ingress"
+        },
+        {
+          "name": "Datadog",
+          "description": "Observability platform"
+        },
+        {
+          "name": "New Relic",
+          "description": "APM & telemetry"
+        },
+        {
+          "name": "Splunk",
+          "description": "Log analytics & SIEM"
+        },
+        {
+          "name": "Grafana Labs",
+          "description": "Visualization & observability"
+        },
+        {
+          "name": "Pulumi",
+          "description": "IaC in general‑purpose languages"
+        },
+        {
+          "name": "Gremlin",
+          "description": "Chaos engineering"
+        },
+        {
+          "name": "LaunchDarkly",
+          "description": "Feature flags"
+        },
+        {
+          "name": "Fossa",
+          "description": "License compliance for code"
+        },
+        {
+          "name": "Nx (Nrwl)",
+          "description": "Monorepo tooling"
+        }
+      ]
+    },
+    {
+      "name": "Consumer Platforms, Media & Creator Ecosystems",
+      "items": [
+        {
+          "name": "Google (YouTube)",
+          "description": "Global video discovery & UGC"
+        },
+        {
+          "name": "Netflix",
+          "description": "On‑demand streaming pioneer"
+        },
+        {
+          "name": "ByteDance (TikTok)",
+          "description": "Short‑form video virality"
+        },
+        {
+          "name": "Spotify",
+          "description": "Music streaming & discovery"
+        },
+        {
+          "name": "Twitch",
+          "description": "Live streaming + chat communities"
+        },
+        {
+          "name": "Reddit",
+          "description": "Community forums & knowledge threads"
+        },
+        {
+          "name": "Discord",
+          "description": "Persistent community chat & bots"
+        },
+        {
+          "name": "Pinterest",
+          "description": "Visual discovery"
+        },
+        {
+          "name": "Patreon",
+          "description": "Creator membership monetization"
+        },
+        {
+          "name": "Substack",
+          "description": "Newsletter + community platform"
+        },
+        {
+          "name": "Medium",
+          "description": "Long‑form publishing network"
+        },
+        {
+          "name": "Canva",
+          "description": "Democratized design tool"
+        },
+        {
+          "name": "Adobe",
+          "description": "Creative pro software suite"
+        },
+        {
+          "name": "Figma",
+          "description": "Collaborative product design"
+        },
+        {
+          "name": "Snap Inc.",
+          "description": "AR‑forward social messaging"
+        },
+        {
+          "name": "X (Twitter)",
+          "description": "Public micro‑broadcast network"
+        },
+        {
+          "name": "LinkedIn (Microsoft)",
+          "description": "Professional network & graph"
+        },
+        {
+          "name": "Quora",
+          "description": "Q&A knowledge community"
+        },
+        {
+          "name": "Wikipedia/Wikimedia",
+          "description": "Open encyclopedia ecosystem"
+        }
+      ]
+    },
+    {
+      "name": "Gaming, Metaverse & Interactive 3D",
+      "items": [
+        {
+          "name": "Nintendo",
+          "description": "Hybrid console & first‑party IP"
+        },
+        {
+          "name": "Sony Interactive Entertainment",
+          "description": "PlayStation ecosystem"
+        },
+        {
+          "name": "Xbox (Microsoft Gaming)",
+          "description": "Console + Game Pass"
+        },
+        {
+          "name": "Valve",
+          "description": "Steam distribution & PC gaming"
+        },
+        {
+          "name": "Epic Games",
+          "description": "Fortnite + Unreal Engine"
+        },
+        {
+          "name": "Unity Technologies",
+          "description": "Realtime 3D engine"
+        },
+        {
+          "name": "Roblox",
+          "description": "UGC game platform/metaverse"
+        },
+        {
+          "name": "Electronic Arts",
+          "description": "Large multiplatform publisher"
+        },
+        {
+          "name": "Activision Blizzard",
+          "description": "AAA franchises (now Microsoft)"
+        },
+        {
+          "name": "Take‑Two Interactive",
+          "description": "Rockstar/2K publisher"
+        },
+        {
+          "name": "Ubisoft",
+          "description": "Global AAA publisher"
+        },
+        {
+          "name": "Bandai Namco",
+          "description": "Japanese publisher & IP"
+        },
+        {
+          "name": "Square Enix",
+          "description": "Japanese RPG publisher"
+        },
+        {
+          "name": "Capcom",
+          "description": "Japanese action IP"
+        },
+        {
+          "name": "Sega",
+          "description": "Legacy IP & arcades"
+        },
+        {
+          "name": "Konami",
+          "description": "Japanese publisher"
+        },
+        {
+          "name": "CD PROJEKT",
+          "description": "RPG developer/publisher"
+        },
+        {
+          "name": "Riot Games (Tencent)",
+          "description": "Esports‑scale live ops"
+        },
+        {
+          "name": "Supercell (Tencent)",
+          "description": "Mobile‑first hits"
+        },
+        {
+          "name": "NetEase Games",
+          "description": "China game ecosystem"
+        },
+        {
+          "name": "Mojang Studios (Microsoft)",
+          "description": "Minecraft"
+        }
+      ]
+    },
+    {
+      "name": "Commerce, Payments & Fintech",
+      "items": [
+        {
+          "name": "Amazon",
+          "description": "Global ecommerce & logistics"
+        },
+        {
+          "name": "Shopify",
+          "description": "Merchant commerce platform"
+        },
+        {
+          "name": "eBay",
+          "description": "Online marketplace pioneer"
+        },
+        {
+          "name": "Alibaba",
+          "description": "B2B/B2C marketplaces"
+        },
+        {
+          "name": "JD.com",
+          "description": "China ecommerce & logistics"
+        },
+        {
+          "name": "Mercado Libre",
+          "description": "LatAm ecommerce & fintech"
+        },
+        {
+          "name": "Rakuten",
+          "description": "Japan ecommerce & ecosystem"
+        },
+        {
+          "name": "Sea Group (Shopee)",
+          "description": "SEA ecommerce"
+        },
+        {
+          "name": "Etsy",
+          "description": "Handmade & creator marketplace"
+        },
+        {
+          "name": "PDD Holdings (Pinduoduo/Temu)",
+          "description": "Social commerce"
+        },
+        {
+          "name": "Flipkart",
+          "description": "India ecommerce"
+        },
+        {
+          "name": "Zalando",
+          "description": "EU fashion marketplace"
+        },
+        {
+          "name": "Stripe",
+          "description": "Developer payments platform"
+        },
+        {
+          "name": "Adyen",
+          "description": "Global payments acquiring"
+        },
+        {
+          "name": "PayPal",
+          "description": "Online payments pioneer"
+        },
+        {
+          "name": "Block (Square)",
+          "description": "POS + fintech ecosystem"
+        },
+        {
+          "name": "Wise",
+          "description": "Cross‑border money movement"
+        },
+        {
+          "name": "Klarna",
+          "description": "BNPL consumer finance"
+        },
+        {
+          "name": "Plaid",
+          "description": "Banking data APIs"
+        },
+        {
+          "name": "Intuit",
+          "description": "Accounting & fintech software"
+        }
+      ]
+    },
+    {
+      "name": "Enterprise SaaS (CRM, IT, HR, Support)",
+      "items": [
+        {
+          "name": "Salesforce",
+          "description": "CRM & app platform"
+        },
+        {
+          "name": "ServiceNow",
+          "description": "Digital workflows & ITSM"
+        },
+        {
+          "name": "Workday",
+          "description": "HR & finance cloud"
+        },
+        {
+          "name": "SAP",
+          "description": "Enterprise applications & ERP"
+        },
+        {
+          "name": "Oracle",
+          "description": "DB + enterprise applications"
+        },
+        {
+          "name": "Microsoft 365",
+          "description": "Productivity cloud"
+        },
+        {
+          "name": "Google Workspace",
+          "description": "Cloud productivity suite"
+        },
+        {
+          "name": "Box",
+          "description": "Enterprise content management"
+        },
+        {
+          "name": "Dropbox",
+          "description": "File sync & sharing for teams"
+        },
+        {
+          "name": "DocuSign",
+          "description": "E‑signatures & agreements"
+        },
+        {
+          "name": "Zendesk",
+          "description": "Customer support"
+        },
+        {
+          "name": "HubSpot",
+          "description": "SMB CRM & marketing"
+        },
+        {
+          "name": "Intercom",
+          "description": "Customer messaging"
+        },
+        {
+          "name": "Freshworks",
+          "description": "CRM + support suite"
+        },
+        {
+          "name": "Asana",
+          "description": "Work management"
+        },
+        {
+          "name": "Monday.com",
+          "description": "Work OS & automation"
+        },
+        {
+          "name": "Smartsheet",
+          "description": "Collaborative spreadsheets"
+        },
+        {
+          "name": "Notion",
+          "description": "Wiki + docs + databases"
+        },
+        {
+          "name": "Airtable",
+          "description": "Low‑code relational workspace"
+        },
+        {
+          "name": "Miro",
+          "description": "Visual collaboration whiteboard"
+        },
+        {
+          "name": "Lucid Software",
+          "description": "Diagramming (Lucidchart)"
+        },
+        {
+          "name": "Tableau (Salesforce)",
+          "description": "Visual analytics"
+        },
+        {
+          "name": "Qlik",
+          "description": "Business intelligence"
+        },
+        {
+          "name": "Alteryx",
+          "description": "Analytics automation"
+        },
+        {
+          "name": "MicroStrategy",
+          "description": "BI & analytics"
+        },
+        {
+          "name": "UiPath",
+          "description": "Robotic process automation"
+        },
+        {
+          "name": "Automation Anywhere",
+          "description": "RPA platform"
+        },
+        {
+          "name": "PagerDuty",
+          "description": "Incident response"
+        },
+        {
+          "name": "Jamf",
+          "description": "Apple device management"
+        },
+        {
+          "name": "Okta",
+          "description": "Identity & SSO for enterprise"
+        },
+        {
+          "name": "Zscaler",
+          "description": "Zero‑trust network access"
+        }
+      ]
+    },
+    {
+      "name": "Security & Identity",
+      "items": [
+        {
+          "name": "Palo Alto Networks",
+          "description": "Next‑gen firewalls & cloud security"
+        },
+        {
+          "name": "Fortinet",
+          "description": "Network security at scale"
+        },
+        {
+          "name": "Check Point",
+          "description": "Enterprise security"
+        },
+        {
+          "name": "CrowdStrike",
+          "description": "Endpoint protection & threat intel"
+        },
+        {
+          "name": "SentinelOne",
+          "description": "Autonomous endpoint security"
+        },
+        {
+          "name": "Rapid7",
+          "description": "Vulnerability & detection"
+        },
+        {
+          "name": "Tenable",
+          "description": "Vulnerability management"
+        },
+        {
+          "name": "Qualys",
+          "description": "Cloud security & compliance"
+        },
+        {
+          "name": "Proofpoint",
+          "description": "Email security & training"
+        },
+        {
+          "name": "Mimecast",
+          "description": "Email security"
+        },
+        {
+          "name": "Darktrace",
+          "description": "AI‑driven anomaly detection"
+        },
+        {
+          "name": "1Password",
+          "description": "Password manager for teams"
+        },
+        {
+          "name": "LastPass",
+          "description": "Password management"
+        },
+        {
+          "name": "Gen Digital (NortonLifeLock/Avast)",
+          "description": "Consumer security"
+        },
+        {
+          "name": "Trend Micro",
+          "description": "Enterprise security"
+        },
+        {
+          "name": "Sophos",
+          "description": "Security for mid‑market"
+        },
+        {
+          "name": "Kaspersky",
+          "description": "Security vendor (global presence)"
+        }
+      ]
+    },
+    {
+      "name": "Maps, Mobility & Autonomy",
+      "items": [
+        {
+          "name": "Waymo (Alphabet)",
+          "description": "Autonomous driving"
+        },
+        {
+          "name": "Cruise",
+          "description": "Autonomous vehicles"
+        },
+        {
+          "name": "Mobileye (Intel)",
+          "description": "ADAS & autonomy"
+        },
+        {
+          "name": "Aurora Innovation",
+          "description": "Autonomous trucking"
+        },
+        {
+          "name": "Tesla",
+          "description": "Software‑defined EVs & Autopilot"
+        },
+        {
+          "name": "Rivian",
+          "description": "Adventure EV platform"
+        },
+        {
+          "name": "Lucid Motors",
+          "description": "Luxury EV tech"
+        },
+        {
+          "name": "Uber",
+          "description": "Ride‑hailing & logistics platform"
+        },
+        {
+          "name": "Lyft",
+          "description": "Ride‑hailing network"
+        },
+        {
+          "name": "Didi",
+          "description": "China mobility super‑app"
+        },
+        {
+          "name": "Grab",
+          "description": "SEA super‑app mobility"
+        },
+        {
+          "name": "Bolt",
+          "description": "Ride‑hailing & micromobility"
+        },
+        {
+          "name": "Lime",
+          "description": "Shared e‑scooters/bikes"
+        },
+        {
+          "name": "Bird",
+          "description": "Micromobility"
+        },
+        {
+          "name": "HERE Technologies",
+          "description": "Mapping & location services"
+        },
+        {
+          "name": "TomTom",
+          "description": "Maps & navigation"
+        },
+        {
+          "name": "Mapbox",
+          "description": "Developer‑centric mapping"
+        }
+      ]
+    },
+    {
+      "name": "Hardware, Devices & Consumer Electronics",
+      "items": [
+        {
+          "name": "Apple",
+          "description": "Integrated devices & services"
+        },
+        {
+          "name": "Samsung Electronics",
+          "description": "Broad consumer electronics"
+        },
+        {
+          "name": "Huawei",
+          "description": "Devices & networking"
+        },
+        {
+          "name": "Xiaomi",
+          "description": "Smartphones & IoT ecosystem"
+        },
+        {
+          "name": "Oppo",
+          "description": "Smartphones & imaging"
+        },
+        {
+          "name": "Vivo",
+          "description": "Smartphones & audio"
+        },
+        {
+          "name": "OnePlus",
+          "description": "Performance‑centric smartphones"
+        },
+        {
+          "name": "HMD (Nokia phones)",
+          "description": "Android devices"
+        },
+        {
+          "name": "Sony",
+          "description": "Consumer electronics & imaging"
+        },
+        {
+          "name": "LG Electronics",
+          "description": "Home entertainment & appliances"
+        },
+        {
+          "name": "HTC",
+          "description": "VR devices (Vive) & phones"
+        },
+        {
+          "name": "Lenovo",
+          "description": "PCs & enterprise devices"
+        },
+        {
+          "name": "HP Inc.",
+          "description": "PCs & printers"
+        },
+        {
+          "name": "Dell Technologies",
+          "description": "PCs & infrastructure"
+        },
+        {
+          "name": "Acer",
+          "description": "PCs & monitors"
+        },
+        {
+          "name": "ASUS",
+          "description": "PCs & gaming (ROG)"
+        },
+        {
+          "name": "Razer",
+          "description": "Gaming hardware ecosystem"
+        },
+        {
+          "name": "Logitech",
+          "description": "Peripherals & webcams"
+        },
+        {
+          "name": "Wacom",
+          "description": "Pen tablets & displays"
+        },
+        {
+          "name": "GoPro",
+          "description": "Action cameras"
+        },
+        {
+          "name": "Garmin",
+          "description": "Wearables & GPS devices"
+        },
+        {
+          "name": "Fitbit (Google)",
+          "description": "Health wearables"
+        },
+        {
+          "name": "Withings",
+          "description": "Health wearables & devices"
+        },
+        {
+          "name": "Sonos",
+          "description": "Connected audio"
+        }
+      ]
+    },
+    {
+      "name": "Robotics, Drones & Automation",
+      "items": [
+        {
+          "name": "Boston Dynamics",
+          "description": "Legged robots"
+        },
+        {
+          "name": "DJI",
+          "description": "Consumer & pro camera drones"
+        },
+        {
+          "name": "Skydio",
+          "description": "Autonomous drones"
+        },
+        {
+          "name": "Parrot",
+          "description": "Drones"
+        },
+        {
+          "name": "Zipline",
+          "description": "Delivery drones"
+        },
+        {
+          "name": "Wing (Alphabet)",
+          "description": "Drone delivery"
+        },
+        {
+          "name": "Nuro",
+          "description": "Sidewalk/road delivery robots"
+        },
+        {
+          "name": "Starship Technologies",
+          "description": "Sidewalk delivery bots"
+        },
+        {
+          "name": "Agility Robotics",
+          "description": "Bipedal robots"
+        },
+        {
+          "name": "Universal Robots",
+          "description": "Collaborative arms"
+        },
+        {
+          "name": "FANUC",
+          "description": "Industrial robots"
+        },
+        {
+          "name": "Yaskawa Motoman",
+          "description": "Industrial robotics"
+        },
+        {
+          "name": "KUKA",
+          "description": "Industrial automation"
+        },
+        {
+          "name": "ABB Robotics",
+          "description": "Industrial robotics"
+        },
+        {
+          "name": "Intuitive Surgical",
+          "description": "Surgical robots"
+        },
+        {
+          "name": "Clearpath Robotics",
+          "description": "Autonomous platforms"
+        }
+      ]
+    },
+    {
+      "name": "Smart Home & IoT",
+      "items": [
+        {
+          "name": "Ring (Amazon)",
+          "description": "Smart doorbells & cameras"
+        },
+        {
+          "name": "Nest (Google)",
+          "description": "Thermostats & home security"
+        },
+        {
+          "name": "Philips Hue (Signify)",
+          "description": "Smart lighting"
+        },
+        {
+          "name": "Ecobee",
+          "description": "Smart thermostats"
+        },
+        {
+          "name": "Arlo",
+          "description": "Home security cameras"
+        },
+        {
+          "name": "Wyze",
+          "description": "Affordable smart home devices"
+        },
+        {
+          "name": "August",
+          "description": "Smart locks"
+        },
+        {
+          "name": "Tile",
+          "description": "Bluetooth trackers"
+        },
+        {
+          "name": "Eve Systems",
+          "description": "HomeKit‑first smart home"
+        },
+        {
+          "name": "Aqara",
+          "description": "Sensors & hubs"
+        },
+        {
+          "name": "Tuya",
+          "description": "IoT platform & ecosystem"
+        },
+        {
+          "name": "Semtech (LoRa)",
+          "description": "Low‑power IoT networking"
+        },
+        {
+          "name": "Particle",
+          "description": "IoT device cloud"
+        },
+        {
+          "name": "Belkin Wemo",
+          "description": "Smart home devices"
+        },
+        {
+          "name": "iRobot",
+          "description": "Robot vacuums"
+        }
+      ]
+    },
+    {
+      "name": "Semiconductors & Compute Hardware",
+      "items": [
+        {
+          "name": "Intel",
+          "description": "CPUs & fabs"
+        },
+        {
+          "name": "AMD",
+          "description": "CPUs & GPUs"
+        },
+        {
+          "name": "NVIDIA",
+          "description": "GPUs & AI systems"
+        },
+        {
+          "name": "Qualcomm",
+          "description": "Mobile chipsets & modem tech"
+        },
+        {
+          "name": "Apple Silicon",
+          "description": "Custom SoCs (M‑series, A‑series)"
+        },
+        {
+          "name": "Broadcom",
+          "description": "Networking & connectivity chips"
+        },
+        {
+          "name": "Marvell",
+          "description": "Data infrastructure silicon"
+        },
+        {
+          "name": "Micron",
+          "description": "Memory & storage"
+        },
+        {
+          "name": "SK hynix",
+          "description": "Memory"
+        },
+        {
+          "name": "Samsung Semiconductor",
+          "description": "Memory & foundry"
+        },
+        {
+          "name": "TSMC",
+          "description": "Leading semiconductor foundry"
+        },
+        {
+          "name": "ARM",
+          "description": "CPU architecture & IP"
+        },
+        {
+          "name": "Imagination Technologies",
+          "description": "GPU IP"
+        },
+        {
+          "name": "NXP",
+          "description": "Automotive & embedded"
+        },
+        {
+          "name": "STMicroelectronics",
+          "description": "Industrial & automotive"
+        },
+        {
+          "name": "Texas Instruments",
+          "description": "Analog & embedded"
+        },
+        {
+          "name": "Infineon",
+          "description": "Power & automotive chips"
+        },
+        {
+          "name": "ASML",
+          "description": "Lithography equipment"
+        },
+        {
+          "name": "Applied Materials",
+          "description": "Semiconductor fab equipment"
+        },
+        {
+          "name": "Lam Research",
+          "description": "Wafer fabrication equipment"
+        },
+        {
+          "name": "KLA",
+          "description": "Process control & inspection"
+        }
+      ]
+    },
+    {
+      "name": "Communications, Voice & Contact Centers",
+      "items": [
+        {
+          "name": "Zoom",
+          "description": "Video conferencing"
+        },
+        {
+          "name": "Slack (Salesforce)",
+          "description": "Team messaging"
+        },
+        {
+          "name": "Twilio",
+          "description": "Programmable communications APIs"
+        },
+        {
+          "name": "RingCentral",
+          "description": "Cloud telephony"
+        },
+        {
+          "name": "Vonage",
+          "description": "Communications APIs"
+        },
+        {
+          "name": "8x8",
+          "description": "Unified communications"
+        },
+        {
+          "name": "Genesys",
+          "description": "Contact center platforms"
+        },
+        {
+          "name": "Talkdesk",
+          "description": "Cloud contact center"
+        },
+        {
+          "name": "Aircall",
+          "description": "Cloud phone system"
+        },
+        {
+          "name": "Grammarly",
+          "description": "AI writing assistant (communication UX)"
+        }
+      ]
+    },
+    {
+      "name": "Health, Bio & Wearables",
+      "items": [
+        {
+          "name": "Whoop",
+          "description": "Performance wearables & analytics"
+        },
+        {
+          "name": "Oura",
+          "description": "Health ring & sleep analytics"
+        },
+        {
+          "name": "Peloton",
+          "description": "Connected fitness platform"
+        },
+        {
+          "name": "Zwift",
+          "description": "Virtual cycling platform"
+        },
+        {
+          "name": "23andMe",
+          "description": "Consumer genetics"
+        },
+        {
+          "name": "Illumina",
+          "description": "Sequencing technology"
+        },
+        {
+          "name": "Grail",
+          "description": "Early cancer detection (liquid biopsy)"
+        },
+        {
+          "name": "Tempus",
+          "description": "Precision medicine data"
+        },
+        {
+          "name": "Butterfly Network",
+          "description": "Handheld ultrasound"
+        },
+        {
+          "name": "AliveCor",
+          "description": "Mobile ECG"
+        }
+      ]
+    },
+    {
+      "name": "Education, Knowledge & Learning",
+      "items": [
+        {
+          "name": "Duolingo",
+          "description": "Gamified language learning"
+        },
+        {
+          "name": "Coursera",
+          "description": "MOOCs & certificates"
+        },
+        {
+          "name": "Udemy",
+          "description": "Open course marketplace"
+        },
+        {
+          "name": "Khan Academy",
+          "description": "Free education platform"
+        },
+        {
+          "name": "Quizlet",
+          "description": "Study tools"
+        },
+        {
+          "name": "Chegg",
+          "description": "Student services & study support"
+        },
+        {
+          "name": "BYJU'S",
+          "description": "India edtech"
+        },
+        {
+          "name": "Outschool",
+          "description": "Live classes for kids"
+        }
+      ]
+    },
+    {
+      "name": "Information, Search & Discovery",
+      "items": [
+        {
+          "name": "Google",
+          "description": "Web search & knowledge graph"
+        },
+        {
+          "name": "Bing (Microsoft)",
+          "description": "Search & generative answers"
+        },
+        {
+          "name": "Baidu",
+          "description": "China search & AI"
+        },
+        {
+          "name": "Yandex",
+          "description": "Search & maps in RU/CIS"
+        },
+        {
+          "name": "DuckDuckGo",
+          "description": "Privacy search"
+        },
+        {
+          "name": "Wolfram Research",
+          "description": "Computational knowledge"
+        }
+      ]
+    },
+    {
+      "name": "Industrial, IoT & Enterprise Tech",
+      "items": [
+        {
+          "name": "Siemens",
+          "description": "Industrial automation & software"
+        },
+        {
+          "name": "Schneider Electric",
+          "description": "Energy management & automation"
+        },
+        {
+          "name": "Honeywell",
+          "description": "Industrial tech & building systems"
+        },
+        {
+          "name": "Rockwell Automation",
+          "description": "Industrial control systems"
+        },
+        {
+          "name": "Bosch",
+          "description": "Sensors & industrial/auto tech"
+        },
+        {
+          "name": "GE Vernova/Digital",
+          "description": "Industrial software & energy"
+        },
+        {
+          "name": "Caterpillar",
+          "description": "Connected heavy machinery"
+        },
+        {
+          "name": "John Deere",
+          "description": "Precision agriculture technology"
+        },
+        {
+          "name": "Trimble",
+          "description": "GPS & industrial positioning"
+        },
+        {
+          "name": "PTC",
+          "description": "CAD, PLM & IoT platforms"
+        },
+        {
+          "name": "Autodesk",
+          "description": "Design & engineering software"
+        },
+        {
+          "name": "Bentley Systems",
+          "description": "Infrastructure engineering software"
+        }
+      ]
+    },
+    {
+      "name": "Travel, Local & Marketplaces",
+      "items": [
+        {
+          "name": "Booking Holdings",
+          "description": "Online travel (Booking.com, etc.)"
+        },
+        {
+          "name": "Airbnb",
+          "description": "Home sharing marketplace"
+        },
+        {
+          "name": "Expedia Group",
+          "description": "Travel booking platforms"
+        },
+        {
+          "name": "Tripadvisor",
+          "description": "Travel discovery & reviews"
+        },
+        {
+          "name": "DoorDash",
+          "description": "On‑demand local delivery"
+        },
+        {
+          "name": "Instacart",
+          "description": "Groceries on demand"
+        },
+        {
+          "name": "Glovo",
+          "description": "EU/EMEA local delivery"
+        }
+      ]
+    }
+  ]
+}

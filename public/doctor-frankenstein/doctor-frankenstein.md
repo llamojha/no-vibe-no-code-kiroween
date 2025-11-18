@@ -1,7 +1,0 @@
-Resumen de la idea: “Doctor Frankenstein Kiroween”
-
-Crearemos una página en no-vibe-no-code  que replica el modelo de la página Kiroween Analyzer. La nueva página añade un botón “Crear Frankenstein” que, al pulsarlo, muestra 3–4 ranuras vacías y reproduce una animación mientras selecciona aleatoriamente compañías desde la batería de 356 Unique Tech Companies (fuente: well_known_unique_tech_companies_300_400_frankenstein_mashups_catalog.md). Al finalizar la animación, se muestran las compañías elegidas. Si el usuario acepta la combinación, la app genera automáticamente una Idea Description y a continuación el informe completo de Kiroween Analyzer, reutilizando la página original como plantilla (misma estructura de secciones y métricas).
-
-Como extra, la página incluye un toggle para cambiar la batería de origen a AWS Services, leyendo del archivo aws_services_products_full_list_as_of_nov_5_2025.md. Así, el usuario puede alternar entre ideas basadas en empresas tecnológicas o en servicios de AWS, manteniendo el mismo flujo: animación → selección aleatoria (3–4) → confirmación → informe Kiroween.
-
-Objetivo: generar ideas originales a partir de combinaciones aleatorias de tecnologías (compañías o servicios AWS) y entregar rápidamente un reporte tipo Kiroween Analyzer que sirva para evaluar, comunicar y priorizar cada concepto.

@@ -15,41 +15,68 @@ export interface AWSService {
 }
 
 /**
- * Parse tech companies from markdown file
+ * Parse tech companies from markdown file (table format)
  */
 export function parseTechCompanies(markdown: string): TechCompany[] {
   const companies: TechCompany[] = [];
-  const lines = markdown.split('\n');
-  let currentCategory = '';
+  const lines = markdown.split("\n");
+  let currentCategory = "";
+  let inTable = false;
 
   for (let rawLine of lines) {
-    // Trim to handle Windows line endings (\r\n)
     const line = rawLine.trim();
-    
+
     // Detect category headers (remove emojis and special characters)
-    if (line.startsWith('## ') && !line.includes('How to use')) {
+    if (
+      line.startsWith("## ") &&
+      !line.includes("How to use") &&
+      !line.includes("Notes on")
+    ) {
       currentCategory = line
-        .replace('## ', '')
-        .replace(/[☁️🤖🧰📱🎮🛒🧑‍💼🔐🛰️🔧🤖🏠🧪🗣️🧬🧭📰🏢✈️]/g, '')
-        .replace(/â˜ï¸|ğŸ¤–|ğŸ§°|ğŸ"±|ğŸŽ®|ğŸ›'|ğŸ§'â€�ğŸ'¼|ğŸ"�|ğŸ›°ï¸|ğŸ"§|ğŸ¤–|ğŸ �|ğŸ§ª|ğŸ—£ï¸|ğŸ§¬|ğŸ§­|ğŸ"°|ğŸ¢|âœˆï¸/g, '')
+        .replace("## ", "")
+        .replace(/[☁️🤖🧰📱🎮🛒🧑‍💼🔐🛰️🔧🤖🏠🧪🗣️🧬🧭📰🏢✈️]/g, "")
+        .replace(
+          /â˜ï¸|ğŸ¤–|ğŸ§°|ğŸ"±|ğŸŽ®|ğŸ›'|ğŸ§'â€�ğŸ'¼|ğŸ"�|ğŸ›°ï¸|ğŸ"§|ğŸ¤–|ğŸ �|ğŸ§ª|ğŸ—£ï¸|ğŸ§¬|ğŸ§­|ğŸ"°|ğŸ¢|âœˆï¸/g,
+          ""
+        )
         .trim();
+      inTable = false;
       continue;
     }
 
-    // Parse company entries - handle em dash (—) which appears as character code 8212
-    // Format: "number. **Name** — description"
-    const match = line.match(/^\d+\.\s+\*\*(.+?)\*\*\s+[\u2014\u2013\-—–]\s+(.+)$/);
-    if (match && currentCategory) {
-      const name = match[1].trim();
-      const description = match[2].trim();
-      // Verify it's a valid entry
-      if (name && description && description.length > 5) {
-        companies.push({
-          name,
-          description,
-          category: currentCategory,
-        });
+    // Detect table header
+    if (line.startsWith("| Company |") || line.startsWith("| Service |")) {
+      inTable = true;
+      continue;
+    }
+
+    // Skip table separator line
+    if (line.startsWith("|---") || line.startsWith("|-")) {
+      continue;
+    }
+
+    // Parse table rows
+    if (inTable && line.startsWith("|") && currentCategory) {
+      const parts = line
+        .split("|")
+        .map((p) => p.trim())
+        .filter((p) => p);
+      if (parts.length >= 2) {
+        const name = parts[0];
+        const description = parts[1];
+        if (name && description && name !== "Company" && name !== "Service") {
+          companies.push({
+            name,
+            description,
+            category: currentCategory,
+          });
+        }
       }
+    }
+
+    // Exit table when we hit an empty line or non-table content
+    if (inTable && !line.startsWith("|")) {
+      inTable = false;
     }
   }
 
@@ -57,48 +84,57 @@ export function parseTechCompanies(markdown: string): TechCompany[] {
 }
 
 /**
- * Parse AWS services from markdown file
+ * Parse AWS services from markdown file (table format)
  */
 export function parseAWSServices(markdown: string): AWSService[] {
   const services: AWSService[] = [];
-  const lines = markdown.split('\n');
-  let currentCategory = '';
+  const lines = markdown.split("\n");
+  let currentCategory = "";
+  let inTable = false;
 
   for (const line of lines) {
+    const trimmedLine = line.trim();
+
     // Detect category headers
-    if (line.startsWith('## ')) {
-      currentCategory = line.replace('## ', '').trim();
+    if (trimmedLine.startsWith("## ") && !trimmedLine.includes("Notes")) {
+      currentCategory = trimmedLine.replace("## ", "").trim();
+      inTable = false;
       continue;
     }
 
-    // Parse service entries (format: "- Service Name (details)" or "- Service Name")
-    const lineContent = line.trim();
-    if (lineContent.startsWith('-') && currentCategory && !line.includes('---')) {
-      // Try to match: "- Service Name (description)"
-      const matchWithDesc = lineContent.match(/^-\s+(.+?)\s+\((.+)\)$/);
-      if (matchWithDesc) {
-        const serviceName = matchWithDesc[1].trim();
-        const description = matchWithDesc[2].trim();
-        if (serviceName && !serviceName.startsWith('#')) {
+    // Detect table header
+    if (trimmedLine.startsWith("| Service |")) {
+      inTable = true;
+      continue;
+    }
+
+    // Skip table separator line
+    if (trimmedLine.startsWith("|---") || trimmedLine.startsWith("|-")) {
+      continue;
+    }
+
+    // Parse table rows
+    if (inTable && trimmedLine.startsWith("|") && currentCategory) {
+      const parts = trimmedLine
+        .split("|")
+        .map((p) => p.trim())
+        .filter((p) => p);
+      if (parts.length >= 2) {
+        const serviceName = parts[0];
+        const description = parts[1];
+        if (serviceName && description && serviceName !== "Service") {
           services.push({
             name: serviceName,
             category: currentCategory,
             description: description,
           });
         }
-      } else {
-        // Try to match: "- Service Name" (without description)
-        const matchNoDesc = lineContent.match(/^-\s+(.+?)$/);
-        if (matchNoDesc) {
-          const serviceName = matchNoDesc[1].trim();
-          if (serviceName && !serviceName.startsWith('#')) {
-            services.push({
-              name: serviceName,
-              category: currentCategory,
-            });
-          }
-        }
       }
+    }
+
+    // Exit table when we hit an empty line or non-table content
+    if (inTable && !trimmedLine.startsWith("|")) {
+      inTable = false;
     }
   }
 
