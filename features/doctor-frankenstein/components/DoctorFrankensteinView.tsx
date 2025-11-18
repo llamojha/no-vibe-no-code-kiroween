@@ -9,8 +9,6 @@ import { FrankensteinSlotMachine } from "./FrankensteinSlotMachine";
 import { FrankensteinDiagram } from "./FrankensteinDiagram";
 import FrankensteinExportControl from "./FrankensteinExportControl";
 import {
-  parseTechCompanies,
-  parseAWSServices,
   selectRandom,
   type TechCompany,
   type AWSService,
@@ -126,34 +124,20 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     async function loadData() {
       try {
         console.log("Loading data sources...");
-        const [companiesRes, awsRes] = await Promise.all([
-          fetch(
-            "/doctor-frankenstein/well_known_unique_tech_companies_300_400_frankenstein_mashups_catalog.md"
-          ),
-          fetch(
-            "/doctor-frankenstein/aws_services_products_full_list_as_of_nov_5_2025.md"
-          ),
-        ]);
+        const response = await fetch("/api/doctor-frankenstein/data");
 
-        if (!companiesRes.ok) {
-          throw new Error(`Failed to load companies: ${companiesRes.status}`);
-        }
-        if (!awsRes.ok) {
-          throw new Error(`Failed to load AWS services: ${awsRes.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to load data: ${response.status}`);
         }
 
-        const companiesText = await companiesRes.text();
-        const awsText = await awsRes.text();
-
-        const parsedCompanies = parseTechCompanies(companiesText);
-        const parsedAWS = parseAWSServices(awsText);
+        const data = await response.json();
 
         console.log(
-          `Loaded ${parsedCompanies.length} companies and ${parsedAWS.length} AWS services`
+          `Loaded ${data.techCompanies.length} companies and ${data.awsServices.length} AWS services`
         );
 
-        setTechCompanies(parsedCompanies);
-        setAWSServices(parsedAWS);
+        setTechCompanies(data.techCompanies);
+        setAWSServices(data.awsServices);
       } catch (err) {
         console.error("Failed to load data:", err);
         setError(
