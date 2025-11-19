@@ -4,7 +4,7 @@ import { resolve } from "path";
 export default defineConfig({
   test: {
     globals: true,
-    environment: "jsdom",
+    environment: "node",
     setupFiles: ["tests/setup/vitest.setup.ts"],
     include: [
       "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
@@ -14,6 +14,25 @@ export default defineConfig({
       "features/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
     ],
     exclude: ["node_modules", "dist", ".next", "tests/e2e"],
+    environmentMatchGlobs: [
+      // Use jsdom for React component tests
+      ["features/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}", "jsdom"],
+      // Use node for property tests (no browser APIs needed)
+      [
+        "tests/properties/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+        "node",
+      ],
+      // Use node for domain/application/infrastructure tests
+      ["src/domain/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}", "node"],
+      [
+        "src/application/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+        "node",
+      ],
+      [
+        "src/infrastructure/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
+        "node",
+      ],
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "json-summary"],
