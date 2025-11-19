@@ -16,6 +16,7 @@ Core business objects with identity and lifecycle:
 
 - `entities/Analysis.ts` - Analysis aggregate root with business rules and invariants
 - `entities/User.ts` - User aggregate root
+- `entities/CreditTransaction.ts` - Credit transaction entity with immutability guarantees
 - `entities/shared/Entity.ts` - Base entity class with ID encapsulation
 
 #### Value Objects
@@ -24,9 +25,12 @@ Immutable domain concepts with validation:
 
 - `value-objects/AnalysisId.ts` - Strongly-typed analysis identifier
 - `value-objects/UserId.ts` - Strongly-typed user identifier
+- `value-objects/CreditTransactionId.ts` - Strongly-typed credit transaction identifier
 - `value-objects/Email.ts` - Email validation and representation
 - `value-objects/Score.ts` - Score validation (0-100 range)
 - `value-objects/Category.ts` - Analysis categories (general/hackathon types)
+- `value-objects/AnalysisType.ts` - Analysis type discriminator (startup/hackathon)
+- `value-objects/TransactionType.ts` - Credit transaction types (deduct/add/refund/admin_adjustment)
 - `value-objects/Criteria.ts` - Evaluation criteria value object
 - `value-objects/Locale.ts` - Supported locale value object (en/es)
 
@@ -36,6 +40,7 @@ Data access contracts (ports):
 
 - `repositories/IAnalysisRepository.ts` - Analysis persistence interface
 - `repositories/IUserRepository.ts` - User persistence interface
+- `repositories/ICreditTransactionRepository.ts` - Credit transaction persistence interface
 - `repositories/IHackathonAnalysisRepository.ts` - Hackathon analysis persistence
 - `repositories/IDashboardRepository.ts` - Dashboard data aggregation interface
 - `repositories/base/` - Base repository interfaces and types
@@ -47,6 +52,7 @@ Business logic coordination:
 - `services/AnalysisValidationService.ts` - Analysis validation rules and quality metrics
 - `services/ScoreCalculationService.ts` - Score computation logic
 - `services/HackathonAnalysisService.ts` - Hackathon-specific business rules
+- `services/CreditPolicy.ts` - Credit system policies and business rules
 
 ### Application Layer (`src/application/`)
 
@@ -65,6 +71,10 @@ Business operation orchestration:
 - `use-cases/GetUserAnalysesUseCase.ts` - Retrieve user's analyses
 - `use-cases/GetDashboardStatsUseCase.ts` - Calculate dashboard statistics
 - `use-cases/GetHackathonLeaderboardUseCase.ts` - Generate hackathon leaderboard
+- `use-cases/CheckCreditsUseCase.ts` - Check user credit balance
+- `use-cases/DeductCreditUseCase.ts` - Deduct credits for operations
+- `use-cases/AddCreditsUseCase.ts` - Add credits to user account
+- `use-cases/GetCreditBalanceUseCase.ts` - Retrieve current credit balance
 - `use-cases/user/CreateUserUseCase.ts` - User creation
 - `use-cases/user/GetUserByIdUseCase.ts` - User retrieval
 - `use-cases/user/UpdateUserLastLoginUseCase.ts` - Login tracking
@@ -85,9 +95,9 @@ Cross-cutting application concerns:
 - `services/AuthenticationService.ts` - Authentication logic
 - `services/SessionService.ts` - Session management
 - `services/NotificationService.ts` - Notification handling
-- `services/IAIAnalysisService.ts` - AI service interface
-- `services/IAudioProcessingService.ts` - Audio service interface
-- `services/INotificationService.ts` - Notification service interface
+- `services/IAIAnalysisService.ts` - AI service interface (port)
+- `services/IAudioProcessingService.ts` - Audio service interface (port)
+- `services/INotificationService.ts` - Notification service interface (port)
 
 #### Types
 
@@ -96,6 +106,15 @@ Application-level types:
 - `types/commands.ts` - Command type definitions
 - `types/queries.ts` - Query type definitions
 - `types/base/` - Base command/query types
+- `types/commands/` - Specific command type definitions
+- `types/queries/` - Specific query type definitions
+
+#### Utilities
+
+Application-level utilities:
+
+- `utils/getUserTier.ts` - User tier determination logic
+- `utils/localDevCredits.ts` - Local development credit utilities
 
 ### Infrastructure Layer (`src/infrastructure/`)
 
@@ -106,11 +125,7 @@ The infrastructure layer provides concrete implementations of interfaces and ext
 - `database/supabase/SupabaseClient.ts` - Database connection management
 - `database/supabase/repositories/SupabaseAnalysisRepository.ts` - Analysis repository implementation
 - `database/supabase/repositories/SupabaseUserRepository.ts` - User repository implementation
-- `database/supabase/repositories/SupabaseHackathonAnalysisRepository.ts` - Hackathon repository
-- `database/supabase/repositories/SupabaseDashboardRepository.ts` - Dashboard repository
-- `database/supabase/mappers/AnalysisMapper.ts` - Entity ↔ DAO conversion for Analysis
-- `database/supabase/mappers/UserMapper.ts` - Entity ↔ DAO conversion for User
-- `database/supabase/mappers/HackathonAnalysisMapper.ts` - Hackathon analysis mapping
+- `database/supabase/repositories/SupabaseCreditTransactionRepository.ts` - Credit transaction repository
 - `database/types/` - Database-specific types (DAOs)
 - `database/errors/` - Database error handling
 
@@ -152,6 +167,7 @@ Environment and feature configuration:
 - `config/database.ts` - Database configuration
 - `config/ai.ts` - AI service configuration
 - `config/features.ts` - Feature flag configuration
+- `config/credits.ts` - Credit system configuration
 
 #### Integration Adapters
 
@@ -166,6 +182,13 @@ Application initialization:
 - `bootstrap/nextjs.ts` - Next.js-specific bootstrap
 - `bootstrap/validation.ts` - Validation setup
 - `bootstrap/index.ts` - Main bootstrap orchestration
+
+#### Cache
+
+Caching infrastructure:
+
+- `cache/ICache.ts` - Cache interface (port)
+- `cache/InMemoryCache.ts` - In-memory cache implementation
 
 ### Feature Modules (`features/`)
 
@@ -304,6 +327,72 @@ Shared utilities and types used across layers.
 - `shared/types/errors.ts` - Error types and classes
 - `shared/utils/validation.ts` - Validation utilities
 
+### Property Testing (`tests/properties/`)
+
+Property-based testing framework for validating correctness properties across all architectural layers.
+
+#### Test Organization
+
+Property tests are organized by architectural concern:
+
+- `properties/domain/` - Domain layer property tests
+
+  - `entity-identity.properties.test.ts` - Entity ID immutability, uniqueness, and format validation
+  - `value-objects.properties.test.ts` - Value object immutability and validation
+  - `analysis.properties.test.ts` - Analysis entity business rules and invariants
+  - `credits.properties.test.ts` - Credit system invariants and transaction rules
+
+- `properties/data-integrity/` - Data persistence and mapping property tests
+
+  - `mappers.properties.test.ts` - Entity ↔ DAO round-trip fidelity and null preservation
+  - `migration.properties.test.ts` - Database migration integrity and data preservation
+
+- `properties/business-rules/` - Business logic property tests
+
+  - `scoring.properties.test.ts` - Score calculation determinism and aggregation
+  - `rate-limiting.properties.test.ts` - Credit cost consistency and deduction rules
+  - `categories.properties.test.ts` - Category evaluation and matching logic
+
+- `properties/security/` - Security and authorization property tests
+
+  - `auth.properties.test.ts` - Authentication, authorization, and RLS policy enforcement
+
+- `properties/system/` - System-wide property tests
+  - `idempotency.properties.test.ts` - Repository and query idempotency
+  - `caching.properties.test.ts` - Cache expiration, invalidation, and consistency
+  - `error-handling.properties.test.ts` - Error propagation and graceful degradation
+  - `ci-cd.properties.test.ts` - Build determinism and test isolation
+
+#### Test Utilities
+
+Shared utilities for property-based testing:
+
+- `properties/utils/generators.ts` - Test data generators using faker.js
+
+  - Entity generators (Analysis, User, CreditTransaction)
+  - Value object generators (AnalysisId, UserId, Score, Email)
+  - Bulk generation utilities
+
+- `properties/utils/property-helpers.ts` - Property test assertion helpers
+
+  - `forAll()` - Assert property holds for all generated values
+  - `forCases()` - Assert property holds for specific test cases
+  - `deepEqual()` - Deep value comparison
+  - `entityEquals()` - Entity equality by ID
+  - `measureTime()` - Performance measurement utilities
+
+- `properties/utils/coverage-tracker.ts` - Property coverage tracking
+  - Track which properties have test implementations
+  - Generate coverage reports by category
+  - Identify untested properties
+
+#### Test File Patterns
+
+- **Naming**: Use `.properties.test.ts` suffix for property test files
+- **Structure**: Organize by architectural layer and concern
+- **Documentation**: Each test references the property ID from general-properties.md
+- **Iterations**: Run 100+ iterations per property test for thorough validation
+
 ## Finding Files by Purpose
 
 ### "Where do I add business validation?"
@@ -330,6 +419,18 @@ Shared utilities and types used across layers.
 
 → Co-located with source in `__tests__/` folders or `.test.ts` files
 
+### "Where do I add property tests?"
+
+→ `tests/properties/` organized by concern:
+
+- `tests/properties/domain/` for domain layer properties (entities, value objects)
+- `tests/properties/data-integrity/` for mapper and migration properties
+- `tests/properties/business-rules/` for business logic properties
+- `tests/properties/security/` for authentication and authorization properties
+- `tests/properties/system/` for system-wide properties (caching, idempotency, CI/CD)
+- Use `tests/properties/utils/generators.ts` for test data generation
+- Use `tests/properties/utils/property-helpers.ts` for assertion utilities
+
 ### "Where do I add a new use case?"
 
 → `src/application/use-cases/` with proper dependency injection
@@ -345,6 +446,10 @@ Shared utilities and types used across layers.
 ### "Where do I add feature flags?"
 
 → `lib/featureFlags.config.ts` for configuration, use via `lib/featureFlags.ts`
+
+### "Where do I add credit system logic?"
+
+→ `src/domain/services/CreditPolicy.ts` for business rules, `src/application/use-cases/` for credit operations
 
 ## Hexagonal Architecture Layers
 
@@ -390,4 +495,4 @@ Shared utilities and types used across layers.
 - Consistent error handling and response formats
 - Authentication middleware for protected routes
 
-<!-- Last updated: November 9, 2025 -->
+<!-- Last updated: November 19, 2025 -->
