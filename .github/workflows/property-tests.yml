@@ -1,0 +1,159 @@
+name: Property Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  property-tests:
+    name: Property-Based Tests with Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Record start time
+        id: start-time
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run property tests with coverage
+        run: npm run test:properties:coverage
+        continue-on-error: true
+        env:
+          CI: true
+
+      - name: Check property test results
+        id: test-check
+        if: always()
+        run: |
+          if [ -f tests/property-coverage-report.json ]; then
+            node -e "
+              const fs = require('fs');
+              const report = JSON.parse(fs.readFileSync('tests/property-coverage-report.json', 'utf8'));
+
+              console.log('Property Coverage:', report.tested + '/' + report.total);
+              console.log('Percentage:', report.percentage.toFixed(1) + '%');
+
+              // Output for GitHub Actions
+              console.log('tested=' + report.tested);
+              console.log('total=' + report.total);
+              console.log('percentage=' + report.percentage.toFixed(1));
+
+              // Write to GITHUB_OUTPUT
+              const output = 'tested=' + report.tested + '\n' +
+                            'total=' + report.total + '\n' +
+                            'percentage=' + report.percentage.toFixed(1) + '\n';
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
+
+              // Add to step summary
+              let summary = '### Property Test Coverage\n\n';
+              summary += '- **Total Properties:** ' + report.total + '\n';
+              summary += '- **Tested Properties:** ' + report.tested + '\n';
+              summary += '- **Coverage:** ' + report.percentage.toFixed(1) + '%\n\n';
+
+              if (report.untested && report.untested.length > 0) {
+                summary += '#### ⚠️ Untested Properties (' + report.untested.length + ')\n\n';
+                report.untested.slice(0, 10).forEach(prop => {
+                  summary += '- ' + prop + '\n';
+                });
+                if (report.untested.length > 10) {
+                  summary += '\n_...and ' + (report.untested.length - 10) + ' more_\n';
+                }
+              } else {
+                summary += '✅ All properties have tests!\n';
+              }
+
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+            "
+          else
+            echo "⚠️ Property coverage report not found"
+            echo "tested=0" >> $GITHUB_OUTPUT
+            echo "total=0" >> $GITHUB_OUTPUT
+            echo "percentage=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify property tests passed
+        id: verify-tests
+        if: always()
+        run: |
+          # Check if vitest tests passed by looking at exit code
+          # This step will fail if property tests failed
+          if npm run test:properties -- --reporter=json --outputFile=property-test-results.json; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "✅ All property tests passed"
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Some property tests failed"
+            exit 1
+          fi
+
+      - name: Upload property coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-coverage-report-${{ github.run_number }}
+          path: |
+            tests/property-coverage-report.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload property test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-test-results-${{ github.run_number }}
+          path: |
+            property-test-results.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Calculate workflow duration
+        if: always()
+        run: |
+          START_TIME=${{ steps.start-time.outputs.start }}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          DURATION_MIN=$((DURATION / 60))
+          DURATION_SEC=$((DURATION % 60))
+
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "### ⏱️ Workflow Duration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total time: ${DURATION_MIN}m ${DURATION_SEC}s" >> $GITHUB_STEP_SUMMARY
+
+          # Log warning if duration exceeds 5 minutes (property tests should be fast)
+          if [ $DURATION -gt 300 ]; then
+            echo "::warning::Property tests exceeded 5 minute threshold (${DURATION_MIN}m ${DURATION_SEC}s)"
+            echo "⚠️ Duration exceeded 5 minute threshold" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Save duration for PR comment
+          echo "{\"workflow\":\"property-tests\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
+
+      - name: Upload duration metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duration-property-tests-${{ github.run_number }}
+          path: workflow-duration.json
+          retention-days: 30
+          if-no-files-found: warn

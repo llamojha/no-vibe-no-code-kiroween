@@ -11,6 +11,9 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
+    "test:properties": "vitest run tests/properties",
+    "test:properties:watch": "vitest watch tests/properties",
+    "test:properties:coverage": "vitest run tests/properties --coverage && node scripts/generate-property-coverage.cjs",
     "test:e2e": "playwright test",
     "test:e2e:coverage": "E2E_COLLECT_COVERAGE=true playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -37,6 +40,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@lhci/cli": "^0.13.0",
     "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.9.1",
