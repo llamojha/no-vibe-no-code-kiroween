@@ -3,7 +3,13 @@ name: PR Comment Report
 on:
   workflow_run:
     workflows:
-      ["Lint", "Unit Tests", "E2E Tests", "Lighthouse Accessibility Audit"]
+      [
+        "Lint",
+        "Unit Tests",
+        "E2E Tests",
+        "Lighthouse Accessibility Audit",
+        "Property Tests",
+      ]
     types:
       - completed
 
@@ -49,6 +55,7 @@ jobs:
             [unit]="unit-tests.yml"
             [e2e]="e2e-tests.yml"
             [lighthouse]="lighthouse.yml"
+            [property]="property-tests.yml"
           )
 
           for key in "${!WORKFLOWS[@]}"; do
@@ -104,6 +111,15 @@ jobs:
         with:
           path: artifacts/lighthouse
           run-id: ${{ steps.run-ids.outputs.lighthouse-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download Property Test artifacts
+        if: steps.run-ids.outputs.property-run-id != ''
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/property
+          run-id: ${{ steps.run-ids.outputs.property-run-id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
@@ -335,6 +351,54 @@ jobs:
             }
           } else {
             console.log('⚠ E2E test results not found');
+          }
+
+          // ===== Parse Property Test Results =====
+          console.log('Parsing property test results...');
+          const propertyFiles = findFiles('property-coverage-report.json');
+          if (propertyFiles.length > 0) {
+            try {
+              const propertyData = JSON.parse(fs.readFileSync(propertyFiles[0], 'utf8'));
+
+              const tested = propertyData.tested || 0;
+              const total = propertyData.total || 0;
+              const percentage = propertyData.percentage || 0;
+              const untested = propertyData.untested || [];
+
+              totalChecks++;
+              const passed = percentage >= 100;
+              if (passed) passedChecks++;
+              else failedChecks++;
+
+              let detail = '### 🔍 Property-Based Tests\n\n';
+              if (passed) {
+                detail += `✅ **Passed** - All ${total} properties tested\n`;
+                detail += `📊 Coverage: 100%\n\n`;
+              } else {
+                detail += `⚠️ **Incomplete** - ${tested}/${total} properties tested\n`;
+                detail += `📊 Coverage: ${percentage.toFixed(1)}%\n\n`;
+
+                if (untested.length > 0) {
+                  detail += '<details>\n<summary>Untested Properties (' + untested.length + ')</summary>\n\n';
+                  untested.slice(0, 10).forEach(prop => {
+                    detail += `- ${prop}\n`;
+                  });
+                  if (untested.length > 10) {
+                    detail += `\n_...and ${untested.length - 10} more_\n`;
+                  }
+                  detail += '\n</details>\n\n';
+                }
+
+                recommendations.push(`Implement tests for ${untested.length} untested property/properties`);
+              }
+
+              checkDetails.push(detail);
+              console.log(`✓ Property Tests: ${passed ? 'PASSED' : 'INCOMPLETE'} (${tested}/${total})`);
+            } catch (e) {
+              console.log('Error parsing property test results:', e.message);
+            }
+          } else {
+            console.log('⚠ Property test results not found');
           }
 
           // ===== Parse Duration Metrics =====
