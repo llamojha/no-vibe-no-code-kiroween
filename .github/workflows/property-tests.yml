@@ -36,8 +36,8 @@ jobs:
         run: npm ci
 
       - name: Run property tests with coverage
+        id: run-tests
         run: npm run test:properties:coverage
-        continue-on-error: true
         env:
           CI: true
 
@@ -50,30 +50,41 @@ jobs:
               const fs = require('fs');
               const report = JSON.parse(fs.readFileSync('tests/property-coverage-report.json', 'utf8'));
 
-              console.log('Property Coverage:', report.tested + '/' + report.total);
-              console.log('Percentage:', report.percentage.toFixed(1) + '%');
+              // Access nested coverage fields
+              const coverage = report.coverage || {};
+              const tested = coverage.tested || 0;
+              const total = coverage.total || 0;
+              const percentage = coverage.percentage || 0;
 
-              // Output for GitHub Actions
-              console.log('tested=' + report.tested);
-              console.log('total=' + report.total);
-              console.log('percentage=' + report.percentage.toFixed(1));
+              console.log('Property Coverage:', tested + '/' + total);
+              console.log('Percentage:', percentage.toFixed(1) + '%');
 
               // Write to GITHUB_OUTPUT
-              const output = 'tested=' + report.tested + '\n' +
-                            'total=' + report.total + '\n' +
-                            'percentage=' + report.percentage.toFixed(1) + '\n';
+              const output = 'tested=' + tested + '\n' +
+                            'total=' + total + '\n' +
+                            'percentage=' + percentage.toFixed(1) + '\n';
               fs.appendFileSync(process.env.GITHUB_OUTPUT, output);
 
               // Add to step summary
               let summary = '### Property Test Coverage\n\n';
-              summary += '- **Total Properties:** ' + report.total + '\n';
-              summary += '- **Tested Properties:** ' + report.tested + '\n';
-              summary += '- **Coverage:** ' + report.percentage.toFixed(1) + '%\n\n';
+              summary += '- **Total Properties:** ' + total + '\n';
+              summary += '- **Tested Properties:** ' + tested + '\n';
+              summary += '- **Coverage:** ' + percentage.toFixed(1) + '%\n\n';
+
+              // Show coverage by category
+              if (coverage.byCategory) {
+                summary += '#### Coverage by Category\n\n';
+                for (const [category, stats] of Object.entries(coverage.byCategory)) {
+                  const pct = stats.total > 0 ? ((stats.tested / stats.total) * 100).toFixed(1) : '0.0';
+                  summary += '- **' + category + ':** ' + stats.tested + '/' + stats.total + ' (' + pct + '%)\n';
+                }
+                summary += '\n';
+              }
 
               if (report.untested && report.untested.length > 0) {
                 summary += '#### ⚠️ Untested Properties (' + report.untested.length + ')\n\n';
                 report.untested.slice(0, 10).forEach(prop => {
-                  summary += '- ' + prop + '\n';
+                  summary += '- ' + prop.id + ': ' + prop.name + '\n';
                 });
                 if (report.untested.length > 10) {
                   summary += '\n_...and ' + (report.untested.length - 10) + ' more_\n';
@@ -91,21 +102,6 @@ jobs:
             echo "percentage=0" >> $GITHUB_OUTPUT
           fi
 
-      - name: Verify property tests passed
-        id: verify-tests
-        if: always()
-        run: |
-          # Check if vitest tests passed by looking at exit code
-          # This step will fail if property tests failed
-          if npm run test:properties -- --reporter=json --outputFile=property-test-results.json; then
-            echo "status=passed" >> $GITHUB_OUTPUT
-            echo "✅ All property tests passed"
-          else
-            echo "status=failed" >> $GITHUB_OUTPUT
-            echo "❌ Some property tests failed"
-            exit 1
-          fi
-
       - name: Upload property coverage report
         if: always()
         uses: actions/upload-artifact@v4
@@ -113,16 +109,7 @@ jobs:
           name: property-coverage-report-${{ github.run_number }}
           path: |
             tests/property-coverage-report.json
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload property test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: property-test-results-${{ github.run_number }}
-          path: |
-            property-test-results.json
+            coverage/
           retention-days: 30
           if-no-files-found: warn
 
