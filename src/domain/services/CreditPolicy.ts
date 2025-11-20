@@ -9,7 +9,7 @@ export class CreditPolicy {
   /**
    * Default number of credits for new users
    */
-  private readonly DEFAULT_CREDITS = 3;
+  private readonly DEFAULT_CREDITS = 5;
 
   /**
    * Cost in credits for performing an analysis
@@ -18,7 +18,7 @@ export class CreditPolicy {
 
   /**
    * Get the default number of credits for new users
-   * @returns Default credit amount (3)
+   * @returns Default credit amount (5)
    */
   getDefaultCredits(): number {
     return this.DEFAULT_CREDITS;

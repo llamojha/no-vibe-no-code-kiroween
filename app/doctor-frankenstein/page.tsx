@@ -30,16 +30,11 @@ export default async function DoctorFrankensteinPage() {
     );
   }
 
-  // Regular authentication and authorization flow for production
+  // Regular authentication flow for production
+  // All logged-in users can access, credit system controls usage
   const authenticated = await isAuthenticated();
   if (!authenticated) {
     redirect("/login");
-  }
-
-  // Check if user has paid access using the new authentication helpers
-  const hasPaidAccess = await isCurrentUserPaid();
-  if (!hasPaidAccess) {
-    redirect("/dashboard");
   }
 
   // Get user information for identity badge and credits

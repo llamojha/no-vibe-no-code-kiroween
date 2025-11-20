@@ -66,9 +66,9 @@ export class HackathonController {
         resolveMockModeFlag(process.env.NEXT_PUBLIC_FF_USE_MOCK_API);
 
       // Authenticate request for both mock and production flows
+      // All logged-in users can access, credit system controls usage
       const authResult = await authenticateRequest(request, {
-        requirePaid: true,
-        allowFree: false,
+        allowFree: true,
       });
 
       if (!authResult.success) {
