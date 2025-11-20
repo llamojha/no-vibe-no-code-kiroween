@@ -30,30 +30,16 @@ export default async function AnalyzerPage() {
     );
   }
 
-  // Regular authentication and authorization flow for production
+  // Regular authentication flow for production
+  // All logged-in users can access, credit system controls usage
   const authenticated = await isAuthenticated();
   if (!authenticated) {
     redirect("/login");
   }
 
-  // Check if user has paid or admin access
-  const sessionContext = await getSessionContext();
-  console.log("[Analyzer Page] Session context:", {
-    isAuthenticated: sessionContext.isAuthenticated,
-    isPaid: sessionContext.isPaid,
-    isAdmin: sessionContext.isAdmin,
-    tier: sessionContext.tier,
-    userId: sessionContext.userId?.value,
-  });
-
-  const hasPaidAccess = await isCurrentUserPaid();
-  if (!hasPaidAccess) {
-    console.log("[Analyzer Page] Access denied - redirecting to dashboard");
-    redirect("/dashboard");
-  }
-
   // Get user information for identity badge and credits
   const user = await getCurrentUser();
+  const sessionContext = await getSessionContext();
   const credits = user?.credits ?? 3;
   const tier: UserTier = sessionContext.tier ?? "free";
 
