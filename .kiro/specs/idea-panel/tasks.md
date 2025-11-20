@@ -2,118 +2,200 @@
 
 - [ ] 1. Set up database schema and migrations
 
-  - Use Supabase MCP `apply_migration` tool to create migration for saved_analyses table extensions (project_status, panel_metadata columns)
-  - Use Supabase MCP `apply_migration` tool to create index for faster panel lookups by user and status
-  - Use Supabase MCP `list_tables` and `execute_sql` tools to verify migrations applied correctly
-  - Test that existing analyses are not affected by schema changes
-  - _Requirements: 3.1, 3.3, 4.3, 5.4_
+  - [ ] 1.1 Apply migration using Supabase MCP `apply_migration` tool
+
+    - Create `ideas` table with proper schema
+    - Create `documents` table with proper schema
+    - Create indexes for performance (user_id, status, updated_at, idea_id)
+    - Migrate all ideas from `saved_analyses` to `ideas` table
+    - Migrate all analyses from `saved_analyses` to `documents` table
+    - Enable Row Level Security (RLS) on both tables
+    - Create RLS policies for both tables
+    - Create triggers for auto-updating `updated_at` timestamps
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
+
+  - [ ] 1.2 Verify migration using Supabase MCP `list_tables` tool
+
+    - Confirm `ideas` table exists
+    - Confirm `documents` table exists
+    - _Requirements: 8.1, 8.2_
+
+  - [ ] 1.3 Verify migration counts using Supabase MCP `execute_sql` tool
+
+    - Confirm ideas_count = saved_analyses_count
+    - Confirm documents_count = saved_analyses_count - frankenstein_count
+    - _Requirements: 8.1, 8.2, 8.4_
+
+  - [ ] 1.4 Verify foreign key constraints using Supabase MCP `execute_sql` tool
+
+    - Confirm FK from ideas.user_id to auth.users.id
+    - Confirm FK from documents.idea_id to ideas.id
+    - Confirm FK from documents.user_id to auth.users.id
+    - _Requirements: 8.3_
+
+  - [ ] 1.5 Verify RLS policies using Supabase MCP `execute_sql` tool
+
+    - Confirm 2 policies exist (1 for ideas, 1 for documents)
+    - _Requirements: All_
+
+  - [ ] 1.6 Verify triggers using Supabase MCP `execute_sql` tool
+
+    - Confirm `trigger_update_ideas_timestamp` exists
+    - Confirm `trigger_update_documents_timestamp` exists
+    - _Requirements: 3.4, 4.4_
+
+  - [ ] 1.7 Verify data integrity using Supabase MCP `execute_sql` tool
+    - Confirm no orphaned documents (documents without ideas)
+    - _Requirements: 8.3, 8.4_
 
 - [ ] 2. Implement domain layer entities and value objects
 
-  - [ ] 2.1 Create ProjectStatus value object
+  - [ ] 2.1 Create value objects
 
-    - Implement IDEA, IN_PROGRESS, COMPLETED constants
-    - Add equality comparison method
-    - _Requirements: 3.1, 3.3_
+    - Create IdeaSource value object (MANUAL, FRANKENSTEIN)
+    - Create DocumentType value object (STARTUP_ANALYSIS, HACKATHON_ANALYSIS)
+    - Create ProjectStatus value object (IDEA, IN_PROGRESS, COMPLETED, ARCHIVED)
+    - Add equality comparison methods
+    - _Requirements: 3.1, 9.4_
 
-  - [ ] 2.2 Create IdeaPanel aggregate root entity
+  - [ ] 2.2 Create Idea aggregate root entity
 
     - Implement create and reconstruct factory methods
-    - Add updateStatus method
+    - Add updateStatus method (validates status transitions)
     - Add updateNotes method
     - Add addTag and removeTag methods
-    - Add getTags method
-    - _Requirements: 1.3, 3.1, 3.3, 4.3, 5.2, 5.3_
+    - Add getTags and getIdeaText methods
+    - Encapsulate IdeaId and UserId as value objects
+    - _Requirements: 1.3, 3.1, 3.3, 4.3, 5.2, 5.3, 9.2_
 
-  - [ ]\* 2.3 Write property test for notes round-trip
+  - [ ] 2.3 Create Document entity
 
-    - **Property 12: Notes round-trip**
+    - Implement create and reconstruct factory methods
+    - Add getContent and getType methods
+    - Encapsulate DocumentId, IdeaId, and UserId as value objects
+    - _Requirements: 2.1, 2.3, 2.4_
+
+  - [ ]\* 2.4 Write property test for notes round-trip
+
+    - **Property: Notes round-trip**
     - **Validates: Requirements 4.5**
 
-  - [ ]\* 2.4 Write property test for tags round-trip
-    - **Property 17: Tags round-trip**
+  - [ ]\* 2.5 Write property test for tags round-trip
+    - **Property: Tags round-trip**
     - **Validates: Requirements 5.5**
 
-- [ ] 3. Implement domain repository interface
+- [ ] 3. Implement domain repository interfaces
 
-  - Create IIdeaPanelRepository interface
-  - Define save, update methods
-  - Define findById, findByAnalysisId, findByUserId query methods
-  - _Requirements: 1.3, 3.3, 4.3, 5.4_
+  - Create IIdeaRepository interface
+  - Define save, update, delete methods
+  - Define findById, findByUserId query methods
+  - Create IDocumentRepository interface
+  - Define save, delete methods
+  - Define findById, findByIdeaId, findByUserId query methods
+  - _Requirements: 1.3, 2.1, 3.3, 4.3, 5.4, 8.3_
 
 - [ ] 4. Implement domain errors
 
-  - Create IdeaPanelNotFoundError
+  - Create IdeaNotFoundError
+  - Create DocumentNotFoundError
   - Create InvalidProjectStatusError
   - Create FeatureDisabledError
   - Create UnauthorizedAccessError
   - _Requirements: 3.1, 7.2_
 
-- [ ] 5. Implement infrastructure layer - database repository
+- [ ] 5. Implement infrastructure layer - database repositories
 
-  - [ ] 5.1 Create IdeaPanelMapper for entity/DAO/DTO conversions
+  - [ ] 5.1 Create IdeaMapper for entity/DAO/DTO conversions
 
-    - Implement toDAO method
-    - Implement toDomain method
-    - Implement toDTO method
-    - Handle panel_metadata JSON serialization
-    - _Requirements: 1.3, 3.1, 4.3, 5.4_
+    - Implement toDAO method (entity → database format)
+    - Implement toDomain method (database → entity)
+    - Implement toDTO method (entity → API response)
+    - Map structured fields (notes, tags) directly
+    - _Requirements: 1.3, 3.1, 4.3, 5.4, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 5.2 Implement SupabaseIdeaPanelRepository
+  - [ ] 5.2 Create DocumentMapper for entity/DAO/DTO conversions
 
-    - Implement save method
-    - Implement update method with optimistic locking
-    - Implement findById query
-    - Implement findByAnalysisId query (create panel if not exists)
-    - Implement findByUserId query
+    - Implement toDAO method (entity → database format)
+    - Implement toDomain method (database → entity)
+    - Implement toDTO method (entity → API response)
+    - Handle JSONB content field
+    - _Requirements: 2.1, 2.3, 2.4, 2.5_
+
+  - [ ] 5.3 Implement SupabaseIdeaRepository
+
+    - Implement save method (INSERT new idea)
+    - Implement update method (UPDATE existing idea, updated_at handled by trigger)
+    - Implement delete method (DELETE idea)
+    - Implement findById query (single idea by id)
+    - Implement findByUserId query (all ideas for user, ordered by updated_at DESC)
     - Use Supabase MCP `execute_sql` tool to test repository methods during development
-    - _Requirements: 1.3, 3.3, 4.3, 5.4_
+    - Handle database errors and convert to domain errors
+    - _Requirements: 1.3, 3.3, 4.3, 5.4, 9.1_
 
-  - [ ]\* 5.3 Write property test for status persistence
+  - [ ] 5.4 Implement SupabaseDocumentRepository
 
-    - **Property 5: Status updates are persisted**
+    - Implement save method (INSERT new document)
+    - Implement delete method (DELETE document)
+    - Implement findById query (single document by id)
+    - Implement findByIdeaId query (all documents for idea, ordered by created_at DESC)
+    - Implement findByUserId query (all documents for user)
+    - Use Supabase MCP `execute_sql` tool to test repository methods during development
+    - Handle database errors and convert to domain errors
+    - _Requirements: 2.1, 2.2, 2.5_
+
+  - [ ]\* 5.5 Write property test for status persistence
+
+    - **Property: Status updates are persisted**
     - **Validates: Requirements 3.3**
 
-  - [ ]\* 5.4 Write property test for metadata persistence
-    - **Property 10: Notes are persisted**
-    - **Property 16: Tags are persisted**
+  - [ ]\* 5.6 Write property test for metadata persistence
+    - **Property: Notes are persisted**
+    - **Property: Tags are persisted**
     - **Validates: Requirements 4.3, 5.4**
 
 - [ ] 6. Implement application layer - use cases
 
-  - [ ] 6.1 Implement OpenIdeaPanelUseCase
+  - [ ] 6.1 Implement GetIdeaWithDocumentsUseCase
 
-    - Check if panel exists for analysis, create if not
-    - Load analysis data
-    - Return panel DTO with analysis data
-    - _Requirements: 1.2, 1.3_
+    - Verify user owns the idea (authorization check)
+    - Load idea by id
+    - Load all documents for idea
+    - Return combined IdeaWithDocumentsDTO
+    - Handle errors (IdeaNotFoundError, UnauthorizedAccessError)
+    - _Requirements: 1.2, 1.3, 2.1, 2.2_
 
-  - [ ] 6.2 Implement GetPanelDataUseCase
+  - [ ] 6.2 Implement UpdateIdeaStatusUseCase
 
-    - Load panel data
-    - Load analysis data
-    - Combine into PanelDataDTO
-    - _Requirements: 1.3, 2.1, 2.2, 2.3, 2.4, 2.5_
+    - Load idea by id
+    - Validate new status (use ProjectStatus value object)
+    - Update idea status using domain method
+    - Persist changes (updated_at handled by database trigger)
+    - _Requirements: 3.2, 3.3, 3.4_
 
-  - [ ] 6.3 Implement UpdatePanelStatusUseCatabase repositories
+  - [ ] 6.3 Implement SaveIdeaMetadataUseCase
 
-- Validate new status
+    - Load idea by id
+    - Update notes using domain method (if provided)
+    - Update tags using domain methods (addTag/removeTag if provided)
+    - Persist changes (updated_at handled by database trigger)
+    - _Requirements: 4.2, 4.3, 4.4, 5.2, 5.3, 5.4_
 
-  - Update panel status
-  - Persist changes
-  - _Requirements: 3.2, 3.3, 3.4_
+  - [ ] 6.4 Implement GetUserIdeasUseCase
 
-- [ ] 6.4 Implement SavePanelMetadataUseCase
+    - Load all ideas for user
+    - Load document counts for each idea
+    - Return array of IdeaWithDocumentsDTO
+    - _Requirements: 9.1, 9.2, 9.3_
 
-  - Update notes and/or tags
-  - Update timestamp
-  - Persist changes
-  - _Requirements: 4.2, 4.3, 4.4, 5.2, 5.3, 5.4_
+  - [ ] 6.5 Implement GetDocumentsByIdeaUseCase
 
-- [ ]\* 6.5 Write property test for analysis type detection
+    - Load all documents for idea
+    - Return array of DocumentDTO
+    - _Requirements: 2.1, 2.2_
 
-  - **Property 25: Analysis type is detected automatically**
-  - **Validates: Requirements 8.3**
+  - [ ]\* 6.6 Write property test for document type detection
+    - **Property: Document type is detected correctly**
+    - **Validates: Requirements 2.3, 2.4**
 
 - [ ] 7. Checkpoint - Ensure all backend tests pass
 
@@ -123,36 +205,43 @@
 
   - [ ] 8.1 Create IdeaPanelController
 
-    - Implement openPanel handler
-    - Implement getPanelData handler
+    - Implement getIdeaPanel handler
     - Implement updateStatus handler
     - Implement saveMetadata handler
     - Add authentication middleware
     - Add feature flag checks
     - _Requirements: 1.2, 1.3, 3.3, 4.3, 5.4, 7.1, 7.2_
 
-  - [ ] 8.2 Create Next.js API routes
+  - [ ] 8.2 Create Next.js API routes for ideas
 
-    - Create /api/v2/idea-panel/[analysisId]/route.ts (GET for panel data)
-    - Create /api/v2/idea-panel/[analysisId]/status/route.ts (PUT for status update)
-    - Create /api/v2/idea-panel/[analysisydata/route.ts (PUT for notes/tags)
-    - _Requirements: 1.2, 3.3, 4.3, 5.4_
+    - Create /api/v2/ideas/route.ts (GET for list, POST for create)
+    - Create /api/v2/ideas/[ideaId]/route.ts (GET for single idea with documents)
+    - Create /api/v2/ideas/[ideaId]/status/route.ts (PUT for status update)
+    - Create /api/v2/ideas/[ideaId]/metadata/route.ts (PUT for notes/tags)
+    - _Requirements: 1.2, 3.3, 4.3, 5.4, 9.1_
 
-  - [ ]\* 8.3 Write integration tests for API routes
-    - Test complete panel creation flow
+  - [ ] 8.3 Create Next.js API routes for documents
+
+    - Create /api/v2/ideas/[ideaId]/documents/route.ts (GET for list)
+    - _Requirements: 2.1_
+
+  - [ ]\* 8.4 Write integration tests for API routes
+    - Test complete idea creation flow
     - Test status update flow
     - Test metadata save flow
+    - Test document listing flow
     - Test feature flag protection
     - Test authentication and authorization
 
 - [ ] 9. Implement feature layer - client-side API wrappers
 
   - Create idea panel API client functions
-  - Implement openIdeaPanel function
-  - Implement getPanelData function
+  - Implement getIdeaWithDocuments function
+  - Implement getUserIdeas function
   - Implement updateStatus function
   - Implement saveMetadata function
-  - _Requirements: 1.2, 3.3, 4.3, 5.4_
+  - Implement getDocumentsByIdea function
+  - _Requirements: 1.2, 2.1, 3.3, 4.3, 5.4, 9.1_
 
 - [ ] 10. Implement feature layer - UI components (Panel structure)
 
@@ -164,22 +253,37 @@
     - Add ARIA labels for accessibility
     - _Requirements: 1.4, 1.5, 6.2, 6.3_
 
-  - [ ] 10.2 Create AnalysisDetailsSection component
+  - [ ] 10.2 Create IdeaDetailsSection component
 
-    - Display idea title and description prominently
-    - Display all analysis scores in visual format
-    - Display strengths section
-    - Display weaknesses section
-    - Display recommendations section
-    - Support both standard and hackathon analysis types
-    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 8.1, 8.2, 8.4, 8.5_
+    - Display idea text prominently
+    - Display idea source (manual or frankenstein)
+    - Display creation date
+    - _Requirements: 1.3, 9.2, 9.4_
 
-  - [ ] 10.3 Create ProjectStatusControl component
+  - [ ] 10.3 Create DocumentsListSection component
+
+    - Display list of all documents
+    - Show "No analyses yet" when no documents
+    - Display document type (startup_analysis or hackathon_analysis)
+    - Display document creation date
+    - Support expandable/collapsible document details
+    - Display startup analysis fields (viability, innovation, market scores)
+    - Display hackathon analysis fields (technical, creativity, impact scores)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+  - [ ] 10.4 Create ProjectStatusControl component
+
     - Display current status
     - Provide status update dropdown/buttons
-    - Update status indicator immediately on c
-    - Display creation date and last updated timestamp
+    - Update status indicator immediately on change
+    - Display last updated timestamp
     - _Requirements: 3.1, 3.2, 3.4, 3.5_
+
+  - [ ] 10.5 Create AnalyzeButton component
+    - Display "Analyze" button
+    - Show dropdown with analysis type options (Startup, Hackathon)
+    - Navigate to appropriate analyzer page with idea pre-filled
+    - _Requirements: 10.1, 10.2, 10.3_
 
 - [ ] 11. Implement feature layer - UI components (Metadata management)
 
@@ -204,90 +308,139 @@
   - [ ] 12.1 Create IdeaPanelView component
 
     - Integrate IdeaPanelLayout
-    - Integrate AnalysisDetailsSection
+    - Integrate IdeaDetailsSection
+    - Integrate DocumentsListSection
     - Integrate ProjectStatusControl
+    - Integrate AnalyzeButton
     - Integrate NotesSection
     - Integrate TagsSection
     - Manage component state and data flow
     - Handle feature flag checks
-    - _Requirements: 1.3, 2.1, 3.1, 4.1, 5.1, 7.1_
+    - _Requirements: 1.3, 2.1, 3.1, 4.1, 5.1, 7.1, 10.1_
 
-  - [ ] 12.2 Update AnalysisCard component
+  - [ ] 12.2 Update Dashboard to show ideas
 
+    - Update to fetch from ideas table (not saved_analyses)
+    - Create IdeaCard component
+    - Display idea text
+    - Display document count
+    - Display idea source badge (manual/frankenstein)
+    - Display project status
     - Add "Manage" button when ENABLE_IDEA_PANEL is true
-    - Handle navigatioa panel route
+    - Handle navigation to panel route
     - Add touch-friendly button sizing for mobile
-    - _Requirements: 1.1, 1.2, 6.4, 7.1_
+    - _Requirements: 1.1, 1.2, 6.4, 7.1, 9.1, 9.2, 9.3, 9.4, 9.5_
 
   - [ ] 12.3 Create Next.js page route
-    - Create app/idea-panel/[analysisId]/page.tsx
+    - Create app/idea-panel/[ideaId]/page.tsx
     - Implement server-side data loading
     - Add authentication check
     - Add feature flag check
     - Return 404 if feature disabled
     - _Requirements: 1.2, 7.2_
 
-- [ ] 13. Implement feature flag configuration
+- [ ] 13. Update analyzer pages to save to new tables
+
+  - [ ] 13.1 Update startup analyzer
+
+    - When analysis completes, check if idea exists in ideas table
+    - If not, create idea entry (source='manual')
+    - Create document entry (type='startup_analysis')
+    - Link document to idea via idea_id
+    - _Requirements: 8.1, 8.2, 8.3, 10.4_
+
+  - [ ] 13.2 Update hackathon analyzer
+
+    - When analysis completes, check if idea exists in ideas table
+    - If not, create idea entry (source='manual')
+    - Create document entry (type='hackathon_analysis')
+    - Link document to idea via idea_id
+    - _Requirements: 8.1, 8.2, 8.3, 10.4_
+
+  - [ ] 13.3 Update Doctor Frankenstein
+
+    - When idea is generated, create idea entry (source='frankenstein')
+    - Do NOT create document entry (no analysis yet)
+    - User can analyze later from panel or analyzer pages
+    - _Requirements: 8.1, 8.2, 9.4_
+
+  - [ ] 13.4 Add pre-fill functionality to analyzers
+    - Accept ideaId query parameter
+    - Load idea text from ideas table
+    - Pre-fill analyzer form with idea text
+    - After analysis, link document to existing idea
+    - _Requirements: 10.3, 10.4, 10.5_
+
+- [] 14. Implement feature flag configuration
 
   - Add ENABLE_IDEA_PANEL to featureFlags.config.ts
   - Add environment variable checks
   - Document feature flag usage
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-- [ ] 14. Implement service factory updates
+- [ ] 15. Implement service factory updates
 
-  - [ ] 14.1 Update RepositoryFactory
+  - [ ] 15.1 Update RepositoryFactory
 
-    - Add createIdeaPanelRepository method
-    - _Requirements: 1.3_
+        - Add createIdeaRepository method
+        - Add createDocumentRepository method
 
-  - [ ] 14.2 Update UseCaseFactory
-    - Add createOpenIdeaPanelUseCase method
-      -etPanelDataUseCase method
-    - Add createUpdatePanelStatusUseCase method
-    - Add createSavePanelMetadataUseCase method
-    - _Requirements: 1.2, 3.3, 4.3, 5.4_
+    uirements: 1.3, 2.1\_
 
-- [ ] 15. Checkpoint - Ensure all frontend tests pass
+  -ate UseCaseFactory - Add createGetIdeaWithDocumentsUseCase method - Add createUpdateIdeaStatusUseCase method - Add createSaveIdeaMetadataUseCase method - Add createGetUserIdeasUseCase method - Add createGetDocumentsByIdeaUseCase method - _Requirements:1.2, 2.1, 3.3, 4.3, 5.4, 9.1_
+
+- [ ] 16. Checkpoint - Ensurefrontend tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ]\* 16. Write E2E tests for complete user workflows
+- [ ]\* 17. Write E2E tests for complete user workflows
 
   - Test navigation from dashboard to idea panel
-  - Test viewing analysis details
+  - Test viewing idea details and documents in panel
   - Test status updates
   - Test notes management
   - Test tags management
   - Test feature flag behavior
   - Test responsive design on mobile viewport
   - Test keyboard navigation and accessibility
-  - Test both standard and hackathon analysis types
+  - Test creating new analysis from panel
+    or Frankenstein → Idea Panel flow
+  - Test manual idea → analysis → panel flow
 
-- [ ] 17. Add analytics tracking
+- [ ] 18. Add analytics tracking
 
   - Track idea panel opens
   - Track status updates
   - Track notes saves
   - Track tags management
+  - Track document views
+  - Track analyze button clicks
   - _Requirements: All requirements for observability_
 
-- [ ] 18. Update feature-specific documentation
+- [ ] 19. Update feature-specific documentation
 
   - Update API documentation with new endpoints
   - Document feature flag configuration
-  - Add user guide for Idea Panel feature
-  - Document database schema changes
+    ser guide for Idea Panel feature
+    databasees (ideas and documents tables)
+  - Document migration process
+  - Document the relationship between ideas and documents
   - _Requirements: All requirements for maintainability_
 
-- [ ] 19. Update project-level documentation
+- [ ] 20. Update project-level documentation
 
   - Update PRD.md to include Idea Panel feature description
   - Update README.md with Idea Panel feature overview
   - Update any architecture documentation with new routes and components
-  - Document the relationship between analyses and idea panels
-  - Add Ideaature list in project documentation
+
+- Document the new data model (ideas → documents)
+
+  - Document backward compatibility with saved_analyses
+  - Add Idea Panel to feature list in project documentation
   - _Requirements: All requirements for maintainability_
 
-- [ ] 20. Final checkpoint - Complete system verification
+- [ ] 21. Final checkpoint - Complete system verification
   - Ensure all tests pass, ask the user if questions arise.
+  - Verify migration completed successfully
+  - Verify backward compatibility maintained
+  - Verify feature flag works correctly

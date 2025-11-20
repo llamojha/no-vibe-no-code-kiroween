@@ -2,9 +2,14 @@
 
 ## Overview
 
-The Idea Panel MVP provides a dedicated workspace for users to view and manage their analyzed startup ideas. This initial version focuses on creating a solid foundation with a clean interface that displays analysis details, allows status tracking, and supports basic metadata management (notes and tags). The panel integrates with both standard and hackathon analysis types.
+The Idea Panel MVP introduces a new data model that separates ideas from documents (analyses). This architectural change enables:
 
-This MVP intentionally excludes document generation features (PRD, Design Doc, Roadmap, Architecture), which will be added in a future iteration. The focus is on establishing the core panel infrastructure, data model, and user interface patterns that will support future enhancements.
+- Ideas to have multiple analyses (startup + hackathon)
+- Future support for multiple document types (PRDs, Design Docs, Roadmaps)
+- Cleaner separation between idea management and document generation
+- Better support for Doctor Frankenstein (idea generator without analysis)
+
+This MVP focuses on creating the foundational infrastructure with a clean interface that displays idea details, lists all associated documents, and provides basic project management features (status, notes, tags).
 
 ## Architecture
 
@@ -14,40 +19,45 @@ The Idea Panel follows hexagonal architecture with three primary layers:
 
 **Domain Layer:**
 
-- `IdeaPanel` aggregate root managing panel state and business rules
-- Value objects for `ProjectStatus`
+- `Idea` aggregate root managing idea state and business rules
+- `Document` entity representing analyses and future documents
+- Value objects for `IdeaSource`, `DocumentType`, `ProjectStatus`
 - Repository interfaces for data access contracts
 
 **Application Layer:**
 
-- Use cases for panel operations (open, update status, save metadata)
-- Query handlers for read operations (get panel data)
-- Command handlers for write operations (update status, save notes/tags)
+- Use cases for idea operations (create, update status, save metadata)
+- Use cases for document operations (list, create)
+- Query handlers for read operations
+- Command handlers for write operations
 
 **Infrastructure Layer:**
 
-- Supabase repository implementation for persistence
+- Supabase repository implementations for persistence
+- Data migration from `saved_analyses` to new tables
 - Web controllers handling HTTP requests from Next.js routes
 
 ### Integration Points
 
-1. **Dashboard Integration**: Analysis cards display "Manage" button when feature is enabled
-2. **Analysis Integration**: Panel loads data from existing saved_analyses table
+1. **Dashboard Integration**: Idea cards display "Manage" button when feature is enabled
+2. **Analyzer Integration**: Panel links to analyzer pages for creating new analyses
 3. **Authentication**: Uses existing auth middleware for access control
 4. **Analytics**: Tracks panel usage events
+5. **Backward Compatibility**: Keeps `saved_analyses` table unchanged
 
 ## Components and Interfaces
 
 ### Domain Layer Components
 
-#### IdeaPanel Entity (Aggregate Root)
+#### Idea Entity (Aggregate Root)
 
 ```typescript
-class IdeaPanel extends Entity<IdeaPanelId> {
+class Idea extends Entity<IdeaId> {
   private constructor(
-    id: IdeaPanelId,
-    private readonly analysisId: AnalysisId,
+    id: IdeaId,
     private readonly userId: UserId,
+    private ideaText: string,
+    private readonly source: IdeaSource,
     private projectStatus: ProjectStatus,
     private notes: string,
     private tags: string[],
@@ -58,8 +68,8 @@ class IdeaPanel extends Entity<IdeaPanelId> {
   }
 
   // Factory methods
-  static create(props: CreateIdeaPanelProps): IdeaPanel;
-  static reconstruct(props: IdeaPanelProps): IdeaPanel;
+  static create(props: CreateIdeaProps): Idea;
+  static reconstruct(props: IdeaProps): Idea;
 
   // Business methods
   updateStatus(newStatus: ProjectStatus): void;
@@ -67,40 +77,106 @@ class IdeaPanel extends Entity<IdeaPanelId> {
   addTag(tag: string): void;
   removeTag(tag: string): void;
   getTags(): string[];
+  getIdeaText(): string;
+}
+```
+
+#### Document Entity
+
+```typescript
+class Document extends Entity<DocumentId> {
+  private constructor(
+    id: DocumentId,
+    private readonly ideaId: IdeaId,
+    private readonly userId: UserId,
+    private readonly documentType: DocumentType,
+    private title: string,
+    private content: any,
+    private readonly createdAt: Date,
+    private updatedAt: Date
+  ) {
+    super(id);
+  }
+
+  // Factory methods
+  static create(props: CreateDocumentProps): Document;
+  static reconstruct(props: DocumentProps): Document;
+
+  // Getters
+  getContent(): any;
+  getType(): DocumentType;
 }
 ```
 
 #### Value Objects
 
 ```typescript
+class IdeaSource {
+  private constructor(private readonly _value: "manual" | "frankenstein") {}
+
+  static MANUAL = new IdeaSource("manual");
+  static FRANKENSTEIN = new IdeaSource("frankenstein");
+
+  get value(): string {
+    return this._value;
+  }
+  equals(other: IdeaSource): boolean;
+}
+
+class DocumentType {
+  private constructor(
+    private readonly _value: "startup_analysis" | "hackathon_analysis"
+  ) {}
+
+  static STARTUP_ANALYSIS = new DocumentType("startup_analysis");
+  static HACKATHON_ANALYSIS = new DocumentType("hackathon_analysis");
+
+  get value(): string {
+    return this._value;
+  }
+  equals(other: DocumentType): boolean;
+}
+
 class ProjectStatus {
   private constructor(
-    private readonly _value: "idea" | "in_progress" | "completed"
+    private readonly _value: "idea" | "in_progress" | "completed" | "archived"
   ) {}
 
   static IDEA = new ProjectStatus("idea");
   static IN_PROGRESS = new ProjectStatus("in_progress");
   static COMPLETED = new ProjectStatus("completed");
+  static ARCHIVED = new ProjectStatus("archived");
 
   get value(): string {
     return this._value;
   }
-  equals(other: ProjectStat): boolean;
+  equals(other: ProjectStatus): boolean;
 }
 ```
 
 #### Repository Interfaces
 
 ```typescript
-interface IIdeaPanelRepository {
+interface IIdeaRepository {
   // Commands
-  save(panel: IdeaPanel): Promise<void>;
-  update(panel: IdeaPanel): Promise<void>;
+  save(idea: Idea): Promise<void>;
+  update(idea: Idea): Promise<void>;
+  delete(id: IdeaId): Promise<void>;
 
   // Queries
-  findById(id: IdeaPanelId): Promise<IdeaPanel | null>;
-  findByAnalysisId(analysisId: AnalysisId): Promise<IdeaPanel | null>;
-  findByUserId(userId: UserId): Promise<IdeaPanel[]>;
+  findById(id: IdeaId): Promise<Idea | null>;
+  findByUserId(userId: UserId): Promise<Idea[]>;
+}
+
+interface IDocumentRepository {
+  // Commands
+  save(document: Document): Promise<void>;
+  delete(id: DocumentId): Promise<void>;
+
+  // Queries
+  findById(id: DocumentId): Promise<Document | null>;
+  findByIdeaId(ideaId: IdeaId): Promise<Document[]>;
+  findByUserId(userId: UserId): Promise<Document[]>;
 }
 ```
 
@@ -109,54 +185,76 @@ interface IIdeaPanelRepository {
 #### Use Cases
 
 ```typescript
-// Panel Management
-class OpenIdeaPanelUseCase {
+// Idea Management
+class GetIdeaWithDocumentsUseCase {
   constructor(
-    private readonly panelRepository: IIdeaPanelRepository,
-    private readonly analysisRepository: IAnalysisRepository
+    private readonly ideaRepository: IIdeaRepository,
+    private readonly documentRepository: IDocumentRepository
   ) {}
 
-  async execute(command: OpenIdeaPanelCommand): Promise<IdeaPanelDTO>;
+  async execute(
+    query: GetIdeaWithDocumentsQuery
+  ): Promise<IdeaWithDocumentsDTO>;
 }
 
-class UpdatePanelStatusUseCase {
-  constructor(private readonly panelRepository: IIdeaPanelRepository) {}
+class UpdateIdeaStatusUseCase {
+  constructor(private readonly ideaRepository: IIdeaRepository) {}
 
-  async execute(command: UpdateStatusCommand): Promise<void>;
+  async execute(command: UpdateIdeaStatusCommand): Promise<void>;
 }
 
-class SavePanelMetadataUseCase {
-  constructor(private readonly panelRepository: IIdeaPanelRepository) {}
+class SaveIdeaMetadataUseCase {
+  constructor(private readonly ideaRepository: IIdeaRepository) {}
 
-  async execute(command: SaveMetadataCommand): Promise<void>;
+  async execute(command: SaveIdeaMetadataCommand): Promise<void>;
 }
 
-class GetPanelDataUseCase {
+class GetUserIdeasUseCase {
   constructor(
-    private readonly panelRepository: IIdeaPanelRepository,
-    private readonly analysisRepository: IAnalysisRepository
+    private readonly ideaRepository: IIdeaRepository,
+    private readonly documentRepository: IDocumentRepository
   ) {}
 
-  async execute(query: GetPanelDataQuery): Promise<PanelDataDTO>;
+  async execute(query: GetUserIdeasQuery): Promise<IdeaWithDocumentsDTO[]>;
+}
+
+// Document Management
+class GetDocumentsByIdeaUseCase {
+  constructor(private readonly documentRepository: IDocumentRepository) {}
+
+  async execute(query: GetDocumentsByIdeaQuery): Promise<DocumentDTO[]>;
 }
 ```
 
 ### Infrastructure Layer Components
 
-#### Repository Implementation
+#### Repository Implementations
 
 ```typescript
-class SupabaseIdeaPanelRepository implements IIdeaPanelRepository {
-  construn new DocumentVersion(1);
-  }private readonly client: SupabaseClient,
-    private readonly mapper: IdeaPanelMapper
+class SupabaseIdeaRepository implements IIdeaRepository {
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly mapper: IdeaMapper
   ) {}
 
-  async save(panel: IdeaPanel): Promise<void>
-  async update(panel: IdeaPanel): Promise<void>
-  async findById(id: IdeaPanelId): Promise<IdeaPanel | null>
-  async findByAnalysisId(analysisId: AnalysisId): Promise<IdeaPanel | null>
-  async findByUserId(userId: UserId): Promise<IdeaPanel[]>
+  async save(idea: Idea): Promise<void>;
+  async update(idea: Idea): Promise<void>;
+  async delete(id: IdeaId): Promise<void>;
+  async findById(id: IdeaId): Promise<Idea | null>;
+  async findByUserId(userId: UserId): Promise<Idea[]>;
+}
+
+class SupabaseDocumentRepository implements IDocumentRepository {
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly mapper: DocumentMapper
+  ) {}
+
+  async save(document: Document): Promise<void>;
+  async delete(id: DocumentId): Promise<void>;
+  async findById(id: DocumentId): Promise<Document | null>;
+  async findByIdeaId(ideaId: IdeaId): Promise<Document[]>;
+  async findByUserId(userId: UserId): Promise<Document[]>;
 }
 ```
 
@@ -165,14 +263,12 @@ class SupabaseIdeaPanelRepository implements IIdeaPanelRepository {
 ```typescript
 class IdeaPanelController {
   constructor(
-    private readonly openPanelUseCase: OpenIdeaPanelUseCase,
-    private readonly getPanelDataUseCase: GetPanelDataUseCase,
-    private readonly updateStatusUseCase: UpdatePanelStatusUseCase,
-    private readonly saveMetadataUseCase: SavePanelMetadataUseCase
+    private readonly getIdeaWithDocumentsUseCase: GetIdeaWithDocumentsUseCase,
+    private readonly updateStatusUseCase: UpdateIdeaStatusUseCase,
+    private readonly saveMetadataUseCase: SaveIdeaMetadataUseCase
   ) {}
 
-  async openPanel(req: NextRequest): Promise<NextResponse>;
-  async getPanelData(req: NextRequest): Promise<NextResponse>;
+  async getIdeaPanel(req: NextRequest): Promise<NextResponse>;
   async updateStatus(req: NextRequest): Promise<NextResponse>;
   async saveMetadata(req: NextRequest): Promise<NextResponse>;
 }
@@ -182,196 +278,493 @@ class IdeaPanelController {
 
 ### Database Schema
 
-#### saved_analyses Table Extensions
+#### Table Relationships
+
+```
+ideas (1) → (many) documents
+  ├─ startup_analysis documents
+  └─ hackathon_analysis documents
+
+saved_analyses (UNCHANGED - backward compatibility)
+```
+
+**Design Rationale:**
+
+- `ideas` table stores all ideas with panel management data
+- `documents` table stores all analyses linked to ideas
+- `saved_analyses` remains unchanged for backward compatibility
+- Clean separation enables future document types (PRDs, Design Docs, etc.)
+
+#### ideas Table (New)
 
 ```sql
-ALTER TABLE saved_analyses ADD COLUMN IF NOT EXISTS project_status TEXT DEFAULT 'idea' CHECK (project_status IN ('idea', 'in_progress', 'completed'));
-ALTER TABLE saved_analyses ADD COLUMN IF NOT EXISTS panel_metadata JSONB DEFAULT '{"notes": "", " []}';
+CREATE TABLE ideas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Core idea data
+  idea_text TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual'
+    CHECK (source IN ('manual', 'frankenstein')),
+
+  -- Panel management data
+  project_status TEXT NOT NULL DEFAULT 'idea'
+    CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived')),
+  notes TEXT DEFAULT '',
+  tags TEXT[] DEFAULT '{}',
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_ideas_user ON ideas(user_id);
+CREATE INDEX idx_ideas_status ON ideas(user_id, project_status);
+CREATE INDEX idx_ideas_updated ON ideas(updated_at DESC);
+```
+
+#### documents Table (New)
+
+```sql
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idea_id UUID NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Document metadata
+  document_type TEXT NOT NULL
+    CHECK (document_type IN ('startup_analysis', 'hackathon_analysis')),
+  title TEXT,
+  content JSONB NOT NULL,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_documents_idea ON documents(idea_id);
+CREATE INDEX idx_documents_user ON documents(user_id);
+CREATE INDEX idx_documents_type ON documents(idea_id, document_type);
+```
+
+#### Auto-update Triggers
+
+```sql
+-- Trigger for ideas table
+CREATE OR REPLACE FUNCTION update_ideas_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_ideas_timestamp
+  BEFORE UPDATE ON ideas
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ideas_timestamp();
+
+-- Trigger for documents table
+CREATE OR REPLACE FUNCTION update_documents_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_documents_timestamp
+  BEFORE UPDATE ON documents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_documents_timestamp();
+```
+
+#### Row Level Security Policies
+
+```sql
+-- Ideas table RLS
+ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own ideas"
+  ON ideas FOR ALL
+  USING (auth.uid() = user_id);
+
+-- Documents table RLS
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own documents"
+  ON documents FOR ALL
+  USING (auth.uid() = user_id);
 ```
 
 ### Data Transfer Objects (DTOs)
 
 ```typescript
-interface IdeaPanelDTO {
+interface IdeaDTO {
   id: string;
-  analysisId: string;
   userId: string;
-  projectStatus: "idea" | "in_progress" | "completed";
+  ideaText: string;
+  source: "manual" | "frankenstein";
+  projectStatus: "idea" | "in_progress" | "completed" | "archived";
   notes: string;
   tags: string[];
   createdAt: string;
   updatedAt: string;
 }
 
-interface PanelDataDTO {
-  panel: IdeaPanelDTO;
-  analysis: AnalysisDTO;
+interface DocumentDTO {
+  id: string;
+  ideaId: string;
+  userId: string;
+  documentType: "startup_analysis" | "hackathon_analysis";
+  title: string;
+  content: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface AnalysisDTO {
-  id: string;
-  idea: string;
-  category: string;
-  scores: Record<string, number>;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  createdAt: string;
+interface IdeaWithDocumentsDTO {
+  idea: IdeaDTO;
+  documents: DocumentDTO[];
 }
 ```
 
 ### Domain to DAO Mapping
 
 ```typescript
-interface IdeaPanelDAO {
+interface IdeaDAO {
   id: string;
-  analysis_id: string;
   user_id: string;
+  idea_text: string;
+  soerty: string;
   project_status: string;
-  panel_metadata: {
-    notes: string;
-    tags: string[];
-  };
+  notes: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface DocumentDAO {
+  id: string;
+  idea_id: string;
+  user_id: string;
+  document_type: string;
+  title: string | null;
+  content: any;
   created_at: string;
   updated_at: string;
 }
 ```
 
-## Correctness Properties
+### Query Pattern: Get Idea with Documents
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+```typescript
+// Get idea
+const { data: ideaData } = await supabase
+  .from('ideas')
+  .select('*')
+  .eq('id', ideaId)
+  .single();
 
-### Property Reflection
+// Get documents for idea
+const { data: documentsData } = await supabase
+  .from('documents')
+  .select('*')
+  .eq('idea_id', ideaId)
+  .order('created_at', { ascending: false });
 
-After analyzing all acceptance criteria, several consolidation opportunities emerged:
+// Result structure:
+{
+  idea: {
+    id: 'idea-uuid',
+    user_id: 'user-uuid',
+    idea_text: 'My startup idea',
+    source: 'manual',
+    project_status: 'idea',
+    notes: '',
+    tags: [],
+    created_at: '...',
+    updated_at: '...'
+  },
+  documents: [
+    {
+      id: 'doc-uuid-1',
+      idea_id: 'idea-uuid',
+      document_type: 'startup_analysis',
+      content: { viability: 85, innovation: 90, ... },
+      created_at: '...'
+    },
+    {
+      id: 'doc-uuid-2',
+      idea_id: 'idea-uuid',
+      document_type: 'hackathon_analysis',
+      content: { technical: 88, creativity: 92, ... },
+      created_at: '...'
+    }
+  ]
+}
+```
 
-**Feature Flag Pattern**: Requirements 7.1 and 7.3 test the same behavior (button visibility) with opposite flag values. Similarly, 7.2 and 7.4 test route access. These can be consolidated into single properties that test both states.
+## Data Migration
 
-**Display Pattern**: Requirements 2.1-2.5 all test that different sections are displayed. These can be consolidated into a single property that verifies all required sections are present.
+### Migration Strategy
 
-**Persistence Pattern**: Requirements 4.3 and 5.4 both test persistence to panel_metadata. These follow the same pattern and can be consolidated.
+Since there are fewer than 100 existing analyses (all test data), we will:
 
-**Round-trip Pattern**: Requirements 4.5 and 5.5 both test that saved data is retrieved correctly. These are round-trip properties.
+1. **Create new tables** (`ideas`, `documents`)
+2. **Migrate all data** from `saved_analyses` to new tables
+3. **Keep `saved_analyses` unchanged** for backward compatibility
+4. **Update application code** to use new tables
 
-### Correctness Properties
+### Complete Migration SQL
 
-Property 1: Dashboard displays manage button for all analyses
-_For any_ dashboard view containing analyses, when ENABLE_IDEA_PANEL is true, each analysis card should display a "Manage" button
-**Validates: Requirements 1.1, 7.3**
+```sql
+-- Migration: create_ideas_and_documents_tables
 
-Property 2: Manage button navigates to correct panel route
-_For any_ analysis, clicking the "Manage" button should navigate to `/idea-panel/[analysisId]` with the correct analysis ID
-**Validates: Requirements 1.2**
+-- Step 1: Create ideas table
+CREATE TABLE ideas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  idea_text TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual'
+    CHECK (source IN ('manual', 'frankenstein')),
+  project_status TEXT NOT NULL DEFAULT 'idea'
+    CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived')),
+  notes TEXT DEFAULT '',
+  tags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-Property 3: Panel displays complete analysis data
-_For any_ idea panel, the displayed content should include idea description, all scores, strengths, weaknesses, and recommendations
-**Validates: Requirements 1.3, 2.1, 2.2, 2.3, 2.4, 2.5**
+-- Step 2: Create documents table
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idea_id UUID NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  document_type TEXT NOT NULL
+    CHECK (document_type IN ('startup_analysis', 'hackathon_analysis')),
+  title TEXT,
+  content JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-Property 4: Panel displays current status
-_For any_ idea panel, the system should display the current project status (idea, in_progress, or completed)
-**Validates: Requirements 3.1**
+-- Step 3: Create indexes
+CREATE INDEX idx_ideas_user ON ideas(user_id);
+CREATE INDEX idx_ideas_status ON ideas(user_id, project_status);
+CREATE INDEX idx_ideas_updated ON ideas(updated_at DESC);
 
-Property 5: Status updates are persisted
-_For any_ idea panel, when the project status is changed, the new status should be persisted to the database
-**Validates: Requirements 3.3**
+CREATE INDEX idx_documents_idea ON documents(idea_id);
+CREATE INDEX idx_documents_user ON documents(user_id);
+CREATE INDEX idx_documents_type ON documents(idea_id, document_type);
 
-Property 6: Status indicator updates immediately
-_For any_ idea panel, when the project status is changed, the status indicator should reflect the new status without page reload
-**Validates: Requirements 3.4**
+-- Step 4: Migrate ideas from saved_analyses
+-- Create a temporary mapping table to track old analysis_id to new idea_id
+CREATE TEMP TABLE idea_mapping AS
+SELECT
+  sa.id as old_analysis_id,
+  gen_random_uuid() as new_idea_id,
+  sa.user_id,
+  sa.idea as idea_text,
+  CASE
+    WHEN sa.analysis_type = 'frankenstein' THEN 'frankenstein'
+    ELSE 'manual'
+  END as source,
+  sa.created_at,
+  sa.updated_at
+FROM saved_analyses sa;
 
-Property 7: Panel displays timestamps
-_For any_ idea panel, the system should display the analysis creation date and last updated timestamp
-**Validates: Requirements 3.5**
+-- Insert ideas
+INSERT INTO ideas (id, user_id, idea_text, source, created_at, updated_at)
+SELECT new_idea_id, user_id, idea_text, source, created_at, updated_at
+FROM idea_mapping;
 
-Property 8: Notes section is displayed
-_For any_ idea panel, a notes section should be displayed
-**Validates: Requirements 4.1**
+-- Step 5: Migrate documents (only for entries with analysis)
+INSERT INTO documents (idea_id, user_id, document_type, content, created_at, updated_at)
+SELECT
+  im.new_idea_id,
+  sa.user_id,
+  CASE
+    WHEN sa.analysis_type = 'idea' THEN 'startup_analysis'
+    WHEN sa.analysis_type = 'hackathon' THEN 'hackathon_analysis'
+  END as document_type,
+  sa.analysis as content,
+  sa.created_at,
+  sa.updated_at
+FROM saved_analyses sa
+JOIN idea_mapping im ON im.old_analysis_id = sa.id
+WHERE sa.analysis_type IN ('idea', 'hackathon')
+  AND sa.analysis IS NOT NULL
+  AND sa.analysis != 'null'::jsonb;
 
-Property 9: Editing notes enables save button
-_For any_ idea panel, when notes are added or edited, the save button should be enabled
-**Validates: Requirements 4.2**
+-- Step 6: Enable RLS
+ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
-Property 10: Notes are persisted
-_For any_ idea panel, when notes are saved, they should be persisted to the panel_metadata field in the database
-**Validates: Requirements 4.3**
+-- Step 7: Create RLS policies
+CREATE POLICY "Users can manage their own ideas"
+  ON ideas FOR ALL
+  USING (auth.uid() = user_id);
 
-Property 11: Saving updates timestamp
-_For any_ idea panel, when notes are saved, the last modified timestamp should be updated
-**Validates: Requirements 4.4**
+CREATE POLICY "Users can manage their own documents"
+  ON documents FOR ALL
+  USING (auth.uid() = user_id);
 
-Property 12: Notes round-trip
-_For any_ idea panel with saved notes, loading the panel should display the previously saved notes
-**Validates: Requirements 4.5**
+-- Step 8: Create triggers
+CREATE OR REPLACE FUNCTION update_ideas_timestamp()
+RETURNS TRIGGER AS $ round-trip
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-Property 13: Tags section is displayed
-_For any_ idea panel, a tags section should be displayed
-**Validates: Requirements 5.1**
+CREATE TRIGGER trigger_update_ideas_timestamp
+  BEFORE UPDATE ON ideas
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ideas_timestamp();
 
-Property 14: Adding tag updates metadata
-_For any_ idea panel, when a tag is added, it should be added to the panel_metadata field
-**Validates: Requirements 5.2**
+CREATE OR REPLACE FUNCTION update_documents_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-Property 15: Removing tag updates metadata
-_For any_ idea panel, when a tag is removed, it should be removed from the panel_metadata field
-**Validates: Requirements 5.3**
+CREATE TRIGGER trigger_update_documents_timestamp
+  BEFORE UPDATE ON documents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_documents_timestamp();
+```
 
-Property 16: Tags are persisted
-_For any_ idea panel, when tags are saved, they should be persisted to the database
-**Validates: Requirements 5.4**
+### Migration Application Using MCP
 
-Property 17: Tags round-trip
-_For any_ idea panel with saved tags, loading the panel should display the previously saved tags
-**Validates: Requirements 5.5**
+```typescript
+// Step 1: Apply the migration
+await mcp_supabase_apply_migration({
+  name: "create_ideas_and_documents_tables",
+  query: `/* Complete SQL from above */`,
+});
 
-Property 18: ARIA labels present on interactive elements
-_For any_ interactive element in the idea panel, appropriate ARIA labels should be present for screen reader accessibility
-**Validates: Requirements 6.2**
+// Step 2: Verify tables were created
+await mcp_supabase_list_tables({
+  schemas: ["public"],
+});
+// Should show ideas and documents in the list
 
-Property 19: Responsive layout adapts to viewport
-_For any_ idea panel viewed on mobile viewport, the layout should adapt to the screen size
-**Validates: Requirements 6.3**
+// Step 3: Verify migration counts
+await mcp_supabase_execute_sql({
+  query: `
+    SELECT
+      (SELECT COUNT(*) FROM saved_analyses) as saved_analyses_count,
+      (SELECT COUNT(*) FROM ideas) as ideas_count,
+      (SELECT COUNT(*) FROM documents) as documents_count,
+      (SELECT COUNT(*) FROM saved_analyses WHERE analysis_type = 'frankenstein') as frankenstein_count;
+  `,
+});
+// ideas_count should equal saved_analyses_count
+// documents_count should equal saved_analyses_count - frankenstein_count
 
-Property 20: Touch targets meet minimum size
-_For any_ button in the idea panel on mobile viewport, the tap target should meet minimum size requirements (44x44 pixels)
-**Validates: Requirements 6.4**
+// Step 4: Verify foreign key constraints
+await mcp_supabase_execute_sql({
+  query: `
+    SELECT
+      tc.table_name,
+      tc.constraint_name,
+      kcu.column_name,
+      ccu.table_name AS foreign_table_name,
+      ccu.column_name AS foreign_column_name
+    FROM information_schema.table_constraints AS tc
+    JOIN information_schema.key_column_usage AS kcu
+      ON tc.constraint_name = kcu.constraint_name
+    JOIN information_schema.constraint_column_usage AS ccu
+      ON ccu.constraint_name = tc.constraint_name
+    WHERE tc.table_name IN ('ideas', 'documents')
+      AND tc.constraint_type = 'FOREIGN KEY';
+  `,
+});
 
-Property 21: Feature flag controls manage button visibility
-_For any_ dashboard view, the "Manage" button should be displayed when ENABLE_IDEA_PANEL is true and hidden when false
-**Validates: Requirements 7.1, 7.3**
+// Step 5: Verify RLS policies
+await mcp_supabase_execute_sql({
+  query: `
+    SELECT
+      tablename,
+      policyname,
+      cmd
+    FROM pg_policies
+    WHERE tablename IN ('ideas', 'documents');
+  `,
+});
+// Should show 2 policies (1 per table)
 
-Property 22: Feature flag protects panel routes
-_For any_ request to idea panel routes, the system should allow access when ENABLE_IDEA_PANEL is true and return 404 when false
-**Validates: Requirements 7.2, 7.4**
+// Step 6: Verify triggers exist
+await mcp_supabase_execute_sql({
+  query: `
+    SELECT
+      trigger_name,
+      event_object_table
+    FROM information_schema.triggers
+    WHERE event_object_table IN ('ideas', 'documents');
+  `,
+});
+// Should show 2 triggers (1 per table)
 
-Property 23: Standard analysis displays standard fields
-_For any_ standard analysis, the panel should display viability, innovation, and market scores
-**Validates: Requirements 8.1**
+// Step 7: Verify data integrity
+await mcp_supabase_execute_sql({
+  query: `
+    -- Check for orphaned documents
+    SELECT COUNT(*) as orphaned_documents
+    FROM documents d
+    LEFT JOIN ideas i ON i.id = d.idea_id
+    WHERE i.id IS NULL;
+  `,
+});
+// Should return 0
+```
 
-Property 24: Hackathon analysis displays hackathon fields
-_For any_ hackathon analysis, the panel should display technical, creativity, and impact scores
-**Validates: Requirements 8.2**
+### Verification Checklist
 
-Property 25: Analysis type is detected automatically
-_For any_ analysis, the system should correctly detect whether it is a standard or hackathon type
-**Validates: Requirements 8.3**
+After migration, verify using MCP tools:
 
-Property 26: Score labels match analysis type
-_For any_ analysis, the displayed score labels should match the analysis type (standard or hackathon)
-**Validates: Requirements 8.4**
+- [ ] `mcp_supabase_list_tables` shows `ideas` and `documents` tables exist
+- [ ] `mcp_supabase_execute_sql` confirms ideas_count = saved_analyses_count
+- [ ] `mcp_supabase_execute_sql` confirms documents_count = saved_analyses_count - frankenstein_count
+- [ ] `mcp_supabase_execute_sql` confirms foreign key constraints exist
+- [ ] `mcp_supabase_execute_sql` confirms RLS policies exist (2 total)
+- [ ] `mcp_supabase_execute_sql` confirms triggers exist (2 total)
+- [ ] `mcp_supabase_execute_sql` confirms no orphaned documents (0 rows)
 
-Property 27: Type-specific recommendations are displayed
-_For any_ analysis, the panel should display recommendations appropriate to the analysis type
-**Validates: Requirements 8.5**
+### Rollback Plan (If Needed)
+
+```sql
+-- Use mcp_supabase_execute_sql to rollback if needed
+DROP TRIGGER IF EXISTS trigger_update_documents_timestamp ON documents;
+DROP TRIGGER IF EXISTS trigger_update_ideas_timestamp ON ideas;
+DROP FUNCTION IF EXISTS update_documents_timestamp();
+DROP FUNCTION IF EXISTS update_ideas_timestamp();
+DROP TABLE IF EXISTS documents CASCADE;
+DROP TABLE IF EXISTS ideas CASCADE;
+```
 
 ## Error Handling
 
 ### Domain Errors
 
 ```typescript
-class IdeaPanelNotFoundError extends DomainError {
-  readonly code = "IDEA_PANEL_NOT_FOUND";
-  constructor(analysisId: string) {
-    super(`Idea panel not found for analysis: ${analysisId}`);
+class IdeaNotFoundError extends DomainError {
+  readonly code = "IDEA_NOT_FOUND";
+  constructor(ideaId: string) {
+    super(`Idea not found: ${ideaId}`);
+  }
+}
+
+class DocumentNotFoundError extends DomainError {
+  readonly code = "DOCUMENT_NOT_FOUND";
+  constructor(documentId: string) {
+    super(`Document not found: ${documentId}`);
   }
 }
 
@@ -391,8 +784,8 @@ class FeatureDisabledError extends DomainError {
 
 class UnauthorizedAccessError extends DomainError {
   readonly code = "UNAUTHORIZED_ACCESS";
-  constructor(userId: string, panelId: string) {
-    super(`User ${userId} is not authorized to access panel ${panelId}`);
+  constructor(userId: string, resourceId: string) {
+    super(`User ${userId} is not authorized to access resource ${resourceId}`);
   }
 }
 ```
@@ -400,13 +793,14 @@ class UnauthorizedAccessError extends DomainError {
 ### Error Handling Strategy
 
 1. **Domain Layer**: Throw domain-specific errors for business rule violations
-2. **Application Layer**: Catch domain errors and convert to appropriate result types
+2. **Application Layer**: Catch domain errors and tanvert to appropriate result types
 3. **Infrastructure Layer**: Catch infrastructure errors (database) and convert to domain errors
 4. **Web Layer**: Convert domain errors to appropriate HTTP responses with user-friendly messages
 
 ### HTTP Error Mapping
 
-- `IdeaPanelNotFoundError` → 404 Not Found
+- `IdeaNotFoundError` → 404 Not Found
+- `DocumentNotFoundError` → 404 Not Found
 - `InvalidProjectStatusError` → 400 Bad Request
 - `FeatureDisabledError` → 403 Forbidden
 - `UnauthorizedAccessError` → 403 Forbidden
@@ -420,14 +814,14 @@ Unit tests will verify specific examples and edge cases:
 **Domain Layer Tests:**
 
 - Entity creation and reconstruction
-- ProjectStatus value object validation
+- Value object validation
 - Business rule enforcement (status transitions)
 - Notes and tags management
 
 **Application Layer Tests:**
 
 - Use case orchestration with mocked dependencies
-- Panel creation and retrieval logic
+- Idea and document retrieval logic
 - Status update logic
 - Metadata save logic
 
@@ -435,6 +829,7 @@ Unit tests will verify specific examples and edge cases:
 
 - Repository implementations with test database
 - Mapper conversions (entity ↔ DAO ↔ DTO)
+- Migration scripts
 
 ### Property-Based Testing
 
@@ -451,18 +846,18 @@ const propertyTestConfig = { numRuns: 100 };
 **Property Test Examples:**
 
 ```typescript
-// Property 12: Notes round-trip
-describe("Panel Metadata Properties", () => {
-  it("Feature: idea-panel, Property 12: Notes round-trip", async () => {
+// Property: Notes round-trip
+describe("Idea Metadata Properties", () => {
+  it("Feature: idea-panel, Property: Notes round-trip", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 0, maxLength: 1000 }),
         async (notes) => {
-          const panel = await createPanelWithNotes(notes);
-          const savedPanel = await savePanel(panel);
-          const loadedPanel = await loadPanel(savedPanel.id);
+          const idea = await createIdeaWithNotes(notes);
+          const savedIdea = await saveIdea(idea);
+          const loadedIdea = await loadIdea(savedIdea.id);
 
-          expect(loadedPanel.notes).toBe(notes);
+          expect(loadedIdea.notes).toBe(notes);
         }
       ),
       propertyTestConfig
@@ -470,18 +865,18 @@ describe("Panel Metadata Properties", () => {
   });
 });
 
-// Property 17: Tags round-trip
-describe("Panel Tags Properties", () => {
-  it("Feature: idea-panel, Property 17: Tags round-trip", async () => {
+// Property: Tags round-trip
+describe("Idea Tags Properties", () => {
+  it("Feature: idea-panel, Property: Tags round-trip", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.string({ minLength: 1, maxLength: 20 }), { maxLength: 10 }),
         async (tags) => {
-          const panel = await createPanelWithTags(tags);
-          const savedPanel = await savePanel(panel);
-          const loadedPanel = await loadPanel(savedPanel.id);
+          const idea = await createIdeaWithTags(tags);
+          const savedIdea = await saveIdea(idea);
+          const loadedIdea = await loadIdea(savedIdea.id);
 
-          expect(loadedPanel.getTags()).toEqual(tags);
+          expect(loadedIdea.getTags()).toEqual(tags);
         }
       ),
       propertyTestConfig
@@ -489,19 +884,17 @@ describe("Panel Tags Properties", () => {
   });
 });
 
-// Property 25: Analysis type detection
-describe("Analysis Type Properties", () => {
-  it("Feature: idea-panel, Property 25: Analysis type is detected automatically", async () => {
+// Property: Document type detection
+describe("Document Type Properties", () => {
+  it("Feature: idea-panel, Property: Document type is detected correctly", async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.constantFrom("general", "hackathon"),
-        async (category) => {
-          const analysis = createAnalysisWithCategory(category);
-          const detectedType = detectAnalysisType(analysis);
+        fc.constantFrom("startup_analysis", "hackathon_analysis"),
+        async (documentType) => {
+          const document = createDocumentWithType(documentType);
+          const detectedType = document.getType().value;
 
-          const expectedType =
-            category === "hackathon" ? "hackathon" : "standard";
-          expect(detectedType).toBe(expectedType);
+          expect(detectedType).toBe(documentType);
         }
       ),
       propertyTestConfig
@@ -514,18 +907,20 @@ describe("Analysis Type Properties", () => {
 
 Integration tests will verify end-to-end workflows:
 
-- Complete panel creation flow (analysis → panel creation → data loading)
-- Status update flow (change status → persist → verify)
-- Metadata management flow (save notes/tags → persist → retrieve)
+- Complete idea creation flow
+- Status update flow
+- Metadata management flow (save notes/tags)
+- Document listing flow
 - Feature flag integration with UI and API
 - Authentication and authorization checks
+- Migration data integrity
 
 ### E2E Testing
 
 End-to-end tests using Playwright will verify user workflows:
 
 - Navigate from dashboard to idea panel
-- View analysis details in panel
+- View idea details and documents in panel
 - Update project status
 - Add and save notes
 - Add and remove tags
@@ -537,20 +932,21 @@ End-to-end tests using Playwright will verify user workflows:
 
 ### Database Optimization
 
-- Use existing indexes on `saved_analyses` table
+- Use indexes on foreign keys and frequently queried columns
 - Implement connection pooling for Supabase client
 - Use database transactions for atomic operations
+- Optimize queries with proper JOINs
 
 ### Frontend Optimization
 
-- Use React Server Components for initial panel data loading
+- Use React Server Components for initial data loading
 - Implement optimistic UI updates for better perceived performance
-- Cache panel data in client-side state management
+- Cache idea and document data in client-side state management
 - Lazy load heavy components
 
 ### Caching Strategy
 
-- Cache panel data for 5 minutes
+- Cache idea data for 5 minutes
 - Invalidate cache on updates
 - Use SWR (stale-while-revalidate) pattern for data fetching
 
@@ -559,8 +955,8 @@ End-to-end tests using Playwright will verify user workflows:
 ### Authentication and Authorization
 
 - Verify user authentication on all API endpoints
-- Ensure users can only access their own idea panels
-- Validate analysis ownership before allowing panel access
+- Ensure users can only access their own ideas and documents
+- Validate ownership before allowing operations
 
 ### Input Validation
 
@@ -568,49 +964,15 @@ End-to-end tests using Playwright will verify user workflows:
 - Sanitize notes content before storage
 - Validate project status enum values
 - Validate tag format and length
+- Validate document type enum values
 
 ### Data Protection
 
-- Store panels with user_id association for access control
-- Audit log for panel modifications
-- Encrypt sensitive metadata fields if needed
+- Store ideas and documents with user_id association for access control
+- Use RLS policies to enforce row-level security
+- Audit log for modifications (future enhancement)
 
 ## Deployment Strategy
-
-### Database Migrations
-
-**Use Supabase MCP tools for all database operations:**
-
-- Use `mcp_supabase_apply_migration` tool to apply migrations
-- Use `mcp_supabase_list_tables` tool to verify schema changes
-- Use `mcp_supabase_execute_sql` tool to test queries during development
-
-```sql
--- Migration: add_idea_panel_support
--- Add columns to saved_analyses table
-ALTER TABLE saved_analyses
-  ADD COLUMN IF NOT EXISTS project_status TEXT DEFAULT 'idea' CHECK (project_status IN ('idea', 'in_progress', 'completed')),
-  ADD COLUMN IF NOT EXISTS panel_metadata JSONB DEFAULT '{"notes": "", "tags": []}';
-
--- Create index for faster panel lookups
-CREATE INDEX IF NOT EXISTS idx_saved_analyses_user_status ON saved_analyses(user_id, project_status);
-```
-
-**Migration Application:**
-
-```typescript
-// Use Supabase MCP tool
-await mcp_supabase_apply_migration({
-  name: "add_idea_panel_support",
-  query: `
-    ALTER TABLE saved_analyses
-      ADD COLUMN IF NOT EXISTS project_status TEXT DEFAULT 'idea' CHECK (project_status IN ('idea', 'in_progress', 'completed')),
-      ADD COLUMN IF NOT EXISTS panel_metadata JSONB DEFAULT '{"notes": "", "tags": []}';
-
-    CREATE INDEX IF NOT EXISTS idx_saved_analyses_user_status ON saved_analyses(user_id, project_status);
-  `,
-});
-```
 
 ### Feature Flag Configuration
 
@@ -631,13 +993,15 @@ export const featureFlags = {
 ### Monitoring and Observability
 
 - Track panel opens and usage
-- Monitor panel creation success/failure rates
+- Monitor idea creation success/failure rates
 - Track status update patterns
 - Monitor database query performance
 - Track feature flag usage and adoption rates
+- Monitor migration success
 
 ### Rollback Strategy
 
 - Feature flag allows instant disable without code deployment
 - Database migrations are additive (no data loss on rollback)
-- Panel creation failures don't affect existing analyses
+- `saved_analyses` table remains unchanged (can revert to old code)
+- New tables can be dropped if needed (rollback SQL provided)
