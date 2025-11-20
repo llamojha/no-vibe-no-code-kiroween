@@ -61,17 +61,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const body = await request.json();
     const { elements, mode, language } = body;
 
+    // Authenticate request - all logged-in users can access
     const authResult = await authenticateRequest(request, {
-      requirePaid: true,
-      allowFree: false,
+      allowFree: true,
     });
 
     if (!authResult.success) {
+      logger.warn(
+        LogCategory.API,
+        "POST /api/doctor-frankenstein/generate - Authentication failed",
+        {
+          error: authResult.error,
+          hasUserId: !!authResult.userId,
+          userTier: authResult.userTier,
+        }
+      );
       return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
 
     trackedUserId = authResult.userId || null;
     trackedUserTier = authResult.userTier;
+
+    logger.info(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - User authenticated",
+      {
+        userId: trackedUserId,
+        userTier: trackedUserTier,
+      }
+    );
 
     if (trackedUserId) {
       await trackServerAnalysisRequest(
@@ -82,7 +100,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const userId = UserId.fromString(authResult.userId);
+
+    logger.info(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - Checking credits",
+      {
+        userId: userId.value,
+      }
+    );
+
     await withCreditCheck(userId, checkCreditsUseCase, userRepository);
+
+    logger.info(
+      LogCategory.API,
+      "POST /api/doctor-frankenstein/generate - Credit check passed",
+      {
+        userId: userId.value,
+      }
+    );
 
     if (!elements || !Array.isArray(elements) || elements.length === 0) {
       return NextResponse.json(
