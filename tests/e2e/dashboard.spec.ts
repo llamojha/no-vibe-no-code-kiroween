@@ -41,9 +41,9 @@ test.describe("Dashboard E2E Tests", () => {
     expect(headingText).toContain("Dashboard");
 
     // Verify the main sections exist
-    // Look for the "Your Analyses" heading
-    const analysesHeading = page.locator('h2:has-text("Your Analyses")');
-    await expect(analysesHeading).toBeVisible();
+    // Look for the "Your Ideas" heading
+    const ideasHeading = page.locator('h2:has-text("Your Ideas")');
+    await expect(ideasHeading).toBeVisible();
 
     // Verify filter buttons are present
     const allAnalysesButton = page.locator('button:has-text("All Analyses")');
@@ -156,7 +156,7 @@ test.describe("Dashboard E2E Tests", () => {
     await dashboardPage.waitForDataLoad();
 
     // Verify empty state message is visible
-    const emptyStateText = page.locator("text=No ideas yet");
+    const emptyStateText = page.locator("text=No analyses yet");
     await expect(emptyStateText).toBeVisible();
 
     // Verify the empty state has appropriate text
@@ -169,7 +169,7 @@ test.describe("Dashboard E2E Tests", () => {
     await expect(ideasHeading).toBeVisible();
 
     // Verify filter buttons are present even in empty state
-    const allButton = page.locator('button:has-text("All")');
+    const allButton = page.locator('button:has-text("All Analyses")');
     await expect(allButton).toBeVisible();
 
     console.log("Empty state displayed correctly");
