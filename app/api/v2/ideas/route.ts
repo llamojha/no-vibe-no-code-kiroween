@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
 
 export const runtime = "nodejs";
 
@@ -6,14 +7,16 @@ export const runtime = "nodejs";
  * Get list of user's ideas
  * GET /api/v2/ideas
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    // For now, return not implemented
-    // This will be implemented when we add the GetUserIdeasUseCase handler
-    return NextResponse.json(
-      { error: "List ideas endpoint not yet implemented" },
-      { status: 501 }
-    );
+    // Create service factory
+    const serviceFactory = ServiceFactory.getInstance();
+
+    // Create controller
+    const controller = serviceFactory.createIdeaPanelController();
+
+    // Delegate to controller
+    return await controller.getUserIdeas(request);
   } catch (error) {
     console.error("Error in GET /api/v2/ideas:", error);
     return NextResponse.json(

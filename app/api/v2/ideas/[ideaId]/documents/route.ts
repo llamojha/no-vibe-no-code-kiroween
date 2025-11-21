@@ -4,7 +4,6 @@ import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
 import { IdeaId, UserId } from "@/src/domain/value-objects";
 import { authenticateRequest } from "@/src/infrastructure/web/middleware/AuthMiddleware";
 import { handleApiError } from "@/src/infrastructure/web/middleware/ErrorMiddleware";
-import { isEnabled } from "@/lib/featureFlags";
 
 export const runtime = "nodejs";
 
@@ -17,15 +16,6 @@ export async function GET(
   { params }: { params: { ideaId: string } }
 ) {
   try {
-    // Check feature flag
-    const featureEnabled = isEnabled("ENABLE_IDEA_PANEL");
-    if (!featureEnabled) {
-      return NextResponse.json(
-        { error: "Feature not available" },
-        { status: 404 }
-      );
-    }
-
     // Authenticate request
     const authResult = await authenticateRequest(request);
     if (!authResult.success) {

@@ -2,20 +2,73 @@ import { NextRequest, NextResponse } from "next/server";
 import { GetIdeaWithDocumentsUseCase } from "@/src/application/use-cases/GetIdeaWithDocumentsUseCase";
 import { UpdateIdeaStatusUseCase } from "@/src/application/use-cases/UpdateIdeaStatusUseCase";
 import { SaveIdeaMetadataUseCase } from "@/src/application/use-cases/SaveIdeaMetadataUseCase";
+import { GetUserIdeasUseCase } from "@/src/application/use-cases/GetUserIdeasUseCase";
 import { IdeaId, UserId } from "@/src/domain/value-objects";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
+import { IdeaMapper } from "../../database/supabase/mappers/IdeaMapper";
+import { DashboardIdeaDTO } from "../dto/IdeaDTO";
 
 /**
  * Controller for Idea Panel API endpoints
  * Handles HTTP requests for idea management and delegates to application layer use cases
  */
 export class IdeaPanelController {
+  private readonly ideaMapper = new IdeaMapper();
+
   constructor(
     private readonly getIdeaWithDocumentsUseCase: GetIdeaWithDocumentsUseCase,
     private readonly updateStatusUseCase: UpdateIdeaStatusUseCase,
-    private readonly saveMetadataUseCase: SaveIdeaMetadataUseCase
+    private readonly saveMetadataUseCase: SaveIdeaMetadataUseCase,
+    private readonly getUserIdeasUseCase: GetUserIdeasUseCase
   ) {}
+
+  /**
+   * Get all ideas for the current user
+   * GET /api/v2/ideas
+   */
+  async getUserIdeas(request: NextRequest): Promise<NextResponse> {
+    try {
+      // Authenticate request
+      const authResult = await authenticateRequest(request);
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      const userId = UserId.fromString(authResult.userId);
+
+      // Execute use case
+      const result = await this.getUserIdeasUseCase.execute({ userId });
+
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error?.message || "Failed to retrieve ideas" },
+          { status: 500 }
+        );
+      }
+
+      // Convert to DashboardIdeaDTO format
+      const dashboardIdeas: DashboardIdeaDTO[] = result.data.ideas.map(
+        (item) => {
+          const ideaDTO = this.ideaMapper.toDTO(item.idea);
+          return {
+            id: ideaDTO.id,
+            ideaText: ideaDTO.ideaText,
+            source: ideaDTO.source,
+            projectStatus: ideaDTO.projectStatus,
+            documentCount: item.documentCount,
+            createdAt: ideaDTO.createdAt,
+            updatedAt: ideaDTO.updatedAt,
+            tags: ideaDTO.tags,
+          };
+        }
+      );
+
+      return NextResponse.json(dashboardIdeas);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
 
   /**
    * Get idea with all associated documents

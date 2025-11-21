@@ -59,11 +59,5 @@ export function initFeatureFlags() {
       default: process.env.FF_CREDIT_SYSTEM?.toLowerCase() !== "false",
       exposeToClient: false,
     }),
-    ENABLE_IDEA_PANEL: defineBooleanFlag({
-      key: "ENABLE_IDEA_PANEL",
-      description: "Enable Idea Panel feature for managing ideas and documents",
-      default: resolveBooleanEnvFlag(process.env.FF_ENABLE_IDEA_PANEL) ?? false,
-      exposeToClient: true,
-    }),
   });
 }
