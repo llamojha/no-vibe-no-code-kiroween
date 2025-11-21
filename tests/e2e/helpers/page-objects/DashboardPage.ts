@@ -17,7 +17,7 @@ export class DashboardPage {
     this.page = page;
 
     // Define locators for dashboard page elements
-    this.analysesList = page.locator('[data-testid="analyses-list"]');
+    this.analysesList = page.locator('[data-testid="ideas-list"]');
     this.emptyStateMessage = page.locator('[data-testid="empty-state"]');
     this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
     this.errorMessage = page.locator('[data-testid="error-message"]');

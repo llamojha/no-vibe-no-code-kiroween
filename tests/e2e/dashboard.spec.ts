@@ -50,7 +50,7 @@ test.describe("Dashboard E2E Tests", () => {
     await expect(allAnalysesButton).toBeVisible();
 
     // Check if we have data or empty state
-    const emptyStateText = page.locator("text=No analyses yet");
+    const emptyStateText = page.locator("[data-testid='empty-state']");
     const hasEmptyState = await emptyStateText.isVisible().catch(() => false);
 
     if (hasEmptyState) {
@@ -112,7 +112,7 @@ test.describe("Dashboard E2E Tests", () => {
     // In LOCAL_DEV_MODE, the dashboard doesn't load from localStorage automatically
     // It uses the server-side data which is empty in dev mode
     // So we verify the empty state is shown correctly
-    const emptyStateText = page.locator("text=No analyses yet");
+    const emptyStateText = page.locator("[data-testid='empty-state']");
     const hasEmptyState = await emptyStateText.isVisible().catch(() => false);
 
     if (hasEmptyState) {
@@ -156,7 +156,7 @@ test.describe("Dashboard E2E Tests", () => {
     await dashboardPage.waitForDataLoad();
 
     // Verify empty state message is visible
-    const emptyStateText = page.locator("text=No analyses yet");
+    const emptyStateText = page.locator("[data-testid='empty-state']");
     await expect(emptyStateText).toBeVisible();
 
     // Verify the empty state has appropriate text

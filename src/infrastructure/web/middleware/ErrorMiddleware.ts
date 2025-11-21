@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { InsufficientCreditsError } from "@/shared/types/errors";
+import { InsufficientCreditsError } from "../../../shared/types/errors";
 import type { UserTier } from "@/lib/types";
 
 /**

@@ -1,8 +1,10 @@
-import { analyzeHackathonProject } from "../analyzeHackathonProject";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectSubmission } from "@/lib/types";
+import { analyzeHackathonProject } from "../analyzeHackathonProject";
 
 // Mock fetch globally
-global.fetch = jest.fn();
+const fetchMock = vi.fn();
+global.fetch = fetchMock as unknown as typeof fetch;
 
 describe("analyzeHackathonProject API", () => {
   const mockSubmission: ProjectSubmission = {
@@ -51,18 +53,18 @@ describe("analyzeHackathonProject API", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should successfully analyze a hackathon project", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => mockAnalysis,
     });
 
     const result = await analyzeHackathonProject(mockSubmission, "en");
 
-    expect(fetch).toHaveBeenCalledWith("/api/analyze-hackathon", {
+    expect(fetch).toHaveBeenCalledWith("/api/v2/hackathon/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +80,7 @@ describe("analyzeHackathonProject API", () => {
 
   it("should handle API errors gracefully", async () => {
     const errorMessage = "Analysis failed";
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error: errorMessage }),
     });
@@ -89,7 +91,7 @@ describe("analyzeHackathonProject API", () => {
   });
 
   it("should handle network errors", async () => {
-    (fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+    fetchMock.mockRejectedValueOnce(new Error("Network error"));
 
     await expect(analyzeHackathonProject(mockSubmission, "en")).rejects.toThrow(
       "Network error"
@@ -97,7 +99,7 @@ describe("analyzeHackathonProject API", () => {
   });
 
   it("should handle malformed error responses", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: false,
       json: async () => {
         throw new Error("Invalid JSON");
@@ -110,15 +112,15 @@ describe("analyzeHackathonProject API", () => {
   });
 
   it("should send correct request format", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => mockAnalysis,
     });
 
     await analyzeHackathonProject(mockSubmission, "es");
 
-    const callArgs = (fetch as jest.Mock).mock.calls[0];
-    expect(callArgs[0]).toBe("/api/analyze-hackathon");
+    const callArgs = fetchMock.mock.calls[0];
+    expect(callArgs[0]).toBe("/api/v2/hackathon/analyze");
     expect(callArgs[1].method).toBe("POST");
     expect(callArgs[1].headers["Content-Type"]).toBe("application/json");
 

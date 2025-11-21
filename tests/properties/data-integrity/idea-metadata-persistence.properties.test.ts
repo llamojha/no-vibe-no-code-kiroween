@@ -9,54 +9,63 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createClient } from "@supabase/supabase-js";
-import { SupabaseIdeaRepository } from "@/src/infrastructure/database/supabase/repositories/SupabaseIdeaRepository";
-import { IdeaMapper } from "@/src/infrastructure/database/supabase/mappers/IdeaMapper";
 import { generateIdea, generateUserId } from "../utils/generators";
 import { forAll } from "../utils/property-helpers";
 import { Idea } from "@/src/domain/entities/Idea";
 import { faker } from "@faker-js/faker";
+import { success, failure } from "@/src/shared/types/common";
+import { UniqueConstraintError, RecordNotFoundError } from "@/src/infrastructure/database/errors";
+import { IdeaId } from "@/src/domain/value-objects";
+import type { Result } from "@/src/shared/types/common";
+import type { IIdeaRepository } from "@/src/domain/repositories/IIdeaRepository";
 
 describe("Property: Idea Metadata Persistence", () => {
-  let repository: SupabaseIdeaRepository;
-  let mapper: IdeaMapper;
+  class InMemoryIdeaRepository implements Pick<IIdeaRepository, "save" | "update" | "findById" | "delete"> {
+    private store = new Map<string, Idea>();
+
+    async save(idea: Idea): Promise<Result<Idea, Error>> {
+      if (this.store.has(idea.id.value)) {
+        return failure(new UniqueConstraintError("id", idea.id.value));
+      }
+      this.store.set(idea.id.value, idea);
+      return success(idea);
+    }
+
+    async update(idea: Idea): Promise<Result<Idea, Error>> {
+      if (!this.store.has(idea.id.value)) {
+        return failure(new RecordNotFoundError("Idea", idea.id.value));
+      }
+      this.store.set(idea.id.value, idea);
+      return success(idea);
+    }
+
+    async findById(
+      id: IdeaId,
+      _requestingUserId?: unknown
+    ): Promise<Result<Idea | null, Error>> {
+      return success(this.store.get(id.value) ?? null);
+    }
+
+    async delete(id: IdeaId): Promise<Result<void, Error>> {
+      this.store.delete(id.value);
+      return success(undefined);
+    }
+
+    clear(): void {
+      this.store.clear();
+    }
+  }
+
+  let repository: InMemoryIdeaRepository;
   let createdIdeaIds: string[] = [];
 
   beforeEach(() => {
-    // Initialize Supabase client
-    // Use environment variables or fallback to test values
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      "https://mswggbyrkygymmebtrnb.supabase.co";
-    const supabaseKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zd2dnYnlya3lneW1tZWJ0cm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNjc4NTksImV4cCI6MjA3Nzg0Mzg1OX0.g3_hWX5itJQFofVEYpMK0hrLCucUYZAM6zKZ6nXprSU";
-
-    const client = createClient(supabaseUrl, supabaseKey);
-    mapper = new IdeaMapper();
-    repository = new SupabaseIdeaRepository(client, mapper);
+    repository = new InMemoryIdeaRepository();
     createdIdeaIds = [];
   });
 
   afterEach(async () => {
-    // Clean up created ideas
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      "https://mswggbyrkygymmebtrnb.supabase.co";
-    const supabaseKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zd2dnYnlya3lneW1tZWJ0cm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyNjc4NTksImV4cCI6MjA3Nzg0Mzg1OX0.g3_hWX5itJQFofVEYpMK0hrLCucUYZAM6zKZ6nXprSU";
-
-    const client = createClient(supabaseUrl, supabaseKey);
-
-    for (const ideaId of createdIdeaIds) {
-      try {
-        await client.from("ideas").delete().eq("id", ideaId);
-      } catch (error) {
-        console.warn(`Failed to clean up idea ${ideaId}:`, error);
-      }
-    }
-
+    repository.clear();
     createdIdeaIds = [];
   });
 

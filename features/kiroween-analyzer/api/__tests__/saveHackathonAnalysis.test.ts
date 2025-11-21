@@ -1,32 +1,39 @@
-import { saveHackathonAnalysis } from "../saveHackathonAnalysis";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { HackathonAnalysis } from "@/lib/types";
+import { saveHackathonAnalysis } from "../saveHackathonAnalysis";
+
+vi.mock("@/lib/featureFlags", () => ({
+  isEnabled: () => false,
+}));
 
 // Mock Supabase client
 const mockSupabase = {
   auth: {
-    getSession: jest.fn(),
+    getUser: vi.fn(),
   },
-  from: jest.fn(),
+  from: vi.fn(),
 };
 
-const mockInsert = jest.fn();
-const mockSelect = jest.fn();
-const mockReturns = jest.fn();
-const mockSingle = jest.fn();
+const mockQuery = {
+  insert: vi.fn(),
+  select: vi.fn(),
+  returns: vi.fn(),
+  single: vi.fn(),
+};
 
-jest.mock("@/lib/supabase/client", () => ({
+vi.mock("@/lib/supabase/client", () => ({
   browserSupabase: () => mockSupabase,
 }));
 
-jest.mock("@/lib/supabase/mappers", () => ({
-  mapSavedHackathonAnalysesRow: jest.fn((row) => ({
+vi.mock("@/lib/supabase/mappers", () => ({
+  mapSavedHackathonAnalysesRow: vi.fn((row) => ({
     id: row.id,
     userId: row.user_id,
-    projectDescription: row.project_description,
+    projectDescription: row.idea,
     analysis: row.analysis,
-    createdAt: row.created_at,
+    createdAt: row.created_at ?? "2023-01-01T00:00:00Z",
     audioBase64: row.audio_base64,
-    supportingMaterials: row.supporting_materials,
+    supportingMaterials: undefined,
   })),
 }));
 
@@ -74,21 +81,13 @@ describe("saveHackathonAnalysis", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Setup default mock chain
-    mockSupabase.from.mockReturnValue({
-      insert: mockInsert,
-    });
-    mockInsert.mockReturnValue({
-      select: mockSelect,
-    });
-    mockSelect.mockReturnValue({
-      returns: mockReturns,
-    });
-    mockReturns.mockReturnValue({
-      single: mockSingle,
-    });
+    mockSupabase.from.mockReturnValue(mockQuery);
+    mockQuery.insert.mockReturnValue(mockQuery);
+    mockQuery.select.mockReturnValue(mockQuery);
+    mockQuery.returns.mockReturnValue(mockQuery);
   });
 
   it("should save hackathon analysis successfully", async () => {
@@ -98,19 +97,18 @@ describe("saveHackathonAnalysis", () => {
     const mockSavedRow = {
       id: "analysis-123",
       user_id: "user-123",
-      project_description: mockParams.projectDescription,
-      selected_category: "resurrection",
-      kiro_usage: "",
+      analysis_type: "hackathon",
+      idea: mockParams.projectDescription,
       analysis: mockParams.analysis,
       audio_base64: mockParams.audioBase64,
-      supporting_materials: mockParams.supportingMaterials,
       created_at: "2023-01-01T00:00:00Z",
     };
 
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockSession.user },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: mockSavedRow,
       error: null,
     });
@@ -124,8 +122,9 @@ describe("saveHackathonAnalysis", () => {
   });
 
   it("should return error when user is not authenticated", async () => {
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: null },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
     });
 
     const result = await saveHackathonAnalysis(mockParams);
@@ -139,17 +138,18 @@ describe("saveHackathonAnalysis", () => {
       user: { id: "user-123" },
     };
 
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockSession.user },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: null,
       error: { message: "Database error" },
     });
 
     const result = await saveHackathonAnalysis(mockParams);
 
-    expect(result.error).toBe("Failed to save your analysis.ry again.");
+    expect(result.error).toBe("Failed to save your analysis. Please try again.");
     expect(result.data).toBeNull();
   });
 
@@ -158,25 +158,24 @@ describe("saveHackathonAnalysis", () => {
       user: { id: "user-123" },
     };
 
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: mockSession.user },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: { id: "test-id" },
       error: null,
     });
 
     await saveHackathonAnalysis(mockParams);
 
-    expect(mockSupabase.from).toHaveBeenCalledWith("saved_hackathon_analyses");
-    expect(mockInsert).toHaveBeenCalledWith({
+    expect(mockSupabase.from).toHaveBeenCalledWith("saved_analyses");
+    expect(mockQuery.insert).toHaveBeenCalledWith({
       user_id: "user-123",
-      project_description: mockParams.projectDescription,
-      selected_category: "resurrection",
-      kiro_usage: "",
+      analysis_type: "hackathon",
+      idea: mockParams.projectDescription,
       analysis: mockParams.analysis,
       audio_base64: mockParams.audioBase64,
-      supporting_materials: mockParams.supportingMaterials,
     });
   });
 });

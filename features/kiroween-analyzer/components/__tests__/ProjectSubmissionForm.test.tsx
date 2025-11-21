@@ -1,8 +1,21 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import ProjectSubmissionForm from "../ProjectSubmissionForm";
 import { ProjectSubmission } from "@/lib/types";
+import en from "@/locales/en.json";
+
+const translate = (key: string) =>
+  (en as Record<string, string>)[key] ?? key;
+
+vi.mock("@/features/locale/context/LocaleContext", () => ({
+  useLocale: () => ({
+    locale: "en" as const,
+    setLocale: vi.fn(),
+    t: translate,
+  }),
+}));
 
 const mockSubmission: ProjectSubmission = {
   description: "",
@@ -11,14 +24,14 @@ const mockSubmission: ProjectSubmission = {
 
 const mockProps = {
   submission: mockSubmission,
-  onSubmissionChange: jest.fn(),
-  onAnalyze: jest.fn(),
+  onSubmissionChange: vi.fn(),
+  onAnalyze: vi.fn(),
   isLoading: false,
 };
 
 describe("ProjectSubmissionForm", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders form elements correctly", () => {
@@ -27,22 +40,20 @@ describe("ProjectSubmissionForm", () => {
     expect(screen.getByLabelText(/project description/i)).toBeInTheDocument();
     // Category and Kiro usage fields have been removed
     expect(
-      screen.getByRole("button", { name: /analyze my project/i })
+      screen.getByRole("button", { name: /analyze project/i })
     ).toBeInTheDocument();
   });
 
-  it("shows validation errors for empty required fields", () => {
+  it("prevents submission when required fields are empty", () => {
     render(<ProjectSubmissionForm {...mockProps} />);
 
     const submitButton = screen.getByRole("button", {
-      name: /analyze my project/i,
+      name: /analyze project/i,
     });
-    fireEvent.click(submitButton);
-
+    expect(submitButton).toBeDisabled();
     expect(
-      screen.getByText(/project description is required/i)
-    ).toBeInTheDocument();
-    // No Kiro usage validation anymore
+      screen.queryByText(/project description is required/i)
+    ).not.toBeInTheDocument();
   });
 
   it("calls onSubmissionChange when form fields are updated", () => {
@@ -72,7 +83,7 @@ describe("ProjectSubmissionForm", () => {
     );
 
     const submitButton = screen.getByRole("button", {
-      name: /analyze my project/i,
+      name: /analyze project/i,
     });
     fireEvent.click(submitButton);
 
@@ -107,7 +118,7 @@ describe("ProjectSubmissionForm", () => {
     );
 
     const submitButton = screen.getByRole("button", {
-      name: /analyze my project/i,
+      name: /analyze project/i,
     });
     fireEvent.click(submitButton);
 

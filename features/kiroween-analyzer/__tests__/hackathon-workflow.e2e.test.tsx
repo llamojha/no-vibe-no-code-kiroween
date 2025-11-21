@@ -1,27 +1,33 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
+import en from "@/locales/en.json";
 import KiroweenAnalyzerView from "../components/KiroweenAnalyzerView";
 import { analyzeHackathonProject } from "../api/analyzeHackathonProject";
 import { saveHackathonAnalysis } from "../api/saveHackathonAnalysis";
 
 // Mock the API functions
-jest.mock("../api/analyzeHackathonProject");
-jest.mock("../api/saveHackathonAnalysis");
+vi.mock("../api/analyzeHackathonProject");
+vi.mock("../api/saveHackathonAnalysis");
+
+const translate = (key: string) =>
+  (en as Record<string, string>)[key] ?? key;
 
 // Mock Next.js router
-jest.mock("next/navigation", () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
   }),
   useSearchParams: () => ({
-    get: jest.fn(),
+    get: vi.fn(),
   }),
 }));
 
 // Mock auth context
-jest.mock("@/features/auth/context/AuthContext", () => ({
+vi.mock("@/features/auth/context/AuthContext", () => ({
   useAuth: () => ({
     session: { user: { id: "test-user" } },
     supabase: null,
@@ -30,10 +36,15 @@ jest.mock("@/features/auth/context/AuthContext", () => ({
 }));
 
 // Mock locale context
-jest.mock("@/features/locale/context/LocaleContext", () => ({
+vi.mock("@/features/locale/context/LocaleContext", () => ({
   useLocale: () => ({
     locale: "en" as const,
+    t: translate,
   }),
+}));
+
+vi.mock("@/features/shared/api", () => ({
+  getCreditBalance: vi.fn().mockResolvedValue({ credits: 5, tier: "free" as const }),
 }));
 
 const mockAnalysis = {
@@ -150,9 +161,11 @@ const mockAnalysis = {
 
 describe("Hackathon Evaluation Workflow E2E", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (analyzeHackathonProject as jest.Mock).mockResolvedValue(mockAnalysis);
-    (saveHackathonAnalysis as jest.Mock).mockResolvedValue({
+    vi.clearAllMocks();
+    (analyzeHackathonProject as unknown as Mock).mockResolvedValue(
+      mockAnalysis
+    );
+    (saveHackathonAnalysis as unknown as Mock).mockResolvedValue({
       data: { id: "saved-analysis-123" },
       error: null,
     });
@@ -225,7 +238,7 @@ describe("Hackathon Evaluation Workflow E2E", () => {
   });
 
   it("handles analysis errors gracefully", async () => {
-    (analyzeHackathonProject as jest.Mock).mockRejectedValue(
+    (analyzeHackathonProject as unknown as Mock).mockRejectedValue(
       new Error("Analysis service unavailable")
     );
 
@@ -317,12 +330,12 @@ describe("Hackathon Evaluation Workflow E2E", () => {
     });
 
     // Verify the second call includes the refined description
-    const secondCall = (analyzeHackathonProject as jest.Mock).mock.calls[1];
+    const secondCall = (analyzeHackathonProject as unknown as Mock).mock.calls[1];
     expect(secondCall[0].description).toContain("Legacy Integration");
   });
 
   it("handles save errors gracefully", async () => {
-    (saveHackathonAnalysis as jest.Mock).mockResolvedValue({
+    (saveHackathonAnalysis as unknown as Mock).mockResolvedValue({
       data: null,
       error: "Failed to save analysis",
     });

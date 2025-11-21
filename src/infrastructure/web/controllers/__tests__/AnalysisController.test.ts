@@ -10,6 +10,10 @@ vi.mock('../../middleware/AuthMiddleware', () => ({
   authenticateRequest: vi.fn()
 }));
 
+vi.mock('@/src/infrastructure/config/credits', () => ({
+  isCreditSystemEnabled: vi.fn(() => false)
+}));
+
 // Mock the GoogleAIAdapter module
 vi.mock('../../../external/ai/GoogleAIAdapter', () => ({
   GoogleAIAdapter: {
@@ -60,6 +64,8 @@ describe('AnalysisController API Integration Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.FF_USE_MOCK_API = 'false';
+    process.env.NEXT_PUBLIC_FF_USE_MOCK_API = 'false';
     
     // Setup default authentication mock to return success with valid UUID
     (authenticateRequest as any).mockResolvedValue({

@@ -45,6 +45,11 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
   categoryAnalysis,
 }) => {
   const { t } = useLocale();
+  const bestMatchLabelRaw = t("bestMatchingCategory");
+  const bestMatchLabel =
+    bestMatchLabelRaw === "bestMatchingCategory"
+      ? "Best Match"
+      : bestMatchLabelRaw || "Best Match";
 
   // Handle undefined categoryAnalysis
   if (!categoryAnalysis) {
@@ -150,7 +155,7 @@ const CategoryEvaluation: React.FC<CategoryEvaluationProps> = ({
           <div className="text-3xl mr-3">{bestMatchInfo.emoji}</div>
           <div>
             <h3 className="text-xl font-bold text-orange-300 uppercase tracking-wider">
-              🏆 {t("bestMatchingCategory")}
+              🏆 {bestMatchLabel}
             </h3>
             <p className={`text-lg font-semibold ${bestMatchInfo.color}`}>
               {bestMatchInfo.label}

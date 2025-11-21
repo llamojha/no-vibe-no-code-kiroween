@@ -171,9 +171,15 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                 {t("averageOfAllCriteria")}
               </p>
               <p className="text-slate-500 text-xs">{t("outOfFive")}</p>
+              <p className="text-slate-500 text-xs mt-1">
+                Score Explanation: {analysis.finalScoreExplanation}
+              </p>
             </div>
           </div>
           <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-slate-200">
+              Viability Summary
+            </h3>
             <p className="text-lg text-slate-300 leading-relaxed">
               {analysis.viabilitySummary}
             </p>
@@ -207,6 +213,9 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           </svg>
         }
       >
+        <h3 className="text-lg font-semibold text-slate-200 mb-2">
+          Category Analysis
+        </h3>
         <CategoryEvaluation categoryAnalysis={analysis.categoryAnalysis} />
       </CollapsibleSection>
 
@@ -231,6 +240,9 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
           </svg>
         }
       >
+        <h3 className="text-lg font-semibold text-slate-200 mb-2">
+          Criteria Breakdown
+        </h3>
         <CriteriaScoring criteriaAnalysis={analysis.criteriaAnalysis} />
       </CollapsibleSection>
 
