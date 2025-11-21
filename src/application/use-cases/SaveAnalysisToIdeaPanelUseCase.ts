@@ -143,12 +143,17 @@ export class SaveAnalysisToIdeaPanelUseCase {
             ? DocumentType.HACKATHON_ANALYSIS
             : DocumentType.STARTUP_ANALYSIS;
 
+        const normalizedContent = this.normalizeAnalysisContent(
+          input.analysisContent,
+          documentType
+        );
+
         document = Document.create({
           ideaId: idea.id,
           userId: input.userId,
           documentType,
           title: "", // Can be set later if needed
-          content: input.analysisContent,
+          content: normalizedContent,
         });
 
         const saveDocumentResult = await this.documentRepository.save(document);
@@ -208,5 +213,43 @@ export class SaveAnalysisToIdeaPanelUseCase {
           : new Error("Unknown error saving analysis to idea panel")
       );
     }
+  }
+
+  /**
+   * Normalize analysis content into the shape expected by Document invariants.
+   * Handles cases where callers pass a Result-like object instead of the raw analysis payload.
+   */
+  private normalizeAnalysisContent(
+    content: DocumentContent,
+    documentType: DocumentType
+  ): DocumentContent {
+    // Unwrap Result objects of shape { success, data }
+    if (
+      content &&
+      typeof content === "object" &&
+      "success" in content &&
+      "data" in content &&
+      (content as { data?: unknown }).data
+    ) {
+      const unwrapped = (content as { data: unknown }).data;
+      if (typeof unwrapped === "object" && unwrapped !== null) {
+        return unwrapped as DocumentContent;
+      }
+    }
+
+    // For hackathon analyses, accept nested analysis under "analysis" key
+    if (
+      documentType.isHackathonAnalysis() &&
+      content &&
+      typeof content === "object" &&
+      "analysis" in content
+    ) {
+      const nested = (content as { analysis?: unknown }).analysis;
+      if (nested && typeof nested === "object") {
+        return nested as DocumentContent;
+      }
+    }
+
+    return content;
   }
 }

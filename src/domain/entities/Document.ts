@@ -131,21 +131,20 @@ export class Document extends Entity<DocumentId> {
    * Validate startup analysis content structure
    */
   private validateStartupAnalysisContent(): void {
-    if (typeof this._content !== "object") {
-      throw new InvariantViolationError(
-        "Startup analysis content must be an object"
-      );
-    }
+    this.ensureObjectContent("Startup analysis");
 
-    // Basic validation - content should have expected fields
-    // More detailed validation can be added as needed
-    const requiredFields = ["viability", "innovation", "market"];
-    for (const field of requiredFields) {
-      if (!(field in this._content)) {
-        throw new InvariantViolationError(
-          `Startup analysis content must include ${field} field`
-        );
-      }
+    // Accept both legacy (viability/innovation/market) and idea panel (score/feedback) payloads
+    const hasLegacyFields = this.hasRequiredFields([
+      "viability",
+      "innovation",
+      "market",
+    ]);
+    const hasIdeaPanelFields = this.hasRequiredFields(["score", "feedback"]);
+
+    if (!hasLegacyFields && !hasIdeaPanelFields) {
+      throw new InvariantViolationError(
+        "Startup analysis content must include viability/innovation/market or score/feedback fields"
+      );
     }
   }
 
@@ -153,20 +152,31 @@ export class Document extends Entity<DocumentId> {
    * Validate hackathon analysis content structure
    */
   private validateHackathonAnalysisContent(): void {
-    if (typeof this._content !== "object") {
-      throw new InvariantViolationError(
-        "Hackathon analysis content must be an object"
-      );
-    }
+    this.ensureObjectContent("Hackathon analysis");
 
-    // Basic validation - content should have expected fields
-    const requiredFields = ["technical", "creativity", "impact"];
-    for (const field of requiredFields) {
-      if (!(field in this._content)) {
-        throw new InvariantViolationError(
-          `Hackathon analysis content must include ${field} field`
-        );
-      }
+    const hasLegacyFields = this.hasRequiredFields([
+      "technical",
+      "creativity",
+      "impact",
+    ]);
+    const hasIdeaPanelFields = this.hasRequiredFields([
+      "score",
+      "detailedSummary",
+    ]);
+    const hasCriteriaAnalysisShape =
+      "criteriaAnalysis" in this._content ||
+      this.hasRequiredFields(["finalScore", "criteriaAnalysis"]);
+    const hasCategoryAnalysisShape = "categoryAnalysis" in this._content;
+
+    if (
+      !hasLegacyFields &&
+      !hasIdeaPanelFields &&
+      !hasCriteriaAnalysisShape &&
+      !hasCategoryAnalysisShape
+    ) {
+      throw new InvariantViolationError(
+        "Hackathon analysis content must include technical/creativity/impact, score/detailedSummary, criteriaAnalysis, or categoryAnalysis fields"
+      );
     }
   }
 
@@ -266,5 +276,27 @@ export class Document extends Entity<DocumentId> {
     const titlePart = this._title ? `: ${this._title}` : "";
 
     return `${typeLabel}${titlePart}`;
+  }
+
+  /**
+   * Ensure content is a non-null object
+   */
+  private ensureObjectContent(context: string): void {
+    if (
+      typeof this._content !== "object" ||
+      this._content === null ||
+      Array.isArray(this._content)
+    ) {
+      throw new InvariantViolationError(`${context} content must be an object`);
+    }
+  }
+
+  /**
+   * Check if content has all required fields
+   */
+  private hasRequiredFields(fields: string[]): boolean {
+    return fields.every((field) =>
+      Object.prototype.hasOwnProperty.call(this._content, field)
+    );
   }
 }

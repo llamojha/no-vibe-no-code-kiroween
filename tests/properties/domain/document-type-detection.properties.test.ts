@@ -108,18 +108,29 @@ describe("Property: Document Type Detection", () => {
         const type = document.getType();
 
         if (type.isStartupAnalysis()) {
-          // Startup analysis should have viability, innovation, market
-          return (
+          const hasLegacyFields =
             "viability" in content &&
             "innovation" in content &&
-            "market" in content
-          );
+            "market" in content;
+          const hasIdeaPanelFields =
+            "score" in content &&
+            ("feedback" in content || "detailedSummary" in content);
+
+          // Startup analysis should have either legacy fields or idea panel fields
+          return hasLegacyFields || hasIdeaPanelFields;
         } else if (type.isHackathonAnalysis()) {
-          // Hackathon analysis should have technical, creativity, impact
-          return (
+          const hasLegacyFields =
             "technical" in content &&
             "creativity" in content &&
-            "impact" in content
+            "impact" in content;
+          const hasIdeaPanelFields =
+            "score" in content && "detailedSummary" in content;
+          const hasCriteriaAnalysisFields =
+            "criteriaAnalysis" in content || "categoryAnalysis" in content;
+
+          // Hackathon analysis should have either legacy fields or idea panel fields
+          return (
+            hasLegacyFields || hasIdeaPanelFields || hasCriteriaAnalysisFields
           );
         }
 

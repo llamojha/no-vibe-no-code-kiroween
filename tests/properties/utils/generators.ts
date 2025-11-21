@@ -260,39 +260,145 @@ export function generateDocument(
   // Generate appropriate content based on document type
   let content: any;
   if (documentType.isStartupAnalysis()) {
-    content = {
-      viability: faker.number.int({ min: 0, max: 100 }),
-      innovation: faker.number.int({ min: 0, max: 100 }),
-      market: faker.number.int({ min: 0, max: 100 }),
-      feedback: faker.lorem.paragraph(),
-      suggestions: faker.helpers.arrayElements(
-        [
-          "Focus on MVP",
-          "Validate market fit",
-          "Build prototype",
-          "Talk to customers",
-          "Refine value proposition",
-        ],
-        { min: 1, max: 3 }
-      ),
-    };
+    const useIdeaPanelShape = faker.datatype.boolean();
+    content = useIdeaPanelShape
+      ? {
+          score: faker.number.int({ min: 0, max: 100 }),
+          feedback: faker.lorem.paragraph(),
+          locale: generateLocale().value,
+          category: faker.datatype.boolean()
+            ? generateCategory().value
+            : undefined,
+          createdAt: faker.date.recent().toISOString(),
+        }
+      : {
+          viability: faker.number.int({ min: 0, max: 100 }),
+          innovation: faker.number.int({ min: 0, max: 100 }),
+          market: faker.number.int({ min: 0, max: 100 }),
+          feedback: faker.lorem.paragraph(),
+          suggestions: faker.helpers.arrayElements(
+            [
+              "Focus on MVP",
+              "Validate market fit",
+              "Build prototype",
+              "Talk to customers",
+              "Refine value proposition",
+            ],
+            { min: 1, max: 3 }
+          ),
+        };
   } else {
-    content = {
-      technical: faker.number.int({ min: 0, max: 100 }),
-      creativity: faker.number.int({ min: 0, max: 100 }),
-      impact: faker.number.int({ min: 0, max: 100 }),
-      feedback: faker.lorem.paragraph(),
-      suggestions: faker.helpers.arrayElements(
-        [
-          "Improve technical implementation",
-          "Add more features",
-          "Better UI/UX",
-          "Optimize performance",
-          "Add documentation",
-        ],
-        { min: 1, max: 3 }
-      ),
-    };
+    const shape = faker.helpers.arrayElement([
+      "idea-panel",
+      "legacy",
+      "criteria-analysis",
+    ] as const);
+    if (shape === "idea-panel") {
+      content = {
+        score: faker.number.int({ min: 0, max: 100 }),
+        detailedSummary: faker.lorem.paragraph(),
+        criteria: faker.helpers.multiple(
+          () => ({
+            name: faker.helpers.arrayElement([
+              "Innovation",
+              "Implementation",
+              "Impact",
+            ]),
+            score: faker.number.int({ min: 0, max: 100 }),
+            justification: faker.lorem.sentence(),
+          }),
+          { count: { min: 1, max: 3 } }
+        ),
+        suggestions: faker.helpers.arrayElements(
+          [
+            "Improve technical implementation",
+            "Add more features",
+            "Better UI/UX",
+            "Optimize performance",
+            "Add documentation",
+          ],
+          { min: 1, max: 3 }
+        ),
+      };
+    } else if (shape === "criteria-analysis") {
+      content = {
+        finalScore: faker.number.int({ min: 0, max: 100 }),
+        detailedSummary: faker.lorem.paragraph(),
+        criteriaAnalysis: {
+          scores: faker.helpers.multiple(
+            () => ({
+              name: faker.helpers.arrayElement([
+                "Potential Value",
+                "Implementation",
+                "Quality and Design",
+              ]),
+              score: faker.number.int({ min: 0, max: 100 }),
+              justification: faker.lorem.sentence(),
+            }),
+            { count: { min: 1, max: 3 } }
+          ),
+          finalScore: faker.number.int({ min: 0, max: 100 }),
+          finalScoreExplanation: faker.lorem.sentence(),
+        },
+        categoryAnalysis: {
+          evaluations: faker.helpers.multiple(
+            () => ({
+              category: faker.helpers.arrayElement([
+                "resurrection",
+                "frankenstein",
+                "skeleton-crew",
+                "costume-contest",
+              ]),
+              fitScore: faker.number.int({ min: 1, max: 10 }),
+              explanation: faker.lorem.sentence(),
+              improvementSuggestions: faker.helpers.multiple(
+                () => faker.lorem.sentence(),
+                { count: { min: 1, max: 3 } }
+              ),
+            }),
+            { count: { min: 1, max: 3 } }
+          ),
+          bestMatch: faker.helpers.arrayElement([
+            "resurrection",
+            "frankenstein",
+            "skeleton-crew",
+            "costume-contest",
+          ]),
+          bestMatchReason: faker.lorem.sentence(),
+        },
+        hackathonSpecificAdvice: {
+          categoryOptimization: faker.helpers.multiple(
+            () => faker.lorem.sentence(),
+            { count: { min: 1, max: 3 } }
+          ),
+          kiroIntegrationTips: faker.helpers.multiple(
+            () => faker.lorem.sentence(),
+            { count: { min: 1, max: 3 } }
+          ),
+          competitionStrategy: faker.helpers.multiple(
+            () => faker.lorem.sentence(),
+            { count: { min: 1, max: 3 } }
+          ),
+        },
+      };
+    } else {
+      content = {
+        technical: faker.number.int({ min: 0, max: 100 }),
+        creativity: faker.number.int({ min: 0, max: 100 }),
+        impact: faker.number.int({ min: 0, max: 100 }),
+        feedback: faker.lorem.paragraph(),
+        suggestions: faker.helpers.arrayElements(
+          [
+            "Improve technical implementation",
+            "Add more features",
+            "Better UI/UX",
+            "Optimize performance",
+            "Add documentation",
+          ],
+          { min: 1, max: 3 }
+        ),
+      };
+    }
   }
 
   const props: CreateDocumentProps = {

@@ -33,6 +33,7 @@ import {
 import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { SaveAnalysisToIdeaPanelUseCase } from "@/src/application/use-cases/SaveAnalysisToIdeaPanelUseCase";
 import { logger, LogCategory } from "@/lib/logger";
+import { type DocumentContent } from "@/src/domain/entities";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -243,12 +244,13 @@ export class HackathonController {
           // Check if ideaId is provided in the request (for linking to existing idea)
           const url = new URL(request.url);
           const existingIdeaId = url.searchParams.get("ideaId");
+          const analysisContent = analysis.data as unknown as DocumentContent;
 
           const saveToIdeaPanelResult =
             await this.saveAnalysisToIdeaPanelUseCase.execute({
               ideaText: submission.description,
               userId: userId,
-              analysisContent: analysis,
+              analysisContent,
               documentType: "hackathon_analysis",
               source: "manual",
               existingIdeaId: existingIdeaId || undefined,
