@@ -3,7 +3,7 @@ import { GetIdeaWithDocumentsUseCase } from "@/src/application/use-cases/GetIdea
 import { UpdateIdeaStatusUseCase } from "@/src/application/use-cases/UpdateIdeaStatusUseCase";
 import { SaveIdeaMetadataUseCase } from "@/src/application/use-cases/SaveIdeaMetadataUseCase";
 import { GetUserIdeasUseCase } from "@/src/application/use-cases/GetUserIdeasUseCase";
-import { IdeaId, UserId } from "@/src/domain/value-objects";
+import { IdeaId, ProjectStatus, UserId } from "@/src/domain/value-objects";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
 import { IdeaMapper } from "../../database/supabase/mappers/IdeaMapper";
@@ -127,7 +127,7 @@ export class IdeaPanelController {
       const body = await request.json();
       const { status } = body;
 
-      if (!status) {
+      if (!status || typeof status !== "string") {
         return NextResponse.json(
           { error: "Status is required" },
           { status: 400 }
@@ -149,12 +149,13 @@ export class IdeaPanelController {
 
       const userId = UserId.fromString(authResult.userId);
       const ideaId = IdeaId.fromString(params.ideaId);
+      const projectStatus = ProjectStatus.fromString(status);
 
       // Execute use case
       const result = await this.updateStatusUseCase.execute({
         ideaId,
         userId,
-        newStatus: status,
+        newStatus: projectStatus,
       });
 
       if (!result.success) {

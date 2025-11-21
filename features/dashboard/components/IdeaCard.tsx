@@ -26,6 +26,13 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
   const router = useRouter();
   const { t, locale } = useLocale();
 
+  const analysisCategory =
+    idea.source === "frankenstein"
+      ? "frankenstein"
+      : idea.source === "kiroween"
+      ? "kiroween"
+      : "idea";
+
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", {
@@ -103,7 +110,11 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
       : idea.ideaText;
 
   return (
-    <div className="bg-primary/30 border border-slate-700 rounded-lg p-6 hover:border-accent/50 transition-all duration-200 animate-fade-in">
+    <div
+      className="bg-primary/30 border border-slate-700 rounded-lg p-6 hover:border-accent/50 transition-all duration-200 animate-fade-in"
+      data-testid="analysis-item"
+      data-analysis-category={analysisCategory}
+    >
       {/* Header with badges */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {getSourceBadge()}
@@ -123,7 +134,7 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
               clipRule="evenodd"
             />
           </svg>
-          <span>
+          <span data-testid="analysis-score">
             {idea.documentCount}{" "}
             {idea.documentCount === 1
               ? t("document") || "document"
@@ -134,7 +145,12 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
 
       {/* Idea text */}
       <div className="mb-4">
-        <p className="text-slate-200 leading-relaxed">{truncatedIdea}</p>
+        <p
+          className="text-slate-200 leading-relaxed"
+          data-testid="analysis-title"
+        >
+          {truncatedIdea}
+        </p>
       </div>
 
       {/* Tags */}

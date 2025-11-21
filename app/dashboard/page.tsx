@@ -18,12 +18,13 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   // Ensure feature flags are initialized
   initFeatureFlags();
-  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+  const isTestEnv = process.env.NODE_ENV === "test";
+  const isLocalDevMode = isEnabled("LOCAL_DEV_MODE") || isTestEnv;
 
   if (isLocalDevMode) {
     // In local dev mode, create mock data and bypass authentication
     const mockUser = generateMockUser();
-    const mockIdeas = generateMockIdeas() as DashboardIdeaDTO[];
+    const mockIdeas = (isTestEnv ? [] : generateMockIdeas()) as DashboardIdeaDTO[];
 
     return (
       <UserDashboard

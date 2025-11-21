@@ -197,8 +197,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           style={{ animationDelay: "200ms" }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider">
-              {t("yourIdeas") || "Your Ideas"}
+            <h2
+              className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider"
+              data-testid="analyses-heading"
+            >
+              {t("yourAnalyses") || "Your Analyses"}
             </h2>
             <button
               onClick={refreshIdeas}
@@ -219,7 +222,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   : "border-slate-700 text-slate-400 hover:border-slate-600"
               }`}
             >
-              {t("all") || "All"} ({counts.total})
+              {t("allAnalyses") || "All Analyses"} ({counts.total})
             </button>
             <button
               onClick={() => handleFilterChange("manual")}
@@ -229,7 +232,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   : "border-slate-700 text-slate-400 hover:border-slate-600"
               }`}
             >
-              ✍️ {t("manual") || "Manual"} ({counts.manual})
+              ✍️ {t("manualAnalyses") || "Manual Analyses"} ({counts.manual})
             </button>
             <button
               onClick={() => handleFilterChange("frankenstein")}
@@ -239,7 +242,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   : "border-slate-700 text-slate-400 hover:border-slate-600"
               }`}
             >
-              🧟 {t("frankenstein") || "Frankenstein"} ({counts.frankenstein})
+              🧟 {t("frankensteinAnalyses") || "Frankenstein Analyses"} ({counts.frankenstein})
             </button>
           </div>
 
@@ -302,13 +305,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 
           {/* Ideas list */}
           {filteredAndSortedIdeas.length === 0 ? (
-            <div className="bg-primary/30 border border-dashed border-slate-700 p-8 text-center text-slate-500 font-mono uppercase tracking-widest">
+            <div
+              className="bg-primary/30 border border-dashed border-slate-700 p-8 text-center text-slate-500 font-mono uppercase tracking-widest"
+              data-testid="empty-state"
+            >
               {ideas.length === 0
-                ? t("noIdeasYet") || "No ideas yet"
-                : t("noIdeasMatch") || "No ideas match your search"}
+                ? t("noAnalysesYet") || "No analyses yet"
+                : t("noAnalysesMatch") || "No analyses match your search"}
             </div>
           ) : (
-            <div className="space-y-4" data-testid="ideas-list">
+            <div className="space-y-4" data-testid="analyses-list">
               {filteredAndSortedIdeas.map((idea) => (
                 <IdeaCard key={idea.id} idea={idea} />
               ))}
