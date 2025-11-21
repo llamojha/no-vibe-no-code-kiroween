@@ -1,4 +1,4 @@
-import { Document } from "../../../../domain/entities";
+import { Document, type DocumentContent } from "../../../../domain/entities";
 import {
   DocumentId,
   IdeaId,
@@ -16,7 +16,7 @@ export interface DocumentDTO {
   userId: string;
   documentType: "startup_analysis" | "hackathon_analysis";
   title: string | null;
-  content: any;
+  content: DocumentContent;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,7 +38,7 @@ export class DocumentMapper {
         | "startup_analysis"
         | "hackathon_analysis",
       title: document.title,
-      content: document.getContent(), // Already returns a deep copy
+      content: document.getContent() as DocumentDAO["content"], // Already returns a deep copy
       created_at: document.createdAt.toISOString(),
       updated_at: document.updatedAt.toISOString(),
     };
@@ -82,24 +82,24 @@ export class DocumentMapper {
    * Parse JSONB content from database
    * Handles various content formats and ensures proper structure
    */
-  private parseContent(content: any): any {
+  private parseContent(content: unknown): DocumentContent {
     // If content is already an object, return it
     if (typeof content === "object" && content !== null) {
-      return content;
+      return content as DocumentContent;
     }
 
     // If content is a string, try to parse it as JSON
     if (typeof content === "string") {
       try {
-        return JSON.parse(content);
-      } catch (error) {
+        return JSON.parse(content) as DocumentContent;
+      } catch (_error) {
         // If parsing fails, return as-is wrapped in an object
-        return { raw: content };
+        return { raw: content } as DocumentContent;
       }
     }
 
     // Fallback for unexpected types
-    return content;
+    return { raw: content } as DocumentContent;
   }
 
   /**

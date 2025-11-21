@@ -1,7 +1,11 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Idea } from "../../../../domain/entities";
-import { IdeaId, UserId } from "../../../../domain/value-objects";
-import { IIdeaRepository } from "../../../../domain/repositories/IIdeaRepository";
+import { IdeaId, UserId, ProjectStatus, IdeaSource } from "../../../../domain/value-objects";
+import {
+  IIdeaRepository,
+  type IdeaSearchCriteria,
+  type IdeaSortOptions,
+} from "../../../../domain/repositories/IIdeaRepository";
 import {
   Result,
   PaginatedResult,
@@ -281,7 +285,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
    * Bulk update project status for multiple ideas
    */
   async updateStatuses(
-    updates: Array<{ id: IdeaId; status: any }>
+    updates: Array<{ id: IdeaId; status: ProjectStatus }>
   ): Promise<Result<void, Error>> {
     try {
       // Supabase doesn't support bulk updates directly, so we'll do them sequentially
@@ -289,7 +293,10 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
       for (const update of updates) {
         const { error } = await this.client
           .from(this.tableName)
-          .update({ project_status: update.status.value })
+          .update({
+            project_status:
+              update.status.value as Database["public"]["Tables"]["ideas"]["Update"]["project_status"],
+          })
           .eq("id", update.id.value);
 
         if (error) {
@@ -452,128 +459,201 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
   // These would be implemented based on specific requirements
 
   async findByUserId(
-    userId: UserId,
-    params: PaginationParams
+    _userId: UserId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement pagination
     throw new Error("Method not implemented");
   }
 
   async findByUserIdPaginated(
-    userId: UserId,
-    options: any
+    _userId: UserId,
+    _options: {
+      page: number;
+      limit: number;
+      sortBy?: "newest" | "oldest" | "updated";
+      source?: "manual" | "frankenstein" | "all";
+      status?: "idea" | "in_progress" | "completed" | "archived" | "all";
+    }
   ): Promise<Result<{ ideas: Idea[]; total: number }, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async searchByUser(
-    userId: UserId,
-    searchTerm: string,
-    options: any
+    _userId: UserId,
+    _searchTerm: string,
+    _options: {
+      page: number;
+      limit: number;
+      sortBy?: "newest" | "oldest" | "updated";
+      source?: "manual" | "frankenstein" | "all";
+      status?: "idea" | "in_progress" | "completed" | "archived" | "all";
+    }
   ): Promise<Result<{ ideas: Idea[]; total: number }, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
-  async getIdeaCountsByStatus(userId: UserId): Promise<Result<any, Error>> {
+  async getIdeaCountsByStatus(
+    _userId: UserId
+  ): Promise<
+    Result<
+      {
+        total: number;
+        idea: number;
+        in_progress: number;
+        completed: number;
+        archived: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
-  async getIdeaCountsBySource(userId: UserId): Promise<Result<any, Error>> {
+  async getIdeaCountsBySource(
+    _userId: UserId
+  ): Promise<
+    Result<
+      {
+        total: number;
+        manual: number;
+        frankenstein: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByStatus(
-    userId: UserId,
-    status: any,
-    params: PaginationParams
+    _userId: UserId,
+    _status: ProjectStatus,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findBySource(
-    userId: UserId,
-    source: any,
-    params: PaginationParams
+    _userId: UserId,
+    _source: IdeaSource,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findRecent(
-    userId: UserId,
-    days: number,
-    params: PaginationParams
+    _userId: UserId,
+    _days: number,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findRecentlyUpdated(
-    userId: UserId,
-    days: number,
-    params: PaginationParams
+    _userId: UserId,
+    _days: number,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async search(
-    criteria: any,
-    sort: any,
-    params: PaginationParams
+    _criteria: IdeaSearchCriteria,
+    _sort: IdeaSortOptions,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByUserAndStatus(
-    userId: UserId,
-    status: any,
-    params: PaginationParams
+    _userId: UserId,
+    _status: ProjectStatus,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
-  async getUserIdeaStats(userId: UserId): Promise<Result<any, Error>> {
+  async getUserIdeaStats(
+    _userId: UserId
+  ): Promise<
+    Result<
+      {
+        totalCount: number;
+        statusCounts: Record<string, number>;
+        sourceCounts: Record<string, number>;
+        withNotes: number;
+        withTags: number;
+        recentCount: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findWithTags(
-    userId: UserId,
-    params: PaginationParams
+    _userId: UserId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findWithNotes(
-    userId: UserId,
-    params: PaginationParams
+    _userId: UserId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByTag(
-    userId: UserId,
-    tag: string,
-    params: PaginationParams
+    _userId: UserId,
+    _tag: string,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByUserIdForDashboard(
-    userId: UserId,
-    options: any
-  ): Promise<Result<any, Error>> {
+    _userId: UserId,
+    _options: {
+      page: number;
+      limit: number;
+      sortBy?: "newest" | "oldest" | "updated";
+      source?: "manual" | "frankenstein" | "all";
+      status?: "idea" | "in_progress" | "completed" | "archived" | "all";
+    }
+  ): Promise<
+    Result<
+      {
+        ideas: Array<{
+          id: string;
+          ideaText: string;
+          source: string;
+          projectStatus: string;
+          documentCount: number;
+          createdAt: string;
+          updatedAt: string;
+          tags: string[];
+        }>;
+        total: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
@@ -583,7 +663,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
   /**
    * Save multiple ideas in a transaction
    */
-  async saveMany(ideas: Idea[]): Promise<Result<Idea[], Error>> {
+  async saveMany(_ideas: Idea[]): Promise<Result<Idea[], Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
@@ -591,7 +671,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
   /**
    * Delete multiple ideas by their IDs
    */
-  async deleteMany(ids: IdeaId[]): Promise<Result<void, Error>> {
+  async deleteMany(_ids: IdeaId[]): Promise<Result<void, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
@@ -599,7 +679,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
   /**
    * Check if an idea exists by its ID
    */
-  async exists(id: IdeaId): Promise<Result<boolean, Error>> {
+  async exists(_id: IdeaId): Promise<Result<boolean, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
@@ -616,7 +696,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
    * Find all ideas with pagination
    */
   async findAll(
-    params: PaginationParams
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
@@ -625,7 +705,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
   /**
    * Find ideas by multiple IDs
    */
-  async findByIds(ids: IdeaId[]): Promise<Result<Idea[], Error>> {
+  async findByIds(_ids: IdeaId[]): Promise<Result<Idea[], Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
@@ -634,7 +714,7 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
    * Find ideas matching specific criteria
    */
   async findWhere(
-    criteria: Record<string, unknown>
+    _criteria: Record<string, unknown>
   ): Promise<Result<Idea[], Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
@@ -644,8 +724,8 @@ export class SupabaseIdeaRepository implements IIdeaRepository {
    * Find ideas with pagination and criteria
    */
   async findWhereWithPagination(
-    criteria: Record<string, unknown>,
-    params: PaginationParams
+    _criteria: Record<string, unknown>,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Idea>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");

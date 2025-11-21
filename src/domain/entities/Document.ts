@@ -5,6 +5,8 @@ import { UserId } from "../value-objects/UserId";
 import { DocumentType } from "../value-objects/DocumentType";
 import { InvariantViolationError } from "../../shared/types/errors";
 
+export type DocumentContent = Record<string, unknown>;
+
 /**
  * Properties required to create at
  */
@@ -13,7 +15,7 @@ export interface CreateDocumentProps {
   userId: UserId;
   documentType: DocumentType;
   title?: string;
-  content: any;
+  content: DocumentContent;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface ReconstructDocumentProps {
   userId: UserId;
   documentType: DocumentType;
   title: string | null;
-  content: any;
+  content: DocumentContent;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,7 +42,7 @@ export class Document extends Entity<DocumentId> {
   private readonly _userId: UserId;
   private readonly _documentType: DocumentType;
   private _title: string | null;
-  private readonly _content: any;
+  private readonly _content: DocumentContent;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -50,7 +52,7 @@ export class Document extends Entity<DocumentId> {
     userId: UserId,
     documentType: DocumentType,
     title: string | null,
-    content: any,
+    content: DocumentContent,
     createdAt: Date,
     updatedAt: Date
   ) {
@@ -171,9 +173,11 @@ export class Document extends Entity<DocumentId> {
   /**
    * Get the document content
    */
-  getContent(): any {
+  getContent(): DocumentContent {
     // Return a deep copy to prevent external modification
-    return JSON.parse(JSON.stringify(this._content));
+    return JSON.parse(
+      JSON.stringify(this._content)
+    ) as unknown as DocumentContent;
   }
 
   /**
@@ -239,7 +243,7 @@ export class Document extends Entity<DocumentId> {
     return this._title;
   }
 
-  get content(): any {
+  get content(): DocumentContent {
     return this.getContent();
   }
 

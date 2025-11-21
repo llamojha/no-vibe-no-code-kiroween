@@ -18,9 +18,13 @@ export class InsufficientCreditsError extends Error {
 
 export const requestAnalysis = async (
   idea: string,
-  locale: SupportedLocale
+  locale: SupportedLocale,
+  ideaId?: string
 ): Promise<Analysis> => {
-  const response = await fetch("/api/analyze", {
+  const url = ideaId
+    ? `/api/analyze?ideaId=${encodeURIComponent(ideaId)}`
+    : "/api/analyze";
+  const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idea, locale }),

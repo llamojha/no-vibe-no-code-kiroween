@@ -30,6 +30,7 @@ import { UpdateIdeaStatusUseCase } from "../../application/use-cases/UpdateIdeaS
 import { SaveIdeaMetadataUseCase } from "../../application/use-cases/SaveIdeaMetadataUseCase";
 import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUseCase";
 import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
+import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
 
 /**
  * Factory for creating use case instances with proper dependency composition
@@ -429,6 +430,23 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as GetDocumentsByIdeaUseCase;
+  }
+
+  /**
+   * Create SaveAnalysisToIdeaPanelUseCase with dependencies
+   */
+  createSaveAnalysisToIdeaPanelUseCase(): SaveAnalysisToIdeaPanelUseCase {
+    const cacheKey = "saveAnalysisToIdeaPanelUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new SaveAnalysisToIdeaPanelUseCase(
+        this.ideaRepository,
+        this.documentRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as SaveAnalysisToIdeaPanelUseCase;
   }
 
   /**

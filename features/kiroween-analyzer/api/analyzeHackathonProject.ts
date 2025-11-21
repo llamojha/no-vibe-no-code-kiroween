@@ -18,10 +18,14 @@ export class InsufficientCreditsError extends Error {
 
 export async function analyzeHackathonProject(
   submission: ProjectSubmission,
-  locale: SupportedLocale
+  locale: SupportedLocale,
+  ideaId?: string
 ): Promise<HackathonAnalysis> {
   // Use the new v2 API endpoint with hexagonal architecture
-  const response = await fetch("/api/v2/hackathon/analyze", {
+  const url = ideaId
+    ? `/api/v2/hackathon/analyze?ideaId=${encodeURIComponent(ideaId)}`
+    : "/api/v2/hackathon/analyze";
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -4,10 +4,36 @@ import React, { useState } from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { DocumentDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
 import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
+import { trackDocumentView } from "@/features/idea-panel/analytics/tracking";
 
 interface DocumentsListSectionProps {
   documents: DocumentDTO[];
+  ideaId?: string;
 }
+
+type ScoreRubricItem = {
+  name?: string;
+  score?: number;
+  explanation?: string;
+};
+
+type AnalysisContent = {
+  viabilitySummary?: string;
+} & Record<string, unknown>;
+
+type StartupAnalysisContent = AnalysisContent & {
+  finalScore?: number;
+  scoringRubric?: ScoreRubricItem[];
+};
+
+type HackathonAnalysisContent = AnalysisContent & {
+  overallScore?: number;
+  categoryScores?: {
+    technical?: number;
+    creativity?: number;
+    impact?: number;
+  };
+};
 
 /**
  * DocumentsListSection component
@@ -22,13 +48,16 @@ interface DocumentsListSectionProps {
  */
 export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
   documents,
+  ideaId,
 }) => {
   const { t, locale } = useLocale();
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(
     new Set()
   );
 
-  const toggleDocument = (documentId: string) => {
+  const toggleDocument = (documentId: string, documentType: string) => {
+    const isExpanding = !expandedDocuments.has(documentId);
+
     setExpandedDocuments((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(documentId)) {
@@ -38,6 +67,16 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
       }
       return newSet;
     });
+
+    // Track document view
+    if (ideaId && isExpanding) {
+      trackDocumentView({
+        ideaId,
+        documentId,
+        documentType: documentType as "startup_analysis" | "hackathon_analysis",
+        action: "expand",
+      });
+    }
   };
 
   const formatDate = (dateString: string): string => {
@@ -100,10 +139,22 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
     return null;
   };
 
-  const renderStartupAnalysisFields = (content: any) => {
+  const renderStartupAnalysisFields = (
+    content: StartupAnalysisContent
+  ): JSX.Element => {
+    const scoringRubric = Array.isArray(content.scoringRubric)
+      ? content.scoringRubric
+      : [];
+    const marketDemandScore = scoringRubric.find(
+      (r) => r.name === "Market Demand"
+    )?.score;
+    const uniquenessScore = scoringRubric.find(
+      (r) => r.name === "Uniqueness"
+    )?.score;
+
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-        {content.finalScore !== undefined && (
+        {typeof content.finalScore === "number" && (
           <div className="bg-black/30 border border-slate-800 p-4 flex flex-col items-center">
             <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2">
               {t("finalScoreLabel") || "Final Score"}
@@ -111,37 +162,29 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
             <ScoreGauge score={content.finalScore} size={80} />
           </div>
         )}
-        {content.scoringRubric && (
+        {scoringRubric.length > 0 && (
           <>
-            {content.scoringRubric.find(
-              (r: any) => r.name === "Market Demand"
-            ) && (
+            {typeof marketDemandScore === "number" && (
               <div className="bg-black/30 border border-slate-800 p-4">
                 <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 block mb-2">
                   {t("marketDemandLabel") || "Market Demand"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-accent font-mono">
-                    {content.scoringRubric
-                      .find((r: any) => r.name === "Market Demand")
-                      ?.score.toFixed(1)}
+                    {marketDemandScore.toFixed(1)}
                   </span>
                   <span className="text-slate-500 font-mono">/5.0</span>
                 </div>
               </div>
             )}
-            {content.scoringRubric.find(
-              (r: any) => r.name === "Uniqueness"
-            ) && (
+            {typeof uniquenessScore === "number" && (
               <div className="bg-black/30 border border-slate-800 p-4">
                 <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 block mb-2">
                   {t("uniquenessLabel") || "Uniqueness"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-accent font-mono">
-                    {content.scoringRubric
-                      .find((r: any) => r.name === "Uniqueness")
-                      ?.score.toFixed(1)}
+                    {uniquenessScore.toFixed(1)}
                   </span>
                   <span className="text-slate-500 font-mono">/5.0</span>
                 </div>
@@ -153,10 +196,29 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
     );
   };
 
-  const renderHackathonAnalysisFields = (content: any) => {
+  const renderHackathonAnalysisFields = (
+    content: HackathonAnalysisContent
+  ): JSX.Element => {
+    const categoryScores =
+      content.categoryScores && typeof content.categoryScores === "object"
+        ? content.categoryScores
+        : undefined;
+    const technicalScore =
+      categoryScores && typeof categoryScores.technical === "number"
+        ? categoryScores.technical
+        : undefined;
+    const creativityScore =
+      categoryScores && typeof categoryScores.creativity === "number"
+        ? categoryScores.creativity
+        : undefined;
+    const impactScore =
+      categoryScores && typeof categoryScores.impact === "number"
+        ? categoryScores.impact
+        : undefined;
+
     return (
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-        {content.overallScore !== undefined && (
+        {typeof content.overallScore === "number" && (
           <div className="bg-black/30 border border-slate-800 p-4 flex flex-col items-center">
             <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2">
               {t("overallScoreLabel") || "Overall Score"}
@@ -164,42 +226,42 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
             <ScoreGauge score={content.overallScore} size={80} />
           </div>
         )}
-        {content.categoryScores && (
+        {categoryScores && (
           <>
-            {content.categoryScores.technical !== undefined && (
+            {typeof technicalScore === "number" && (
               <div className="bg-black/30 border border-slate-800 p-4">
                 <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 block mb-2">
                   {t("technicalLabel") || "Technical"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-accent font-mono">
-                    {content.categoryScores.technical.toFixed(1)}
+                    {technicalScore.toFixed(1)}
                   </span>
                   <span className="text-slate-500 font-mono">/5.0</span>
                 </div>
               </div>
             )}
-            {content.categoryScores.creativity !== undefined && (
+            {typeof creativityScore === "number" && (
               <div className="bg-black/30 border border-slate-800 p-4">
                 <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 block mb-2">
                   {t("creativityLabel") || "Creativity"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-accent font-mono">
-                    {content.categoryScores.creativity.toFixed(1)}
+                    {creativityScore.toFixed(1)}
                   </span>
                   <span className="text-slate-500 font-mono">/5.0</span>
                 </div>
               </div>
             )}
-            {content.categoryScores.impact !== undefined && (
+            {typeof impactScore === "number" && (
               <div className="bg-black/30 border border-slate-800 p-4">
                 <span className="text-sm font-semibold uppercase tracking-wider text-slate-400 block mb-2">
                   {t("impactLabel") || "Impact"}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold text-accent font-mono">
-                    {content.categoryScores.impact.toFixed(1)}
+                    {impactScore.toFixed(1)}
                   </span>
                   <span className="text-slate-500 font-mono">/5.0</span>
                 </div>
@@ -267,6 +329,11 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
       <div className="space-y-4">
         {documents.map((document) => {
           const isExpanded = expandedDocuments.has(document.id);
+          const analysisContent = document.content as AnalysisContent;
+          const viabilitySummary =
+            typeof analysisContent.viabilitySummary === "string"
+              ? analysisContent.viabilitySummary
+              : undefined;
 
           return (
             <div
@@ -275,7 +342,9 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
             >
               {/* Document header - always visible */}
               <button
-                onClick={() => toggleDocument(document.id)}
+                onClick={() =>
+                  toggleDocument(document.id, document.documentType)
+                }
                 className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-900/30 transition-colors"
                 aria-expanded={isExpanded}
                 aria-controls={`document-content-${document.id}`}
@@ -316,18 +385,22 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
                   className="px-6 pb-6 border-t border-slate-800 pt-4 animate-fade-in"
                 >
                   {document.documentType === "startup_analysis" &&
-                    renderStartupAnalysisFields(document.content)}
+                    renderStartupAnalysisFields(
+                      document.content as StartupAnalysisContent
+                    )}
                   {document.documentType === "hackathon_analysis" &&
-                    renderHackathonAnalysisFields(document.content)}
+                    renderHackathonAnalysisFields(
+                      document.content as HackathonAnalysisContent
+                    )}
 
                   {/* Summary or description if available */}
-                  {document.content.viabilitySummary && (
+                  {viabilitySummary && (
                     <div className="mt-4 p-4 bg-slate-900/50 border border-slate-800">
                       <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-2">
                         {t("summaryLabel") || "Summary"}
                       </h4>
                       <p className="text-slate-300 text-sm leading-relaxed font-mono">
-                        {document.content.viabilitySummary}
+                        {viabilitySummary}
                       </p>
                     </div>
                   )}

@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { IdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import { trackAnalyzeButtonClick } from "@/features/idea-panel/analytics/tracking";
 
 interface AnalyzeButtonProps {
   idea: IdeaDTO;
+  documentCount?: number;
 }
 
 type AnalysisType = "startup" | "hackathon";
@@ -21,13 +23,24 @@ type AnalysisType = "startup" | "hackathon";
  *
  * Requirements: 10.1, 10.2, 10.3
  */
-export const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({ idea }) => {
+export const AnalyzeButton: React.FC<AnalyzeButtonProps> = ({
+  idea,
+  documentCount = 0,
+}) => {
   const router = useRouter();
   const { t } = useLocale();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleAnalyze = (type: AnalysisType) => {
     setShowDropdown(false);
+
+    // Track analyze button click
+    trackAnalyzeButtonClick({
+      ideaId: idea.id,
+      analysisType: type,
+      ideaSource: idea.source,
+      existingDocumentCount: documentCount,
+    });
 
     // Encode the idea text for URL
     const encodedIdea = encodeURIComponent(idea.ideaText);

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import type { DocumentContent } from "@/src/domain/entities";
+
 /**
  * DTO for Idea response
  */
@@ -24,7 +26,7 @@ export interface DocumentDTO {
   userId: string;
   documentType: "startup_analysis" | "hackathon_analysis";
   title: string | null;
-  content: any;
+  content: DocumentContent;
   createdAt: string;
   updatedAt: string;
 }
@@ -132,7 +134,7 @@ export interface CreateDocumentDTO {
   ideaId: string;
   documentType: "startup_analysis" | "hackathon_analysis";
   title?: string;
-  content: any;
+  content: DocumentContent;
 }
 
 /**

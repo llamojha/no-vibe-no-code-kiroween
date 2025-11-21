@@ -42,13 +42,7 @@ export class IdeaPanelController {
       });
 
       if (!result.success) {
-        const error = result.error as any;
-        const statusCode =
-          error?.code === "IDEA_NOT_FOUND"
-            ? 404
-            : error?.code === "UNAUTHORIZED_ACCESS"
-            ? 403
-            : 400;
+        const statusCode = this.mapErrorToStatus(result.error);
         return NextResponse.json(
           { error: result.error?.message || "Failed to retrieve idea" },
           { status: statusCode }
@@ -111,13 +105,7 @@ export class IdeaPanelController {
       });
 
       if (!result.success) {
-        const error = result.error as any;
-        const statusCode =
-          error?.code === "IDEA_NOT_FOUND"
-            ? 404
-            : error?.code === "UNAUTHORIZED_ACCESS"
-            ? 403
-            : 400;
+        const statusCode = this.mapErrorToStatus(result.error);
         return NextResponse.json(
           { error: result.error?.message || "Failed to update status" },
           { status: statusCode }
@@ -177,13 +165,7 @@ export class IdeaPanelController {
       });
 
       if (!result.success) {
-        const error = result.error as any;
-        const statusCode =
-          error?.code === "IDEA_NOT_FOUND"
-            ? 404
-            : error?.code === "UNAUTHORIZED_ACCESS"
-            ? 403
-            : 400;
+        const statusCode = this.mapErrorToStatus(result.error);
         return NextResponse.json(
           { error: result.error?.message || "Failed to save metadata" },
           { status: statusCode }
@@ -194,5 +176,18 @@ export class IdeaPanelController {
     } catch (error) {
       return handleApiError(error);
     }
+  }
+
+  private mapErrorToStatus(error: unknown): number {
+    if (error && typeof error === "object" && "code" in error) {
+      const code = (error as { code?: string }).code;
+      if (code === "IDEA_NOT_FOUND") {
+        return 404;
+      }
+      if (code === "UNAUTHORIZED_ACCESS") {
+        return 403;
+      }
+    }
+    return 400;
   }
 }

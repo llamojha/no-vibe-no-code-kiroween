@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverSupabase } from "@/lib/supabase/server";
-import { RepositoryFactory } from "@/src/infrastructure/factories/RepositoryFactory";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
-import { UseCaseFactory } from "@/src/infrastructure/factories/UseCaseFactory";
 import { IdeaId, UserId } from "@/src/domain/value-objects";
 import { authenticateRequest } from "@/src/infrastructure/web/middleware/AuthMiddleware";
 import { handleApiError } from "@/src/infrastructure/web/middleware/ErrorMiddleware";
@@ -41,10 +39,7 @@ export async function GET(
     const serviceFactory = ServiceFactory.getInstance(supabase);
 
     // Get use case factory
-    const useCaseFactory = (serviceFactory as any).useCaseFactory;
-    if (!useCaseFactory) {
-      throw new Error("Use case factory not initialized");
-    }
+    const useCaseFactory = serviceFactory.getUseCaseFactory();
 
     // Create use case
     const getDocumentsByIdeaUseCase =
@@ -60,11 +55,14 @@ export async function GET(
     });
 
     if (!result.success) {
-      const error = result.error as any;
+      const errorCode =
+        result.error && typeof result.error === "object"
+          ? (result.error as { code?: string }).code
+          : undefined;
       const statusCode =
-        error?.code === "IDEA_NOT_FOUND"
+        errorCode === "IDEA_NOT_FOUND"
           ? 404
-          : error?.code === "UNAUTHORIZED_ACCESS"
+          : errorCode === "UNAUTHORIZED_ACCESS"
           ? 403
           : 400;
       return NextResponse.json(

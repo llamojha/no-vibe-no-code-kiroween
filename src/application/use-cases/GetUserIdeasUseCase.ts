@@ -1,5 +1,5 @@
 import { Idea, Document } from "../../domain/entities";
-import { UserId, IdeaId } from "../../domain/value-objects";
+import { UserId } from "../../domain/value-objects";
 import {
   IIdeaRepository,
   IDocumentRepository,

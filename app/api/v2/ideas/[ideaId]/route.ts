@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverSupabase } from "@/lib/supabase/server";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
-import { IdeaPanelController } from "@/src/infrastructure/web/controllers/IdeaPanelController";
 import { isEnabled } from "@/lib/featureFlags";
 import { initFeatureFlags } from "@/lib/featureFlags.config";
 import { generateMockIdeaPanel } from "@/lib/mockData";

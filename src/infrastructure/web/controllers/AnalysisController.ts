@@ -47,6 +47,8 @@ import { AnalysisType } from "@/src/domain/value-objects/AnalysisType";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 import { isCreditSystemEnabled } from "@/src/infrastructure/config/credits";
 import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
+import { SaveAnalysisToIdeaPanelUseCase } from "@/src/application/use-cases/SaveAnalysisToIdeaPanelUseCase";
+import { logger, LogCategory } from "@/lib/logger";
 
 /**
  * Controller for analysis-related API endpoints
@@ -63,7 +65,8 @@ export class AnalysisController {
     private readonly checkCreditsUseCase: CheckCreditsUseCase,
     private readonly getCreditBalanceUseCase: GetCreditBalanceUseCase,
     private readonly deductCreditUseCase: DeductCreditUseCase,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly saveAnalysisToIdeaPanelUseCase?: SaveAnalysisToIdeaPanelUseCase
   ) {}
 
   /**
@@ -155,6 +158,61 @@ export class AnalysisController {
       }
 
       const analysis = result.data.analysis;
+
+      // Save to new ideas and documents tables for Idea Panel feature
+      if (this.saveAnalysisToIdeaPanelUseCase) {
+        try {
+          // Check if ideaId is provided in the request (for linking to existing idea)
+          const url = new URL(request.url);
+          const existingIdeaId = url.searchParams.get("ideaId");
+
+          const saveToIdeaPanelResult =
+            await this.saveAnalysisToIdeaPanelUseCase.execute({
+              ideaText: dto.idea,
+              userId: userId,
+              analysisContent: {
+                score: analysis.score.value,
+                feedback: analysis.feedback,
+                locale: analysis.locale.value,
+                category: analysis.category?.value,
+                createdAt: analysis.createdAt.toISOString(),
+              },
+              documentType: "startup_analysis",
+              source: "manual",
+              existingIdeaId: existingIdeaId || undefined,
+            });
+
+          if (saveToIdeaPanelResult.success) {
+            logger.info(
+              LogCategory.BUSINESS,
+              "Analysis saved to idea panel tables",
+              {
+                ideaId: saveToIdeaPanelResult.data.idea.id.value,
+                documentId: saveToIdeaPanelResult.data.document?.id.value,
+                isNewIdea: saveToIdeaPanelResult.data.isNewIdea,
+              }
+            );
+          } else {
+            // Log error but don't fail the request since analysis was successful
+            logger.error(
+              LogCategory.BUSINESS,
+              "Failed to save analysis to idea panel tables",
+              {
+                error: saveToIdeaPanelResult.error.message,
+              }
+            );
+          }
+        } catch (error) {
+          // Log error but don't fail the request
+          logger.error(
+            LogCategory.BUSINESS,
+            "Unexpected error saving to idea panel tables",
+            {
+              error: error instanceof Error ? error.message : String(error),
+            }
+          );
+        }
+      }
 
       if (creditSystemEnabled) {
         // Deduct credit after successful analysis

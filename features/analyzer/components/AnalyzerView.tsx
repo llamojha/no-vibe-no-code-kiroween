@@ -33,11 +33,15 @@ type LoaderMessages = [string, string, string, string, string, string];
 interface AnalyzerViewProps {
   initialCredits: number;
   userTier: UserTier;
+  prefilledIdea?: string;
+  ideaId?: string;
 }
 
 const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   initialCredits,
   userTier,
+  prefilledIdea,
+  ideaId,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,6 +104,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     }
   }, [ideaFromUrl, sourceFromUrl, savedId]);
 
+  // Pre-fill idea from Idea Panel if provided
+  useEffect(() => {
+    if (prefilledIdea && !savedId) {
+      setIdea(prefilledIdea);
+    }
+  }, [prefilledIdea, savedId]);
+
   useEffect(() => {
     void refreshCredits();
   }, [refreshCredits]);
@@ -118,7 +129,9 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       setSavedAnalysisRecord(null);
       // Don't reset if we have an idea from Frankenstein
       if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
-        setIdea((previous) => (previous && previous.length > 0 ? previous : ""));
+        setIdea((previous) =>
+          previous && previous.length > 0 ? previous : ""
+        );
       }
       setIsReportSaved(false);
       setGeneratedAudio(null);
@@ -241,7 +254,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     setIsReportSaved(false);
 
     try {
-      const analysisResult = await requestAnalysis(idea, locale);
+      const analysisResult = await requestAnalysis(idea, locale, ideaId);
       setNewAnalysis(analysisResult);
       await refreshCredits();
 

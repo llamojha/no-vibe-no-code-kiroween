@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { IdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import { trackStatusUpdate } from "@/features/idea-panel/analytics/tracking";
 
 interface ProjectStatusControlProps {
   idea: IdeaDTO;
@@ -134,11 +135,20 @@ export const ProjectStatusControl: React.FC<ProjectStatusControlProps> = ({
   const handleStatusChange = async (newStatus: ProjectStatus) => {
     if (newStatus === idea.projectStatus || isUpdating) return;
 
+    const previousStatus = idea.projectStatus;
     setIsUpdating(true);
     setShowDropdown(false);
 
     try {
       await onStatusUpdate(newStatus);
+
+      // Track status update
+      trackStatusUpdate({
+        ideaId: idea.id,
+        previousStatus,
+        newStatus,
+        ideaSource: idea.source,
+      });
     } catch (error) {
       console.error("Failed to update status:", error);
       // Error handling is done in parent component

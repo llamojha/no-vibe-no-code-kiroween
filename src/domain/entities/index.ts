@@ -20,4 +20,8 @@ export type {
   ReconstructCreditTransactionProps,
 } from "./CreditTransaction";
 export type { CreateIdeaProps, ReconstructIdeaProps } from "./Idea";
-export type { CreateDocumentProps, ReconstructDocumentProps } from "./Document";
+export type {
+  CreateDocumentProps,
+  ReconstructDocumentProps,
+  DocumentContent,
+} from "./Document";

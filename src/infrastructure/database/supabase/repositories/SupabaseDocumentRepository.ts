@@ -1,7 +1,16 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Document } from "../../../../domain/entities";
-import { DocumentId, IdeaId, UserId } from "../../../../domain/value-objects";
-import { IDocumentRepository } from "../../../../domain/repositories/IDocumentRepository";
+import {
+  DocumentId,
+  IdeaId,
+  UserId,
+  DocumentType,
+} from "../../../../domain/value-objects";
+import {
+  IDocumentRepository,
+  type DocumentSearchCriteria,
+  type DocumentSortOptions,
+} from "../../../../domain/repositories/IDocumentRepository";
 import {
   Result,
   PaginatedResult,
@@ -9,7 +18,6 @@ import {
   success,
   failure,
 } from "../../../../shared/types/common";
-import { AuthorizationError } from "../../../../shared/types/errors";
 import { Database } from "../../types";
 import {
   DatabaseQueryError,
@@ -627,100 +635,137 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
   // These would be implemented based on specific requirements
 
   async findByIdeaIdPaginated(
-    ideaId: IdeaId,
-    params: PaginationParams
+    _ideaId: IdeaId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement pagination
     throw new Error("Method not implemented");
   }
 
   async findByUserIdPaginated(
-    userId: UserId,
-    params: PaginationParams
+    _userId: UserId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByUserIdWithOptions(
-    userId: UserId,
-    options: any
+    _userId: UserId,
+    _options: {
+      page: number;
+      limit: number;
+      sortBy?: "newest" | "oldest";
+      documentType?: "startup_analysis" | "hackathon_analysis" | "all";
+    }
   ): Promise<Result<{ documents: Document[]; total: number }, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByType(
-    documentType: any,
-    params: PaginationParams
+    _documentType: DocumentType,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByUserAndType(
-    userId: UserId,
-    documentType: any,
-    params: PaginationParams
+    _userId: UserId,
+    _documentType: DocumentType,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findByIdeaAndType(
-    ideaId: IdeaId,
-    documentType: any
+    _ideaId: IdeaId,
+    _documentType: DocumentType
   ): Promise<Result<Document[], Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
-  async getDocumentCountsByType(userId: UserId): Promise<Result<any, Error>> {
+  async getDocumentCountsByType(
+    _userId: UserId
+  ): Promise<
+    Result<
+      {
+        total: number;
+        startup_analysis: number;
+        hackathon_analysis: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async getDocumentCountsByTypeForIdea(
-    ideaId: IdeaId
-  ): Promise<Result<any, Error>> {
+    _ideaId: IdeaId
+  ): Promise<
+    Result<
+      {
+        total: number;
+        startup_analysis: number;
+        hackathon_analysis: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findRecent(
-    userId: UserId,
-    days: number,
-    params: PaginationParams
+    _userId: UserId,
+    _days: number,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async search(
-    criteria: any,
-    sort: any,
-    params: PaginationParams
+    _criteria: DocumentSearchCriteria,
+    _sort: DocumentSortOptions,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
-  async getUserDocumentStats(userId: UserId): Promise<Result<any, Error>> {
+  async getUserDocumentStats(
+    _userId: UserId
+  ): Promise<
+    Result<
+      {
+        totalCount: number;
+        typeCounts: Record<string, number>;
+        withTitle: number;
+        recentCount: number;
+      },
+      Error
+    >
+  > {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async findWithTitles(
-    userId: UserId,
-    params: PaginationParams
+    _userId: UserId,
+    _params: PaginationParams
   ): Promise<Result<PaginatedResult<Document>, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");
   }
 
   async hasDocumentType(
-    ideaId: IdeaId,
-    documentType: any
+    _ideaId: IdeaId,
+    _documentType: DocumentType
   ): Promise<Result<boolean, Error>> {
     // TODO: Implement
     throw new Error("Method not implemented");

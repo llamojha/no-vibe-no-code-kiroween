@@ -3,12 +3,10 @@ import { redirect } from "next/navigation";
 import { DoctorFrankensteinView } from "@/features/doctor-frankenstein/components/DoctorFrankensteinView";
 import Loader from "@/features/analyzer/components/Loader";
 import {
-  isCurrentUserPaid,
   isAuthenticated,
   getCurrentUser,
   getSessionContext,
 } from "@/src/infrastructure/web/helpers/serverAuth";
-import { generateMockUser } from "@/lib/mockData";
 import type { UserTier } from "@/lib/types";
 import { resolveMockModeFlag } from "@/lib/testing/config/mock-mode-flags";
 
@@ -22,7 +20,6 @@ export default async function DoctorFrankensteinPage() {
 
   if (isDevelopment || isMockMode) {
     // In development mode, bypass authentication and tier checks
-    const mockUser = generateMockUser();
     return (
       <Suspense fallback={<Loader message="Loading Doctor Frankenstein..." />}>
         <DoctorFrankensteinView initialCredits={3} userTier="free" />

@@ -11,9 +11,263 @@ For information about the database consolidation that unified the analysis table
 
 ## Tables
 
+### ideas
+
+New table storing all startup ideas and project concepts. Part of the Idea Panel feature.
+
+#### Schema
+
+```sql
+CREATE TABLE public.ideas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Core idea data
+  idea_text TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual'
+    CHECK (source IN ('manual', 'frankenstein')),
+
+  -- Panel management data
+  project_status TEXT NOT NULL DEFAULT 'idea'
+    CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived')),
+  notes TEXT DEFAULT '',
+  tags TEXT[] DEFAULT '{}',
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+#### Columns
+
+| Column           | Type        | Nullable | Default             | Description                                                    |
+| ---------------- | ----------- | -------- | ------------------- | -------------------------------------------------------------- |
+| `id`             | UUID        | NO       | `gen_random_uuid()` | Primary key                                                    |
+| `user_id`        | UUID        | NO       | -                   | Foreign key to auth.users                                      |
+| `idea_text`      | TEXT        | NO       | -                   | The idea description                                           |
+| `source`         | TEXT        | NO       | `'manual'`          | How idea was created: 'manual' or 'frankenstein'               |
+| `project_status` | TEXT        | NO       | `'idea'`            | Current status: 'idea', 'in_progress', 'completed', 'archived' |
+| `notes`          | TEXT        | YES      | `''`                | User notes about the idea                                      |
+| `tags`           | TEXT[]      | YES      | `'{}'`              | Array of tags for organization                                 |
+| `created_at`     | TIMESTAMPTZ | YES      | `NOW()`             | Record creation timestamp                                      |
+| `updated_at`     | TIMESTAMPTZ | YES      | `NOW()`             | Record last update timestamp (auto-updated)                    |
+
+#### Indexes
+
+```sql
+-- User-based queries
+CREATE INDEX idx_ideas_user
+  ON public.ideas(user_id);
+
+-- Status filtering
+CREATE INDEX idx_ideas_status
+  ON public.ideas(user_id, project_status);
+
+-- Timestamp ordering
+CREATE INDEX idx_ideas_updated
+  ON public.ideas(updated_at DESC);
+```
+
+#### Constraints
+
+```sql
+-- Primary key
+ALTER TABLE public.ideas
+  ADD CONSTRAINT ideas_pkey PRIMARY KEY (id);
+
+-- Foreign key to users
+ALTER TABLE public.ideas
+  ADD CONSTRAINT ideas_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- Source check
+ALTER TABLE public.ideas
+  ADD CONSTRAINT ideas_source_check
+  CHECK (source IN ('manual', 'frankenstein'));
+
+-- Status check
+ALTER TABLE public.ideas
+  ADD CONSTRAINT ideas_project_status_check
+  CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived'));
+```
+
+#### Row Level Security
+
+```sql
+-- Enable RLS
+ALTER TABLE public.ideas ENABLE ROW LEVEL SECURITY;
+
+-- Owner-only access
+CREATE POLICY "Users can manage their own ideas"
+  ON public.ideas
+  FOR ALL
+  USING (auth.uid() = user_id);
+```
+
+#### Auto-update Trigger
+
+```sql
+-- Trigger function
+CREATE OR REPLACE FUNCTION update_ideas_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger
+CREATE TRIGGER trigger_update_ideas_timestamp
+  BEFORE UPDATE ON public.ideas
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ideas_timestamp();
+```
+
+### documents
+
+New table storing analyses and generated documents linked to ideas. Part of the Idea Panel feature.
+
+#### Schema
+
+```sql
+CREATE TABLE public.documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idea_id UUID NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- Document metadata
+  document_type TEXT NOT NULL
+    CHECK (document_type IN ('startup_analysis', 'hackathon_analysis')),
+  title TEXT,
+  content JSONB NOT NULL,
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+#### Columns
+
+| Column          | Type        | Nullable | Default             | Description                                      |
+| --------------- | ----------- | -------- | ------------------- | ------------------------------------------------ |
+| `id`            | UUID        | NO       | `gen_random_uuid()` | Primary key                                      |
+| `idea_id`       | UUID        | NO       | -                   | Foreign key to ideas                             |
+| `user_id`       | UUID        | NO       | -                   | Foreign key to auth.users                        |
+| `document_type` | TEXT        | NO       | -                   | Type: 'startup_analysis' or 'hackathon_analysis' |
+| `title`         | TEXT        | YES      | NULL                | Optional document title                          |
+| `content`       | JSONB       | NO       | -                   | Document content (analysis data)                 |
+| `created_at`    | TIMESTAMPTZ | YES      | `NOW()`             | Record creation timestamp                        |
+| `updated_at`    | TIMESTAMPTZ | YES      | `NOW()`             | Record last update timestamp (auto-updated)      |
+
+#### Indexes
+
+```sql
+-- Idea-based queries
+CREATE INDEX idx_documents_idea
+  ON public.documents(idea_id);
+
+-- User-based queries
+CREATE INDEX idx_documents_user
+  ON public.documents(user_id);
+
+-- Type filtering
+CREATE INDEX idx_documents_type
+  ON public.documents(idea_id, document_type);
+```
+
+#### Constraints
+
+```sql
+-- Primary key
+ALTER TABLE public.documents
+  ADD CONSTRAINT documents_pkey PRIMARY KEY (id);
+
+-- Foreign key to ideas
+ALTER TABLE public.documents
+  ADD CONSTRAINT documents_idea_id_fkey
+  FOREIGN KEY (idea_id) REFERENCES ideas(id) ON DELETE CASCADE;
+
+-- Foreign key to users
+ALTER TABLE public.documents
+  ADD CONSTRAINT documents_user_id_fkey
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- Document type check
+ALTER TABLE public.documents
+  ADD CONSTRAINT documents_document_type_check
+  CHECK (document_type IN ('startup_analysis', 'hackathon_analysis'));
+```
+
+#### Row Level Security
+
+```sql
+-- Enable RLS
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+
+-- Owner-only access
+CREATE POLICY "Users can manage their own documents"
+  ON public.documents
+  FOR ALL
+  USING (auth.uid() = user_id);
+```
+
+#### Auto-update Trigger
+
+```sql
+-- Trigger function
+CREATE OR REPLACE FUNCTION update_documents_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger
+CREATE TRIGGER trigger_update_documents_timestamp
+  BEFORE UPDATE ON public.documents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_documents_timestamp();
+```
+
+#### JSONB Structure
+
+The `content` field stores type-specific analysis data:
+
+**Startup Analysis Content**:
+
+```json
+{
+  "score": 78,
+  "detailedSummary": "This is a solid marketplace idea...",
+  "criteria": [
+    {
+      "name": "Market Size",
+      "score": 85,
+      "justification": "Large and growing pet care market..."
+    }
+  ],
+  "locale": "en"
+}
+```
+
+**Hackathon Analysis Content**:
+
+```json
+{
+  "score": 82,
+  "detailedSummary": "Innovative approach...",
+  "criteria": [...],
+  "locale": "en",
+  "selectedCategory": "frankenstein"
+}
+```
+
 ### saved_analyses
 
-Unified table storing both standard idea analyses and hackathon project analyses.
+Unified table storing both standard idea analyses and hackathon project analyses. This table is maintained for backward compatibility.
 
 #### Schema
 
@@ -168,7 +422,7 @@ Example:
   "criteria": [...],
   "locale": "en",
   "selectedCategory": "frankenstein",
-  
+
 }
 ```
 
@@ -195,12 +449,38 @@ Supabase-managed table for user authentication.
 
 ```mermaid
 erDiagram
+    auth_users ||--o{ ideas : "owns"
+    auth_users ||--o{ documents : "owns"
     auth_users ||--o{ saved_analyses : "owns"
+    ideas ||--o{ documents : "has"
 
     auth_users {
         uuid id PK
         text email
         timestamptz created_at
+    }
+
+    ideas {
+        uuid id PK
+        uuid user_id FK
+        text idea_text
+        text source
+        text project_status
+        text notes
+        text_array tags
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    documents {
+        uuid id PK
+        uuid idea_id FK
+        uuid user_id FK
+        text document_type
+        text title
+        jsonb content
+        timestamptz created_at
+        timestamptz updated_at
     }
 
     saved_analyses {
@@ -216,7 +496,83 @@ erDiagram
 
 ## Query Patterns
 
-### Common Queries
+### Idea Panel Queries
+
+#### Get all ideas for a user
+
+```sql
+SELECT * FROM ideas
+WHERE user_id = $1
+ORDER BY updated_at DESC;
+```
+
+#### Get idea with document count
+
+```sql
+SELECT
+  i.*,
+  COUNT(d.id) as document_count
+FROM ideas i
+LEFT JOIN documents d ON d.idea_id = i.id
+WHERE i.user_id = $1
+GROUP BY i.id
+ORDER BY i.updated_at DESC;
+```
+
+#### Get idea with all documents
+
+```sql
+-- Get idea
+SELECT * FROM ideas
+WHERE id = $1 AND user_id = $2;
+
+-- Get documents for idea
+SELECT * FROM documents
+WHERE idea_id = $1
+ORDER BY created_at DESC;
+```
+
+#### Filter ideas by status
+
+```sql
+SELECT * FROM ideas
+WHERE user_id = $1
+  AND project_status = $2
+ORDER BY updated_at DESC;
+```
+
+#### Filter ideas by source
+
+```sql
+SELECT * FROM ideas
+WHERE user_id = $1
+  AND source = $2
+ORDER BY updated_at DESC;
+```
+
+#### Search ideas by text or tags
+
+```sql
+SELECT * FROM ideas
+WHERE user_id = $1
+  AND (
+    idea_text ILIKE '%' || $2 || '%'
+    OR notes ILIKE '%' || $2 || '%'
+    OR $2 = ANY(tags)
+  )
+ORDER BY updated_at DESC;
+```
+
+#### Get documents by type
+
+```sql
+SELECT * FROM documents
+WHERE idea_id = $1
+  AND document_type = $2
+ORDER BY created_at DESC;
+```
+
+### Legacy saved_analyses Queries
 
 #### Get all analyses for a user
 
@@ -282,19 +638,61 @@ LIMIT $2 OFFSET $3;
 | ------- | ---------- | ----------------------------------------------- |
 | 1.0     | 2023-12-01 | Initial schema with separate tables             |
 | 2.0     | 2024-01-15 | Database consolidation - unified analysis table |
+| 2.1     | 2024-01-20 | Added ideas and documents tables for Idea Panel |
 
-### Current Migration
+### Current Migration (v2.1)
 
-The current schema (v2.0) includes the database consolidation that unified the `saved_analyses` and `saved_hackathon_analyses` tables. See [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md) for details.
+The current schema includes:
+
+1. **Database Consolidation (v2.0)**: Unified `saved_analyses` and `saved_hackathon_analyses` tables
+2. **Idea Panel Tables (v2.1)**: Added `ideas` and `documents` tables with new data model
+
+### Idea Panel Migration
+
+The Idea Panel migration created two new tables and migrated data from `saved_analyses`:
+
+**Migration Process**:
+
+1. Created `ideas` table with panel management fields
+2. Created `documents` table for analyses
+3. Migrated all ideas from `saved_analyses` to `ideas`
+4. Migrated all analyses to `documents` (linked to ideas)
+5. Maintained `saved_analyses` for backward compatibility
+
+**Data Mapping**:
+
+- Each `saved_analyses` entry → one `ideas` entry
+- Each analysis in `saved_analyses` → one `documents` entry (except frankenstein type)
+- Frankenstein entries → `ideas` only (no document)
+
+**Verification**:
+
+- All data successfully migrated
+- Foreign key constraints validated
+- RLS policies applied
+- Triggers created for auto-updating timestamps
+- No orphaned documents
 
 ### Migration Files
 
-Migration files are stored in the `.kiro/specs/database-consolidation/` directory:
+**Database Consolidation**:
 
-- `requirements.md`: Migration requirements
-- `design.md`: Migration design and architecture
-- `tasks.md`: Implementation tasks
-- `verification-results.md`: Migration verification results
+- `.kiro/specs/database-consolidation/`
+  - `requirements.md`: Migration requirements
+  - `design.md`: Migration design and architecture
+  - `tasks.md`: Implementation tasks
+  - `verification-results.md`: Migration verification results
+
+**Idea Panel**:
+
+- `.kiro/specs/idea-panel/`
+  - `requirements.md`: Feature requirements
+  - `design.md`: Feature design and data model
+  - `tasks.md`: Implementation tasks
+
+### Migration SQL
+
+See the design document at `.kiro/specs/idea-panel/design.md` for the complete migration SQL.
 
 ## Backup and Recovery
 

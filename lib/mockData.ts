@@ -910,7 +910,6 @@ export function generateMockIdeas(): Array<{
   updatedAt: string;
   tags: string[];
 }> {
-  const mockUser = generateMockUser();
   const baseDate = new Date("2024-10-15T00:00:00Z");
 
   return [

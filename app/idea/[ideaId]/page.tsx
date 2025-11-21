@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: IdeaPanelPageProps) {
   const { ideaId } = await params;
 
   return {
-    title: "Idea Panel | No Vibe No Code",
+    title: `Idea ${ideaId} | No Vibe No Code`,
     description: "Manage your idea and track progress",
   };
 }

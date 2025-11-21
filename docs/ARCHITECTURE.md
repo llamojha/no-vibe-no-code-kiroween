@@ -302,26 +302,98 @@ src/
 │   ├── entities/                 # Domain entities
 │   │   ├── analysis/            # Analysis entity and related
 │   │   ├── user/                # User entity and related
+│   │   ├── idea/                # Idea entity (Idea Panel)
+│   │   ├── document/            # Document entity (Idea Panel)
 │   │   └── shared/              # Base entity classes
 │   ├── value-objects/           # Immutable value objects
+│   │   ├── IdeaId.ts           # Idea identifier
+│   │   ├── DocumentId.ts       # Document identifier
+│   │   ├── IdeaSource.ts       # Idea source (manual/frankenstein)
+│   │   ├── DocumentType.ts     # Document type (startup_analysis/hackathon_analysis)
+│   │   ├── ProjectStatus.ts    # Project status (idea/in_progress/completed/archived)
+│   │   └── ...                 # Other value objects
 │   ├── repositories/            # Repository interfaces (ports)
+│   │   ├── IIdeaRepository.ts  # Idea repository interface
+│   │   ├── IDocumentRepository.ts # Document repository interface
+│   │   └── ...                 # Other repository interfaces
 │   ├── services/                # Domain services
 │   └── types/                   # Domain types and errors
 ├── application/                 # Use cases and orchestration
 │   ├── use-cases/              # Business use cases
+│   │   ├── GetIdeaWithDocumentsUseCase.ts
+│   │   ├── UpdateIdeaStatusUseCase.ts
+│   │   ├── SaveIdeaMetadataUseCase.ts
+│   │   ├── GetUserIdeasUseCase.ts
+│   │   ├── GetDocumentsByIdeaUseCase.ts
+│   │   └── ...                 # Other use cases
 │   ├── handlers/               # Command and query handlers
 │   ├── services/               # Application services
 │   └── types/                  # Application types
 ├── infrastructure/             # External integrations
 │   ├── database/               # Database implementations
+│   │   └── supabase/
+│   │       ├── repositories/
+│   │       │   ├── SupabaseIdeaRepository.ts
+│   │       │   ├── SupabaseDocumentRepository.ts
+│   │       │   └── ...
+│   │       └── mappers/
+│   │           ├── IdeaMapper.ts
+│   │           ├── DocumentMapper.ts
+│   │           └── ...
 │   ├── external/               # External service adapters
 │   ├── web/                    # Web framework adapters
+│   │   └── controllers/
+│   │       ├── IdeaPanelController.ts
+│   │       └── ...
 │   ├── config/                 # Configuration management
 │   └── factories/              # Service factories
 └── shared/                     # Shared utilities
     ├── utils/                  # Common utilities
     ├── types/                  # Shared types
     └── constants/              # Application constants
+
+features/                       # Feature-specific UI components
+├── idea-panel/                # Idea Panel feature
+│   ├── components/
+│   │   ├── IdeaPanelView.tsx
+│   │   ├── IdeaPanelLayout.tsx
+│   │   ├── IdeaDetailsSection.tsx
+│   │   ├── DocumentsListSection.tsx
+│   │   ├── ProjectStatusControl.tsx
+│   │   ├── NotesSection.tsx
+│   │   ├── TagsSection.tsx
+│   │   └── AnalyzeButton.tsx
+│   ├── api/
+│   │   ├── getIdeaWithDocuments.ts
+│   │   ├── getUserIdeas.ts
+│   │   ├── updateStatus.ts
+│   │   ├── saveMetadata.ts
+│   │   └── getDocumentsByIdea.ts
+│   └── analytics/
+│       └── tracking.ts
+├── analyzer/                  # Analyzer feature
+├── dashboard/                 # Dashboard feature
+│   └── components/
+│       ├── IdeaCard.tsx      # New: displays ideas instead of analyses
+│       └── ...
+└── ...                       # Other features
+
+app/                          # Next.js App Router
+├── api/
+│   └── v2/
+│       └── ideas/           # Idea Panel API routes
+│           ├── route.ts     # GET /api/v2/ideas (list)
+│           └── [ideaId]/
+│               ├── route.ts # GET /api/v2/ideas/[ideaId] (single)
+│               ├── status/
+│               │   └── route.ts # PUT /api/v2/ideas/[ideaId]/status
+│               ├── metadata/
+│               │   └── route.ts # PUT /api/v2/ideas/[ideaId]/metadata
+│               └── documents/
+│                   └── route.ts # GET /api/v2/ideas/[ideaId]/documents
+└── idea/
+    └── [ideaId]/
+        └── page.tsx         # Idea Panel page
 ```
 
 ## Integration Points
@@ -364,6 +436,88 @@ export default async function DashboardPage() {
   return <DashboardView analyses={result.data} />;
 }
 ```
+
+### Idea Panel Integration
+
+The Idea Panel feature introduces new routes and components for managing ideas:
+
+#### API Routes
+
+```typescript
+// Get idea with all documents
+GET / api / v2 / ideas / [ideaId];
+
+// Get all ideas for user
+GET / api / v2 / ideas;
+
+// Update idea status
+PUT / api / v2 / ideas / [ideaId] / status;
+
+// Save idea metadata (notes, tags)
+PUT / api / v2 / ideas / [ideaId] / metadata;
+
+// Get documents for idea
+GET / api / v2 / ideas / [ideaId] / documents;
+```
+
+#### Page Routes
+
+```typescript
+// Idea Panel page
+/idea/[ideaId];
+```
+
+#### Key Components
+
+- **IdeaPanelView**: Main container component orchestrating the panel
+- **IdeaPanelLayout**: Full-screen layout with breadcrumb navigation
+- **IdeaDetailsSection**: Displays idea text, source, and creation date
+- **DocumentsListSection**: Lists all analyses with expandable details
+- **ProjectStatusControl**: Status dropdown with last updated timestamp
+- **NotesSection**: Textarea for adding and editing notes
+- **TagsSection**: Tag management with add/remove functionality
+- **AnalyzeButton**: Dropdown button for creating new analyses
+
+#### Data Model
+
+The Idea Panel introduces a new data model that separates ideas from documents:
+
+**Ideas Table:**
+
+```sql
+CREATE TABLE ideas (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  idea_text TEXT NOT NULL,
+  source TEXT NOT NULL CHECK (source IN ('manual', 'frankenstein')),
+  project_status TEXT NOT NULL CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived')),
+  notes TEXT DEFAULT '',
+  tags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Documents Table:**
+
+```sql
+CREATE TABLE documents (
+  id UUID PRIMARY KEY,
+  idea_id UUID REFERENCES ideas(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id),
+  document_type TEXT NOT NULL CHECK (document_type IN ('startup_analysis', 'hackathon_analysis')),
+  title TEXT,
+  content JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Relationship:**
+
+- One idea can have multiple documents (analyses)
+- Documents are linked to ideas via `idea_id` foreign key
+- Backward compatible: `saved_analyses` table remains unchanged
 
 ### Database Integration
 
@@ -627,9 +781,17 @@ it("should create fresh factory instances", () => {
 
 ## Database Architecture
 
-### Unified Analysis Table
+### Database Tables Overview
 
-The application uses a unified `saved_analyses` table with a type discriminator column to store both standard idea analyses and hackathon project analyses. This consolidation simplifies the data model and improves maintainability.
+The application uses multiple tables to manage different aspects of the system:
+
+1. **`saved_analyses`**: Legacy unified table for backward compatibility
+2. **`ideas`**: New table for managing ideas with metadata (Idea Panel feature)
+3. **`documents`**: New table for storing analyses linked to ideas (Idea Panel feature)
+
+### Unified Analysis Table (Legacy)
+
+The application uses a unified `saved_analyses` table with a type discriminator column to store both standard idea analyses and hackathon project analyses. This table is maintained for backward compatibility while the new Idea Panel feature uses the `ideas` and `documents` tables.
 
 #### Table Structure
 
@@ -678,7 +840,7 @@ The `analysis` JSONB field contains type-specific data:
   "criteria": [...],
   "locale": "en",
   "selectedCategory": "frankenstein",
-  
+
 }
 ```
 
@@ -694,6 +856,180 @@ For detailed information about the database consolidation, see:
 
 - [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md)
 - [Archived Schema Definitions](./archive/OLD_SCHEMA_DEFINITIONS.md)
+
+### Idea Panel Data Model (New)
+
+The Idea Panel feature introduces a new data model that separates ideas from their analyses (documents). This architectural change enables:
+
+- Ideas to exist independently of analyses
+- Multiple analyses per idea (e.g., both startup and hackathon analyses)
+- Better organization with status tracking, notes, and tags
+- Foundation for future document types (PRDs, Design Docs, Roadmaps)
+
+#### Ideas Table
+
+Stores all ideas with panel management metadata:
+
+```sql
+CREATE TABLE ideas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  idea_text TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual'
+    CHECK (source IN ('manual', 'frankenstein')),
+  project_status TEXT NOT NULL DEFAULT 'idea'
+    CHECK (project_status IN ('idea', 'in_progress', 'completed', 'archived')),
+  notes TEXT DEFAULT '',
+  tags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_ideas_user ON ideas(user_id);
+CREATE INDEX idx_ideas_status ON ideas(user_id, project_status);
+CREATE INDEX idx_ideas_updated ON ideas(updated_at DESC);
+```
+
+**Fields:**
+
+- `id`: Unique identifier for the idea
+- `user_id`: Owner of the idea (foreign key to auth.users)
+- `idea_text`: The actual idea description
+- `source`: How the idea was created ('manual' or 'frankenstein')
+- `project_status`: Current status in workflow ('idea', 'in_progress', 'completed', 'archived')
+- `notes`: User notes for capturing thoughts and progress
+- `tags`: Array of tags for organization
+- `created_at`: When the idea was created
+- `updated_at`: Last modification timestamp (auto-updated via trigger)
+
+#### Documents Table
+
+Stores analyses and future document types linked to ideas:
+
+```sql
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  idea_id UUID NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  document_type TEXT NOT NULL
+    CHECK (document_type IN ('startup_analysis', 'hackathon_analysis')),
+  title TEXT,
+  content JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_documents_idea ON documents(idea_id);
+CREATE INDEX idx_documents_user ON documents(user_id);
+CREATE INDEX idx_documents_type ON documents(idea_id, document_type);
+```
+
+**Fields:**
+
+- `id`: Unique identifier for the document
+- `idea_id`: Link to parent idea (foreign key to ideas)
+- `user_id`: Owner of the document (foreign key to auth.users)
+- `document_type`: Type of document ('startup_analysis', 'hackathon_analysis', future: 'prd', 'design_doc', etc.)
+- `title`: Optional title for the document
+- `content`: JSONB field containing the analysis or document data
+- `created_at`: When the document was created
+- `updated_at`: Last modification timestamp (auto-updated via trigger)
+
+#### Relationship Model
+
+```
+ideas (1) → (many) documents
+  ├─ startup_analysis documents
+  ├─ hackathon_analysis documents
+  └─ future: prd, design_doc, roadmap, architecture documents
+
+saved_analyses (UNCHANGED - backward compatibility)
+```
+
+#### Row Level Security (RLS)
+
+Both tables have RLS enabled with policies ensuring users can only access their own data:
+
+```sql
+-- Ideas table RLS
+ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own ideas"
+  ON ideas FOR ALL
+  USING (auth.uid() = user_id);
+
+-- Documents table RLS
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own documents"
+  ON documents FOR ALL
+  USING (auth.uid() = user_id);
+```
+
+#### Auto-Update Triggers
+
+Both tables have triggers that automatically update the `updated_at` timestamp:
+
+```sql
+-- Trigger for ideas table
+CREATE OR REPLACE FUNCTION update_ideas_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_ideas_timestamp
+  BEFORE UPDATE ON ideas
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ideas_timestamp();
+
+-- Trigger for documents table
+CREATE OR REPLACE FUNCTION update_documents_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_documents_timestamp
+  BEFORE UPDATE ON documents
+  FOR EACH ROW
+  EXECUTE FUNCTION update_documents_timestamp();
+```
+
+#### Migration and Backward Compatibility
+
+The new tables were populated via migration from `saved_analyses`:
+
+- All existing analyses were migrated to create corresponding ideas
+- Analyses with actual analysis data were migrated to documents
+- Doctor Frankenstein ideas (no analysis) created ideas without documents
+- `saved_analyses` table remains unchanged for backward compatibility
+
+**Migration Details:**
+
+- Ideas count = saved_analyses count
+- Documents count = saved_analyses count - frankenstein ideas (which have no analysis)
+- All foreign key constraints and RLS policies verified
+- No data loss during migration
+
+For detailed migration information, see:
+
+- [Idea Panel Migration Documentation](./IDEA_PANEL_MIGRATION.md)
+
+#### Benefits of New Data Model
+
+- **Separation of Concerns**: Ideas and analyses are distinct concepts
+- **Multiple Analyses**: One idea can have multiple types of analyses
+- **Better Organization**: Status tracking, notes, and tags for project management
+- **Future Extensibility**: Easy to add new document types (PRDs, Design Docs, Roadmaps)
+- **Clean Architecture**: Follows domain-driven design principles
+- **Backward Compatible**: Existing code continues to work with saved_analyses
 
 ## Performance Considerations
 
@@ -768,3 +1104,6 @@ For detailed information about the database consolidation, see:
 - [Developer Guide](./DEVELOPER_GUIDE.md)
 - [API Documentation](./API.md)
 - [Hexagonal Architecture Standards](../.kiro/steering/hexagonal-architecture-standards.md)
+- [Idea Panel User Guide](./IDEA_PANEL_USER_GUIDE.md)
+- [Idea Panel API Documentation](./IDEA_PANEL_API.md)
+- [Idea Panel Migration Documentation](./IDEA_PANEL_MIGRATION.md)

@@ -13,6 +13,7 @@ import {
   updateStatus,
   saveMetadata,
 } from "@/features/idea-panel/api";
+import { trackIdeaPanelView } from "@/features/idea-panel/analytics/tracking";
 
 // Component imports
 import IdeaPanelLayout from "./IdeaPanelLayout";
@@ -20,6 +21,7 @@ import IdeaDetailsSection from "./IdeaDetailsSection";
 import DocumentsListSection from "./DocumentsListSection";
 import ProjectStatusControl from "./ProjectStatusControl";
 import AnalyzeButton from "./AnalyzeButton";
+import NotesSection from "./NotesSection";
 import TagsSection from "./TagsSection";
 
 interface IdeaPanelViewProps {
@@ -64,6 +66,20 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     }
   }, [ideaId, initialData]);
 
+  // Track panel view when data is loaded
+  useEffect(() => {
+    if (idea && documents) {
+      trackIdeaPanelView({
+        ideaId: idea.id,
+        ideaSource: idea.source,
+        projectStatus: idea.projectStatus,
+        documentCount: documents.length,
+        hasNotes: idea.notes.length > 0,
+        tagCount: idea.tags.length,
+      });
+    }
+  }, [idea, documents]);
+
   const loadIdeaData = async () => {
     setIsLoading(true);
     setError(null);
@@ -100,6 +116,24 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
       });
     } catch (err) {
       console.error("Failed to update status:", err);
+      throw err; // Re-throw to let component handle error display
+    }
+  };
+
+  const handleSaveNotes = async (notes: string): Promise<void> => {
+    if (!idea) return;
+
+    try {
+      await saveMetadata(ideaId, { notes });
+
+      // Optimistically update local state
+      setIdea({
+        ...idea,
+        notes,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("Failed to save notes:", err);
       throw err; // Re-throw to let component handle error display
     }
   };
@@ -205,15 +239,18 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         <IdeaDetailsSection idea={idea} />
 
         {/* Documents List Section */}
-        <DocumentsListSection documents={documents} />
+        <DocumentsListSection documents={documents} ideaId={idea.id} />
 
         {/* Project Status Control */}
         <ProjectStatusControl idea={idea} onStatusUpdate={handleStatusUpdate} />
 
         {/* Analyze Button */}
         <div className="flex justify-center">
-          <AnalyzeButton idea={idea} />
+          <AnalyzeButton idea={idea} documentCount={documents.length} />
         </div>
+
+        {/* Notes Section */}
+        <NotesSection idea={idea} onSaveNotes={handleSaveNotes} />
 
         {/* Tags Section */}
         <TagsSection idea={idea} onSaveTags={handleSaveTags} />

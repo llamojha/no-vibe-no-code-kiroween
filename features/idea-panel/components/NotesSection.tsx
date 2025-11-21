@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { IdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import { trackNotesSave } from "@/features/idea-panel/analytics/tracking";
 
 interface NotesSectionProps {
   idea: IdeaDTO;
@@ -46,6 +47,7 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
   const handleSave = async () => {
     if (!hasChanges || isSaving) return;
 
+    const hadPreviousNotes = idea.notes.length > 0;
     setIsSaving(true);
     setSaveSuccess(false);
 
@@ -53,6 +55,14 @@ export const NotesSection: React.FC<NotesSectionProps> = ({
       await onSaveNotes(notes);
       setHasChanges(false);
       setSaveSuccess(true);
+
+      // Track notes save
+      trackNotesSave({
+        ideaId: idea.id,
+        notesLength: notes.length,
+        hadPreviousNotes,
+        ideaSource: idea.source,
+      });
 
       // Clear success message after 3 seconds
       setTimeout(() => {

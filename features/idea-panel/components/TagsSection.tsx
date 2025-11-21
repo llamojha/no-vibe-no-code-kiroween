@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { IdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import { trackTagsManagement } from "@/features/idea-panel/analytics/tracking";
 
 interface TagsSectionProps {
   idea: IdeaDTO;
@@ -98,6 +99,7 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
   const handleSave = async () => {
     if (!hasChanges || isSaving) return;
 
+    const previousTagCount = idea.tags.length;
     setIsSaving(true);
     setSaveSuccess(false);
     setError(null);
@@ -106,6 +108,15 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
       await onSaveTags(tags);
       setHasChanges(false);
       setSaveSuccess(true);
+
+      // Track tags save
+      trackTagsManagement({
+        ideaId: idea.id,
+        action: "save",
+        tagCount: tags.length,
+        previousTagCount,
+        ideaSource: idea.source,
+      });
 
       // Clear success message after 3 seconds
       setTimeout(() => {

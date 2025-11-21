@@ -19,8 +19,8 @@
 
 ### Project Management
 
-- **Idea Panel** (In Development): Transform saved analyses into execution-ready documentation (PRDs, Technical Design, Roadmaps, Architecture Documents)
-- **Dashboard**: Unified view of all analyses with filtering, search, and management capabilities
+- **Idea Panel**: Dedicated workspace for managing ideas with status tracking, notes, tags, and multiple analyses. Separates ideas from documents (analyses) for better organization and future extensibility. Foundation for generating execution-ready documentation (PRDs, Technical Design, Roadmaps, Architecture Documents).
+- **Dashboard**: Unified view of all ideas with filtering, search, and management capabilities. Updated to show ideas instead of analyses, with document counts and "Manage" buttons.
 - **Analysis History**: Track and manage all generated analyses with version history
 
 ### Export & Integration
@@ -65,12 +65,14 @@
 - ✅ Property-based testing framework for system correctness
 - ✅ Mock mode for development without API costs
 - ✅ Hexagonal architecture refactoring for maintainability
+- ✅ Idea Panel MVP with status tracking, notes, tags, and multiple analyses per idea
+- ✅ New data model separating ideas from documents for better organization
+- ✅ Dashboard updated to show ideas with document counts and management capabilities
 
 ### In Progress
 
-- 🚧 Idea Panel for generating execution-ready documentation (PRDs, technical designs, roadmaps)
 - 🚧 Enhanced export capabilities across all analysis types
-- 🚧 Dashboard improvements for better analysis management
+- 🚧 E2E tests for Idea Panel user workflows
 
 ### Next Steps
 

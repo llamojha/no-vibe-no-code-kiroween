@@ -202,6 +202,10 @@ export class ServiceFactory {
       // Get user repository
       const userRepository = this.repositoryFactory!.createUserRepository();
 
+      // Create SaveAnalysisToIdeaPanelUseCase
+      const saveAnalysisToIdeaPanelUseCase =
+        this.useCaseFactory!.createSaveAnalysisToIdeaPanelUseCase();
+
       const controller = new AnalysisController(
         createAnalysisHandler,
         updateAnalysisHandler,
@@ -212,7 +216,8 @@ export class ServiceFactory {
         checkCreditsUseCase,
         getCreditBalanceUseCase,
         deductCreditUseCase,
-        userRepository
+        userRepository,
+        saveAnalysisToIdeaPanelUseCase
       );
 
       this.services.set(cacheKey, controller);
@@ -247,6 +252,10 @@ export class ServiceFactory {
       // Get user repository
       const userRepository = this.repositoryFactory!.createUserRepository();
 
+      // Create SaveAnalysisToIdeaPanelUseCase
+      const saveAnalysisToIdeaPanelUseCase =
+        this.useCaseFactory!.createSaveAnalysisToIdeaPanelUseCase();
+
       const controller = new HackathonController(
         createHackathonAnalysisHandler,
         updateHackathonAnalysisHandler,
@@ -254,7 +263,8 @@ export class ServiceFactory {
         searchHackathonAnalysesHandler,
         checkCreditsUseCase,
         deductCreditUseCase,
-        userRepository
+        userRepository,
+        saveAnalysisToIdeaPanelUseCase
       );
 
       this.services.set(cacheKey, controller);

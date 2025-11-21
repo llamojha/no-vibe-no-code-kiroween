@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverSupabase } from "@/lib/supabase/server";
-import { RepositoryFactory } from "@/src/infrastructure/factories/RepositoryFactory";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
-import { UseCaseFactory } from "@/src/infrastructure/factories/UseCaseFactory";
-import { IdeaPanelController } from "@/src/infrastructure/web/controllers/IdeaPanelController";
 
 export const runtime = "nodejs";
 
