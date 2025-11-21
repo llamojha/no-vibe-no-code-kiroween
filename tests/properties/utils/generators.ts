@@ -10,13 +10,20 @@ import {
   CreditTransaction,
   CreateCreditTransactionProps,
 } from "@/src/domain/entities/CreditTransaction";
+import { Idea, CreateIdeaProps } from "@/src/domain/entities/Idea";
+import { Document, CreateDocumentProps } from "@/src/domain/entities/Document";
 import { AnalysisId } from "@/src/domain/value-objects/AnalysisId";
 import { UserId } from "@/src/domain/value-objects/UserId";
+import { IdeaId } from "@/src/domain/value-objects/IdeaId";
+import { DocumentId } from "@/src/domain/value-objects/DocumentId";
 import { Score } from "@/src/domain/value-objects/Score";
 import { Email } from "@/src/domain/value-objects/Email";
 import { Locale } from "@/src/domain/value-objects/Locale";
 import { Category } from "@/src/domain/value-objects/Category";
 import { TransactionType } from "@/src/domain/value-objects/TransactionType";
+import { IdeaSource } from "@/src/domain/value-objects/IdeaSource";
+import { DocumentType } from "@/src/domain/value-objects/DocumentType";
+import { ProjectStatus } from "@/src/domain/value-objects/ProjectStatus";
 
 /**
  * Generate random valid AnalysisId
@@ -161,4 +168,141 @@ export function generateCreditTransaction(
  */
 export function generateMany<T>(generator: () => T, count: number = 10): T[] {
   return Array.from({ length: count }, generator);
+}
+
+/**
+ * Generate random valid IdeaId
+ */
+export function generateIdeaId(): IdeaId {
+  return IdeaId.generate();
+}
+
+/**
+ * Generate random valid DocumentId
+ */
+export function generateDocumentId(): DocumentId {
+  return DocumentId.generate();
+}
+
+/**
+ * Generate random valid IdeaSource
+ */
+export function generateIdeaSource(): IdeaSource {
+  return faker.helpers.arrayElement([
+    IdeaSource.MANUAL,
+    IdeaSource.FRANKENSTEIN,
+  ]);
+}
+
+/**
+ * Generate random valid DocumentType
+ */
+export function generateDocumentType(): DocumentType {
+  return faker.helpers.arrayElement([
+    DocumentType.STARTUP_ANALYSIS,
+    DocumentType.HACKATHON_ANALYSIS,
+  ]);
+}
+
+/**
+ * Generate random valid ProjectStatus
+ */
+export function generateProjectStatus(): ProjectStatus {
+  return faker.helpers.arrayElement([
+    ProjectStatus.IDEA,
+    ProjectStatus.IN_PROGRESS,
+    ProjectStatus.COMPLETED,
+    ProjectStatus.ARCHIVED,
+  ]);
+}
+
+/**
+ * Generate random valid Idea
+ */
+export function generateIdea(overrides?: Partial<CreateIdeaProps>): Idea {
+  const props: CreateIdeaProps = {
+    userId: generateUserId(),
+    ideaText: faker.lorem.paragraph({ min: 1, max: 3 }),
+    source: generateIdeaSource(),
+    projectStatus: generateProjectStatus(),
+    notes: faker.datatype.boolean() ? faker.lorem.paragraphs(2) : "",
+    tags: faker.datatype.boolean()
+      ? faker.helpers.arrayElements(
+          [
+            "startup",
+            "tech",
+            "mvp",
+            "saas",
+            "mobile",
+            "web",
+            "ai",
+            "blockchain",
+            "fintech",
+            "healthtech",
+          ],
+          { min: 0, max: 5 }
+        )
+      : [],
+    ...overrides,
+  };
+
+  return Idea.create(props);
+}
+
+/**
+ * Generate random valid Document
+ */
+export function generateDocument(
+  overrides?: Partial<CreateDocumentProps>
+): Document {
+  const documentType = overrides?.documentType || generateDocumentType();
+
+  // Generate appropriate content based on document type
+  let content: any;
+  if (documentType.isStartupAnalysis()) {
+    content = {
+      viability: faker.number.int({ min: 0, max: 100 }),
+      innovation: faker.number.int({ min: 0, max: 100 }),
+      market: faker.number.int({ min: 0, max: 100 }),
+      feedback: faker.lorem.paragraph(),
+      suggestions: faker.helpers.arrayElements(
+        [
+          "Focus on MVP",
+          "Validate market fit",
+          "Build prototype",
+          "Talk to customers",
+          "Refine value proposition",
+        ],
+        { min: 1, max: 3 }
+      ),
+    };
+  } else {
+    content = {
+      technical: faker.number.int({ min: 0, max: 100 }),
+      creativity: faker.number.int({ min: 0, max: 100 }),
+      impact: faker.number.int({ min: 0, max: 100 }),
+      feedback: faker.lorem.paragraph(),
+      suggestions: faker.helpers.arrayElements(
+        [
+          "Improve technical implementation",
+          "Add more features",
+          "Better UI/UX",
+          "Optimize performance",
+          "Add documentation",
+        ],
+        { min: 1, max: 3 }
+      ),
+    };
+  }
+
+  const props: CreateDocumentProps = {
+    ideaId: generateIdeaId(),
+    userId: generateUserId(),
+    documentType,
+    title: faker.datatype.boolean() ? faker.lorem.sentence() : undefined,
+    content,
+    ...overrides,
+  };
+
+  return Document.create(props);
 }

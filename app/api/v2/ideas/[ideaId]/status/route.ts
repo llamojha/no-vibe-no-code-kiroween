@@ -1,0 +1,37 @@
+import { NextRequest, NextResponse } from "next/server";
+import { serverSupabase } from "@/lib/supabase/server";
+import { RepositoryFactory } from "@/src/infrastructure/factories/RepositoryFactory";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+import { UseCaseFactory } from "@/src/infrastructure/factories/UseCaseFactory";
+import { IdeaPanelController } from "@/src/infrastructure/web/controllers/IdeaPanelController";
+
+export const runtime = "nodejs";
+
+/**
+ * Update idea status
+ * PUT /api/v2/ideas/[ideaId]/status
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { ideaId: string } }
+) {
+  try {
+    // Create fresh Supabase client for this request
+    const supabase = serverSupabase();
+
+    // Create service factory with fresh client
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+
+    // Create controller
+    const controller = serviceFactory.createIdeaPanelController();
+
+    // Delegate to controller
+    return await controller.updateStatus(request, { params });
+  } catch (error) {
+    console.error("Error in PUT /api/v2/ideas/[ideaId]/status:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

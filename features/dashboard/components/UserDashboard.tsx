@@ -5,24 +5,19 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
-import AnalysisFilter from "./AnalysisFilter";
-import AnalysisCard from "./AnalysisCard";
-import { loadUnifiedAnalyses } from "../api/loadUnifiedAnalyses";
-import type {
-  UnifiedAnalysisRecord,
-  AnalysisCounts,
-  DashboardFilterState,
-  UserTier,
-} from "@/lib/types";
+import IdeaCard from "./IdeaCard";
+import { getUserIdeas } from "@/features/idea-panel/api";
+import type { DashboardIdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import type { UserTier } from "@/lib/types";
 import { trackDashboardView } from "@/features/analytics/tracking";
 import { isEnabled } from "@/lib/featureFlags";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
 
 type SortOption = "newest" | "oldest" | "az";
+type FilterOption = "all" | "manual" | "frankenstein";
 
 interface UserDashboardProps {
-  initialAnalyses: UnifiedAnalysisRecord[];
-  initialCounts: AnalysisCounts;
+  initialIdeas: DashboardIdeaDTO[];
   sessionUserId: string;
   initialCredits: number;
   userTier: UserTier;
@@ -30,8 +25,7 @@ interface UserDashboardProps {
 }
 
 const UserDashboard: React.FC<UserDashboardProps> = ({
-  initialAnalyses,
-  initialCounts,
+  initialIdeas,
   sessionUserId,
   initialCredits,
   userTier,
@@ -39,64 +33,56 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 }) => {
   const router = useRouter();
   const { t } = useLocale();
-  const { supabase, signOut } = useAuth();
+  const { signOut } = useAuth();
 
   // Feature flag evaluations
   const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
   const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
 
-  const [analyses, setAnalyses] =
-    useState<UnifiedAnalysisRecord[]>(initialAnalyses);
-  const [counts, setCounts] = useState<AnalysisCounts>({
-    total: initialCounts.total ?? 0,
-    idea: initialCounts.idea ?? 0,
-    kiroween: initialCounts.kiroween ?? 0,
-    frankenstein: initialCounts.frankenstein ?? 0,
-  });
-  const [filterState, setFilterState] = useState<DashboardFilterState>({
+  const [ideas, setIdeas] = useState<DashboardIdeaDTO[]>(initialIdeas);
+  const [filterState, setFilterState] = useState<{
+    filter: FilterOption;
+    searchQuery: string;
+    sortOption: SortOption;
+  }>({
     filter: "all",
     searchQuery: "",
     sortOption: "newest",
   });
-  const [analysisToDelete, setAnalysisToDelete] =
-    useState<UnifiedAnalysisRecord | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const cancelButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  const refreshAnalyses = useCallback(async () => {
+  const refreshIdeas = useCallback(async () => {
     setIsRefreshing(true);
-    const { data, counts: newCounts, error } = await loadUnifiedAnalyses();
-    if (error) {
-      console.error("Error refreshing analyses", error);
-    } else {
-      setAnalyses(data);
-      setCounts(newCounts);
+    try {
+      const data = await getUserIdeas();
+      setIdeas(data);
+    } catch (error) {
+      console.error("Error refreshing ideas", error);
+    } finally {
+      setIsRefreshing(false);
     }
-    setIsRefreshing(false);
   }, []);
 
   useEffect(() => {
     trackDashboardView();
   }, []);
 
-  useEffect(() => {
-    void refreshAnalyses();
-  }, [refreshAnalyses]);
-
-  const filteredAndSortedAnalyses = useMemo(() => {
-    return analyses
-      .filter((analysis) => {
+  const filteredAndSortedIdeas = useMemo(() => {
+    return ideas
+      .filter((idea) => {
+        // Filter by source
         if (
           filterState.filter !== "all" &&
-          analysis.category !== filterState.filter
+          idea.source !== filterState.filter
         ) {
           return false;
         }
+        // Filter by search query
         if (filterState.searchQuery) {
           const query = filterState.searchQuery.toLowerCase();
           return (
-            analysis.title.toLowerCase().includes(query) ||
-            analysis.summary.toLowerCase().includes(query)
+            idea.ideaText.toLowerCase().includes(query) ||
+            idea.tags.some((tag) => tag.toLowerCase().includes(query))
           );
         }
         return true;
@@ -108,7 +94,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             );
           case "az":
-            return a.title.localeCompare(b.title);
+            return a.ideaText.localeCompare(b.ideaText);
           case "newest":
           default:
             return (
@@ -116,65 +102,16 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             );
         }
       });
-  }, [analyses, filterState]);
-
-  const handleDelete = useCallback(async () => {
-    if (!analysisToDelete || !supabase) return;
-
-    let analysisType: "idea" | "hackathon" | "frankenstein" = "idea";
-    if (analysisToDelete.category === "kiroween") {
-      analysisType = "hackathon";
-    } else if (analysisToDelete.category === "frankenstein") {
-      analysisType = "frankenstein";
-    }
-
-    const { error } = await supabase
-      .from("saved_analyses")
-      .delete()
-      .eq("id", analysisToDelete.id)
-      .eq("analysis_type", analysisType);
-
-    if (error) {
-      console.error("Failed to delete analysis", error);
-      return;
-    }
-
-    setAnalyses((prev) =>
-      prev.filter((analysis) => analysis.id !== analysisToDelete.id)
-    );
-    setCounts((prev) => ({
-      total: prev.total - 1,
-      idea: analysisToDelete.category === "idea" ? prev.idea - 1 : prev.idea,
-      kiroween:
-        analysisToDelete.category === "kiroween"
-          ? prev.kiroween - 1
-          : prev.kiroween,
-      frankenstein:
-        analysisToDelete.category === "frankenstein"
-          ? prev.frankenstein - 1
-          : prev.frankenstein,
-    }));
-    setAnalysisToDelete(null);
-  }, [analysisToDelete, supabase]);
-
-  // Focus management for delete dialog
-  useEffect(() => {
-    if (analysisToDelete && cancelButtonRef.current) {
-      cancelButtonRef.current.focus();
-    }
-  }, [analysisToDelete]);
+  }, [ideas, filterState]);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
     router.replace("/");
   }, [router, signOut]);
 
-  const handleFilterChange = useCallback(
-    (filter: "all" | "idea" | "kiroween" | "frankenstein") => {
-      setFilterState((prev) => ({ ...prev, filter }));
-    },
-    []
-  );
+  const handleFilterChange = useCallback((filter: FilterOption) => {
+    setFilterState((prev) => ({ ...prev, filter }));
+  }, []);
 
   const handleSearchChange = useCallback((searchQuery: string) => {
     setFilterState((prev) => ({ ...prev, searchQuery }));
@@ -183,6 +120,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const handleSortChange = useCallback((sortOption: SortOption) => {
     setFilterState((prev) => ({ ...prev, sortOption }));
   }, []);
+
+  // Calculate counts for filter buttons
+  const counts = useMemo(() => {
+    return {
+      total: ideas.length,
+      manual: ideas.filter((i) => i.source === "manual").length,
+      frankenstein: ideas.filter((i) => i.source === "frankenstein").length,
+    };
+  }, [ideas]);
 
   return (
     <div className="min-h-screen bg-black text-slate-200 p-4 sm:p-6 lg:p-8">
@@ -252,10 +198,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider">
-              {t("yourAnalyses")}
+              {t("yourIdeas") || "Your Ideas"}
             </h2>
             <button
-              onClick={refreshAnalyses}
+              onClick={refreshIdeas}
               disabled={isRefreshing}
               className="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-700 text-slate-300 hover:border-accent hover:text-accent transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -263,17 +209,45 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
             </button>
           </div>
 
-          <AnalysisFilter
-            currentFilter={filterState.filter}
-            onFilterChange={handleFilterChange}
-            counts={counts}
-          />
+          {/* Filter buttons */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button
+              onClick={() => handleFilterChange("all")}
+              className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider border rounded transition-colors ${
+                filterState.filter === "all"
+                  ? "border-accent text-accent bg-accent/10"
+                  : "border-slate-700 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              {t("all") || "All"} ({counts.total})
+            </button>
+            <button
+              onClick={() => handleFilterChange("manual")}
+              className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider border rounded transition-colors ${
+                filterState.filter === "manual"
+                  ? "border-blue-600 text-blue-400 bg-blue-900/20"
+                  : "border-slate-700 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              ✍️ {t("manual") || "Manual"} ({counts.manual})
+            </button>
+            <button
+              onClick={() => handleFilterChange("frankenstein")}
+              className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider border rounded transition-colors ${
+                filterState.filter === "frankenstein"
+                  ? "border-green-600 text-green-400 bg-green-900/20"
+                  : "border-slate-700 text-slate-400 hover:border-slate-600"
+              }`}
+            >
+              🧟 {t("frankenstein") || "Frankenstein"} ({counts.frankenstein})
+            </button>
+          </div>
 
-          {analyses.length > 0 && (
+          {ideas.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-grow">
-                <label htmlFor="search-analyses" className="sr-only">
-                  {t("searchAnalysesLabel")}
+                <label htmlFor="search-ideas" className="sr-only">
+                  {t("searchIdeasLabel") || "Search ideas"}
                 </label>
                 <span
                   className="absolute inset-y-0 left-0 flex items-center pl-3"
@@ -295,105 +269,53 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   </svg>
                 </span>
                 <input
-                  id="search-analyses"
+                  id="search-ideas"
                   type="text"
-                  placeholder={t("searchAnalysesPlaceholder")}
+                  placeholder={t("searchIdeasPlaceholder") || "Search ideas..."}
                   value={filterState.searchQuery}
                   onChange={(event) => handleSearchChange(event.target.value)}
-                  aria-describedby="search-help"
                   className="w-full pl-10 pr-4 py-2 bg-primary/50 border border-slate-700 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-slate-200 placeholder-slate-500 font-mono"
                 />
-                <div id="search-help" className="sr-only">
-                  {t("searchAnalysesHelp")}
-                </div>
               </div>
               <div className="flex items-center gap-2">
                 <label
-                  htmlFor="sort-analyses"
+                  htmlFor="sort-ideas"
                   className="text-sm text-slate-400 uppercase tracking-wider"
                 >
                   {t("sort")}
                 </label>
                 <select
-                  id="sort-analyses"
+                  id="sort-ideas"
                   value={filterState.sortOption}
                   onChange={(event) =>
                     handleSortChange(event.target.value as SortOption)
                   }
-                  aria-describedby="sort-help"
                   className="bg-primary/50 border border-slate-700 text-slate-200 px-3 py-2 rounded-none focus:outline-none focus:ring-2 focus:ring-accent text-sm uppercase tracking-wider"
                 >
                   <option value="newest">{t("newest")}</option>
                   <option value="oldest">{t("oldest")}</option>
                   <option value="az">{t("alphabetical")}</option>
                 </select>
-                <div id="sort-help" className="sr-only">
-                  {t("sortHelp")}
-                </div>
               </div>
             </div>
           )}
 
-          {filteredAndSortedAnalyses.length === 0 ? (
+          {/* Ideas list */}
+          {filteredAndSortedIdeas.length === 0 ? (
             <div className="bg-primary/30 border border-dashed border-slate-700 p-8 text-center text-slate-500 font-mono uppercase tracking-widest">
-              {analyses.length === 0
-                ? t("noAnalysesYet")
-                : t("noAnalysesMatch")}
+              {ideas.length === 0
+                ? t("noIdeasYet") || "No ideas yet"
+                : t("noIdeasMatch") || "No ideas match your search"}
             </div>
           ) : (
-            <div className="space-y-4" data-testid="analyses-list">
-              {filteredAndSortedAnalyses.map((analysis) => (
-                <AnalysisCard
-                  key={analysis.id}
-                  analysis={analysis}
-                  onDelete={setAnalysisToDelete}
-                />
+            <div className="space-y-4" data-testid="ideas-list">
+              {filteredAndSortedIdeas.map((idea) => (
+                <IdeaCard key={idea.id} idea={idea} />
               ))}
             </div>
           )}
         </div>
       </main>
-
-      {analysisToDelete && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fade-in"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
-          aria-describedby="delete-dialog-description"
-        >
-          <div className="bg-primary/90 border border-red-500 p-6 max-w-md w-full">
-            <h3
-              id="delete-dialog-title"
-              className="text-xl font-bold text-red-400 uppercase tracking-wider"
-            >
-              {t("deleteAnalysisTitle")}
-            </h3>
-            <p id="delete-dialog-description" className="text-slate-300 mt-4">
-              {t("deleteAnalysisConfirm", { title: analysisToDelete.title })}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                ref={cancelButtonRef}
-                onClick={() => setAnalysisToDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-800/50 border border-slate-700 rounded-none hover:bg-slate-700/50 transition-colors uppercase tracking-wider"
-                aria-label={t("cancelDeleteLabel")}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-500 rounded-none hover:bg-red-500 transition-colors uppercase tracking-wider"
-                aria-label={t("deleteAnalysisLabel", {
-                  title: analysisToDelete.title,
-                })}
-              >
-                {t("delete")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

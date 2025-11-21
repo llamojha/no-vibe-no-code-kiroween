@@ -107,3 +107,61 @@ export class InsufficientCreditsError extends DomainError {
     );
   }
 }
+
+/**
+ * Error thrown when an idea is not found
+ */
+export class IdeaNotFoundError extends DomainError {
+  readonly code = "IDEA_NOT_FOUND";
+
+  constructor(ideaId: string, cause?: Error) {
+    super(`Idea not found: ${ideaId}`, cause);
+  }
+}
+
+/**
+ * Error thrown when a document is not found
+ */
+export class DocumentNotFoundError extends DomainError {
+  readonly code = "DOCUMENT_NOT_FOUND";
+
+  constructor(documentId: string, cause?: Error) {
+    super(`Document not found: ${documentId}`, cause);
+  }
+}
+
+/**
+ * Error thrown when an invalid project status is provided
+ */
+export class InvalidProjectStatusError extends DomainError {
+  readonly code = "INVALID_PROJECT_STATUS";
+
+  constructor(status: string, cause?: Error) {
+    super(`Invalid project status: ${status}`, cause);
+  }
+}
+
+/**
+ * Error thrown when a feature is disabled
+ */
+export class FeatureDisabledError extends DomainError {
+  readonly code = "FEATURE_DISABLED";
+
+  constructor(feature: string, cause?: Error) {
+    super(`Feature is disabled: ${feature}`, cause);
+  }
+}
+
+/**
+ * Error thrown when a user attempts unauthorized access to a resource
+ */
+export class UnauthorizedAccessError extends DomainError {
+  readonly code = "UNAUTHORIZED_ACCESS";
+
+  constructor(userId: string, resourceId: string, cause?: Error) {
+    super(
+      `User ${userId} is not authorized to access resource ${resourceId}`,
+      cause
+    );
+  }
+}

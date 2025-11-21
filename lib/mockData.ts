@@ -898,6 +898,199 @@ export function generateMockHackathonAnalyses(): SavedHackathonAnalysis[] {
 }
 
 /**
+ * Generate mock ideas for the new ideas system
+ */
+export function generateMockIdeas(): Array<{
+  id: string;
+  ideaText: string;
+  source: string;
+  projectStatus: string;
+  documentCount: number;
+  createdAt: string;
+  updatedAt: string;
+  tags: string[];
+}> {
+  const mockUser = generateMockUser();
+  const baseDate = new Date("2024-10-15T00:00:00Z");
+
+  return [
+    {
+      id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      ideaText:
+        "AI-powered personal fitness coach that creates custom workout plans based on your body type, goals, and available equipment",
+      source: "manual",
+      projectStatus: "in_progress",
+      documentCount: 1,
+      createdAt: new Date(
+        baseDate.getTime() + 2 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 5 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      tags: ["fitness", "ai", "health", "mobile-app"],
+    },
+    {
+      id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      ideaText:
+        "Subscription service for locally-sourced, seasonal meal kits with zero-waste packaging",
+      source: "manual",
+      projectStatus: "idea",
+      documentCount: 1,
+      createdAt: new Date(
+        baseDate.getTime() + 5 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 5 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      tags: ["sustainability", "food", "subscription", "local"],
+    },
+    {
+      id: "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      ideaText:
+        "Mobile app that gamifies learning programming through AR coding challenges in real-world environments",
+      source: "manual",
+      projectStatus: "idea",
+      documentCount: 1,
+      createdAt: new Date(
+        baseDate.getTime() + 8 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 8 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      tags: ["education", "ar", "programming", "gamification"],
+    },
+    {
+      id: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
+      ideaText:
+        "Platform that combines AI code review with GitHub integration and team learning patterns",
+      source: "frankenstein",
+      projectStatus: "completed",
+      documentCount: 2,
+      createdAt: new Date(
+        baseDate.getTime() + 10 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 15 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      tags: ["developer-tools", "ai", "code-review", "github"],
+    },
+    {
+      id: "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b",
+      ideaText:
+        "Halloween costume recommendation engine using computer vision and AR try-on features",
+      source: "frankenstein",
+      projectStatus: "archived",
+      documentCount: 1,
+      createdAt: new Date(
+        baseDate.getTime() + 12 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 20 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      tags: ["halloween", "ar", "fashion", "computer-vision"],
+    },
+  ];
+}
+
+/**
+ * Generate mock idea panel data (idea with documents)
+ */
+export function generateMockIdeaPanel(ideaId: string) {
+  const mockIdeas = generateMockIdeas();
+  const idea = mockIdeas.find((i) => i.id === ideaId);
+
+  if (!idea) {
+    return null;
+  }
+
+  const mockUser = generateMockUser();
+  const baseDate = new Date(idea.createdAt);
+
+  // Generate mock documents based on the idea
+  const documents = [];
+
+  // Add startup analysis document for most ideas
+  if (idea.documentCount >= 1 && idea.source === "manual") {
+    documents.push({
+      id: `doc-${ideaId.substring(0, 8)}-001`,
+      ideaId: idea.id,
+      userId: mockUser.id,
+      documentType: "startup_analysis",
+      title: "Startup Analysis",
+      content: {
+        finalScore: Math.floor(Math.random() * 30) + 60, // 60-90
+        viabilitySummary: `This idea shows strong potential in the market. ${idea.ideaText.substring(
+          0,
+          100
+        )}...`,
+        scoringRubric: [
+          {
+            name: "Market Demand",
+            score: Math.floor(Math.random() * 2) + 4,
+            justification: "Strong market demand with clear user need",
+          },
+          {
+            name: "Uniqueness",
+            score: Math.floor(Math.random() * 2) + 3,
+            justification: "Differentiated approach with unique features",
+          },
+        ],
+      },
+      createdAt: new Date(
+        baseDate.getTime() + 1 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 1 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+    });
+  }
+
+  // Add hackathon analysis for frankenstein ideas
+  if (idea.source === "frankenstein") {
+    documents.push({
+      id: `doc-${ideaId.substring(0, 8)}-002`,
+      ideaId: idea.id,
+      userId: mockUser.id,
+      documentType: "hackathon_analysis",
+      title: "Hackathon Analysis",
+      content: {
+        overallScore: Math.floor(Math.random() * 20) + 70, // 70-90
+        categoryScores: {
+          technical: Math.floor(Math.random() * 2) + 4,
+          creativity: Math.floor(Math.random() * 2) + 4,
+          impact: Math.floor(Math.random() * 2) + 3,
+        },
+        detailedSummary: `Excellent hackathon project with strong technical execution. ${idea.ideaText.substring(
+          0,
+          100
+        )}...`,
+      },
+      createdAt: new Date(
+        baseDate.getTime() + 2 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      updatedAt: new Date(
+        baseDate.getTime() + 2 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+    });
+  }
+
+  return {
+    idea: {
+      id: idea.id,
+      userId: mockUser.id,
+      ideaText: idea.ideaText,
+      source: idea.source,
+      projectStatus: idea.projectStatus,
+      notes: "",
+      tags: idea.tags,
+      createdAt: idea.createdAt,
+      updatedAt: idea.updatedAt,
+    },
+    documents,
+  };
+}
+
+/**
  * Initialize local storage with mock data if empty
  */
 export async function initializeMockData(): Promise<void> {

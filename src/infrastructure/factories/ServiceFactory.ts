@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { AnalysisController } from "../web/controllers/AnalysisController";
 import { HackathonController } from "../web/controllers/HackathonController";
 import { DashboardController } from "../web/controllers/DashboardController";
+import { IdeaPanelController } from "../web/controllers/IdeaPanelController";
 
 // Import handlers
 import {
@@ -157,10 +158,16 @@ export class ServiceFactory {
       },
     });
 
+    const ideaRepository = this.repositoryFactory.createIdeaRepository();
+    const documentRepository =
+      this.repositoryFactory.createDocumentRepository();
+
     this.useCaseFactory = UseCaseFactory.create(
       analysisRepository,
       userRepository,
       creditTransactionRepository,
+      ideaRepository,
+      documentRepository,
       // aiAnalysisService, // Temporarily disabled
       notificationService,
       analysisValidationService,
@@ -286,6 +293,37 @@ export class ServiceFactory {
     }
 
     return this.services.get(cacheKey) as DashboardController;
+  }
+
+  /**
+   * Create IdeaPanelController with all dependencies
+   */
+  createIdeaPanelController(): IdeaPanelController {
+    const cacheKey = "ideaPanelController";
+
+    if (!this.services.has(cacheKey)) {
+      if (!this.useCaseFactory) {
+        throw new Error("Use case factory not initialized");
+      }
+
+      // Create use cases
+      const getIdeaWithDocumentsUseCase =
+        this.useCaseFactory.createGetIdeaWithDocumentsUseCase();
+      const updateStatusUseCase =
+        this.useCaseFactory.createUpdateIdeaStatusUseCase();
+      const saveMetadataUseCase =
+        this.useCaseFactory.createSaveIdeaMetadataUseCase();
+
+      const controller = new IdeaPanelController(
+        getIdeaWithDocumentsUseCase,
+        updateStatusUseCase,
+        saveMetadataUseCase
+      );
+
+      this.services.set(cacheKey, controller);
+    }
+
+    return this.services.get(cacheKey) as IdeaPanelController;
   }
 
   // Private methods to create handlers

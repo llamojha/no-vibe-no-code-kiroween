@@ -1,6 +1,8 @@
 import { IAnalysisRepository } from "../../domain/repositories/IAnalysisRepository";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
 import { ICreditTransactionRepository } from "../../domain/repositories/ICreditTransactionRepository";
+import { IIdeaRepository } from "../../domain/repositories/IIdeaRepository";
+import { IDocumentRepository } from "../../domain/repositories/IDocumentRepository";
 import { AnalysisValidationService } from "../../domain/services/AnalysisValidationService";
 import { ScoreCalculationService } from "../../domain/services/ScoreCalculationService";
 import { HackathonAnalysisService } from "../../domain/services/HackathonAnalysisService";
@@ -23,6 +25,11 @@ import { CheckCreditsUseCase } from "../../application/use-cases/CheckCreditsUse
 import { DeductCreditUseCase } from "../../application/use-cases/DeductCreditUseCase";
 import { GetCreditBalanceUseCase } from "../../application/use-cases/GetCreditBalanceUseCase";
 import { AddCreditsUseCase } from "../../application/use-cases/AddCreditsUseCase";
+import { GetIdeaWithDocumentsUseCase } from "../../application/use-cases/GetIdeaWithDocumentsUseCase";
+import { UpdateIdeaStatusUseCase } from "../../application/use-cases/UpdateIdeaStatusUseCase";
+import { SaveIdeaMetadataUseCase } from "../../application/use-cases/SaveIdeaMetadataUseCase";
+import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUseCase";
+import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
 
 /**
  * Factory for creating use case instances with proper dependency composition
@@ -44,6 +51,8 @@ export class UseCaseFactory {
     private readonly analysisRepository: IAnalysisRepository,
     private readonly userRepository: IUserRepository,
     private readonly creditTransactionRepository: ICreditTransactionRepository,
+    private readonly ideaRepository: IIdeaRepository,
+    private readonly documentRepository: IDocumentRepository,
     // private readonly aiAnalysisService: IAIAnalysisService, // Temporarily disabled
     private readonly notificationService: INotificationService,
     private readonly analysisValidationService: AnalysisValidationService,
@@ -73,6 +82,8 @@ export class UseCaseFactory {
     analysisRepository: IAnalysisRepository,
     userRepository: IUserRepository,
     creditTransactionRepository: ICreditTransactionRepository,
+    ideaRepository: IIdeaRepository,
+    documentRepository: IDocumentRepository,
     // aiAnalysisService: IAIAnalysisService, // Temporarily disabled
     notificationService: INotificationService,
     analysisValidationService: AnalysisValidationService,
@@ -83,6 +94,8 @@ export class UseCaseFactory {
       analysisRepository,
       userRepository,
       creditTransactionRepository,
+      ideaRepository,
+      documentRepository,
       // aiAnalysisService, // Temporarily disabled
       notificationService,
       analysisValidationService,
@@ -100,6 +113,8 @@ export class UseCaseFactory {
     analysisRepository: IAnalysisRepository,
     userRepository: IUserRepository,
     creditTransactionRepository: ICreditTransactionRepository,
+    ideaRepository: IIdeaRepository,
+    documentRepository: IDocumentRepository,
     // aiAnalysisService: IAIAnalysisService, // Temporarily disabled
     notificationService: INotificationService,
     analysisValidationService: AnalysisValidationService,
@@ -110,6 +125,8 @@ export class UseCaseFactory {
       analysisRepository,
       userRepository,
       creditTransactionRepository,
+      ideaRepository,
+      documentRepository,
       notificationService,
       analysisValidationService,
       scoreCalculationService,
@@ -333,6 +350,85 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as AddCreditsUseCase;
+  }
+
+  /**
+   * Create GetIdeaWithDocumentsUseCase with dependencies
+   */
+  createGetIdeaWithDocumentsUseCase(): GetIdeaWithDocumentsUseCase {
+    const cacheKey = "getIdeaWithDocumentsUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new GetIdeaWithDocumentsUseCase(
+        this.ideaRepository,
+        this.documentRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GetIdeaWithDocumentsUseCase;
+  }
+
+  /**
+   * Create UpdateIdeaStatusUseCase with dependencies
+   */
+  createUpdateIdeaStatusUseCase(): UpdateIdeaStatusUseCase {
+    const cacheKey = "updateIdeaStatusUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new UpdateIdeaStatusUseCase(this.ideaRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as UpdateIdeaStatusUseCase;
+  }
+
+  /**
+   * Create SaveIdeaMetadataUseCase with dependencies
+   */
+  createSaveIdeaMetadataUseCase(): SaveIdeaMetadataUseCase {
+    const cacheKey = "saveIdeaMetadataUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new SaveIdeaMetadataUseCase(this.ideaRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as SaveIdeaMetadataUseCase;
+  }
+
+  /**
+   * Create GetUserIdeasUseCase with dependencies
+   */
+  createGetUserIdeasUseCase(): GetUserIdeasUseCase {
+    const cacheKey = "getUserIdeasUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new GetUserIdeasUseCase(
+        this.ideaRepository,
+        this.documentRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GetUserIdeasUseCase;
+  }
+
+  /**
+   * Create GetDocumentsByIdeaUseCase with dependencies
+   */
+  createGetDocumentsByIdeaUseCase(): GetDocumentsByIdeaUseCase {
+    const cacheKey = "getDocumentsByIdeaUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new GetDocumentsByIdeaUseCase(
+        this.documentRepository,
+        this.ideaRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GetDocumentsByIdeaUseCase;
   }
 
   /**

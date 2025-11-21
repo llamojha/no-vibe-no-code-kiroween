@@ -12,8 +12,8 @@ describe("CreditPolicy", () => {
   });
 
   describe("getDefaultCredits", () => {
-    it("should return 3 as default credits", () => {
-      expect(creditPolicy.getDefaultCredits()).toBe(3);
+    it("should return 5 as default credits", () => {
+      expect(creditPolicy.getDefaultCredits()).toBe(5);
     });
   });
 
@@ -140,7 +140,7 @@ describe("CreditPolicy", () => {
       );
 
       const numberOfAnalyses = Math.floor(defaultCredits / analysisCost);
-      expect(numberOfAnalyses).toBeGreaterThanOrEqual(3);
+      expect(numberOfAnalyses).toBeGreaterThanOrEqual(5);
     });
   });
 
