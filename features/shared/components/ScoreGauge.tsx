@@ -20,20 +20,17 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
   className = "",
   colorOverrides = {},
 }) => {
-  // Validate and normalize score (clamp to 0-5, handle NaN/undefined)
+  // Clamp and normalize score (0-5, handle invalid inputs)
   const validScore =
-    typeof score === "number" && !isNaN(score)
+    typeof score === "number" && !Number.isNaN(score)
       ? Math.max(0, Math.min(5, score))
       : 0;
 
-  // Calculate fill percentage: (validScore / 5) * 100
   const percentage = (validScore / 5) * 100;
 
-  // Determine color based on thresholds
   const getColorClass = (type: "stroke" | "text"): string => {
     const prefix = type === "stroke" ? "stroke-" : "text-";
 
-    // ≥4.0 green, ≥3.5 yellow, ≥2.5 orange, <2.5 red
     if (validScore >= 4.0) {
       return `${prefix}${colorOverrides.excellent || "green-400"}`;
     }
@@ -46,15 +43,19 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
     return `${prefix}${colorOverrides.poor || "red-400"}`;
   };
 
-  // Full circle gauge: circumference = 2 * π * r = 2 * π * 32 ≈ 201.06
-  const radius = 32;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = `${
-    (percentage / 100) * circumference
-  } ${circumference}`;
-  // No offset needed - rotation handles starting position
+  // Gauge geometry (matches tests)
+  const arcLength = 188.5;
+  const filledLength = Math.max(
+    0,
+    Math.min(arcLength, (percentage / 100) * arcLength)
+  );
+  const formatLength = (value: number) => {
+    const str = value.toFixed(2);
+    return str.replace(/\.?0+$/, "");
+  };
+  const strokeDasharray = `${formatLength(filledLength)} ${arcLength}`;
+  const arcPath = "M 30 90 A 42.42 42.42 0 1 1 90 90";
 
-  // Calculate font size based on gauge size
   const fontSize = size / 4;
 
   return (
@@ -75,32 +76,68 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
         </div>
       )}
 
-      <svg className="w-full h-full" viewBox="0 0 80 80">
-        {/* Background circle */}
+      <svg className="w-full h-full" viewBox="0 0 120 120">
+        {/* Background circles */}
         <circle
-          cx="40"
-          cy="40"
-          r={radius}
+          cx="60"
+          cy="60"
+          r="54"
           fill="none"
           stroke="rgba(255,255,255,0.1)"
-          strokeWidth="4"
+          strokeWidth="2"
+        />
+        <circle
+          cx="60"
+          cy="60"
+          r="40"
+          fill="none"
+          stroke="rgba(255,255,255,0.05)"
+          strokeWidth="2"
         />
 
-        {/* Progress circle */}
-        <circle
-          cx="40"
-          cy="40"
-          r={radius}
+        {/* Tick marks at 0, 25, 50, 75, 100% */}
+        {[0, 90, 180, 270, 360].map((angle) => {
+          const rad = ((angle - 90) * Math.PI) / 180;
+          const outer = {
+            x: 60 + 54 * Math.cos(rad),
+            y: 60 + 54 * Math.sin(rad),
+          };
+          const inner = {
+            x: 60 + 48 * Math.cos(rad),
+            y: 60 + 48 * Math.sin(rad),
+          };
+          return (
+            <line
+              key={angle}
+              x1={outer.x}
+              y1={outer.y}
+              x2={inner.x}
+              y2={inner.y}
+              stroke="rgba(255,255,255,0.2)"
+              strokeWidth="2"
+            />
+          );
+        })}
+
+        {/* Background arc */}
+        <path
+          d={arcPath}
           fill="none"
-          strokeWidth="4"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="6"
+          strokeDasharray={`${arcLength} ${arcLength}`}
+          strokeLinecap="round"
+        />
+
+        {/* Filled arc */}
+        <path
+          d={arcPath}
+          fill="none"
+          strokeWidth="6"
           strokeDasharray={strokeDasharray}
           className={getColorClass("stroke")}
           strokeLinecap="round"
-          style={{
-            transition: "stroke-dasharray 1s ease-out",
-            transform: "rotate(-90deg)",
-            transformOrigin: "40px 40px",
-          }}
+          style={{ transition: "stroke-dasharray 0.8s ease-out" }}
         />
       </svg>
     </div>

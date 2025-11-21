@@ -199,9 +199,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           <div className="flex justify-between items-center mb-4">
             <h2
               className="text-2xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider"
-              data-testid="analyses-heading"
+              data-testid="ideas-heading"
             >
-              {t("yourAnalyses") || "Your Analyses"}
+              {t("yourIdeas") || "Your Ideas"}
             </h2>
             <button
               onClick={refreshIdeas}
@@ -242,7 +242,8 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
                   : "border-slate-700 text-slate-400 hover:border-slate-600"
               }`}
             >
-              🧟 {t("frankensteinAnalyses") || "Frankenstein Analyses"} ({counts.frankenstein})
+              🧟 {t("frankensteinAnalyses") || "Frankenstein Analyses"} (
+              {counts.frankenstein})
             </button>
           </div>
 
@@ -310,11 +311,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               data-testid="empty-state"
             >
               {ideas.length === 0
-                ? t("noAnalysesYet") || "No analyses yet"
-                : t("noAnalysesMatch") || "No analyses match your search"}
+                ? t("noIdeasYet") || "No ideas yet"
+                : t("noIdeasMatch") || "No ideas match your search"}
             </div>
           ) : (
-            <div className="space-y-4" data-testid="analyses-list">
+            <div className="space-y-4" data-testid="ideas-list">
               {filteredAndSortedIdeas.map((idea) => (
                 <IdeaCard key={idea.id} idea={idea} />
               ))}
