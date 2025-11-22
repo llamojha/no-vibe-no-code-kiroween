@@ -78,6 +78,7 @@
   "reportSavedMessage": "Report Saved",
   "reportAutoSavedMessage": "Auto-Saved",
   "goToDashboardButton": "Go to Dashboard",
+  "goToIdeaPanelButton": "Go to Idea Panel",
   "searchPlaceholder": "Search by idea name...",
   "sortLabel": "Sort by:",
   "sortNewest": "Newest First",

@@ -86,25 +86,10 @@ export class ProjectStatus {
 
   /**
    * Check if status transition is valid
-   * Business rule: Can only move forward in workflow or archive from any state
+   * Business rule: Allow any status transition (users have full control)
    */
   canTransitionTo(newStatus: ProjectStatus): boolean {
-    // Can always archive from any state
-    if (newStatus.isArchived()) {
-      return true;
-    }
-
-    // Cannot transition from archived to any other state
-    if (this.isArchived()) {
-      return false;
-    }
-
-    // Can move forward in the workflow
-    const statusOrder = ["idea", "in_progress", "completed"];
-    const currentIndex = statusOrder.indexOf(this._value);
-    const newIndex = statusOrder.indexOf(newStatus._value);
-
-    // Allow moving forward or staying in the same state
-    return newIndex >= currentIndex;
+    // Allow any status transition
+    return true;
   }
 }

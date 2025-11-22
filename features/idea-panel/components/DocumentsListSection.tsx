@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
+import { isEnabled } from "@/lib/featureFlags";
 import type { DocumentDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
 import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 import { trackDocumentView } from "@/features/idea-panel/analytics/tracking";
@@ -50,10 +52,15 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
   documents,
   ideaId,
 }) => {
+  const router = useRouter();
   const { t, locale } = useLocale();
   const [expandedDocuments, setExpandedDocuments] = useState<Set<string>>(
     new Set()
   );
+
+  // Feature flag evaluations
+  const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
+  const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
 
   const toggleDocument = (documentId: string, documentType: string) => {
     const isExpanding = !expandedDocuments.has(documentId);
@@ -404,6 +411,94 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
                       </p>
                     </div>
                   )}
+
+                  {/* Action buttons */}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        if (document.documentType === "startup_analysis") {
+                          router.push(
+                            `/analyzer?savedId=${encodeURIComponent(
+                              document.id
+                            )}&mode=view`
+                          );
+                        } else if (
+                          document.documentType === "hackathon_analysis"
+                        ) {
+                          router.push(
+                            `/kiroween-analyzer?savedId=${encodeURIComponent(
+                              document.id
+                            )}&mode=view`
+                          );
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors rounded-none uppercase tracking-wider text-sm"
+                      aria-label={
+                        t("viewDocumentButton") || "View full analysis"
+                      }
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path
+                          fillRule="evenodd"
+                          d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>{t("view") || "View"}</span>
+                    </button>
+
+                    {((document.documentType === "startup_analysis" &&
+                      showClassicAnalyzer) ||
+                      (document.documentType === "hackathon_analysis" &&
+                        showKiroweenAnalyzer)) && (
+                      <button
+                        onClick={() => {
+                          if (document.documentType === "startup_analysis") {
+                            router.push(
+                              `/analyzer?savedId=${encodeURIComponent(
+                                document.id
+                              )}&mode=refine`
+                            );
+                          } else if (
+                            document.documentType === "hackathon_analysis"
+                          ) {
+                            router.push(
+                              `/kiroween-analyzer?savedId=${encodeURIComponent(
+                                document.id
+                              )}&mode=refine`
+                            );
+                          }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary/40 border border-slate-700 text-slate-300 hover:bg-secondary/20 hover:text-secondary hover:border-secondary transition-colors rounded-none uppercase tracking-wider text-sm"
+                        aria-label={
+                          t("editDocumentButton") || "Edit and refine analysis"
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                          <path
+                            fillRule="evenodd"
+                            d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>{t("edit") || "Edit"}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

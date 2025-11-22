@@ -227,8 +227,12 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
   }, [isLoading, loadingMessages]);
 
   const handleBack = useCallback(() => {
-    router.push("/dashboard");
-  }, [router]);
+    if (ideaId) {
+      router.push(`/idea/${ideaId}`);
+    } else {
+      router.push("/dashboard");
+    }
+  }, [router, ideaId]);
 
   const handleAnalyze = useCallback(async () => {
     if (!submission.description.trim()) {
@@ -851,6 +855,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
                 savedAudioBase64={generatedAudio}
                 onAudioGenerated={handleAudioGenerated}
                 onGoToDashboard={handleBack}
+                ideaId={ideaId}
                 onRefineSuggestion={
                   showInputForm ? handleRefineSuggestion : undefined
                 }
