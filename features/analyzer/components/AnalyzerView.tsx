@@ -74,6 +74,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   const [credits, setCredits] = useState<number>(initialCredits);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const savedRecordId = savedAnalysisRecord?.id ?? null;
   const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
 
@@ -151,9 +152,40 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
     const fetchSavedAnalysis = async () => {
       setIsFetchingSaved(true);
+      setLoadError(null);
+
       try {
-        // Use the new load function that handles both local dev mode and production
-        const { data: record, error } = await loadAnalysis(savedId);
+        // Try loading from new documents table first
+        let record: SavedAnalysisRecord | null = null;
+        let error: string | null = null;
+
+        try {
+          const { getDocumentById } = await import("@/features/idea-panel/api");
+          const document = await getDocumentById(savedId);
+
+          if (document.documentType === "startup_analysis") {
+            // Convert document to SavedAnalysisRecord format
+            record = {
+              id: document.id,
+              userId: document.userId,
+              idea: "", // Will be in analysis content
+              analysis: document.content,
+              audioBase64: null,
+              createdAt: document.createdAt,
+              analysisType: "idea",
+            };
+          } else {
+            error = "This document is not a startup analysis";
+          }
+        } catch (docError) {
+          // If document not found in new table, try old saved_analyses table
+          console.log(
+            "Document not found in new table, trying legacy table..."
+          );
+          const legacyResult = await loadAnalysis(savedId);
+          record = legacyResult.data;
+          error = legacyResult.error;
+        }
 
         if (error || !record) {
           console.error("Failed to load saved analysis", error);
@@ -161,7 +193,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           setIdea("");
           setIsReportSaved(false);
           setGeneratedAudio(null);
-          if (error !== "Analysis not found") {
+          setLoadError(
+            error || "Unable to load the report. It may have been removed."
+          );
+          if (
+            error !== "Analysis not found" &&
+            error !== "Document not found"
+          ) {
             setError(
               "Unable to load the saved analysis. It may have been removed."
             );
@@ -170,12 +208,19 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
         }
 
         setSavedAnalysisRecord(record);
-        setIdea(record.idea);
+        setIdea(record.idea || "");
         setIsReportSaved(true);
         setNewAnalysis(null);
         setAddedSuggestions([]);
         setGeneratedAudio(record.audioBase64 ?? null);
         setError(null);
+        setLoadError(null);
+      } catch (err) {
+        console.error("Error fetching saved analysis:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load saved analysis";
+        setError(errorMessage);
+        setLoadError(errorMessage);
       } finally {
         setIsFetchingSaved(false);
       }
@@ -654,6 +699,45 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             {t("appTitle")}
           </h1>
           <p className="mt-2 text-lg text-slate-400">{t("appSubtitle")}</p>
+
+          {/* Load Error Notification */}
+          {loadError && (
+            <div role="alert" aria-live="assertive" className="mt-6">
+              <div className="bg-red-900/30 border border-red-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-red-400 font-semibold mb-1">
+                      {locale === "es"
+                        ? "Error al cargar el reporte"
+                        : "Error Loading Report"}
+                    </h3>
+                    <p className="text-red-300 text-sm mb-3">{loadError}</p>
+                    <button
+                      onClick={() => router.push("/dashboard")}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      {locale === "es"
+                        ? "Volver al Dashboard"
+                        : "Back to Dashboard"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Frankenstein Origin Badge */}
           {sourceFromUrl === "frankenstein" && !savedId && (

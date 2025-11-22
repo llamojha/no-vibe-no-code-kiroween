@@ -285,15 +285,26 @@
 
 - [x] 11. Implement feature layer - UI components (Metadata management)
 
-  - [x] 11.1 Create NotesSection component
+  - [x] 11.1 Create useAutoSave custom hook
+
+    - Implement debounced save with 1 second delay
+    - Track save status (idle, saving, saved, error)
+    - Return save status and manual save function
+    - Handle cleanup on unmount
+    - _Requirements: 4.2, 4.3, 4.4, 4.5_
+
+  - [x] 11.2 Create NotesSection component
 
     - Display notes textarea
-    - Enable save button on edit
+    - Use useAutoSave hook for auto-save functionality
+    - Display saving indicator during save
+    - Display "Saved" indicator on success
+    - Display error message on failure with manual retry option
     - Handle save action
     - Display previously saved notes
-    - _Requirements: 4.1, 4.2, 4.5_
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
-  - [x] 11.2 Create TagsSection component
+  - [x] 11.3 Create TagsSection component
     - Display tags list
     - Provide add tag input
     - Provide remove tag buttons
