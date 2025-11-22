@@ -107,7 +107,11 @@ export default async function DashboardPage() {
     } else if (ideasData) {
       // Map to DashboardIdeaDTO
       initialIdeas = (ideasData as IdeaWithDocumentCount[]).map((idea) => {
-        // Supabase returns documents count in different formats depending on the query
+        // Supabase returns documents count in different formats depending on the query.
+        // IMPORTANT: when the query includes `documents(count)` it returns an array
+        // with a single `{ count }` object—not the actual documents. Using `.length`
+        // here will always report 1 when documents exist. We should read the count
+        // field instead.
         let documentCount = 0;
         if (Array.isArray(idea.documents)) {
           documentCount = idea.documents.length;

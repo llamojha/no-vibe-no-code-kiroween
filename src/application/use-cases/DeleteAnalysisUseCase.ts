@@ -108,6 +108,10 @@ export class DeleteAnalysisUseCase {
               };
               return success(output);
             }
+
+            // Explicitly propagate errors coming from the document delete operation so the
+            // legacy path is not taken and callers receive the real failure.
+            return failure(deleteResult.error);
           }
         } catch (error) {
           logger.debug(
