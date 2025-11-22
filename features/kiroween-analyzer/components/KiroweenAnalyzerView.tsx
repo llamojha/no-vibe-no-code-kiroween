@@ -176,15 +176,17 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
           if (document.documentType === "hackathon_analysis") {
             // Convert document to SavedHackathonAnalysis format
+            const content = document.content as any;
+            const projectDescription =
+              content.projectDescription || content.description || "";
             data = {
               id: document.id,
               userId: document.userId,
-              idea: "", // Not needed for view mode
-              projectDescription: "", // Will be in analysis content
-              analysis: document.content,
+              projectDescription,
+              analysis: content.analysis || content,
               createdAt: document.createdAt,
-              updatedAt: document.updatedAt,
-              supportingMaterials: document.content.supportingMaterials || {},
+              audioBase64: null,
+              supportingMaterials: content.supportingMaterials || {},
             };
           } else {
             error = "This document is not a hackathon analysis";

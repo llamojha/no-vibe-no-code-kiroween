@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { NextJSBootstrap } from "@/src/infrastructure/bootstrap/nextjs";
-import { DocumentId } from "@/src/domain/value-objects";
+import { DocumentId, UserId } from "@/src/domain/value-objects";
 
 /**
  * GET /api/v2/documents/[documentId]
@@ -20,8 +20,8 @@ export async function GET(
       .createDocumentRepository();
 
     // Get authenticated user
-    const { createServerClient } = await import("@/lib/supabase/server");
-    const supabase = createServerClient();
+    const { serverSupabase } = await import("@/lib/supabase/server");
+    const supabase = serverSupabase();
     const {
       data: { user },
       error: authError,
@@ -36,7 +36,8 @@ export async function GET(
 
     // Load document
     const documentId = DocumentId.fromString(params.documentId);
-    const result = await documentRepository.findById(documentId, user.id);
+    const userId = UserId.fromString(user.id);
+    const result = await documentRepository.findById(documentId, userId);
 
     if (!result.success || !result.data) {
       return NextResponse.json(

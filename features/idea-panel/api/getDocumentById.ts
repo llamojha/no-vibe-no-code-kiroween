@@ -1,4 +1,4 @@
-import type { DocumentDTO } from "@/src/infrastructure/web/dto/DocumentDTO";
+import type { DocumentDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
 
 /**
  * Fetches a single document by ID from the documents table.
