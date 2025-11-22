@@ -16,8 +16,11 @@ export class InMemoryCache implements ICache {
   private cache = new Map<string, CacheEntry<unknown>>();
   private cleanupInterval: NodeJS.Timeout | null = null;
   private readonly CLEANUP_INTERVAL_MS = 60000; // Run cleanup every 60 seconds
+  private static caches = new Set<InMemoryCache>();
+  private static beforeExitHandlerRegistered = false;
 
   constructor() {
+    InMemoryCache.caches.add(this);
     this.startCleanup();
   }
 
@@ -90,7 +93,10 @@ export class InMemoryCache implements ICache {
 
     // Ensure cleanup stops when process exits
     if (typeof process !== "undefined") {
-      process.on("beforeExit", () => this.stopCleanup());
+      if (!InMemoryCache.beforeExitHandlerRegistered) {
+        process.on("beforeExit", InMemoryCache.handleBeforeExit);
+        InMemoryCache.beforeExitHandlerRegistered = true;
+      }
     }
   }
 
@@ -102,6 +108,14 @@ export class InMemoryCache implements ICache {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
+    }
+    InMemoryCache.caches.delete(this);
+  }
+
+  private static handleBeforeExit(): void {
+    const caches = Array.from(InMemoryCache.caches);
+    for (const cache of caches) {
+      cache.stopCleanup();
     }
   }
 
