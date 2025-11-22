@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { serverSupabase } from "@/lib/supabase/server";
 import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
 import { Idea } from "@/src/domain/entities/Idea";
-import { Document } from "@/src/domain/entities/Document";
+import { Document, DocumentContent } from "@/src/domain/entities/Document";
 import {
   IdeaId,
   UserId,
@@ -106,9 +106,13 @@ export async function POST(request: NextRequest) {
       idea = saveIdeaResult.data;
     }
 
-    // Create document linked to idea
+    // Create document linked to idea. Normalize the hackathon analysis payload so
+    // that the fields expected by Document.validateHackathonAnalysisContent live
+    // at the top level instead of nested inside `analysis`.
+    const normalizedAnalysisContent = normalizeHackathonDocumentContent(analysis);
+
     const documentContent = {
-      analysis,
+      ...normalizedAnalysisContent,
       projectDescription,
       supportingMaterials: supportingMaterials || {},
       audioBase64: audioBase64 || null,
@@ -167,4 +171,36 @@ export async function POST(request: NextRequest) {
         : "Failed to save hackathon analysis.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+function normalizeHackathonDocumentContent(
+  content: unknown
+): DocumentContent {
+  let normalized: unknown = content;
+
+  if (
+    normalized &&
+    typeof normalized === "object" &&
+    "success" in normalized &&
+    "data" in normalized &&
+    (normalized as { data?: unknown }).data
+  ) {
+    normalized = (normalized as { data: unknown }).data;
+  }
+
+  if (
+    normalized &&
+    typeof normalized === "object" &&
+    "analysis" in normalized &&
+    (normalized as { analysis?: unknown }).analysis &&
+    typeof (normalized as { analysis?: unknown }).analysis === "object"
+  ) {
+    return (normalized as { analysis: DocumentContent }).analysis;
+  }
+
+  if (normalized && typeof normalized === "object") {
+    return normalized as DocumentContent;
+  }
+
+  return {};
 }

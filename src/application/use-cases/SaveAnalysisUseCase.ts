@@ -301,17 +301,10 @@ export class SaveAnalysisUseCase {
           updatedAt: new Date(), // Update timestamp
         });
 
-        // Delete old document and save new one (since there's no update method)
-        const deleteResult = await this.documentRepository.delete(
-          documentId,
-          input.userId
-        );
-
-        if (!deleteResult.success) {
-          return failure(deleteResult.error);
-        }
-
-        saveResult = await this.documentRepository.save(updatedDocument);
+        // Update the document in place to avoid a window where the analysis is deleted
+        // before the updated version is persisted. The repository exposes an `update`
+        // method, which keeps the row intact and will return failure without data loss.
+        saveResult = await this.documentRepository.update(updatedDocument);
       }
 
       if (!saveResult.success) {
