@@ -943,6 +943,82 @@ End-to-end tests using Playwright will verify user workflows:
 - Implement optimistic UI updates for better perceived performance
 - Cache idea and document data in client-side state management
 - Lazy load heavy components
+- Implement debounced auto-save for notes (1 second delay)
+- Show save status indicators (saving, saved, error)
+
+### Auto-Save Implementation
+
+#### useAutoSave Custom Hook
+
+```typescript
+interface UseAutoSaveOptions<T> {
+  value: T;
+  onSave: (value: T) => Promise<void>;
+  delay?: number; // Default: 1000ms
+}
+
+interface UseAutoSaveReturn {
+  status: "idle" | "saving" | "saved" | "error";
+  error: Error | null;
+  saveNow: () => Promise<void>;
+}
+
+function useAutoSave<T>(options: UseAutoSaveOptions<T>): UseAutoSaveReturn;
+```
+
+**Implementation Details:**
+
+- Use `useEffect` to watch value changes
+- Use `setTimeout` for debouncing (clear on value change)
+- Track save status in state (`idle`, `saving`, `saved`, `error`)
+- Auto-reset "saved" status after 2 seconds
+- Handle errors and expose manual save function
+- Clean up timers on unmount
+- Skip save if value hasn't changed from initial value
+
+**Behavior:**
+
+1. User types in notes field
+2. After 1 second of inactivity, auto-save triggers
+3. Status changes: `idle` → `saving` → `saved` (or `error`)
+4. "Saved" indicator shows for 2 seconds, then returns to `idle`
+5. If error occurs, show error message with manual retry button
+
+#### NotesSection Component
+
+```typescript
+interface NotesSectionProps {
+  ideaId: string;
+  initialNotes: string;
+  onNotesChange?: (notes: string) => void;
+}
+
+function NotesSection({
+  ideaId,
+  initialNotes,
+  onNotesChange,
+}: NotesSectionProps): JSX.Element;
+```
+
+**Implementation Details:**
+
+- Use `useAutoSave` hook with 1 second delay
+- Display status indicators:
+  - `idle`: No indicator
+  - `saving`: Spinner + "Saving..."
+  - `saved`: Checkmark + "Saved"
+  - `error`: Error icon + error message + "Retry" button
+- Textarea with proper ARIA labels and live region for status
+- Character count indicator (optional)
+- Responsive sizing for mobile
+- Keyboard accessible with focus management
+
+**Status Indicator Positioning:**
+
+- Position in top-right corner of notes section
+- Use subtle colors (gray for saving, green for saved, red for error)
+- Animate transitions between states
+- Ensure sufficient color contrast for accessibility
 
 ### Caching Strategy
 

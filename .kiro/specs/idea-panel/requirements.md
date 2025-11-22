@@ -72,10 +72,13 @@ This MVP focuses on:
 #### Acceptance Criteria
 
 1. WHEN the Idea Panel displays THEN the System SHALL show a notes section
-2. WHEN a user adds or edits notes THEN the System SHALL enable a save button
-3. WHEN a user saves notes THEN the System SHALL persist the notes to the ideas.notes field
-4. WHEN a user saves notes THEN the System SHALL update the last modified timestamp (via database trigger)
-5. WHEN the panel loads THEN the System SHALL display any previously saved notes
+2. WHEN a user types in the notes field THEN the System SHALL automatically save the notes after 1 second of inactivity
+3. WHEN notes are being saved THEN the System SHALL display a saving indicator
+4. WHEN notes are successfully saved THEN the System SHALL display a "Saved" indicator
+5. WHEN notes fail to save THEN the System SHALL display an error message and allow manual retry
+6. WHEN a user saves notes THEN the System SHALL persist the notes to the ideas.notes field
+7. WHEN a user saves notes THEN the System SHALL update the last modified timestamp (via database trigger)
+8. WHEN the panel loads THEN the System SHALL display any previously saved notes
 
 ### Requirement 5
 

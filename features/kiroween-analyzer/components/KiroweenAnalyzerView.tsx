@@ -131,9 +131,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     }
   }, [prefilledIdea, savedId]);
 
+  // State for error handling
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!savedId) {
       setSavedAnalysisRecord(null);
+      setLoadError(null);
       // Don't reset if we have an idea from Frankenstein
       if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
         setSubmission({
@@ -159,8 +163,43 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
     const fetchSavedAnalysis = async () => {
       setIsFetchingSaved(true);
+      setLoadError(null);
+
       try {
-        const { data, error } = await loadHackathonAnalysis(savedId);
+        // Try loading from new documents table first
+        let data: SavedHackathonAnalysis | null = null;
+        let error: string | null = null;
+
+        try {
+          const { getDocumentById } = await import("@/features/idea-panel/api");
+          const document = await getDocumentById(savedId);
+
+          if (document.documentType === "hackathon_analysis") {
+            // Convert document to SavedHackathonAnalysis format
+            const content = document.content as any;
+            const projectDescription =
+              content.projectDescription || content.description || "";
+            data = {
+              id: document.id,
+              userId: document.userId,
+              projectDescription,
+              analysis: content.analysis || content,
+              createdAt: document.createdAt,
+              audioBase64: null,
+              supportingMaterials: content.supportingMaterials || {},
+            };
+          } else {
+            error = "This document is not a hackathon analysis";
+          }
+        } catch (docError) {
+          // If document not found in new table, try old saved_analyses table
+          console.log(
+            "Document not found in new table, trying legacy table..."
+          );
+          const legacyResult = await loadHackathonAnalysis(savedId);
+          data = legacyResult.data;
+          error = legacyResult.error;
+        }
 
         if (error || !data) {
           console.error("Failed to load saved hackathon analysis", error);
@@ -171,7 +210,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           });
           setIsReportSaved(false);
           setGeneratedAudio(null);
-          if (error !== "Analysis not found") {
+          setLoadError(
+            error || "Unable to load the report. It may have been removed."
+          );
+          if (
+            error !== "Analysis not found" &&
+            error !== "Document not found"
+          ) {
             setError(
               error ||
                 "Unable to load the saved analysis. It may have been removed."
@@ -182,7 +227,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
         setSavedAnalysisRecord(data);
         setSubmission({
-          description: data.projectDescription,
+          description: data.projectDescription || "",
           supportingMaterials: data.supportingMaterials || {},
         });
         setIsReportSaved(true);
@@ -190,9 +235,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         setAddedSuggestions([]);
         setGeneratedAudio(data.audioBase64 ?? null);
         setError(null);
+        setLoadError(null);
       } catch (err) {
         console.error("Error fetching saved analysis:", err);
-        setError("Failed to load saved analysis");
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load saved analysis";
+        setError(errorMessage);
+        setLoadError(errorMessage);
       } finally {
         setIsFetchingSaved(false);
       }
@@ -699,6 +748,45 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           <p className="mt-2 text-lg text-slate-400">
             {t("kiroweenAnalyzerSubtitle")}
           </p>
+
+          {/* Load Error Notification */}
+          {loadError && (
+            <div role="alert" aria-live="assertive" className="mt-6">
+              <div className="bg-red-900/30 border border-red-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-red-400 font-semibold mb-1">
+                      {locale === "es"
+                        ? "Error al cargar el reporte"
+                        : "Error Loading Report"}
+                    </h3>
+                    <p className="text-red-300 text-sm mb-3">{loadError}</p>
+                    <button
+                      onClick={() => router.push("/dashboard")}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      {locale === "es"
+                        ? "Volver al Dashboard"
+                        : "Back to Dashboard"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Frankenstein Origin Badge */}
           {sourceFromUrl === "frankenstein" && !savedId && (
