@@ -19,6 +19,7 @@ interface HackathonAnalysisDisplayProps {
   savedAudioBase64?: string | null;
   onAudioGenerated?: (audio: string) => void;
   onGoToDashboard: () => void;
+  ideaId?: string;
   onRefineSuggestion?: (
     suggestionText: string,
     suggestionTitle: string,
@@ -34,6 +35,7 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
   savedAudioBase64,
   onAudioGenerated,
   onGoToDashboard,
+  ideaId,
   onRefineSuggestion,
   addedSuggestions,
 }) => {
@@ -544,8 +546,35 @@ const HackathonAnalysisDisplay: React.FC<HackathonAnalysisDisplayProps> = ({
                 <span>{shareSuccess ? t("linkCopied") : t("share")}</span>
               </button>
             )}
+            {ideaId && (
+              <button
+                onClick={onGoToDashboard}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-orange-300 bg-orange-500/10 border border-orange-600 rounded hover:bg-orange-500/20 hover:text-orange-200 hover:border-orange-500 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                  <path
+                    fillRule="evenodd"
+                    d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>{t("goToIdeaPanelButton") || "Go to Idea Panel"}</span>
+              </button>
+            )}
             <button
-              onClick={onGoToDashboard}
+              onClick={() => {
+                if (ideaId) {
+                  window.location.href = "/dashboard";
+                } else {
+                  onGoToDashboard();
+                }
+              }}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium uppercase tracking-wider text-slate-300 bg-black/50 border border-slate-600 rounded hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-400 transition-colors"
             >
               <svg

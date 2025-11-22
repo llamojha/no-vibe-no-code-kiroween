@@ -30,7 +30,6 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
   const [tags, setTags] = useState<string[]>(idea.tags);
   const [newTag, setNewTag] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,18 +37,9 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
   // Update local state when idea prop changes
   useEffect(() => {
     setTags(idea.tags);
-    setHasChanges(false);
   }, [idea.tags]);
 
-  // Check if tags have changed
-  useEffect(() => {
-    const tagsChanged =
-      tags.length !== idea.tags.length ||
-      tags.some((tag, index) => tag !== idea.tags[index]);
-    setHasChanges(tagsChanged);
-  }, [tags, idea.tags]);
-
-  const handleAddTag = () => {
+  const handleAddTag = async () => {
     const trimmedTag = newTag.trim();
 
     // Validation
@@ -73,20 +63,84 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
       return;
     }
 
-    // Add tag
-    setTags([...tags, trimmedTag]);
+    // Add tag and auto-save
+    const newTags = [...tags, trimmedTag];
+    setTags(newTags);
     setNewTag("");
     setError(null);
     setSaveSuccess(false);
+    setIsSaving(true);
+
+    try {
+      await onSaveTags(newTags);
+      setSaveSuccess(true);
+
+      // Track tags save
+      trackTagsManagement({
+        ideaId: idea.id,
+        action: "add",
+        tagCount: newTags.length,
+        previousTagCount: tags.length,
+        ideaSource: idea.source,
+      });
+
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to save tag:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : t("tagsSaveError") || "Failed to save tag"
+      );
+      // Revert on error
+      setTags(tags);
+    } finally {
+      setIsSaving(false);
+    }
 
     // Focus back on input
     inputRef.current?.focus();
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
+  const handleRemoveTag = async (tagToRemove: string) => {
+    const newTags = tags.filter((tag) => tag !== tagToRemove);
+    setTags(newTags);
     setError(null);
     setSaveSuccess(false);
+    setIsSaving(true);
+
+    try {
+      await onSaveTags(newTags);
+      setSaveSuccess(true);
+
+      // Track tags save
+      trackTagsManagement({
+        ideaId: idea.id,
+        action: "remove",
+        tagCount: newTags.length,
+        previousTagCount: tags.length,
+        ideaSource: idea.source,
+      });
+
+      // Clear success message after 2 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to remove tag:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : t("tagsSaveError") || "Failed to remove tag"
+      );
+      // Revert on error
+      setTags(tags);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -94,52 +148,6 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
       e.preventDefault();
       handleAddTag();
     }
-  };
-
-  const handleSave = async () => {
-    if (!hasChanges || isSaving) return;
-
-    const previousTagCount = idea.tags.length;
-    setIsSaving(true);
-    setSaveSuccess(false);
-    setError(null);
-
-    try {
-      await onSaveTags(tags);
-      setHasChanges(false);
-      setSaveSuccess(true);
-
-      // Track tags save
-      trackTagsManagement({
-        ideaId: idea.id,
-        action: "save",
-        tagCount: tags.length,
-        previousTagCount,
-        ideaSource: idea.source,
-      });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 3000);
-    } catch (error) {
-      console.error("Failed to save tags:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : t("tagsSaveError") || "Failed to save tags"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setTags(idea.tags);
-    setNewTag("");
-    setHasChanges(false);
-    setSaveSuccess(false);
-    setError(null);
   };
 
   return (
@@ -314,80 +322,40 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={!hasChanges || isSaving}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider border border-accent text-accent rounded-none hover:bg-accent/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-          aria-label={t("saveTagsButton") || "Save tags"}
-        >
-          {isSaving ? (
-            <>
-              <svg
-                className="animate-spin h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span>{t("saving") || "Saving..."}</span>
-            </>
-          ) : (
-            <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
-              </svg>
-              <span>{t("saveButton") || "Save"}</span>
-            </>
-          )}
-        </button>
-
-        {hasChanges && !isSaving && (
-          <button
-            onClick={handleCancel}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider border border-slate-600 text-slate-400 rounded-none hover:bg-slate-800/50 transition-colors"
-            aria-label={t("cancelButton") || "Cancel changes"}
+      {/* Status messages */}
+      <div className="flex flex-wrap items-center gap-3 min-h-[32px]">
+        {isSaving && (
+          <div
+            className="flex items-center gap-2 text-slate-400 text-sm animate-fade-in"
+            role="status"
+            aria-live="polite"
           >
             <svg
+              className="animate-spin h-4 w-4"
               xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              fill="none"
+              viewBox="0 0 24 24"
               aria-hidden="true"
             >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
               <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span>{t("cancelButton") || "Cancel"}</span>
-          </button>
+            <span>{t("saving") || "Saving..."}</span>
+          </div>
         )}
 
-        {/* Success message */}
-        {saveSuccess && (
+        {saveSuccess && !isSaving && (
           <div
             className="flex items-center gap-2 text-green-400 text-sm animate-fade-in"
             role="status"
@@ -406,7 +374,7 @@ export const TagsSection: React.FC<TagsSectionProps> = ({
                 clipRule="evenodd"
               />
             </svg>
-            <span>{t("tagsSaved") || "Tags saved successfully"}</span>
+            <span>{t("tagsSaved") || "Saved"}</span>
           </div>
         )}
       </div>

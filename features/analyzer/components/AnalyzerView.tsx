@@ -219,8 +219,12 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   }, [isLoading, t]);
 
   const handleBack = useCallback(() => {
-    router.push("/dashboard");
-  }, [router]);
+    if (ideaId) {
+      router.push(`/idea/${ideaId}`);
+    } else {
+      router.push("/dashboard");
+    }
+  }, [router, ideaId]);
 
   const handleAnalyze = useCallback(async () => {
     if (!idea.trim()) {
@@ -796,6 +800,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
                 savedAudioBase64={generatedAudio}
                 onAudioGenerated={handleAudioGenerated}
                 onGoToDashboard={handleBack}
+                ideaId={ideaId}
                 onRefineSuggestion={
                   showInputForm ? handleRefineSuggestion : undefined
                 }
