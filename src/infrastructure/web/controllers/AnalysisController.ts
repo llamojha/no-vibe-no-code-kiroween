@@ -160,6 +160,9 @@ export class AnalysisController {
       const analysis = result.data.analysis;
 
       // Save to new ideas and documents tables for Idea Panel feature
+      let ideaId: string | undefined;
+      let documentId: string | undefined;
+
       if (this.saveAnalysisToIdeaPanelUseCase) {
         try {
           // Check if ideaId is provided in the request (for linking to existing idea)
@@ -183,12 +186,15 @@ export class AnalysisController {
             });
 
           if (saveToIdeaPanelResult.success) {
+            ideaId = saveToIdeaPanelResult.data.idea.id.value;
+            documentId = saveToIdeaPanelResult.data.document?.id.value;
+
             logger.info(
               LogCategory.BUSINESS,
               "Analysis saved to idea panel tables",
               {
-                ideaId: saveToIdeaPanelResult.data.idea.id.value,
-                documentId: saveToIdeaPanelResult.data.document?.id.value,
+                ideaId,
+                documentId,
                 isNewIdea: saveToIdeaPanelResult.data.isNewIdea,
               }
             );
@@ -241,6 +247,9 @@ export class AnalysisController {
         createdAt: analysis.createdAt.toISOString(),
         locale: analysis.locale.value,
         category: analysis.category?.value,
+        // Include ideaId and documentId from new tables
+        ideaId,
+        documentId,
       };
 
       if (creditSystemEnabled) {

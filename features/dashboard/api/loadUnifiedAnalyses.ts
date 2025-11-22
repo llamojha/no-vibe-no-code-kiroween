@@ -1,3 +1,16 @@
+/**
+ * @deprecated This file is deprecated and maintained only for backward compatibility.
+ *
+ * For new code, use getUserIdeas() from @/features/idea-panel/api instead.
+ * The new approach loads from the ideas + documents tables with proper JOIN queries
+ * to avoid N+1 problems and provides better separation of concerns.
+ *
+ * Migration path:
+ * - Dashboard now uses getUserIdeas() which loads from ideas table with document counts
+ * - Individual analyses are loaded via getIdeaWithDocuments() from idea-panel API
+ * - This file remains for any legacy code that hasn't been migrated yet
+ */
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { browserSupabase } from "@/lib/supabase/client";
 import {
@@ -108,7 +121,7 @@ function transformFrankensteinIdea(
   // Check if this Frankenstein has been validated
   // Use the validation score if it exists, otherwise 0
   let normalizedScore = 0;
-  
+
   if (idea.analysis.validatedWithKiroween) {
     normalizedScore = idea.analysis.validatedWithKiroween.score;
   } else if (idea.analysis.validatedWithAnalyzer) {
@@ -135,6 +148,9 @@ function transformFrankensteinIdea(
 /**
  * Load all analyses for the current user from both tables and transform to unified format
  * Routes to local storage when in local dev mode
+ *
+ * @deprecated Use getUserIdeas() from @/features/idea-panel/api instead.
+ * This function is maintained for backward compatibility only.
  */
 export async function loadUnifiedAnalyses(): Promise<{
   data: UnifiedAnalysisRecord[];
@@ -230,7 +246,9 @@ export async function loadUnifiedAnalyses(): Promise<{
 
     const rows = data ?? [];
     const startupRows = rows.filter((row) => row.analysis_type === "idea");
-    const hackathonRows = rows.filter((row) => row.analysis_type === "hackathon");
+    const hackathonRows = rows.filter(
+      (row) => row.analysis_type === "hackathon"
+    );
     const frankensteinRows = rows.filter(
       (row) => row.analysis_type === "frankenstein"
     );
@@ -252,7 +270,10 @@ export async function loadUnifiedAnalyses(): Promise<{
       ...startupAnalyses,
       ...hackathonAnalyses,
       ...frankensteinAnalyses,
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     // Calculate counts
     const counts: AnalysisCounts = {
@@ -276,6 +297,9 @@ export async function loadUnifiedAnalyses(): Promise<{
 /**
  * Server-side version for initial page load
  * Note: Local dev mode is handled client-side, so this always uses Supabase
+ *
+ * @deprecated Use the /api/v2/ideas endpoint or getUserIdeas() from @/features/idea-panel/api instead.
+ * This function is maintained for backward compatibility only.
  */
 export async function loadUnifiedAnalysesServer(
   userId: string,
@@ -301,7 +325,9 @@ export async function loadUnifiedAnalysesServer(
 
     const rows = data ?? [];
     const startupRows = rows.filter((row) => row.analysis_type === "idea");
-    const hackathonRows = rows.filter((row) => row.analysis_type === "hackathon");
+    const hackathonRows = rows.filter(
+      (row) => row.analysis_type === "hackathon"
+    );
     const frankensteinRows = rows.filter(
       (row) => row.analysis_type === "frankenstein"
     );
@@ -323,7 +349,10 @@ export async function loadUnifiedAnalysesServer(
       ...startupAnalyses,
       ...hackathonAnalyses,
       ...frankensteinAnalyses,
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    ].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     // Calculate counts
     const counts: AnalysisCounts = {

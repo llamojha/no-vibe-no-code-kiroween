@@ -16,7 +16,7 @@ import {
 import { type FrankensteinIdeaResult } from "../api/generateFrankensteinIdea";
 import {
   saveFrankensteinIdea,
-  loadFrankensteinIdea,
+  loadFrankensteinIdeaLegacy,
 } from "../api/saveFrankensteinIdea";
 import type { SavedFrankensteinIdea, TechItem, UserTier } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
@@ -161,7 +161,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
     const fetchSavedIdea = async () => {
       try {
-        const { data, error: loadError } = await loadFrankensteinIdea(savedId);
+        const { data, error: loadError } = await loadFrankensteinIdeaLegacy(
+          savedId
+        );
 
         if (loadError || !data) {
           console.error("Failed to load saved idea", loadError);
@@ -200,7 +202,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
         // Use all selected technologies if available, otherwise fallback to tech1 and tech2
         const selectedTechNames = data.analysis.allSelectedTechnologies
-          ? data.analysis.allSelectedTechnologies.map((tech) => tech.name)
+          ? data.analysis.allSelectedTechnologies.map((tech: any) => tech.name)
           : [data.tech1.name, data.tech2.name];
 
         // Determine slot count from number of selected technologies
@@ -309,11 +311,31 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         return;
       }
 
-      setSavedIdeaRecord(data);
+      // Create a saved record object for state management
+      const savedRecord = {
+        id: data.ideaId,
+        userId: session?.user?.id || "",
+        mode,
+        tech1,
+        tech2,
+        analysis: {
+          ideaName: frankensteinIdea.idea_title,
+          description: frankensteinIdea.idea_description,
+          keyFeatures: [],
+          targetMarket: frankensteinIdea.target_audience,
+          uniqueValueProposition: frankensteinIdea.unique_value_proposition,
+          language: (frankensteinIdea.language || locale) as "en" | "es",
+          fullAnalysis: frankensteinIdea,
+          allSelectedTechnologies: allSelectedTechs,
+        },
+        createdAt: data.createdAt,
+      };
+
+      setSavedIdeaRecord(savedRecord);
       setIsReportSaved(true);
       setSaveError(null);
       router.replace(
-        `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+        `/doctor-frankenstein?savedId=${encodeURIComponent(data.ideaId)}`
       );
     } catch (err) {
       console.error("Retry save error:", err);
@@ -404,12 +426,32 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
         return null;
       }
 
-      setSavedIdeaRecord(data);
+      // Create a saved record object for state management
+      const savedRecord = {
+        id: data.ideaId,
+        userId: session?.user?.id || "",
+        mode,
+        tech1,
+        tech2,
+        analysis: {
+          ideaName: frankensteinIdea.idea_title,
+          description: frankensteinIdea.idea_description,
+          keyFeatures: [],
+          targetMarket: frankensteinIdea.target_audience,
+          uniqueValueProposition: frankensteinIdea.unique_value_proposition,
+          language: (frankensteinIdea.language || locale) as "en" | "es",
+          fullAnalysis: frankensteinIdea,
+          allSelectedTechnologies: allSelectedTechs,
+        },
+        createdAt: data.createdAt,
+      };
+
+      setSavedIdeaRecord(savedRecord);
       setIsReportSaved(true);
       router.replace(
-        `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+        `/doctor-frankenstein?savedId=${encodeURIComponent(data.ideaId)}`
       );
-      return data.id;
+      return data.ideaId;
     } catch (err) {
       console.error("Save error:", err);
       setError(err instanceof Error ? err.message : "Failed to save idea");
@@ -593,10 +635,32 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
             });
 
             if (!saveError && data) {
-              setSavedIdeaRecord(data);
+              // Create a saved record object for state management
+              const savedRecord = {
+                id: data.ideaId,
+                userId: session?.user?.id || "",
+                mode,
+                tech1,
+                tech2,
+                analysis: {
+                  ideaName: result.idea_title,
+                  description: result.idea_description,
+                  keyFeatures: [],
+                  targetMarket: result.target_audience,
+                  uniqueValueProposition: result.unique_value_proposition,
+                  language: (result.language || locale) as "en" | "es",
+                  fullAnalysis: result,
+                  allSelectedTechnologies: allSelectedTechs,
+                },
+                createdAt: data.createdAt,
+              };
+
+              setSavedIdeaRecord(savedRecord);
               setIsReportSaved(true);
               router.replace(
-                `/doctor-frankenstein?savedId=${encodeURIComponent(data.id)}`
+                `/doctor-frankenstein?savedId=${encodeURIComponent(
+                  data.ideaId
+                )}`
               );
               setSaveError(null);
             } else {
@@ -875,45 +939,41 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                 <button
                   onClick={async () => {
                     try {
-                      let frankensteinIdToUse = savedIdeaRecord?.id;
+                      let ideaIdToUse = savedIdeaRecord?.id;
 
                       // Save first if not already saved and user is logged in
                       if (!isReportSaved && isLoggedIn) {
                         const savedId = await handleSaveReport();
                         if (savedId) {
-                          frankensteinIdToUse = savedId;
+                          ideaIdToUse = savedId;
                         }
                       }
 
                       // Navigate to Kiroween Hackathon analyzer with the idea
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = frankensteinIdToUse
-                        ? `&frankensteinId=${encodeURIComponent(
-                            frankensteinIdToUse
-                          )}`
+                      const ideaIdParam = ideaIdToUse
+                        ? `&ideaId=${encodeURIComponent(ideaIdToUse)}`
                         : "";
                       console.log(
-                        "Navigating to Kiroween with frankensteinId:",
-                        frankensteinIdToUse
+                        "Navigating to Kiroween with ideaId:",
+                        ideaIdToUse
                       );
                       router.push(
                         `/kiroween-analyzer?idea=${encodeURIComponent(
                           ideaText
-                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                        )}&source=frankenstein&mode=${mode}${ideaIdParam}`
                       );
                     } catch (err) {
                       console.error("Error saving before validation:", err);
                       // Still navigate even if save fails
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = savedIdeaRecord?.id
-                        ? `&frankensteinId=${encodeURIComponent(
-                            savedIdeaRecord.id
-                          )}`
+                      const ideaIdParam = savedIdeaRecord?.id
+                        ? `&ideaId=${encodeURIComponent(savedIdeaRecord.id)}`
                         : "";
                       router.push(
                         `/kiroween-analyzer?idea=${encodeURIComponent(
                           ideaText
-                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                        )}&source=frankenstein&mode=${mode}${ideaIdParam}`
                       );
                     }
                   }}
@@ -941,45 +1001,41 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                 <button
                   onClick={async () => {
                     try {
-                      let frankensteinIdToUse = savedIdeaRecord?.id;
+                      let ideaIdToUse = savedIdeaRecord?.id;
 
                       // Save first if not already saved and user is logged in
                       if (!isReportSaved && isLoggedIn) {
                         const savedId = await handleSaveReport();
                         if (savedId) {
-                          frankensteinIdToUse = savedId;
+                          ideaIdToUse = savedId;
                         }
                       }
 
                       // Navigate to Analyzer with the idea
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = frankensteinIdToUse
-                        ? `&frankensteinId=${encodeURIComponent(
-                            frankensteinIdToUse
-                          )}`
+                      const ideaIdParam = ideaIdToUse
+                        ? `&ideaId=${encodeURIComponent(ideaIdToUse)}`
                         : "";
                       console.log(
-                        "Navigating to Analyzer with frankensteinId:",
-                        frankensteinIdToUse
+                        "Navigating to Analyzer with ideaId:",
+                        ideaIdToUse
                       );
                       router.push(
                         `/analyzer?idea=${encodeURIComponent(
                           ideaText
-                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                        )}&source=frankenstein&mode=${mode}${ideaIdParam}`
                       );
                     } catch (err) {
                       console.error("Error saving before validation:", err);
                       // Still navigate even if save fails
                       const ideaText = `${frankensteinIdea.idea_title}\n\n${frankensteinIdea.idea_description}`;
-                      const frankensteinIdParam = savedIdeaRecord?.id
-                        ? `&frankensteinId=${encodeURIComponent(
-                            savedIdeaRecord.id
-                          )}`
+                      const ideaIdParam = savedIdeaRecord?.id
+                        ? `&ideaId=${encodeURIComponent(savedIdeaRecord.id)}`
                         : "";
                       router.push(
                         `/analyzer?idea=${encodeURIComponent(
                           ideaText
-                        )}&source=frankenstein&mode=${mode}${frankensteinIdParam}`
+                        )}&source=frankenstein&mode=${mode}${ideaIdParam}`
                       );
                     }
                   }}

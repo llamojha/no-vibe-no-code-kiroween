@@ -161,6 +161,7 @@ These events previously used the legacy `posthogClient` helper but now run throu
 
 - `analysis_id`: string (UUID)
 - `locale`: `"en"` | `"es"`
+- `idea_id`: string (UUID, optional)
 
 **Location**: `features/analyzer/components/AnalyzerView.tsx`
 

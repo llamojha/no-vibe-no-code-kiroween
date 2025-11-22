@@ -4,6 +4,18 @@ import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 import type { SavedHackathonAnalysis } from "@/lib/types";
 
+/**
+ * Update the audio for a hackathon analysis
+ *
+ * Updates the audio_base64 field in the saved_analyses table for legacy data.
+ * For new documents, audio should be stored in the document content JSONB field.
+ *
+ * @param analysisId - The ID of the analysis to update
+ * @param audioBase64 - The base64-encoded audio data
+ * @returns Promise resolving to an object with error (null on success)
+ *
+ * Requirements: 3.1, 3.2
+ */
 export async function updateHackathonAnalysisAudio(
   analysisId: string,
   audioBase64: string

@@ -42,9 +42,32 @@ All endpoints return consistent error responses:
 
 ### Database Structure
 
-All analyses (both idea and hackathon types) are stored in a unified `saved_analyses` table with a type discriminator. This consolidation is transparent to API consumers - all endpoints maintain their original request and response formats.
+**New Data Model (Current)**:
 
-For details about the database structure, see [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md).
+All new analyses are stored in two tables:
+
+- `ideas` table: Stores the idea/project concept with metadata (status, notes, tags)
+- `documents` table: Stores analyses linked to ideas via `idea_id` foreign key
+
+**Legacy Data Model (Backward Compatible)**:
+
+The `saved_analyses` table remains for backward compatibility:
+
+- Contains all analyses created before the migration
+- Still readable via fallback logic in load operations
+- No longer used for new analyses
+
+**Migration Approach**:
+
+- **Write Operations**: All new saves go to `ideas` + `documents` tables
+- **Read Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
+- **Update/Delete Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
+
+For details about the database structure, see:
+
+- [Database Schema Documentation](./DATABASE_SCHEMA.md)
+- [Database Consolidation Documentation](./DATABASE_CONSOLIDATION.md)
+- [Complete Documents Migration Guide](./COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md)
 
 ### POST /api/analyze
 
@@ -129,7 +152,7 @@ Retrieves a specific analysis by ID.
 
 ### POST /api/analyze/save
 
-Saves an analysis to the user's dashboard.
+Saves an analysis to the user's dashboard. Creates an idea and document in the new data model.
 
 **Authentication**: Required
 
@@ -137,18 +160,43 @@ Saves an analysis to the user's dashboard.
 
 ```json
 {
-  "analysisId": "123e4567-e89b-12d3-a456-426614174000"
+  "idea": "A mobile app that connects dog owners with local dog walkers",
+  "analysis": {
+    "score": 78,
+    "detailedSummary": "This is a solid marketplace idea...",
+    "criteria": [...]
+  },
+  "ideaId": "optional-existing-idea-id"
 }
 ```
+
+**Request Schema**:
+
+- `idea` (string, required): The startup idea text
+- `analysis` (object, required): The analysis data
+- `ideaId` (string, optional): Link to existing idea (if analyzing an existing idea)
 
 **Response** (200):
 
 ```json
 {
-  "success": true,
-  "message": "Analysis saved to dashboard"
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "documentId": "456e7890-e89b-12d3-a456-426614174001",
+  "createdAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+**Response Fields**:
+
+- `ideaId`: ID of the idea (new or existing)
+- `documentId`: ID of the created document (analysis)
+- `createdAt`: Timestamp of creation
+
+**Behavior**:
+
+- If `ideaId` is provided: Links document to existing idea
+- If `ideaId` is not provided: Creates new idea with source='manual', then creates document
+- Backward compatible: Falls back to `saved_analyses` table for legacy data
 
 ### GET /api/analyze/search
 
@@ -189,7 +237,7 @@ Searches user's analyses with optional filters.
 
 ### POST /api/analyze-hackathon
 
-Analyzes a hackathon project with specialized criteria.
+Analyzes a hackathon project with specialized criteria. Creates an idea and document in the new data model.
 
 **Authentication**: Required
 
@@ -197,52 +245,50 @@ Analyzes a hackathon project with specialized criteria.
 
 ```json
 {
-  "projectName": "EcoTracker",
-  "description": "A mobile app that helps users track their carbon footprint",
-  "category": "sustainability",
-  "teamSize": 4,
-  "techStack": ["React Native", "Node.js", "MongoDB"],
-  "locale": "en"
+  "projectDescription": "A mobile app that helps users track their carbon footprint",
+  "analysis": {
+    "score": 82,
+    "detailedSummary": "Innovative approach...",
+    "criteria": [...],
+    "selectedCategory": "frankenstein"
+  },
+  "supportingMaterials": {
+    "githubUrl": "https://github.com/...",
+    "demoUrl": "https://demo.example.com"
+  },
+  "ideaId": "optional-existing-idea-id"
 }
 ```
 
 **Request Schema**:
 
-- `projectName` (string, required): Project name (1-100 characters)
-- `description` (string, required): Project description (10-2000 characters)
-- `category` (string, required): Project category
-- `teamSize` (number, optional): Number of team members
-- `techStack` (array, optional): Technologies used
-- `locale` (string, required): Language locale ("en" or "es")
+- `projectDescription` (string, required): Project description (10-2000 characters)
+- `analysis` (object, required): The hackathon analysis data
+- `supportingMaterials` (object, optional): Additional project materials
+- `ideaId` (string, optional): Link to existing idea (if analyzing an existing idea)
 
 **Response** (201):
 
 ```json
 {
-  "id": "456e7890-e89b-12d3-a456-426614174001",
-  "projectName": "EcoTracker",
-  "description": "A mobile app that helps users track their carbon footprint",
-  "category": "sustainability",
-  "overallScore": 82,
-  "criteria": [
-    {
-      "name": "Innovation",
-      "score": 85,
-      "justification": "Novel approach to carbon tracking..."
-    },
-    {
-      "name": "Technical Feasibility",
-      "score": 78,
-      "justification": "Solid tech stack choice..."
-    }
-  ],
-  "recommendations": [
-    "Consider adding social features to increase engagement",
-    "Implement gamification elements"
-  ],
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "documentId": "456e7890-e89b-12d3-a456-426614174001",
   "createdAt": "2024-01-15T10:30:00Z"
 }
 ```
+
+**Response Fields**:
+
+- `ideaId`: ID of the idea (new or existing)
+- `documentId`: ID of the created document (hackathon analysis)
+- `createdAt`: Timestamp of creation
+
+**Behavior**:
+
+- If `ideaId` is provided: Links document to existing idea
+- If `ideaId` is not provided: Creates new idea with source='manual', then creates document
+- Document type is set to 'hackathon_analysis'
+- Backward compatible: Falls back to `saved_analyses` table for legacy data
 
 ## Dashboard Endpoints (v2)
 
@@ -306,7 +352,26 @@ Deletes an analysis from the user's dashboard.
 
 ## Idea Panel Endpoints (v2)
 
-The Idea Panel feature introduces a new data model that separates ideas from documents (analyses). For complete documentation, see [Idea Panel API Documentation](./IDEA_PANEL_API.md).
+The Idea Panel feature introduces a new data model that separates ideas from documents (analyses). This architecture enables:
+
+- Ideas to exist independently of analyses
+- Multiple analyses per idea (e.g., both startup and hackathon analyses)
+- Better organization with status tracking, notes, and tags
+- Foundation for future document types (PRDs, Design Docs, Roadmaps)
+
+**Data Model**:
+
+- `ideas` table: Stores all ideas with management metadata
+- `documents` table: Stores analyses linked to ideas via `idea_id` foreign key
+- One idea can have multiple documents (analyses)
+
+**Migration Status**:
+
+- All new analyses save to `ideas` + `documents` tables
+- Legacy analyses in `saved_analyses` remain readable via fallback logic
+- Backward compatible: No breaking changes to existing functionality
+
+For complete documentation, see [Idea Panel API Documentation](./IDEA_PANEL_API.md).
 
 ### GET /api/v2/ideas
 

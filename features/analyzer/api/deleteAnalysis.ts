@@ -3,7 +3,7 @@ import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 
 /**
- * Delete a hackathon analysis document
+ * Delete a startup analysis document
  *
  * Tries deleting from documents table first (new data model), then falls back
  * to saved_analyses table for legacy data. Does NOT delete the parent idea.
@@ -13,7 +13,7 @@ import { localStorageService } from "@/lib/localStorage";
  *
  * Requirements: 4.1, 4.2, 4.5
  */
-export async function deleteHackathonAnalysis(
+export async function deleteAnalysis(
   analysisId: string
 ): Promise<{ error: string | null }> {
   // Check if we're in local dev mode
@@ -21,9 +21,7 @@ export async function deleteHackathonAnalysis(
 
   if (isLocalDevMode) {
     try {
-      const success = await localStorageService.deleteHackathonAnalysis(
-        analysisId
-      );
+      const success = await localStorageService.deleteAnalysis(analysisId);
 
       if (!success) {
         return { error: "Analysis not found in local storage" };
@@ -31,10 +29,7 @@ export async function deleteHackathonAnalysis(
 
       return { error: null };
     } catch (error) {
-      console.error(
-        "Failed to delete hackathon analysis from local storage",
-        error
-      );
+      console.error("Failed to delete analysis from local storage", error);
       return {
         error:
           "Failed to delete analysis from local storage. Please try again.",
@@ -62,7 +57,7 @@ export async function deleteHackathonAnalysis(
       .delete()
       .eq("id", analysisId)
       .eq("user_id", user.id)
-      .eq("document_type", "hackathon_analysis")
+      .eq("document_type", "startup_analysis")
       .select();
 
     // If document was found and deleted, return success
@@ -77,16 +72,16 @@ export async function deleteHackathonAnalysis(
       .delete()
       .eq("id", analysisId)
       .eq("user_id", user.id)
-      .eq("analysis_type", "hackathon");
+      .eq("analysis_type", "idea");
 
     if (legacyError) {
-      console.error("Failed to delete hackathon analysis", legacyError);
-      throw new Error("Failed to delete hackathon analysis from database");
+      console.error("Failed to delete analysis", legacyError);
+      throw new Error("Failed to delete analysis from database");
     }
 
     return { error: null };
   } catch (error) {
-    console.error("Failed to delete hackathon analysis", error);
+    console.error("Failed to delete analysis", error);
     return { error: "Failed to delete analysis. Please try again." };
   }
 }

@@ -67,6 +67,8 @@ export interface AnalysisResponseDTO {
   createdAt: string;
   locale: string;
   category?: string;
+  ideaId?: string; // ID from ideas table (new architecture)
+  documentId?: string; // ID from documents table (new architecture)
   competitors?: Array<{
     name: string;
     description: string;

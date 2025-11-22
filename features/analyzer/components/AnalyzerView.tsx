@@ -84,8 +84,8 @@ const normalizeDocumentAnalysisContent = (
     typeof data.detailedSummary === "string"
       ? data.detailedSummary
       : typeof data.feedback === "string"
-        ? data.feedback
-        : base.detailedSummary;
+      ? data.feedback
+      : base.detailedSummary;
 
   const swotSource = data.swotAnalysis;
   const swotAnalysis = isRecord(swotSource)
@@ -432,16 +432,31 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       // Auto-save if user is logged in (to preserve credits)
       if (session && !isLocalDevMode) {
         try {
-          const { data: record, error: saveError } = await saveAnalysis({
+          const { data: result, error: saveError } = await saveAnalysis({
             idea,
             analysis: analysisResult,
+            ideaId, // Pass ideaId if available (from URL params)
           });
 
-          if (!saveError && record) {
-            newlySavedId = record.id;
+          if (!saveError && result) {
+            newlySavedId = result.documentId;
+            // Create a SavedAnalysisRecord for backward compatibility
+            const record: SavedAnalysisRecord = {
+              id: result.documentId,
+              userId: session.user.id,
+              idea,
+              analysis: analysisResult,
+              audioBase64: null,
+              createdAt: result.createdAt,
+              analysisType: "idea",
+            };
             setSavedAnalysisRecord(record);
             setIsReportSaved(true);
-            capture("analysis_auto_saved", { analysis_id: record.id, locale });
+            capture("analysis_auto_saved", {
+              analysis_id: result.documentId,
+              idea_id: result.ideaId,
+              locale,
+            });
 
             // If this came from a Frankenstein, update it with the validation
             if (frankensteinId && sourceFromUrl === "frankenstein") {
@@ -457,13 +472,14 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
-                  analysisId: record.id,
+                  analysisId: result.documentId,
+                  ideaId: result.ideaId,
                   score,
                   rawFinalScore: analysisResult.finalScore,
                 });
 
                 await updateFrankensteinValidation(frankensteinId, "analyzer", {
-                  analysisId: record.id,
+                  analysisId: result.documentId,
                   score,
                 });
               } catch (err) {
@@ -474,10 +490,14 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
               }
             }
 
-            // Update URL with saved ID
-            router.replace(
-              `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
-            );
+            // Update URL with saved ID and ideaId
+            const urlParams = new URLSearchParams();
+            urlParams.set("savedId", result.documentId);
+            urlParams.set("mode", "view");
+            if (result.ideaId) {
+              urlParams.set("ideaId", result.ideaId);
+            }
+            router.replace(`/analyzer?${urlParams.toString()}`);
           } else {
             console.error("Auto-save failed:", saveError);
             setSaveError(
@@ -550,6 +570,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     router,
+    ideaId,
   ]);
 
   const handleSaveReport = useCallback(async () => {
@@ -563,23 +584,39 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     }
 
     // Use the new save function that handles both local dev mode and production
-    const { data: record, error: saveError } = await saveAnalysis({
+    const { data: result, error: saveError } = await saveAnalysis({
       idea,
       analysis: analysisToSave,
       audioBase64: generatedAudio || undefined,
+      ideaId, // Pass ideaId if available (from URL params)
     });
 
-    if (saveError || !record) {
+    if (saveError || !result) {
       setError(saveError || "Failed to save your analysis. Please try again.");
       return;
     }
+
+    // Create a SavedAnalysisRecord for backward compatibility
+    const record: SavedAnalysisRecord = {
+      id: result.documentId,
+      userId: session?.user.id || "unknown",
+      idea,
+      analysis: analysisToSave,
+      audioBase64: generatedAudio || null,
+      createdAt: result.createdAt,
+      analysisType: "idea",
+    };
 
     setSavedAnalysisRecord(record);
     setIsReportSaved(true);
     setNewAnalysis(null);
     setAddedSuggestions([]);
-    setGeneratedAudio(record.audioBase64 ?? null);
-    trackAnalysisSaved({ analysisId: record.id, locale });
+    setGeneratedAudio(generatedAudio || null);
+    trackAnalysisSaved({
+      analysisId: result.documentId,
+      ideaId: result.ideaId,
+      locale,
+    });
 
     // If this came from a Frankenstein, update it with the validation
     if (frankensteinId && sourceFromUrl === "frankenstein") {
@@ -596,13 +633,14 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
 
         console.log("Updating Frankenstein with validation:", {
           frankensteinId,
-          analysisId: record.id,
+          analysisId: result.documentId,
+          ideaId: result.ideaId,
           score,
           rawFinalScore: analysisToSave.finalScore,
         });
 
         await updateFrankensteinValidation(frankensteinId, "analyzer", {
-          analysisId: record.id,
+          analysisId: result.documentId,
           score,
         });
       } catch (err) {
@@ -611,9 +649,14 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
       }
     }
 
-    router.replace(
-      `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
-    );
+    // Update URL with saved ID and ideaId
+    const urlParams = new URLSearchParams();
+    urlParams.set("savedId", result.documentId);
+    urlParams.set("mode", "view");
+    if (result.ideaId) {
+      urlParams.set("ideaId", result.ideaId);
+    }
+    router.replace(`/analyzer?${urlParams.toString()}`);
   }, [
     newAnalysis,
     savedAnalysisRecord?.analysis,
@@ -625,6 +668,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     router,
+    ideaId,
   ]);
 
   const handleAudioGenerated = useCallback(
@@ -688,16 +732,32 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     setSaveError(null);
 
     try {
-      const { data: record, error: saveError } = await saveAnalysis({
+      const { data: result, error: saveError } = await saveAnalysis({
         idea,
         analysis: newAnalysis,
+        ideaId, // Pass ideaId if available (from URL params)
       });
 
-      if (!saveError && record) {
+      if (!saveError && result) {
+        // Create a SavedAnalysisRecord for backward compatibility
+        const record: SavedAnalysisRecord = {
+          id: result.documentId,
+          userId: session.user.id,
+          idea,
+          analysis: newAnalysis,
+          audioBase64: null,
+          createdAt: result.createdAt,
+          analysisType: "idea",
+        };
+
         setSavedAnalysisRecord(record);
         setIsReportSaved(true);
         setSaveError(null);
-        capture("analysis_manually_saved", { analysis_id: record.id, locale });
+        capture("analysis_manually_saved", {
+          analysis_id: result.documentId,
+          idea_id: result.ideaId,
+          locale,
+        });
 
         // If this came from a Frankenstein, update it with the validation
         if (frankensteinId && sourceFromUrl === "frankenstein") {
@@ -712,7 +772,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
             const score = deriveFivePointScore(newAnalysis);
 
             await updateFrankensteinValidation(frankensteinId, "analyzer", {
-              analysisId: record.id,
+              analysisId: result.documentId,
               score,
             });
           } catch (err) {
@@ -723,10 +783,14 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
           }
         }
 
-        // Update URL with saved ID
-        router.replace(
-          `/analyzer?savedId=${encodeURIComponent(record.id)}&mode=view`
-        );
+        // Update URL with saved ID and ideaId
+        const urlParams = new URLSearchParams();
+        urlParams.set("savedId", result.documentId);
+        urlParams.set("mode", "view");
+        if (result.ideaId) {
+          urlParams.set("ideaId", result.ideaId);
+        }
+        router.replace(`/analyzer?${urlParams.toString()}`);
       } else {
         console.error("Manual save failed:", saveError);
         setSaveError(saveError || "Failed to save analysis. Please try again.");
@@ -750,6 +814,7 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     router,
+    ideaId,
   ]);
 
   const handleStartNewAnalysis = useCallback(() => {

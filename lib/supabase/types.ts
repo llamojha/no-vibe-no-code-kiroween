@@ -57,6 +57,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      ideas: {
+        Row: {
+          id: string;
+          user_id: string;
+          idea_text: string;
+          source: "manual" | "frankenstein";
+          project_status: "idea" | "in_progress" | "completed" | "archived";
+          notes: string;
+          tags: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          idea_text: string;
+          source?: "manual" | "frankenstein";
+          project_status?: "idea" | "in_progress" | "completed" | "archived";
+          notes?: string;
+          tags?: string[];
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          idea_text?: string;
+          source?: "manual" | "frankenstein";
+          project_status?: "idea" | "in_progress" | "completed" | "archived";
+          notes?: string;
+          tags?: string[];
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      documents: {
+        Row: {
+          id: string;
+          idea_id: string;
+          user_id: string;
+          document_type: "startup_analysis" | "hackathon_analysis";
+          title: string | null;
+          content: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          idea_id: string;
+          user_id: string;
+          document_type: "startup_analysis" | "hackathon_analysis";
+          title?: string | null;
+          content: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          idea_id?: string;
+          user_id?: string;
+          document_type?: "startup_analysis" | "hackathon_analysis";
+          title?: string | null;
+          content?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

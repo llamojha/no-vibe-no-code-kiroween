@@ -337,21 +337,36 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         userId: session?.user?.id,
       });
 
-      let newlySavedId: string | null = null;
+      let newIdeaId: string | null = null;
+      let newDocumentId: string | null = null;
 
       // Auto-save if user is logged in (to preserve credits)
       if (session) {
         try {
-          const { data: record, error: saveError } =
+          const { data: result, error: saveError } =
             await saveHackathonAnalysis({
               projectDescription: submission.description,
               analysis: analysisResult,
               supportingMaterials: submission.supportingMaterials,
+              ideaId: ideaId, // Pass ideaId from URL params if available
             });
 
-          if (!saveError && record) {
-            newlySavedId = record.id;
-            setSavedAnalysisRecord(record);
+          if (!saveError && result) {
+            newIdeaId = result.ideaId;
+            newDocumentId = result.documentId;
+
+            // Create legacy format for compatibility with existing code
+            const legacyRecord: SavedHackathonAnalysis = {
+              id: result.documentId,
+              userId: session.user.id,
+              projectDescription: submission.description,
+              analysis: analysisResult,
+              audioBase64: null,
+              supportingMaterials: submission.supportingMaterials,
+              createdAt: result.createdAt,
+            };
+
+            setSavedAnalysisRecord(legacyRecord);
             setIsReportSaved(true);
 
             // If this came from a Frankenstein, update it with the validation
@@ -368,13 +383,13 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
                 console.log("Auto-updating Frankenstein with validation:", {
                   frankensteinId,
-                  analysisId: record.id,
+                  analysisId: result.documentId,
                   score,
                   rawFinalScore: analysisResult.finalScore,
                 });
 
                 await updateFrankensteinValidation(frankensteinId, "kiroween", {
-                  analysisId: record.id,
+                  analysisId: result.documentId,
                   score,
                 });
               } catch (err) {
@@ -385,12 +400,12 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               }
             }
 
-            // Update URL with saved ID
-            router.replace(
-              `/kiroween-analyzer?savedId=${encodeURIComponent(
-                record.id
-              )}&mode=view`
-            );
+            // Update URL with ideaId and savedId (documentId)
+            const urlParams = new URLSearchParams();
+            urlParams.set("ideaId", result.ideaId);
+            urlParams.set("savedId", result.documentId);
+            urlParams.set("mode", "view");
+            router.replace(`/kiroween-analyzer?${urlParams.toString()}`);
           } else {
             console.error("Auto-save failed:", saveError);
             setSaveError(
@@ -436,7 +451,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       }
 
       // Only clean up URL if we had a savedId but didn't just create a new one
-      if (savedId && !newlySavedId) {
+      if (savedId && !newDocumentId) {
         router.replace("/kiroween-analyzer");
       }
     } catch (err) {
@@ -460,6 +475,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     frankensteinId,
     sourceFromUrl,
     savedId,
+    ideaId,
     router,
   ]);
 
@@ -473,14 +489,15 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     }
 
     try {
-      const { data, error: saveError } = await saveHackathonAnalysis({
+      const { data: result, error: saveError } = await saveHackathonAnalysis({
         projectDescription: submission.description,
         analysis: analysisToSave,
         supportingMaterials: submission.supportingMaterials,
         audioBase64: generatedAudio || undefined,
+        ideaId: ideaId, // Pass ideaId from URL params if available
       });
 
-      if (saveError || !data) {
+      if (saveError || !result) {
         console.error("Failed to save hackathon analysis", saveError);
         setError(
           saveError || "Failed to save your analysis. Please try again."
@@ -488,11 +505,22 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         return;
       }
 
-      setSavedAnalysisRecord(data);
+      // Create legacy format for compatibility
+      const legacyRecord: SavedHackathonAnalysis = {
+        id: result.documentId,
+        userId: session.user.id,
+        projectDescription: submission.description,
+        analysis: analysisToSave,
+        audioBase64: generatedAudio || null,
+        supportingMaterials: submission.supportingMaterials,
+        createdAt: result.createdAt,
+      };
+
+      setSavedAnalysisRecord(legacyRecord);
       setIsReportSaved(true);
       setNewAnalysis(null);
       setAddedSuggestions([]);
-      setGeneratedAudio(data.audioBase64 ?? null);
+      setGeneratedAudio(generatedAudio || null);
 
       // If this came from a Frankenstein, update it with the validation
       if (frankensteinId && sourceFromUrl === "frankenstein") {
@@ -509,20 +537,20 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
 
           console.log("Updating Frankenstein with validation:", {
             frankensteinId,
-            analysisId: data.id,
+            analysisId: result.documentId,
             score,
             rawFinalScore: analysisToSave.finalScore,
           });
 
-          const result = await updateFrankensteinValidation(
+          const updateResult = await updateFrankensteinValidation(
             frankensteinId,
             "kiroween",
             {
-              analysisId: data.id,
+              analysisId: result.documentId,
               score,
             }
           );
-          console.log("Frankenstein update result:", result);
+          console.log("Frankenstein update result:", updateResult);
         } catch (err) {
           console.error("Failed to update Frankenstein with validation:", err);
           // Don't show error to user, this is a background operation
@@ -536,9 +564,12 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         });
       }
 
-      router.replace(
-        `/kiroween-analyzer?savedId=${encodeURIComponent(data.id)}&mode=view`
-      );
+      // Update URL with ideaId and savedId (documentId)
+      const urlParams = new URLSearchParams();
+      urlParams.set("ideaId", result.ideaId);
+      urlParams.set("savedId", result.documentId);
+      urlParams.set("mode", "view");
+      router.replace(`/kiroween-analyzer?${urlParams.toString()}`);
     } catch (err) {
       console.error("Error saving analysis:", err);
       setError("Failed to save your analysis. Please try again.");
@@ -553,6 +584,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     generatedAudio,
     frankensteinId,
     sourceFromUrl,
+    ideaId,
   ]);
 
   const handleAudioGenerated = useCallback(
@@ -622,14 +654,26 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     setSaveError(null);
 
     try {
-      const { data: record, error: saveError } = await saveHackathonAnalysis({
+      const { data: result, error: saveError } = await saveHackathonAnalysis({
         projectDescription: submission.description,
         analysis: newAnalysis,
         supportingMaterials: submission.supportingMaterials,
+        ideaId: ideaId, // Pass ideaId from URL params if available
       });
 
-      if (!saveError && record) {
-        setSavedAnalysisRecord(record);
+      if (!saveError && result) {
+        // Create legacy format for compatibility
+        const legacyRecord: SavedHackathonAnalysis = {
+          id: result.documentId,
+          userId: session.user.id,
+          projectDescription: submission.description,
+          analysis: newAnalysis,
+          audioBase64: null,
+          supportingMaterials: submission.supportingMaterials,
+          createdAt: result.createdAt,
+        };
+
+        setSavedAnalysisRecord(legacyRecord);
         setIsReportSaved(true);
         setSaveError(null);
 
@@ -646,7 +690,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
             const score = deriveFivePointScore(newAnalysis);
 
             await updateFrankensteinValidation(frankensteinId, "kiroween", {
-              analysisId: record.id,
+              analysisId: result.documentId,
               score,
             });
           } catch (err) {
@@ -657,12 +701,12 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
           }
         }
 
-        // Update URL with saved ID
-        router.replace(
-          `/kiroween-analyzer?savedId=${encodeURIComponent(
-            record.id
-          )}&mode=view`
-        );
+        // Update URL with ideaId and savedId (documentId)
+        const urlParams = new URLSearchParams();
+        urlParams.set("ideaId", result.ideaId);
+        urlParams.set("savedId", result.documentId);
+        urlParams.set("mode", "view");
+        router.replace(`/kiroween-analyzer?${urlParams.toString()}`);
       } else {
         console.error("Manual save failed:", saveError);
         setSaveError(saveError || "Failed to save analysis. Please try again.");
@@ -677,7 +721,15 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [newAnalysis, session, submission, frankensteinId, sourceFromUrl, router]);
+  }, [
+    newAnalysis,
+    session,
+    submission,
+    frankensteinId,
+    sourceFromUrl,
+    ideaId,
+    router,
+  ]);
 
   const handleStartNewAnalysis = useCallback(() => {
     setSubmission({

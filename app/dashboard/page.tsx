@@ -29,7 +29,9 @@ export default async function DashboardPage() {
   if (isLocalDevMode) {
     // In local dev mode, create mock data and bypass authentication
     const mockUser = generateMockUser();
-    const mockIdeas = (isTestEnv ? [] : generateMockIdeas()) as DashboardIdeaDTO[];
+    const mockIdeas = (
+      isTestEnv ? [] : generateMockIdeas()
+    ) as DashboardIdeaDTO[];
 
     return (
       <UserDashboard
@@ -59,13 +61,14 @@ export default async function DashboardPage() {
   const credits = user?.credits ?? 3;
   const tier: UserTier = sessionContext.tier ?? "free";
 
-  // Fetch ideas from the new ideas table
+  // Fetch ideas from the new ideas table using optimized query with JOIN
+  // This avoids N+1 queries by getting document counts in a single query
   const supabase = serverSupabase();
   let initialIdeas: DashboardIdeaDTO[] = [];
 
   try {
-    // Temporary type definition until Supabase types are regenerated
-    type IdeaRow = {
+    // Type for the query result with documents count
+    type IdeaWithDocumentCount = {
       id: string;
       user_id: string;
       idea_text: string;
@@ -75,54 +78,57 @@ export default async function DashboardPage() {
       tags: string[];
       created_at: string;
       updated_at: string;
+      documents: Array<{ count: number }> | { count: number }[];
     };
 
+    // Use LEFT JOIN with COUNT to get document counts efficiently
+    // This is a single query that avoids the N+1 problem
     const { data: ideasData, error: ideasError } = await supabase
       .from("ideas")
-      .select("*")
+      .select(
+        `
+        id,
+        user_id,
+        idea_text,
+        source,
+        project_status,
+        notes,
+        tags,
+        created_at,
+        updated_at,
+        documents(count)
+      `
+      )
       .eq("user_id", userId.value)
       .order("updated_at", { ascending: false });
 
     if (ideasError) {
       console.error("Error fetching ideas:", ideasError);
     } else if (ideasData) {
-      // Get document counts for each idea
-      const ideaIds = (ideasData as IdeaRow[]).map((idea) => idea.id);
-
-      let documentCounts: Record<string, number> = {};
-      if (ideaIds.length > 0) {
-        // Temporary type definition for documents
-        type DocumentRow = {
-          idea_id: string;
-        };
-
-        const { data: documentsData, error: documentsError } = await supabase
-          .from("documents")
-          .select("idea_id")
-          .in("idea_id", ideaIds);
-
-        if (!documentsError && documentsData) {
-          documentCounts = (documentsData as DocumentRow[]).reduce(
-            (acc, doc) => {
-              acc[doc.idea_id] = (acc[doc.idea_id] || 0) + 1;
-              return acc;
-            },
-            {} as Record<string, number>
-          );
-        }
-      }
-
       // Map to DashboardIdeaDTO
-      initialIdeas = (ideasData as IdeaRow[]).map((idea) => ({
-        id: idea.id,
-        ideaText: idea.idea_text,
-        source: idea.source,
-        projectStatus: idea.project_status,
-        documentCount: documentCounts[idea.id] || 0,
-        createdAt: idea.created_at,
-        updatedAt: idea.updated_at,
-        tags: idea.tags || [],
-      }));
+      initialIdeas = (ideasData as IdeaWithDocumentCount[]).map((idea) => {
+        // Supabase returns documents count in different formats depending on the query
+        let documentCount = 0;
+        if (Array.isArray(idea.documents)) {
+          documentCount = idea.documents.length;
+        } else if (idea.documents && typeof idea.documents === "object") {
+          const docsArray = idea.documents as unknown as Array<{
+            count: number;
+          }>;
+          documentCount = docsArray[0]?.count ?? 0;
+        }
+
+        return {
+          id: idea.id,
+          ideaText: idea.idea_text,
+          source: idea.source,
+          projectStatus: idea.project_status,
+          documentCount,
+          createdAt: idea.created_at,
+          updatedAt: idea.updated_at,
+          tags: idea.tags || [],
+        };
+      });
     }
   } catch (error) {
     console.error("Error loading ideas:", error);
