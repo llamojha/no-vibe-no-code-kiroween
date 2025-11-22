@@ -48,7 +48,7 @@ describe("SupabaseDocumentRepository", () => {
         ideaId: IdeaId.generate(),
         userId: UserId.generate(),
         documentType: DocumentType.STARTUP_ANALYSIS,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
       });
 
       const mockDAO = {
@@ -57,7 +57,7 @@ describe("SupabaseDocumentRepository", () => {
         user_id: document.userId.value,
         document_type: "startup_analysis",
         title: null,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -79,7 +79,7 @@ describe("SupabaseDocumentRepository", () => {
         ideaId: IdeaId.generate(),
         userId: UserId.generate(),
         documentType: DocumentType.STARTUP_ANALYSIS,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
       });
 
       mockClient.single.mockResolvedValue({
@@ -106,7 +106,7 @@ describe("SupabaseDocumentRepository", () => {
         user_id: userId.value,
         document_type: "startup_analysis",
         title: null,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -151,7 +151,7 @@ describe("SupabaseDocumentRepository", () => {
           user_id: userId.value,
           document_type: "startup_analysis",
           title: null,
-          content: { analysis: { score: 85 } },
+          content: { score: 85, feedback: "Valid feedback" },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -161,7 +161,7 @@ describe("SupabaseDocumentRepository", () => {
           user_id: userId.value,
           document_type: "hackathon_analysis",
           title: "Hackathon Project",
-          content: { analysis: { score: 90 } },
+          content: { score: 90, detailedSummary: "Detailed summary" },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -210,7 +210,7 @@ describe("SupabaseDocumentRepository", () => {
           user_id: userId.value,
           document_type: "startup_analysis",
           title: null,
-          content: { analysis: { score: 85 } },
+          content: { score: 85, feedback: "Valid feedback" },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -234,7 +234,7 @@ describe("SupabaseDocumentRepository", () => {
     it("should delete a document successfully", async () => {
       const documentId = DocumentId.generate();
 
-      mockClient.delete.mockResolvedValue({
+      mockClient.eq.mockResolvedValue({
         error: null,
       });
 
@@ -248,7 +248,7 @@ describe("SupabaseDocumentRepository", () => {
     it("should handle delete errors", async () => {
       const documentId = DocumentId.generate();
 
-      mockClient.delete.mockResolvedValue({
+      mockClient.eq.mockResolvedValue({
         error: { message: "Database error", code: "500" },
       });
 
@@ -311,7 +311,7 @@ describe("SupabaseDocumentRepository", () => {
         ideaId: IdeaId.generate(),
         userId: UserId.generate(),
         documentType: DocumentType.STARTUP_ANALYSIS,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
       });
 
       mockClient.single.mockResolvedValue({
@@ -331,7 +331,7 @@ describe("SupabaseDocumentRepository", () => {
         ideaId: IdeaId.generate(),
         userId: UserId.generate(),
         documentType: DocumentType.STARTUP_ANALYSIS,
-        content: { analysis: { score: 85 } },
+        content: { score: 85, feedback: "Valid feedback" },
       });
 
       mockClient.single.mockResolvedValue({

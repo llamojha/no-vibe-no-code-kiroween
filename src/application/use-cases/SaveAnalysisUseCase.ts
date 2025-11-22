@@ -1,10 +1,11 @@
-import { Analysis } from "../../domain/entities";
+import { Analysis, Document } from "../../domain/entities";
 import {
   AnalysisId,
   UserId,
   Score,
   Category,
   DocumentId,
+  Locale,
 } from "../../domain/value-objects";
 import {
   IAnalysisRepository,
@@ -74,6 +75,8 @@ export class SaveAnalysisUseCase {
           );
 
           if (documentResult.success && documentResult.data) {
+            const document = documentResult.data;
+
             logger.info(
               LogCategory.BUSINESS,
               "Found analysis in documents table",
@@ -82,8 +85,43 @@ export class SaveAnalysisUseCase {
                 userId: input.userId.value,
               }
             );
-            // TODO: Convert document to analysis entity
-            // For now, fall through to legacy lookup
+
+            // Extract analysis from document content
+            const content = document.getContent();
+            const analysisData = (content.analysis || content) as Record<
+              string,
+              unknown
+            >;
+
+            // Reconstruct Analysis entity from document content
+            analysis = Analysis.reconstruct({
+              id: AnalysisId.fromString(document.id.value),
+              idea:
+                typeof analysisData.idea === "string" ? analysisData.idea : "",
+              userId: document.userId,
+              score: Score.create(
+                typeof analysisData.score === "number" ? analysisData.score : 0
+              ),
+              locale:
+                typeof analysisData.locale === "string"
+                  ? Locale.fromString(analysisData.locale)
+                  : Locale.english(),
+              feedback:
+                typeof analysisData.feedback === "string"
+                  ? analysisData.feedback
+                  : "",
+              suggestions: Array.isArray(analysisData.suggestions)
+                ? analysisData.suggestions
+                : [],
+              category:
+                typeof analysisData.category === "string"
+                  ? Category.createGeneral(analysisData.category)
+                  : Category.createGeneral("general"),
+              createdAt: document.createdAt,
+              updatedAt: document.updatedAt,
+            });
+
+            isLegacyData = false; // This is new data in documents table
           }
         } catch (error) {
           logger.debug(
@@ -209,18 +247,71 @@ export class SaveAnalysisUseCase {
         );
       } else {
         // Update in documents table for new data
-        // TODO: Implement document update logic when document entity is available
-        logger.warn(
+        logger.info(
           LogCategory.BUSINESS,
-          "Document update not yet implemented, falling back to legacy",
+          "Updating analysis in documents table",
           {
             analysisId: input.analysisId.value,
           }
         );
-        saveResult = await this.analysisRepository.update(
-          analysis,
+
+        if (!this.documentRepository) {
+          return failure(
+            new Error("Document repository not available for document updates")
+          );
+        }
+
+        // Get the existing document
+        const documentId = DocumentId.fromString(input.analysisId.value);
+        const existingDocResult = await this.documentRepository.findById(
+          documentId,
           input.userId
         );
+
+        if (!existingDocResult.success || !existingDocResult.data) {
+          return failure(
+            new EntityNotFoundError("Document", input.analysisId.value)
+          );
+        }
+
+        const existingDoc = existingDocResult.data;
+        const existingContent = existingDoc.getContent();
+
+        // Update the analysis data within the document content
+        const updatedContent = {
+          ...existingContent,
+          analysis: {
+            ...(existingContent.analysis || existingContent),
+            score: analysis.score.value,
+            feedback: analysis.feedback,
+            suggestions: analysis.suggestions,
+            ...(analysis.category ? { category: analysis.category.value } : {}),
+          },
+        };
+
+        // Create updated document with new content
+        const updatedDocument = Document.reconstruct({
+          id: existingDoc.id,
+          ideaId: existingDoc.ideaId,
+          userId: existingDoc.userId,
+          documentType: existingDoc.documentType,
+          title: existingDoc.title,
+          content: updatedContent,
+          createdAt: existingDoc.createdAt,
+          updatedAt: new Date(), // Update timestamp
+        });
+
+        // Delete old document and save new one (since there's no update method)
+        const deleteResult = await this.documentRepository.delete(
+          documentId,
+          input.userId
+        );
+
+        if (!deleteResult.success) {
+          return failure(deleteResult.error);
+        }
+
+        saveResult = await this.documentRepository.save(updatedDocument);
       }
 
       if (!saveResult.success) {
@@ -229,7 +320,7 @@ export class SaveAnalysisUseCase {
 
       // Step 8: Return result
       const output: SaveAnalysisOutput = {
-        analysis: saveResult.data,
+        analysis,
         updatedFields,
         validationWarnings: validationResult.warnings,
       };

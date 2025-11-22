@@ -1,4 +1,9 @@
-import { beforeEach, vi } from 'vitest';
+import { beforeEach, afterEach, vi } from "vitest";
+import { EventEmitter } from "events";
+
+// Increase max listeners to prevent warnings during parallel test execution
+EventEmitter.defaultMaxListeners = 20;
+process.setMaxListeners(20);
 
 type CookieRecord = { name: string; value: string };
 
@@ -13,24 +18,27 @@ const createCookieApi = () => ({
   },
   getAll: (): CookieRecord[] =>
     Array.from(cookieStore.entries()).map(([name, value]) => ({ name, value })),
-  set: (
-    name: string,
-    value: string | { value: string }
-  ) => {
-    const val = typeof value === 'string' ? value : value?.value ?? '';
+  set: (name: string, value: string | { value: string }) => {
+    const val = typeof value === "string" ? value : value?.value ?? "";
     cookieStore.set(name, val);
   },
   delete: (name: string) => {
     cookieStore.delete(name);
   },
   has: (name: string) => cookieStore.has(name),
-  clear: () => cookieStore.clear()
+  clear: () => cookieStore.clear(),
 });
 
-vi.mock('next/headers', () => ({
-  cookies: createCookieApi
+vi.mock("next/headers", () => ({
+  cookies: createCookieApi,
 }));
 
 beforeEach(() => {
   cookieStore.clear();
+});
+
+afterEach(() => {
+  // Clear all timers and mocks after each test
+  vi.clearAllTimers();
+  vi.clearAllMocks();
 });

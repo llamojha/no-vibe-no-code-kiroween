@@ -49,14 +49,14 @@ describe("SupabaseIdeaRepository", () => {
     it("should save an idea successfully", async () => {
       const idea = Idea.create({
         userId: UserId.generate(),
-        ideaText: "Test idea",
+        ideaText: "Repository test idea for saving success",
         source: IdeaSource.MANUAL,
       });
 
       const mockDAO = {
         id: idea.id.value,
         user_id: idea.userId.value,
-        idea_text: "Test idea",
+        idea_text: "Repository test idea for saving success",
         source: "manual",
         project_status: "idea",
         notes: "",
@@ -80,7 +80,7 @@ describe("SupabaseIdeaRepository", () => {
     it("should handle save errors", async () => {
       const idea = Idea.create({
         userId: createTestUserId(),
-        ideaText: "Test idea",
+        ideaText: "Test idea for error handling",
         source: IdeaSource.MANUAL,
       });
 
@@ -104,7 +104,7 @@ describe("SupabaseIdeaRepository", () => {
       const mockDAO = {
         id: ideaId.value,
         user_id: userId.value,
-        idea_text: "Test idea",
+        idea_text: "Repository test idea for find by id",
         source: "manual",
         project_status: "idea",
         notes: "",
@@ -163,7 +163,7 @@ describe("SupabaseIdeaRepository", () => {
         {
           id: createTestIdeaId().value,
           user_id: userId.value,
-          idea_text: "Idea 1",
+          idea_text: "Repository idea text one",
           source: "manual",
           project_status: "idea",
           notes: "",
@@ -174,7 +174,7 @@ describe("SupabaseIdeaRepository", () => {
         {
           id: createTestIdeaId().value,
           user_id: userId.value,
-          idea_text: "Idea 2",
+          idea_text: "Repository idea text two",
           source: "frankenstein",
           project_status: "in_progress",
           notes: "Some notes",
@@ -286,7 +286,7 @@ describe("SupabaseIdeaRepository", () => {
       const mockDAO = {
         id: ideaId.value,
         user_id: userId.value,
-        idea_text: "Test idea",
+        idea_text: "Repository test idea for delete success",
         source: "manual",
         project_status: "idea",
         notes: "",
@@ -300,10 +300,6 @@ describe("SupabaseIdeaRepository", () => {
         error: null,
       });
 
-      mockClient.delete.mockResolvedValue({
-        error: null,
-      });
-
       const result = await repository.delete(ideaId, userId);
 
       expect(result.success).toBe(true);
@@ -314,7 +310,7 @@ describe("SupabaseIdeaRepository", () => {
     it("should handle delete errors", async () => {
       const ideaId = createTestIdeaId();
 
-      mockClient.delete.mockResolvedValue({
+      mockClient.eq.mockResolvedValueOnce({
         error: { message: "Database error", code: "500" },
       });
 
@@ -361,7 +357,7 @@ describe("SupabaseIdeaRepository", () => {
     it("should convert database errors to domain errors", async () => {
       const idea = Idea.create({
         userId: createTestUserId(),
-        ideaText: "Test idea",
+        ideaText: "Test idea for unique constraint",
         source: IdeaSource.MANUAL,
       });
 
@@ -380,7 +376,7 @@ describe("SupabaseIdeaRepository", () => {
     it("should handle unique constraint violations", async () => {
       const idea = Idea.create({
         userId: createTestUserId(),
-        ideaText: "Test idea",
+        ideaText: "Repository test idea for unique constraint handling",
         source: IdeaSource.MANUAL,
       });
 

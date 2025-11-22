@@ -14,6 +14,14 @@ export default defineConfig({
       "features/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
     ],
     exclude: ["node_modules", "dist", ".next", "tests/e2e"],
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: false,
+      },
+    },
+    isolate: true,
+    fileParallelism: true,
     environmentMatchGlobs: [
       // Use jsdom for React component tests
       ["features/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}", "jsdom"],
