@@ -134,6 +134,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      ideas: {
+        Row: {
+          id: string;
+          user_id: string;
+          idea_text: string;
+          source: "manual" | "frankenstein";
+          project_status: "idea" | "in_progress" | "completed" | "archived";
+          notes: string;
+          tags: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          idea_text: string;
+          source?: "manual" | "frankenstein";
+          project_status?: "idea" | "in_progress" | "completed" | "archived";
+          notes?: string;
+          tags?: string[];
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          idea_text?: string;
+          source?: "manual" | "frankenstein";
+          project_status?: "idea" | "in_progress" | "completed" | "archived";
+          notes?: string;
+          tags?: string[];
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      documents: {
+        Row: {
+          id: string;
+          idea_id: string;
+          user_id: string;
+          document_type: "startup_analysis" | "hackathon_analysis";
+          title: string | null;
+          content: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          idea_id: string;
+          user_id: string;
+          document_type: "startup_analysis" | "hackathon_analysis";
+          title?: string | null;
+          content: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          idea_id?: string;
+          user_id?: string;
+          document_type?: "startup_analysis" | "hackathon_analysis";
+          title?: string | null;
+          content?: Json;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -168,3 +237,13 @@ export type CreditTransactionInsert =
   Database["public"]["Tables"]["credit_transactions"]["Insert"];
 export type CreditTransactionUpdate =
   Database["public"]["Tables"]["credit_transactions"]["Update"];
+
+export type IdeaRow = Database["public"]["Tables"]["ideas"]["Row"];
+export type IdeaInsert = Database["public"]["Tables"]["ideas"]["Insert"];
+export type IdeaUpdate = Database["public"]["Tables"]["ideas"]["Update"];
+
+export type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
+export type DocumentInsert =
+  Database["public"]["Tables"]["documents"]["Insert"];
+export type DocumentUpdate =
+  Database["public"]["Tables"]["documents"]["Update"];

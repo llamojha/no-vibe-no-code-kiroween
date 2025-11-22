@@ -2,6 +2,8 @@
 export { AnalysisId } from "./AnalysisId";
 export { UserId } from "./UserId";
 export { CreditTransactionId } from "./CreditTransactionId";
+export { IdeaId } from "./IdeaId";
+export { DocumentId } from "./DocumentId";
 
 // Basic Value Objects
 export { Score } from "./Score";
@@ -11,6 +13,9 @@ export { Locale } from "./Locale";
 // Domain-specific Value Objects
 export { Category } from "./Category";
 export { Criteria } from "./Criteria";
+export { IdeaSource } from "./IdeaSource";
+export { DocumentType } from "./DocumentType";
+export { ProjectStatus } from "./ProjectStatus";
 
 // Enums
 export { TransactionType } from "./TransactionType";

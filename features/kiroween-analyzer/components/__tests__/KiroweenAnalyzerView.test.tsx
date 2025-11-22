@@ -1,32 +1,42 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Mock } from "vitest";
+import en from "@/locales/en.json";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import KiroweenAnalyzerView from "../KiroweenAnalyzerView";
 
+const translate = (key: string) =>
+  (en as Record<string, string>)[key] ?? key;
+
 // Mock the dependencies
-jest.mock("next/navigation", () => ({
-  useRouter: jest.fn(),
-  useSearchParams: jest.fn(),
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+  useSearchParams: vi.fn(),
 }));
 
-jest.mock("@/features/auth/context/AuthContext", () => ({
-  useAuth: jest.fn(),
+vi.mock("@/features/auth/context/AuthContext", () => ({
+  useAuth: vi.fn(),
 }));
 
-jest.mock("@/features/locale/context/LocaleContext", () => ({
-  useLocale: jest.fn(),
+vi.mock("@/features/locale/context/LocaleContext", () => ({
+  useLocale: vi.fn(),
 }));
 
-jest.mock("@/features/kiroween-analyzer/api/analyzeHackathonProject", () => ({
-  analyzeHackathonProject: jest.fn(),
+vi.mock("@/features/kiroween-analyzer/api/analyzeHackathonProject", () => ({
+  analyzeHackathonProject: vi.fn(),
+}));
+
+vi.mock("@/features/shared/api", () => ({
+  getCreditBalance: vi.fn().mockResolvedValue({ credits: 5, tier: "free" as const }),
 }));
 
 // Mock the child components
-jest.mock("../ProjectSubmissionForm", () => {
-  return function MockProjectSubmissionForm({
+vi.mock("../ProjectSubmissionForm", () => ({
+  default: function MockProjectSubmissionForm({
     onSubmissionChange,
     submission,
   }: any) {
@@ -46,11 +56,11 @@ jest.mock("../ProjectSubmissionForm", () => {
         </button>
       </div>
     );
-  };
-});
+  },
+}));
 
-jest.mock("../HackathonAnalysisDisplay", () => {
-  return function MockHackathonAnalysisDisplay({
+vi.mock("../HackathonAnalysisDisplay", () => ({
+  default: function MockHackathonAnalysisDisplay({
     onRefineSuggestion,
     addedSuggestions,
   }: any) {
@@ -71,28 +81,28 @@ jest.mock("../HackathonAnalysisDisplay", () => {
         </div>
       </div>
     );
-  };
-});
+  },
+}));
 
-jest.mock("../SpookyLoader", () => {
-  return function MockSpookyLoader() {
+vi.mock("../SpookyLoader", () => ({
+  default: function MockSpookyLoader() {
     return <div data-testid="spooky-loader">Loading...</div>;
-  };
-});
+  },
+}));
 
-jest.mock("../SpookyErrorMessage", () => {
-  return function MockSpookyErrorMessage({ message }: any) {
+vi.mock("../SpookyErrorMessage", () => ({
+  default: function MockSpookyErrorMessage({ message }: any) {
     return <div data-testid="spooky-error">{message}</div>;
-  };
-});
+  },
+}));
 
 const mockRouter = {
-  push: jest.fn(),
-  replace: jest.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
 };
 
 const mockSearchParams = {
-  get: jest.fn(),
+  get: vi.fn(),
 };
 
 const mockAuth = {
@@ -103,15 +113,17 @@ const mockAuth = {
 
 const mockLocale = {
   locale: "en" as const,
+  t: vi.fn(translate),
+  setLocale: vi.fn(),
 };
 
 describe("KiroweenAnalyzerView", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
-    (useAuth as jest.Mock).mockReturnValue(mockAuth);
-    (useLocale as jest.Mock).mockReturnValue(mockLocale);
+    vi.clearAllMocks();
+    (useRouter as unknown as Mock).mockReturnValue(mockRouter);
+    (useSearchParams as unknown as Mock).mockReturnValue(mockSearchParams);
+    (useAuth as unknown as Mock).mockReturnValue(mockAuth);
+    (useLocale as unknown as Mock).mockReturnValue(mockLocale);
     mockSearchParams.get.mockReturnValue(null);
   });
 
@@ -121,9 +133,7 @@ describe("KiroweenAnalyzerView", () => {
     expect(
       screen.getByText("Kiroween Hackathon Analyzer")
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Evaluate your spooky hackathon project")
-    ).toBeInTheDocument();
+    expect(screen.getByText(/spooky feedback/i)).toBeInTheDocument();
     expect(screen.getByTestId("project-submission-form")).toBeInTheDocument();
   });
 
@@ -218,7 +228,7 @@ describe("KiroweenAnalyzerView", () => {
     // Check that the suggestion was applied
     await waitFor(() => {
       expect(screen.getByTestId("description")).toHaveTextContent(
-        "Initial description\n\n— Test Suggestion: Test suggestion text"
+        /Initial description\s+— Test Suggestion: Test suggestion text/
       );
       expect(screen.getByTestId("added-suggestions")).toHaveTextContent("[0]");
     });
@@ -287,7 +297,7 @@ describe("KiroweenAnalyzerView", () => {
         "[0,1]"
       );
       expect(screen.getByTestId("description")).toHaveTextContent(
-        "Initial description\n\n— Suggestion 1: First suggestion\n\n— Suggestion 2: Second suggestion"
+        /Initial description\s+— Suggestion 1: First suggestion\s+— Suggestion 2: Second suggestion/
       );
     });
   });

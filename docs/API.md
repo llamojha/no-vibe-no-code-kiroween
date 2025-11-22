@@ -304,6 +304,164 @@ Deletes an analysis from the user's dashboard.
 - `404` - Analysis not found
 - `403` - Analysis belongs to another user
 
+## Idea Panel Endpoints (v2)
+
+The Idea Panel feature introduces a new data model that separates ideas from documents (analyses). For complete documentation, see [Idea Panel API Documentation](./IDEA_PANEL_API.md).
+
+### GET /api/v2/ideas
+
+Retrieves all ideas for the authenticated user with document counts.
+
+**Authentication**: Required
+
+**Query Parameters**:
+
+- `page` (number, optional): Page number (default: 1)
+- `limit` (number, optional): Results per page (default: 10)
+- `status` (string, optional): Filter by project status
+- `source` (string, optional): Filter by idea source
+
+**Response** (200):
+
+```json
+{
+  "ideas": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "ideaText": "A mobile app that connects dog owners...",
+      "source": "manual",
+      "projectStatus": "in_progress",
+      "notes": "Met with potential users",
+      "tags": ["mobile-app", "marketplace"],
+      "documentCount": 2,
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-16T14:20:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+### GET /api/v2/ideas/[ideaId]
+
+Retrieves a specific idea with all associated documents.
+
+**Authentication**: Required
+
+**Response** (200):
+
+```json
+{
+  "idea": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "ideaText": "A mobile app that connects dog owners...",
+    "source": "manual",
+    "projectStatus": "in_progress",
+    "notes": "Met with potential users",
+    "tags": ["mobile-app", "marketplace"],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-16T14:20:00Z"
+  },
+  "documents": [
+    {
+      "id": "doc-uuid-1",
+      "documentType": "startup_analysis",
+      "content": {
+        /* analysis data */
+      },
+      "createdAt": "2024-01-15T10:35:00Z"
+    }
+  ]
+}
+```
+
+### PUT /api/v2/ideas/[ideaId]/status
+
+Updates the project status of an idea.
+
+**Authentication**: Required
+
+**Request Body**:
+
+```json
+{
+  "status": "in_progress"
+}
+```
+
+**Response** (200):
+
+```json
+{
+  "success": true,
+  "idea": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "projectStatus": "in_progress",
+    "updatedAt": "2024-01-16T14:20:00Z"
+  }
+}
+```
+
+### PUT /api/v2/ideas/[ideaId]/metadata
+
+Updates notes and/or tags for an idea.
+
+**Authentication**: Required
+
+**Request Body**:
+
+```json
+{
+  "notes": "Met with potential users, positive feedback",
+  "tags": ["mobile-app", "marketplace", "pets"]
+}
+```
+
+**Response** (200):
+
+```json
+{
+  "success": true,
+  "idea": {
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "notes": "Met with potential users, positive feedback",
+    "tags": ["mobile-app", "marketplace", "pets"],
+    "updatedAt": "2024-01-16T14:25:00Z"
+  }
+}
+```
+
+### GET /api/v2/ideas/[ideaId]/documents
+
+Retrieves all documents for a specific idea.
+
+**Authentication**: Required
+
+**Response** (200):
+
+```json
+{
+  "documents": [
+    {
+      "id": "doc-uuid-1",
+      "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+      "documentType": "startup_analysis",
+      "content": {
+        /* analysis data */
+      },
+      "createdAt": "2024-01-15T10:35:00Z"
+    }
+  ]
+}
+```
+
+For complete Idea Panel API documentation, including data models, migration details, and SDK examples, see [Idea Panel API Documentation](./IDEA_PANEL_API.md).
+
 ## Audio Features
 
 ### POST /api/tts

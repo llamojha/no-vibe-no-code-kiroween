@@ -2,12 +2,18 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { IAnalysisRepository } from "../../domain/repositories/IAnalysisRepository";
 import { IUserRepository } from "../../domain/repositories/IUserRepository";
 import { ICreditTransactionRepository } from "../../domain/repositories/ICreditTransactionRepository";
+import { IIdeaRepository } from "../../domain/repositories/IIdeaRepository";
+import { IDocumentRepository } from "../../domain/repositories/IDocumentRepository";
 import { SupabaseAnalysisRepository } from "../database/supabase/repositories/SupabaseAnalysisRepository";
 import { SupabaseUserRepository } from "../database/supabase/repositories/SupabaseUserRepository";
 import { SupabaseCreditTransactionRepository } from "../database/supabase/repositories/SupabaseCreditTransactionRepository";
+import { SupabaseIdeaRepository } from "../database/supabase/repositories/SupabaseIdeaRepository";
+import { SupabaseDocumentRepository } from "../database/supabase/repositories/SupabaseDocumentRepository";
 import { AnalysisMapper } from "../database/supabase/mappers/AnalysisMapper";
 import { UserMapper } from "../database/supabase/mappers/UserMapper";
 import { CreditTransactionMapper } from "../database/supabase/mappers/CreditTransactionMapper";
+import { IdeaMapper } from "../database/supabase/mappers/IdeaMapper";
+import { DocumentMapper } from "../database/supabase/mappers/DocumentMapper";
 import { MockAnalysisRepository } from "@/lib/testing/mocks/MockAnalysisRepository";
 import { FeatureFlagManager } from "@/lib/testing/FeatureFlagManager";
 import { createSupabaseServiceClient } from "../config";
@@ -26,7 +32,11 @@ import { createSupabaseServiceClient } from "../config";
 export class RepositoryFactory {
   private repositories: Map<
     string,
-    IAnalysisRepository | IUserRepository | ICreditTransactionRepository
+    | IAnalysisRepository
+    | IUserRepository
+    | ICreditTransactionRepository
+    | IIdeaRepository
+    | IDocumentRepository
   > = new Map();
   private featureFlagManager: FeatureFlagManager;
   private readonly serviceSupabaseClient: SupabaseClient | null;
@@ -162,6 +172,50 @@ export class RepositoryFactory {
       throw new Error("Failed to create CreditTransactionRepository");
     }
     return repository as ICreditTransactionRepository;
+  }
+
+  /**
+   * Create configured IdeaRepository instance
+   */
+  createIdeaRepository(): IIdeaRepository {
+    const cacheKey = "ideaRepository";
+
+    if (!this.repositories.has(cacheKey)) {
+      const mapper = new IdeaMapper();
+      const repository = new SupabaseIdeaRepository(
+        this.supabaseClient,
+        mapper
+      );
+      this.repositories.set(cacheKey, repository);
+    }
+
+    const repository = this.repositories.get(cacheKey);
+    if (!repository) {
+      throw new Error("Failed to create IdeaRepository");
+    }
+    return repository as IIdeaRepository;
+  }
+
+  /**
+   * Create configured DocumentRepository instance
+   */
+  createDocumentRepository(): IDocumentRepository {
+    const cacheKey = "documentRepository";
+
+    if (!this.repositories.has(cacheKey)) {
+      const mapper = new DocumentMapper();
+      const repository = new SupabaseDocumentRepository(
+        this.supabaseClient,
+        mapper
+      );
+      this.repositories.set(cacheKey, repository);
+    }
+
+    const repository = this.repositories.get(cacheKey);
+    if (!repository) {
+      throw new Error("Failed to create DocumentRepository");
+    }
+    return repository as IDocumentRepository;
   }
 
   /**

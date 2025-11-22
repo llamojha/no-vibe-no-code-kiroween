@@ -7,6 +7,8 @@ export * from "./IUserRepository";
 export * from "./IHackathonAnalysisRepository";
 export * from "./IDashboardRepository";
 export * from "./ICreditTransactionRepository";
+export * from "./IIdeaRepository";
+export * from "./IDocumentRepository";
 
 // Repository types and interfaces
 export type {
@@ -29,3 +31,10 @@ export type {
   TimeFilter,
 } from "./IDashboardRepository";
 export type { CreditBalance } from "./ICreditTransactionRepository";
+
+export type { IdeaSearchCriteria, IdeaSortOptions } from "./IIdeaRepository";
+
+export type {
+  DocumentSearchCriteria,
+  DocumentSortOptions,
+} from "./IDocumentRepository";

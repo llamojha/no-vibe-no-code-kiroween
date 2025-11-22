@@ -33,6 +33,30 @@ The application follows **hexagonal architecture** (Ports and Adapters pattern) 
 - **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
 - **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
 
+**Idea Panel Feature:**
+
+The Idea Panel is a dedicated workspace for managing ideas and their associated analyses. It introduces a new data model that separates ideas from documents (analyses), enabling better organization and future extensibility.
+
+- **[Idea Panel User Guide](docs/IDEA_PANEL_USER_GUIDE.md)**: Complete user guide for the Idea Panel feature
+- **[Idea Panel API](docs/IDEA_PANEL_API.md)**: API documentation for Idea Panel endpoints
+- **[Idea Panel Migration](docs/IDEA_PANEL_MIGRATION.md)**: Database migration documentation and procedures
+
+**Key Features:**
+
+- Manage ideas in a dedicated full-screen workspace
+- View all analyses (documents) associated with an idea
+- Track project status (idea, in_progress, completed, archived)
+- Add notes and tags for organization
+- Create new analyses directly from the panel
+- Support for manual and Doctor Frankenstein generated ideas
+- Responsive design for mobile and desktop
+
+**Data Model:**
+
+- `ideas` table: Stores all ideas with management metadata
+- `documents` table: Stores analyses linked to ideas
+- Backward compatible with existing `saved_analyses` table
+
 **Testing & Mocks:**
 
 - **[Sistema de Mocks](docs/SISTEMA_MOCKS_DOCUMENTACION.md)**: 🧪 Documentación completa del sistema de mocks para desarrollo sin costos de API

@@ -153,6 +153,31 @@ export interface SupportingMaterialsDAO {
 }
 
 /**
+ * Idea DAO - represents ideas table structure
+ */
+export interface IdeaDAO extends BaseDAO {
+  user_id: string;
+  idea_text: string;
+  source: "manual" | "frankenstein";
+  project_status: "idea" | "in_progress" | "completed" | "archived";
+  notes: string;
+  tags: string[];
+  updated_at: string;
+}
+
+/**
+ * Document DAO - represents documents table structure
+ */
+export interface DocumentDAO extends BaseDAO {
+  idea_id: string;
+  user_id: string;
+  document_type: "startup_analysis" | "hackathon_analysis";
+  title: string | null;
+  content: Json;
+  updated_at: string;
+}
+
+/**
  * Type guard to check if analysis data is IdeaAnalysisData
  * @param data - The analysis data to check
  * @returns true if the data is IdeaAnalysisData (not hackathon type)

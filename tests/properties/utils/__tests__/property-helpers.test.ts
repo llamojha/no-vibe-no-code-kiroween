@@ -125,8 +125,10 @@ describe("Property Helpers", () => {
         return "done";
       });
 
+      const jitterAllowanceMs = 1; // timers can fire slightly early depending on scheduler resolution
+
       expect(result).toBe("done");
-      expect(duration).toBeGreaterThanOrEqual(10);
+      expect(duration).toBeGreaterThanOrEqual(10 - jitterAllowanceMs);
       expect(duration).toBeLessThan(500); // Should complete reasonably quickly (allow for system load)
     });
 

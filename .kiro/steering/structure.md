@@ -17,6 +17,8 @@ Core business objects with identity and lifecycle:
 - `entities/Analysis.ts` - Analysis aggregate root with business rules and invariants
 - `entities/User.ts` - User aggregate root
 - `entities/CreditTransaction.ts` - Credit transaction entity with immutability guarantees
+- `entities/Idea.ts` - Idea aggregate root (Idea Panel feature)
+- `entities/Document.ts` - Document entity for analyses (Idea Panel feature)
 - `entities/shared/Entity.ts` - Base entity class with ID encapsulation
 
 #### Value Objects
@@ -26,10 +28,15 @@ Immutable domain concepts with validation:
 - `value-objects/AnalysisId.ts` - Strongly-typed analysis identifier
 - `value-objects/UserId.ts` - Strongly-typed user identifier
 - `value-objects/CreditTransactionId.ts` - Strongly-typed credit transaction identifier
+- `value-objects/IdeaId.ts` - Strongly-typed idea identifier (Idea Panel)
+- `value-objects/DocumentId.ts` - Strongly-typed document identifier (Idea Panel)
 - `value-objects/Email.ts` - Email validation and representation
 - `value-objects/Score.ts` - Score validation (0-100 range)
 - `value-objects/Category.ts` - Analysis categories (general/hackathon types)
 - `value-objects/AnalysisType.ts` - Analysis type discriminator (startup/hackathon)
+- `value-objects/IdeaSource.ts` - Idea source (manual/frankenstein) (Idea Panel)
+- `value-objects/DocumentType.ts` - Document type (startup_analysis/hackathon_analysis) (Idea Panel)
+- `value-objects/ProjectStatus.ts` - Project status (idea/in_progress/completed/archived) (Idea Panel)
 - `value-objects/TransactionType.ts` - Credit transaction types (deduct/add/refund/admin_adjustment)
 - `value-objects/Criteria.ts` - Evaluation criteria value object
 - `value-objects/Locale.ts` - Supported locale value object (en/es)
@@ -43,6 +50,8 @@ Data access contracts (ports):
 - `repositories/ICreditTransactionRepository.ts` - Credit transaction persistence interface
 - `repositories/IHackathonAnalysisRepository.ts` - Hackathon analysis persistence
 - `repositories/IDashboardRepository.ts` - Dashboard data aggregation interface
+- `repositories/IIdeaRepository.ts` - Idea persistence interface (Idea Panel)
+- `repositories/IDocumentRepository.ts` - Document persistence interface (Idea Panel)
 - `repositories/base/` - Base repository interfaces and types
 
 #### Domain Services
@@ -75,6 +84,11 @@ Business operation orchestration:
 - `use-cases/DeductCreditUseCase.ts` - Deduct credits for operations
 - `use-cases/AddCreditsUseCase.ts` - Add credits to user account
 - `use-cases/GetCreditBalanceUseCase.ts` - Retrieve current credit balance
+- `use-cases/GetIdeaWithDocumentsUseCase.ts` - Retrieve idea with all documents (Idea Panel)
+- `use-cases/UpdateIdeaStatusUseCase.ts` - Update idea status (Idea Panel)
+- `use-cases/SaveIdeaMetadataUseCase.ts` - Save idea notes and tags (Idea Panel)
+- `use-cases/GetUserIdeasUseCase.ts` - Retrieve all ideas for user (Idea Panel)
+- `use-cases/GetDocumentsByIdeaUseCase.ts` - Retrieve documents for idea (Idea Panel)
 - `use-cases/user/CreateUserUseCase.ts` - User creation
 - `use-cases/user/GetUserByIdUseCase.ts` - User retrieval
 - `use-cases/user/UpdateUserLastLoginUseCase.ts` - Login tracking
@@ -126,6 +140,10 @@ The infrastructure layer provides concrete implementations of interfaces and ext
 - `database/supabase/repositories/SupabaseAnalysisRepository.ts` - Analysis repository implementation
 - `database/supabase/repositories/SupabaseUserRepository.ts` - User repository implementation
 - `database/supabase/repositories/SupabaseCreditTransactionRepository.ts` - Credit transaction repository
+- `database/supabase/repositories/SupabaseIdeaRepository.ts` - Idea repository implementation (Idea Panel)
+- `database/supabase/repositories/SupabaseDocumentRepository.ts` - Document repository implementation (Idea Panel)
+- `database/supabase/mappers/IdeaMapper.ts` - Idea entity/DAO/DTO mapper (Idea Panel)
+- `database/supabase/mappers/DocumentMapper.ts` - Document entity/DAO/DTO mapper (Idea Panel)
 - `database/types/` - Database-specific types (DAOs)
 - `database/errors/` - Database error handling
 
@@ -141,12 +159,15 @@ The infrastructure layer provides concrete implementations of interfaces and ext
 - `web/controllers/AnalysisController.ts` - Analysis HTTP request handling
 - `web/controllers/DashboardController.ts` - Dashboard HTTP handling
 - `web/controllers/HackathonController.ts` - Hackathon HTTP handling
+- `web/controllers/IdeaPanelController.ts` - Idea Panel HTTP request handling (Idea Panel)
 - `web/middleware/AuthMiddleware.ts` - Authentication middleware
 - `web/middleware/ErrorMiddleware.ts` - Error handling middleware
 - `web/middleware/ValidationMiddleware.ts` - Request validation
 - `web/dto/AnalysisDTO.ts` - Analysis data transfer objects
 - `web/dto/UserDTO.ts` - User DTOs
 - `web/dto/HackathonDTO.ts` - Hackathon DTOs
+- `web/dto/IdeaDTO.ts` - Idea data transfer objects (Idea Panel)
+- `web/dto/DocumentDTO.ts` - Document data transfer objects (Idea Panel)
 - `web/routes/` - Route definitions and mappings
 - `web/context/` - React context providers
 - `web/helpers/` - Web-specific utilities
@@ -226,8 +247,28 @@ Authentication and user management:
 User dashboard:
 
 - `dashboard/components/UserDashboard.tsx` - Dashboard UI
+- `dashboard/components/IdeaCard.tsx` - Idea card component (displays ideas instead of analyses)
 - `dashboard/components/AnalysisList.tsx` - Analysis list component
 - `dashboard/api/loadUnifiedAnalysesV2.ts` - Dashboard data loading
+
+#### Idea Panel
+
+Dedicated workspace for managing ideas with status tracking, notes, tags, and multiple analyses:
+
+- `idea-panel/components/IdeaPanelView.tsx` - Main container component
+- `idea-panel/components/IdeaPanelLayout.tsx` - Full-screen layout with breadcrumb navigation
+- `idea-panel/components/IdeaDetailsSection.tsx` - Displays idea text, source, and creation date
+- `idea-panel/components/DocumentsListSection.tsx` - Lists all analyses with expandable details
+- `idea-panel/components/ProjectStatusControl.tsx` - Status dropdown with last updated timestamp
+- `idea-panel/components/NotesSection.tsx` - Textarea for adding and editing notes
+- `idea-panel/components/TagsSection.tsx` - Tag management with add/remove functionality
+- `idea-panel/components/AnalyzeButton.tsx` - Dropdown button for creating new analyses
+- `idea-panel/api/getIdeaWithDocuments.ts` - Fetch idea with all documents
+- `idea-panel/api/getUserIdeas.ts` - Fetch all ideas for user
+- `idea-panel/api/updateStatus.ts` - Update idea status
+- `idea-panel/api/saveMetadata.ts` - Save notes and tags
+- `idea-panel/api/getDocumentsByIdea.ts` - Fetch documents for idea
+- `idea-panel/analytics/tracking.ts` - Analytics tracking for panel events
 
 #### Locale
 
@@ -309,6 +350,14 @@ Next.js API routes (HTTP endpoints).
 
 - `api/v2/dashboard/route.ts` - GET /api/v2/dashboard
 
+#### Idea Panel Endpoints
+
+- `api/v2/ideas/route.ts` - GET /api/v2/ideas (list all ideas for user)
+- `api/v2/ideas/[ideaId]/route.ts` - GET /api/v2/ideas/[ideaId] (get idea with documents)
+- `api/v2/ideas/[ideaId]/status/route.ts` - PUT /api/v2/ideas/[ideaId]/status (update status)
+- `api/v2/ideas/[ideaId]/metadata/route.ts` - PUT /api/v2/ideas/[ideaId]/metadata (save notes/tags)
+- `api/v2/ideas/[ideaId]/documents/route.ts` - GET /api/v2/ideas/[ideaId]/documents (list documents)
+
 #### Utility Endpoints
 
 - `api/health/route.ts` - GET /api/health (health check)
@@ -318,6 +367,23 @@ Next.js API routes (HTTP endpoints).
 #### Development Endpoints
 
 - `api/dev/test-new-logger/route.ts` - Logger testing endpoint
+
+### Page Routes (`app/`)
+
+Next.js page routes (UI pages).
+
+#### Main Pages
+
+- `app/page.tsx` - Home page
+- `app/analyzer/page.tsx` - Startup idea analyzer
+- `app/kiroween-analyzer/page.tsx` - Hackathon project analyzer
+- `app/doctor-frankenstein/page.tsx` - Doctor Frankenstein idea generator
+- `app/dashboard/page.tsx` - User dashboard
+- `app/login/page.tsx` - Login page
+
+#### Idea Panel Pages
+
+- `app/idea/[ideaId]/page.tsx` - Idea Panel page (dedicated workspace for managing ideas)
 
 ### Shared Types (`src/shared/`)
 

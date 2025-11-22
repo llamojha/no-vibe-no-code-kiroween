@@ -1,31 +1,38 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadHackathonAnalysis } from "../loadHackathonAnalysis";
+
+vi.mock("@/lib/featureFlags", () => ({
+  isEnabled: () => false,
+}));
 
 // Mock Supabase client
 const mockSupabase = {
   auth: {
-    getSession: jest.fn(),
+    getUser: vi.fn(),
   },
-  from: jest.fn(),
+  from: vi.fn(),
 };
 
-const mockSelect = jest.fn();
-const mockEq = jest.fn();
-const mockReturns = jest.fn();
-const mockSingle = jest.fn();
+const mockQuery = {
+  select: vi.fn(),
+  eq: vi.fn(),
+  returns: vi.fn(),
+  single: vi.fn(),
+};
 
-jest.mock("@/lib/supabase/client", () => ({
+vi.mock("@/lib/supabase/client", () => ({
   browserSupabase: () => mockSupabase,
 }));
 
-jest.mock("@/lib/supabase/mappers", () => ({
-  mapSavedHackathonAnalysesRow: jest.fn((row) => ({
+vi.mock("@/lib/supabase/mappers", () => ({
+  mapSavedHackathonAnalysesRow: vi.fn((row) => ({
     id: row.id,
     userId: row.user_id,
-    projectDescription: row.project_description,
+    projectDescription: row.idea,
     analysis: row.analysis,
-    createdAt: row.created_at,
+    createdAt: row.created_at ?? "2023-01-01T00:00:00Z",
     audioBase64: row.audio_base64,
-    supportingMaterials: row.supporting_materials,
+    supportingMaterials: undefined,
   })),
 }));
 
@@ -33,48 +40,31 @@ describe("loadHackathonAnalysis", () => {
   const mockAnalysisRow = {
     id: "analysis-123",
     user_id: "user-123",
-    project_description: "Test project",
-    selected_category: "resurrection",
-    kiro_usage: "",
+    analysis_type: "hackathon",
+    idea: "Test project",
     analysis: {
       finalScore: 4.2,
       viabilitySummary: "Strong project",
     },
     created_at: "2023-01-01T00:00:00Z",
     audio_base64: null,
-    supporting_materials: {},
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    // Setup default mock chain
-    mockSupabase.from.mockReturnValue({
-      select: mockSelect,
-    });
-    mockSelect.mockReturnValue({
-      eq: mockEq,
-    });
-    mockEq.mockReturnValue({
-      eq: mockEq,
-    });
-    mockEq.mockReturnValue({
-      returns: mockReturns,
-    });
-    mockReturns.mockReturnValue({
-      single: mockSingle,
-    });
+    mockSupabase.from.mockReturnValue(mockQuery);
+    mockQuery.select.mockReturnValue(mockQuery);
+    mockQuery.eq.mockReturnValue(mockQuery);
+    mockQuery.returns.mockReturnValue(mockQuery);
   });
 
   it("should load hackathon analysis successfully", async () => {
-    const mockSession = {
-      user: { id: "user-123" },
-    };
-
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: mockAnalysisRow,
       error: null,
     });
@@ -88,8 +78,9 @@ describe("loadHackathonAnalysis", () => {
   });
 
   it("should return error when user is not authenticated", async () => {
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: null },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
     });
 
     const result = await loadHackathonAnalysis("analysis-123");
@@ -99,14 +90,11 @@ describe("loadHackathonAnalysis", () => {
   });
 
   it("should handle analysis not found", async () => {
-    const mockSession = {
-      user: { id: "user-123" },
-    };
-
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: null,
       error: { code: "PGRST116" },
     });
@@ -118,14 +106,11 @@ describe("loadHackathonAnalysis", () => {
   });
 
   it("should handle database errors", async () => {
-    const mockSession = {
-      user: { id: "user-123" },
-    };
-
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: null,
       error: { message: "Database error" },
     });
@@ -139,26 +124,24 @@ describe("loadHackathonAnalysis", () => {
   });
 
   it("should query database with correct parameters", async () => {
-    const mockSession = {
-      user: { id: "user-123" },
-    };
-
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-123" } },
+      error: null,
     });
-    mockSingle.mockResolvedValue({
+    mockQuery.single.mockResolvedValue({
       data: mockAnalysisRow,
       error: null,
     });
 
     await loadHackathonAnalysis("analysis-123");
 
-    expect(mockSupabase.from).toHaveBeenCalledWith("saved_hackathon_analyses");
-    expect(mockSelect).toHaveBeenCalledWith("*");
+    expect(mockSupabase.from).toHaveBeenCalledWith("saved_analyses");
+    expect(mockQuery.select).toHaveBeenCalledWith("*");
 
-    // Check that eq was called twice (for id and user_id)
-    expect(mockEq).toHaveBeenCalledTimes(2);
-    expect(mockEq).toHaveBeenNthCalledWith(1, "id", "analysis-123");
-    expect(mockEq).toHaveBeenNthCalledWith(2, "user_id", "user-123");
+    // Check that eq was called for id, user_id, and analysis_type
+    expect(mockQuery.eq).toHaveBeenCalledTimes(3);
+    expect(mockQuery.eq).toHaveBeenNthCalledWith(1, "id", "analysis-123");
+    expect(mockQuery.eq).toHaveBeenNthCalledWith(2, "user_id", "user-123");
+    expect(mockQuery.eq).toHaveBeenNthCalledWith(3, "analysis_type", "hackathon");
   });
 });

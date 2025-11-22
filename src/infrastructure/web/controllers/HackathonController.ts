@@ -31,6 +31,9 @@ import {
   trackServerError,
 } from "@/features/analytics/server-tracking";
 import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
+import { SaveAnalysisToIdeaPanelUseCase } from "@/src/application/use-cases/SaveAnalysisToIdeaPanelUseCase";
+import { logger, LogCategory } from "@/lib/logger";
+import { type DocumentContent } from "@/src/domain/entities";
 
 /**
  * Controller for hackathon analysis-related API endpoints
@@ -46,7 +49,8 @@ export class HackathonController {
     private readonly searchHackathonAnalysesHandler: SearchHackathonAnalysesHandler,
     private readonly checkCreditsUseCase: CheckCreditsUseCase,
     private readonly deductCreditUseCase: DeductCreditUseCase,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly saveAnalysisToIdeaPanelUseCase?: SaveAnalysisToIdeaPanelUseCase
   ) {
     this.hackathonMockData = new TestDataManager();
   }
@@ -232,7 +236,58 @@ export class HackathonController {
       "costume-contest",
       Locale.fromString(locale)
     );
+
     if (analysis?.success) {
+      // Save to new ideas and documents tables for Idea Panel feature
+      if (this.saveAnalysisToIdeaPanelUseCase) {
+        try {
+          // Check if ideaId is provided in the request (for linking to existing idea)
+          const url = new URL(request.url);
+          const existingIdeaId = url.searchParams.get("ideaId");
+          const analysisContent = analysis.data as unknown as DocumentContent;
+
+          const saveToIdeaPanelResult =
+            await this.saveAnalysisToIdeaPanelUseCase.execute({
+              ideaText: submission.description,
+              userId: userId,
+              analysisContent,
+              documentType: "hackathon_analysis",
+              source: "manual",
+              existingIdeaId: existingIdeaId || undefined,
+            });
+
+          if (saveToIdeaPanelResult.success) {
+            logger.info(
+              LogCategory.BUSINESS,
+              "Hackathon analysis saved to idea panel tables",
+              {
+                ideaId: saveToIdeaPanelResult.data.idea.id.value,
+                documentId: saveToIdeaPanelResult.data.document?.id.value,
+                isNewIdea: saveToIdeaPanelResult.data.isNewIdea,
+              }
+            );
+          } else {
+            // Log error but don't fail the request since analysis was successful
+            logger.error(
+              LogCategory.BUSINESS,
+              "Failed to save hackathon analysis to idea panel tables",
+              {
+                error: saveToIdeaPanelResult.error.message,
+              }
+            );
+          }
+        } catch (error) {
+          // Log error but don't fail the request
+          logger.error(
+            LogCategory.BUSINESS,
+            "Unexpected error saving hackathon analysis to idea panel tables",
+            {
+              error: error instanceof Error ? error.message : String(error),
+            }
+          );
+        }
+      }
+
       await this.recordCreditUsage(userId, AnalysisType.HACKATHON_PROJECT);
     }
     return NextResponse.json(analysis);

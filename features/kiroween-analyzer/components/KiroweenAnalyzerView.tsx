@@ -31,11 +31,15 @@ import {
 interface KiroweenAnalyzerViewProps {
   initialCredits: number;
   userTier: UserTier;
+  prefilledIdea?: string;
+  ideaId?: string;
 }
 
 const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
   initialCredits,
   userTier,
+  prefilledIdea,
+  ideaId,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,6 +120,16 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
       });
     }
   }, [ideaFromUrl, sourceFromUrl, savedId]);
+
+  // Pre-fill idea from Idea Panel if provided
+  useEffect(() => {
+    if (prefilledIdea && !savedId) {
+      setSubmission({
+        description: prefilledIdea,
+        supportingMaterials: {},
+      });
+    }
+  }, [prefilledIdea, savedId]);
 
   useEffect(() => {
     if (!savedId) {
@@ -255,7 +269,11 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     setIsReportSaved(false);
 
     try {
-      const analysisResult = await analyzeHackathonProject(submission, locale);
+      const analysisResult = await analyzeHackathonProject(
+        submission,
+        locale,
+        ideaId
+      );
       setNewAnalysis(analysisResult);
       await refreshCredits();
 
