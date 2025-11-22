@@ -2,6 +2,65 @@
 
 ## Task Breakdown
 
+### Phase 0: Pre-Migration Verification
+
+- [ ] 0. Verify Database Schema and Policies
+
+  - [ ] 0.1 Verify ideas table schema
+
+    - Check all columns exist (id, user_id, idea_text, source, project_status, notes, tags, created_at, updated_at)
+    - Verify data types match design
+    - _Requirements: 8.1, 8.3, 8.4_
+
+  - [ ] 0.2 Verify documents table schema
+
+    - Check all columns exist (id, idea_id, user_id, document_type, title, content, created_at, updated_at)
+    - Verify data types match design
+    - Verify foreign key constraint (idea_id → ideas.id)
+    - _Requirements: 8.1, 8.2_
+
+  - [ ] 0.3 Verify database indexes
+
+    - Check ideas(user_id) index exists
+    - Check ideas(updated_at DESC) index exists
+    - Check documents(idea_id) index exists
+    - Check documents(user_id) index exists
+    - Check documents(id, user_id) index exists
+    - _Requirements: 10.3_
+
+  - [ ] 0.4 Verify RLS policies on ideas table
+
+    - Test SELECT policy (users can view own ideas)
+    - Test INSERT policy (users can insert own ideas)
+    - Test UPDATE policy (users can update own ideas)
+    - Test DELETE policy (users can delete own ideas)
+    - _Requirements: 8.1_
+
+  - [ ] 0.5 Verify RLS policies on documents table
+
+    - Test SELECT policy (users can view own documents)
+    - Test INSERT policy (users can insert own documents)
+    - Test UPDATE policy (users can update own documents)
+    - Test DELETE policy (users can delete own documents)
+    - _Requirements: 8.1_
+
+  - [ ] 0.6 Test manual database operations
+
+    - Manually create idea record
+    - Manually create document record linked to idea
+    - Verify foreign key constraint works
+    - Verify cascade behavior (if configured)
+    - Test with different users to verify RLS
+    - _Requirements: 8.1, 8.2_
+
+  - [ ] 0.7 Verify existing repositories work
+    - Test IdeaRepository.save()
+    - Test IdeaRepository.findById()
+    - Test DocumentRepository.save()
+    - Test DocumentRepository.findById()
+    - Test DocumentRepository.findByIdeaId()
+    - _Requirements: 10.1, 10.2_
+
 ### Phase 1: Update Save Operations
 
 - [ ] 1. Update Kiroween Analyzer Save
@@ -76,10 +135,17 @@
   - [ ] 3.4 Update Doctor Frankenstein UI components
 
     - Handle new response format
-    - Pass ideaId when navigating to analyzers
+    - Pass ideaId when navigating to analyzers via URL params
+    - Example: `router.push(\`/analyzer?ideaId=\${ideaId}\`)`
     - _Requirements: 5.3_
 
-  - [ ] 3.5 Write unit tests for Frankenstein functions
+  - [ ] 3.5 Update Idea Panel AnalyzeButton component
+
+    - Pass ideaId in URL when navigating to analyzers
+    - Support both `/analyzer?ideaId=X` and `/kiroween-analyzer?ideaId=X`
+    - _Requirements: 5.3, 6.5_
+
+  - [ ] 3.6 Write unit tests for Frankenstein functions
     - Test idea creation
     - Test idea loading
     - Test idea updating
@@ -94,18 +160,28 @@
     - Load from ideas table with document counts
     - Filter for ideas with hackathon_analysis documents
     - Return in unified format
+    - Use JOIN with GROUP BY to avoid N+1 queries
     - _Requirements: 2.3, 6.1, 6.2_
 
-  - [ ] 4.2 Mark loadUnifiedAnalyses.ts as deprecated
+  - [ ] 4.2 Verify dashboard uses getUserIdeas()
+
+    - Check UserDashboard.tsx imports
+    - Ensure no references to loadUnifiedAnalyses
+    - Test dashboard displays ideas correctly
+    - Verify document counts show correctly
+    - _Requirements: 6.1, 6.2, 6.3_
+
+  - [ ] 4.3 Mark loadUnifiedAnalyses.ts as deprecated
 
     - Add deprecation comment
     - Point to getUserIdeas() from idea-panel API
-    - Keep for backward compatibility
+    - Keep for backward compatibility if used elsewhere
     - _Requirements: 6.1_
 
-  - [ ] 4.3 Write unit tests for list operations
+  - [ ] 4.4 Write unit tests for list operations
     - Test loading ideas with document counts
     - Test filtering by document type
+    - Test query uses JOIN (not N+1)
     - _Requirements: 2.3, 6.1_
 
 ### Phase 3: Update Modify Operations

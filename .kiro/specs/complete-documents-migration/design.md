@@ -32,6 +32,33 @@ ideas (1) → (many) documents
 saved_analyses (LEGACY - read-only for backward compatibility)
 ```
 
+## URL Parameter Conventions
+
+When navigating between features with ideaId:
+
+- `/analyzer?ideaId=<uuid>` - Analyze existing idea (startup)
+- `/kiroween-analyzer?ideaId=<uuid>` - Analyze existing idea (hackathon)
+- `/idea/<uuid>` - View Idea Panel
+
+All analyzers should:
+
+1. Read `ideaId` from URL params on mount
+2. Pass `ideaId` to save functions if present
+3. Update URL after save to include `ideaId`
+
+Example navigation from Doctor Frankenstein:
+
+```typescript
+// After generating Frankenstein idea
+const { ideaId } = await saveFrankensteinIdea(...)
+router.push(`/analyzer?ideaId=${ideaId}`)
+
+// Analyzer reads ideaId and passes to save
+const searchParams = useSearchParams()
+const ideaId = searchParams.get('ideaId')
+await saveAnalysis({ idea, analysis, ideaId })
+```
+
 ## Components to Update
 
 ### 1. Kiroween Analyzer API
@@ -60,7 +87,6 @@ interface SaveHackathonAnalysisParams {
   projectDescription: string;
   analysis: HackathonAnalysis;
   supportingMaterials?: Record<string, string>;
-  audioBase64?: string;
   ideaId?: string; // Optional: link to existing idea
 }
 
@@ -105,9 +131,8 @@ async function saveHackathonAnalysis(
 
 **New Behavior:**
 
-- Try updating `documents` table first
-- Fallback to `saved_analyses` for legacy data
-- Store audio in document content JSONB field
+- Out of scope for this migration
+- Keep existing behavior for now
 
 #### deleteHackathonAnalysis.ts
 
@@ -146,7 +171,6 @@ async function saveHackathonAnalysis(
 interface SaveAnalysisParams {
   idea: string;
   analysis: Analysis;
-  audioBase64?: string;
   ideaId?: string; // Optional: link to existing idea
 }
 
@@ -316,7 +340,6 @@ Same pattern as AnalysisController
   user_id: "uuid",
   idea: "My startup idea",
   analysis: { /* Analysis object */ },
-  audio_base64: "base64...",
   created_at: "timestamp",
   analysis_type: "idea"
 }
@@ -344,8 +367,7 @@ Same pattern as AnalysisController
   document_type: "startup_analysis",
   title: null,
   content: {
-    analysis: { /* Analysis object */ },
-    audioBase64: "base64..." // Move audio into content
+    analysis: { /* Analysis object */ }
   },
   created_at: "timestamp",
   updated_at: "timestamp"
@@ -363,7 +385,6 @@ Same pattern as AnalysisController
   user_id: "uuid",
   idea: "My hackathon project",
   analysis: { /* HackathonAnalysis object */ },
-  audio_base64: "base64...",
   created_at: "timestamp",
   analysis_type: "hackathon"
 }
@@ -393,8 +414,7 @@ Same pattern as AnalysisController
   content: {
     analysis: { /* HackathonAnalysis object */ },
     projectDescription: "My hackathon project",
-    supportingMaterials: {},
-    audioBase64: "base64..."
+    supportingMaterials: {}
   },
   created_at: "timestamp",
   updated_at: "timestamp"
@@ -473,6 +493,82 @@ Same pattern as AnalysisController
 }
 ```
 
+## Transaction Safety
+
+Creating idea + document is a two-step operation. If document creation fails after idea creation, we have an orphaned idea.
+
+**Strategy**: Accept orphaned ideas as valid state
+
+- Frankenstein creates ideas without documents intentionally
+- Ideas can exist without analyses (user might analyze later)
+- Orphaned ideas appear in dashboard with document_count=0
+- No rollback needed - this is a valid business state
+
+```typescript
+// Implementation pattern
+try {
+  const idea = await createIdea(...)
+  const document = await createDocument({ ideaId: idea.id, ... })
+  return { ideaId: idea.id, documentId: document.id }
+} catch (error) {
+  // If document creation fails, idea remains (valid state)
+  // User can retry analysis from Idea Panel
+  throw new Error('Failed to save analysis. Please try again.')
+}
+```
+
+## Row Level Security (RLS) Policies
+
+### Ideas Table Policies
+
+```sql
+-- Users can view own ideas
+CREATE POLICY "Users can view own ideas"
+  ON ideas FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can insert own ideas
+CREATE POLICY "Users can insert own ideas"
+  ON ideas FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can update own ideas
+CREATE POLICY "Users can update own ideas"
+  ON ideas FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete own ideas
+CREATE POLICY "Users can delete own ideas"
+  ON ideas FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+### Documents Table Policies
+
+```sql
+-- Users can view own documents
+CREATE POLICY "Users can view own documents"
+  ON documents FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can insert own documents
+CREATE POLICY "Users can insert own documents"
+  ON documents FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can update own documents
+CREATE POLICY "Users can update own documents"
+  ON documents FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete own documents
+CREATE POLICY "Users can delete own documents"
+  ON documents FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
 ## Performance Considerations
 
 ### Indexes
@@ -487,7 +583,7 @@ Ensure these indexes exist:
 
 ### Query Optimization
 
-**Loading ideas with document counts:**
+**Loading ideas with document counts (avoid N+1 queries):**
 
 ```sql
 SELECT
@@ -499,6 +595,8 @@ WHERE i.user_id = $1
 GROUP BY i.id
 ORDER BY i.updated_at DESC;
 ```
+
+**Important**: Always use JOIN with GROUP BY to get document counts in a single query. Never loop through ideas and query documents separately (N+1 problem).
 
 ## Testing Strategy
 
@@ -527,8 +625,36 @@ ORDER BY i.updated_at DESC;
 - View analysis from dashboard → verify loads correctly
 - View legacy analysis → verify loads correctly
 
+## Transition Strategy
+
+### Handling Existing Users
+
+**Legacy Data Approach**: Read-only fallback
+
+- New analyses save to `ideas` + `documents` tables only
+- Legacy analyses in `saved_analyses` remain readable via fallback logic
+- No automatic migration (to avoid data loss risk)
+- Users will see mix of old and new data in dashboard (seamless UX)
+
+**Timeline**:
+
+- Phase 1: Deploy new table writes (this spec)
+- Phase 2: Monitor for issues (2-4 weeks)
+- Phase 3: Optional migration script for power users
+- Phase 4: Deprecate `saved_analyses` reads (6+ months)
+
+### Feature Rollout
+
+**All-at-once deployment** (no feature flag needed):
+
+- Fallback logic ensures no breaking changes
+- New saves go to new tables immediately
+- Old data continues to work
+- Low risk approach
+
 ## Migration Checklist
 
+- [ ] Verify database schema and RLS policies
 - [ ] Update saveHackathonAnalysis.ts
 - [ ] Update loadUserHackathonAnalyses.ts
 - [ ] Update updateHackathonAnalysisAudio.ts
@@ -540,9 +666,12 @@ ORDER BY i.updated_at DESC;
 - [ ] Update AnalysisController.saveAnalysis()
 - [ ] Update AnalysisController.updateAnalysis()
 - [ ] Update AnalysisController.deleteAnalysis()
+- [ ] Update Idea Panel AnalyzeButton to pass ideaId
+- [ ] Update Doctor Frankenstein to pass ideaId when navigating
+- [ ] Verify dashboard uses getUserIdeas() (not loadUnifiedAnalyses)
 - [ ] Mark loadUnifiedAnalyses.ts as deprecated
 - [ ] Add deprecation comments to SupabaseAnalysisRepository
-- [ ] Update all analyzer views to pass ideaId when available
+- [ ] Update all analyzer views to read/pass ideaId from URL
 - [ ] Test all flows end-to-end
 - [ ] Verify legacy data still loads correctly
 - [ ] Update documentation
