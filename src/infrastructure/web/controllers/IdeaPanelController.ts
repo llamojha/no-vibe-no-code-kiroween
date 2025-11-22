@@ -7,6 +7,7 @@ import { IdeaId, ProjectStatus, UserId } from "@/src/domain/value-objects";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
 import { IdeaMapper } from "../../database/supabase/mappers/IdeaMapper";
+import { DocumentMapper } from "../../database/supabase/mappers/DocumentMapper";
 import { DashboardIdeaDTO } from "../dto/IdeaDTO";
 
 /**
@@ -15,6 +16,7 @@ import { DashboardIdeaDTO } from "../dto/IdeaDTO";
  */
 export class IdeaPanelController {
   private readonly ideaMapper = new IdeaMapper();
+  private readonly documentMapper = new DocumentMapper();
 
   constructor(
     private readonly getIdeaWithDocumentsUseCase: GetIdeaWithDocumentsUseCase,
@@ -102,7 +104,16 @@ export class IdeaPanelController {
         );
       }
 
-      return NextResponse.json(result.data);
+      // Convert domain entities to DTOs
+      const ideaDTO = this.ideaMapper.toDTO(result.data.idea);
+      const documentDTOs = this.documentMapper.toDTOBatch(
+        result.data.documents
+      );
+
+      return NextResponse.json({
+        idea: ideaDTO,
+        documents: documentDTOs,
+      });
     } catch (error) {
       return handleApiError(error);
     }
