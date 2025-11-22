@@ -53,7 +53,7 @@ export class SaveAnalysisToIdeaPanelUseCase {
     input: SaveAnalysisToIdeaPanelInput
   ): Promise<Result<SaveAnalysisToIdeaPanelOutput, Error>> {
     try {
-      let idea: Idea;
+      let idea: Idea | undefined;
       let isNewIdea = false;
 
       // Step 1: Check if we should link to an existing idea
@@ -91,7 +91,7 @@ export class SaveAnalysisToIdeaPanelUseCase {
       }
 
       // Step 2: Create new idea if needed
-      if (!idea!) {
+      if (!idea) {
         const source =
           input.source === "frankenstein"
             ? IdeaSource.FRANKENSTEIN
