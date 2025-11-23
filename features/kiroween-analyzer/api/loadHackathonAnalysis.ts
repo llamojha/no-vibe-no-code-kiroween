@@ -5,6 +5,17 @@ import type { SavedHackathonAnalysis } from "@/lib/types";
 import { isEnabled } from "@/lib/featureFlags";
 import { localStorageService } from "@/lib/localStorage";
 
+/**
+ * Load a single hackathon analysis by ID
+ *
+ * This function loads from the legacy saved_analyses table for backward compatibility.
+ * For new documents, use getDocumentById from idea-panel API instead.
+ *
+ * @param analysisId - The ID of the analysis to load
+ * @returns Promise resolving to an object with data (SavedHackathonAnalysis) or error
+ *
+ * Requirements: 2.1, 2.2
+ */
 export async function loadHackathonAnalysis(
   analysisId: string
 ): Promise<{ data: SavedHackathonAnalysis | null; error: string | null }> {

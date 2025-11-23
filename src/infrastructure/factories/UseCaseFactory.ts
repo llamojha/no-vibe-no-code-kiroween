@@ -176,7 +176,8 @@ export class UseCaseFactory {
     if (!this.useCases.has(cacheKey)) {
       const useCase = new SaveAnalysisUseCase(
         this.analysisRepository,
-        this.analysisValidationService
+        this.analysisValidationService,
+        this.documentRepository
       );
       this.useCases.set(cacheKey, useCase);
     }
@@ -193,7 +194,8 @@ export class UseCaseFactory {
     if (!this.useCases.has(cacheKey)) {
       const useCase = new DeleteAnalysisUseCase(
         this.analysisRepository,
-        this.analysisValidationService
+        this.analysisValidationService,
+        this.documentRepository
       );
       this.useCases.set(cacheKey, useCase);
     }

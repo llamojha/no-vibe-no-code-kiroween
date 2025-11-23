@@ -40,6 +40,7 @@ The Idea Panel is a dedicated workspace for managing ideas and their associated 
 - **[Idea Panel User Guide](docs/IDEA_PANEL_USER_GUIDE.md)**: Complete user guide for the Idea Panel feature
 - **[Idea Panel API](docs/IDEA_PANEL_API.md)**: API documentation for Idea Panel endpoints
 - **[Idea Panel Migration](docs/IDEA_PANEL_MIGRATION.md)**: Database migration documentation and procedures
+- **[Complete Documents Migration Guide](docs/COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md)**: Migration from `saved_analyses` to new data model
 
 **Key Features:**
 
@@ -53,9 +54,24 @@ The Idea Panel is a dedicated workspace for managing ideas and their associated 
 
 **Data Model:**
 
-- `ideas` table: Stores all ideas with management metadata
-- `documents` table: Stores analyses linked to ideas
-- Backward compatible with existing `saved_analyses` table
+The application uses a new data model that separates ideas from their analyses:
+
+- **`ideas` table**: Stores all ideas with management metadata (status, notes, tags)
+- **`documents` table**: Stores analyses linked to ideas via `idea_id` foreign key
+- **One-to-Many Relationship**: One idea can have multiple documents (analyses)
+- **Backward Compatible**: Legacy `saved_analyses` table remains accessible via fallback logic
+
+**Migration Status:**
+
+✅ **Complete** - All new analyses save to the new data model:
+
+- **Write Operations**: New analyses create idea + document records
+- **Read Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
+- **Update/Delete Operations**: Support both new and legacy data
+- **No Breaking Changes**: All existing functionality continues to work
+- **No Data Loss**: Legacy data remains accessible
+
+See [Complete Documents Migration Guide](docs/COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md) for details.
 
 **Testing & Mocks:**
 

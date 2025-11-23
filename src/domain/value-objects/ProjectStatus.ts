@@ -88,7 +88,7 @@ export class ProjectStatus {
    * Check if status transition is valid
    * Business rule: Allow any status transition (users have full control)
    */
-  canTransitionTo(newStatus: ProjectStatus): boolean {
+  canTransitionTo(_newStatus: ProjectStatus): boolean {
     // Allow any status transition
     return true;
   }

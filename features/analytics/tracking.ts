@@ -17,6 +17,7 @@ export interface AnalysisStartedProps {
 export interface AnalysisSavedProps {
   analysisId: string;
   locale: string;
+  ideaId?: string;
 }
 
 /**
@@ -129,6 +130,7 @@ export const trackAnalysisSaved = (
     const eventData = {
       analysis_id: props.analysisId,
       locale: props.locale,
+      ...(props.ideaId ? { idea_id: props.ideaId } : {}),
       timestamp: new Date().toISOString(),
     };
 

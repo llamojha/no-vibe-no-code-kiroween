@@ -29,6 +29,18 @@ import { logger, LogCategory } from "@/lib/logger";
 /**
  * Supabase implementation of the Analysis repository
  * Handles all database operations for Analysis entities
+ *
+ * @deprecated This repository uses the legacy saved_analyses table.
+ * For new code, use DocumentRepository to save analyses as documents linked to ideas.
+ * This repository is kept for:
+ * - Reading legacy analyses from saved_analyses table
+ * - Backward compatibility with existing code
+ * - Fallback operations when documents table is not available
+ *
+ * Migration path:
+ * - New analyses should be saved using IdeaRepository + DocumentRepository
+ * - Legacy analyses can still be read using this repository
+ * - See design.md in complete-documents-migration spec for details
  */
 export class SupabaseAnalysisRepository implements IAnalysisRepository {
   private readonly tableName = "saved_analyses";
@@ -40,6 +52,16 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
 
   // Command operations (write)
 
+  /**
+   * @deprecated Use DocumentRepository.save() for new analyses.
+   * This method saves to the legacy saved_analyses table.
+   *
+   * For new code:
+   * 1. Create or load an Idea using IdeaRepository
+   * 2. Create a Document linked to that Idea using DocumentRepository
+   *
+   * This method is kept for backward compatibility only.
+   */
   async save(analysis: Analysis): Promise<Result<Analysis, Error>> {
     logger.debug(LogCategory.DATABASE, "Saving analysis to database", {
       analysisId: analysis.id.value,
@@ -280,6 +302,13 @@ export class SupabaseAnalysisRepository implements IAnalysisRepository {
     }
   }
 
+  /**
+   * @deprecated Use DocumentRepository.saveMany() for new analyses.
+   * This method saves to the legacy saved_analyses table.
+   *
+   * For new code, use DocumentRepository to save multiple documents.
+   * This method is kept for backward compatibility only.
+   */
   async saveMany(entities: Analysis[]): Promise<Result<Analysis[], Error>> {
     try {
       const daos = entities.map((entity) => this.mapper.toDAO(entity));

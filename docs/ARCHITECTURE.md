@@ -186,6 +186,100 @@ sequenceDiagram
     Controller-->>Client: HTTP Response
 ```
 
+### Documents Migration Data Flow
+
+#### Save Analysis Flow (New Data Model)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant IdeaRepo
+    participant DocumentRepo
+    participant IdeasTable
+    participant DocumentsTable
+
+    Client->>API: POST /api/analyze/save
+    Note over API: ideaId provided?
+
+    alt ideaId provided
+        API->>IdeaRepo: findById(ideaId)
+        IdeaRepo->>IdeasTable: SELECT
+        IdeasTable-->>IdeaRepo: Existing idea
+        IdeaRepo-->>API: Idea entity
+    else no ideaId
+        API->>IdeaRepo: save(new Idea)
+        IdeaRepo->>IdeasTable: INSERT
+        IdeasTable-->>IdeaRepo: New idea created
+        IdeaRepo-->>API: Idea entity
+    end
+
+    API->>DocumentRepo: save(new Document)
+    DocumentRepo->>DocumentsTable: INSERT
+    DocumentsTable-->>DocumentRepo: Document created
+    DocumentRepo-->>API: Document entity
+    API-->>Client: {ideaId, documentId}
+```
+
+#### Load Analysis Flow (With Fallback)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant DocumentRepo
+    participant LegacyRepo
+    participant DocumentsTable
+    participant SavedAnalysesTable
+
+    Client->>API: GET /api/analyze/:id
+    API->>DocumentRepo: findById(id)
+    DocumentRepo->>DocumentsTable: SELECT
+
+    alt Found in documents
+        DocumentsTable-->>DocumentRepo: Document data
+        DocumentRepo-->>API: Document entity
+        API-->>Client: Analysis response
+    else Not found in documents
+        API->>LegacyRepo: findById(id)
+        LegacyRepo->>SavedAnalysesTable: SELECT
+        alt Found in saved_analyses
+            SavedAnalysesTable-->>LegacyRepo: Legacy data
+            LegacyRepo-->>API: Legacy analysis
+            API-->>Client: Analysis response
+        else Not found anywhere
+            API-->>Client: 404 Not Found
+        end
+    end
+```
+
+#### Doctor Frankenstein Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frankenstein
+    participant IdeaRepo
+    participant Analyzer
+    participant DocumentRepo
+    participant IdeasTable
+    participant DocumentsTable
+
+    User->>Frankenstein: Generate mashup idea
+    Frankenstein->>IdeaRepo: save(idea, source='frankenstein')
+    IdeaRepo->>IdeasTable: INSERT (no document)
+    IdeasTable-->>IdeaRepo: Idea created
+    IdeaRepo-->>Frankenstein: {ideaId}
+    Frankenstein-->>User: Show idea + "Analyze" button
+
+    User->>Analyzer: Click "Analyze" (with ideaId)
+    Analyzer->>DocumentRepo: save(document, ideaId)
+    DocumentRepo->>DocumentsTable: INSERT (linked to idea)
+    DocumentsTable-->>DocumentRepo: Document created
+    DocumentRepo-->>Analyzer: {documentId}
+    Analyzer-->>User: Show analysis
+```
+
 ## Design Patterns
 
 ### Repository Pattern
@@ -1018,9 +1112,27 @@ The new tables were populated via migration from `saved_analyses`:
 - All foreign key constraints and RLS policies verified
 - No data loss during migration
 
+**Complete Documents Migration (Current)**:
+
+The application has completed migration to the new `ideas` + `documents` data model:
+
+- **Write Operations**: All new analyses save to `ideas` + `documents` tables exclusively
+- **Read Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
+- **Update/Delete Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
+- **Backward Compatibility**: Legacy data in `saved_analyses` remains accessible
+- **No Breaking Changes**: All existing functionality continues to work
+
+**Migration Strategy**:
+
+1. **Phase 1**: Idea Panel MVP - Created `ideas` and `documents` tables
+2. **Phase 2**: Complete Migration - Updated all save/load/update/delete operations
+3. **Phase 3**: Gradual Adoption - New analyses use new tables, legacy data remains accessible
+4. **Future**: Optional data migration tool for users who want to migrate legacy analyses
+
 For detailed migration information, see:
 
 - [Idea Panel Migration Documentation](./IDEA_PANEL_MIGRATION.md)
+- [Complete Documents Migration Guide](./COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md)
 
 #### Benefits of New Data Model
 
