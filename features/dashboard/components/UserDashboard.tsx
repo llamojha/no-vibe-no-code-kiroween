@@ -51,13 +51,19 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const refreshIdeas = useCallback(async () => {
     setIsRefreshing(true);
+    setErrorMessage(null);
     try {
       const data = await getUserIdeas();
       setIdeas(data);
     } catch (error) {
       console.error("Error refreshing ideas", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to load ideas";
+      setErrorMessage(message);
     } finally {
       setIsRefreshing(false);
     }
@@ -211,6 +217,14 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
               {isRefreshing ? t("refreshing") : t("refresh")}
             </button>
           </div>
+
+          {/* Error message */}
+          {errorMessage && (
+            <div className="mb-4 p-4 bg-red-900/30 border border-red-600 rounded text-red-200">
+              <p className="font-semibold mb-1">Error loading ideas</p>
+              <p className="text-sm">{errorMessage}</p>
+            </div>
+          )}
 
           {/* Filter buttons */}
           <div className="flex flex-wrap gap-2 mb-6">

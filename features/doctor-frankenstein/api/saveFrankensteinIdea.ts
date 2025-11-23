@@ -74,8 +74,22 @@ export async function saveFrankensteinIdea(
     return { data: null, error: "User not authenticated" };
   }
 
-  // Create idea text from analysis
-  const ideaText = `${params.analysis.ideaName}\n\n${params.analysis.description}`;
+  // Create idea text from analysis, truncate if needed to fit 5000 char limit
+  let ideaText = `${params.analysis.ideaName}\n\n${params.analysis.description}`;
+
+  // Truncate to 5000 characters if needed (leave room for ellipsis)
+  if (ideaText.length > 5000) {
+    ideaText = ideaText.substring(0, 4997) + "...";
+  }
+
+  // Store full Frankenstein metadata in notes field as JSON
+  // This preserves the generation state (mode, slots, analysis) for reload/share
+  const frankensteinMetadata = {
+    mode: params.mode,
+    tech1: params.tech1,
+    tech2: params.tech2,
+    analysis: params.analysis,
+  };
 
   // Insert into ideas table with source='frankenstein'
   const { data, error } = await supabase
@@ -85,7 +99,7 @@ export async function saveFrankensteinIdea(
       idea_text: ideaText,
       source: "frankenstein",
       project_status: "idea",
-      notes: "",
+      notes: JSON.stringify(frankensteinMetadata),
       tags: [],
     })
     .select("id, created_at")
@@ -358,11 +372,9 @@ export async function updateFrankensteinValidation(
 }
 
 /**
- * Load a saved Doctor Frankenstein idea with full metadata (legacy format)
+ * Load a saved Doctor Frankenstein idea with full metadata
  * This function is used by the Doctor Frankenstein view which needs the full metadata
- *
- * @deprecated This function loads from saved_analyses for backward compatibility
- * New code should use loadFrankensteinIdea which loads from ideas table
+ * Loads from ideas table first (new architecture), falls back to saved_analyses (legacy)
  */
 export async function loadFrankensteinIdeaLegacy(
   ideaId: string
@@ -391,25 +403,68 @@ export async function loadFrankensteinIdeaLegacy(
     }
   }
 
-  // Production: load from saved_analyses (legacy)
+  // Production: Try loading from ideas table first (new architecture)
   const supabase = browserSupabase();
-  const { data, error } = await supabase
+
+  const { data: ideaData, error: ideaError } = await supabase
+    .from("ideas")
+    .select("id, user_id, idea_text, notes, created_at")
+    .eq("id", ideaId)
+    .eq("source", "frankenstein")
+    .single();
+
+  if (ideaData && !ideaError) {
+    try {
+      // Parse metadata from notes field
+      const metadata = JSON.parse(ideaData.notes || "{}");
+
+      // Return in expected format
+      return {
+        data: {
+          id: ideaData.id,
+          userId: ideaData.user_id,
+          mode: metadata.mode || "companies",
+          tech1: metadata.tech1 || { name: "", description: "", category: "" },
+          tech2: metadata.tech2 || { name: "", description: "", category: "" },
+          analysis: metadata.analysis || {
+            ideaName: "",
+            description: ideaData.idea_text,
+            keyFeatures: [],
+            targetMarket: "",
+            uniqueValueProposition: "",
+            language: "en",
+          },
+          createdAt: ideaData.created_at || new Date().toISOString(),
+        },
+        error: null,
+      };
+    } catch (parseError) {
+      console.error(
+        "Failed to parse Frankenstein metadata from notes",
+        parseError
+      );
+      // Continue to fallback
+    }
+  }
+
+  // Fallback to saved_analyses (legacy)
+  const { data: legacyData, error: legacyError } = await supabase
     .from("saved_analyses")
     .select("*")
     .eq("id", ideaId)
     .eq("analysis_type", "frankenstein")
     .single();
 
-  if (error || !data) {
-    console.error("Failed to load Frankenstein idea", error);
+  if (legacyError || !legacyData) {
+    console.error("Failed to load Frankenstein idea", legacyError);
     return {
       data: null,
-      error: error?.message || "Idea not found",
+      error: legacyError?.message || "Idea not found",
     };
   }
 
-  // Map to expected format
-  const dataAny = data as any;
+  // Map legacy format to expected format
+  const dataAny = legacyData as any;
   const analysis = dataAny.analysis as any;
   return {
     data: {

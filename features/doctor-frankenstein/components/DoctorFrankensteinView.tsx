@@ -159,8 +159,17 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
       return;
     }
 
+    // Skip reload if we already have this idea in state (just saved it)
+    // This prevents unnecessary database queries after auto-save
+    if (savedIdeaRecord?.id === savedId) {
+      console.log("Skipping reload - idea already in state:", savedId);
+      return;
+    }
+
+    // Only fetch if we don't have it in state (e.g., page refresh or shared link)
     const fetchSavedIdea = async () => {
       try {
+        console.log("Loading saved Frankenstein idea from database:", savedId);
         const { data, error: loadError } = await loadFrankensteinIdeaLegacy(
           savedId
         );
@@ -234,7 +243,7 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
     };
 
     void fetchSavedIdea();
-  }, [savedId]);
+  }, [savedId, savedIdeaRecord?.id]);
 
   // Reset saved state when mode changes (but not when loading a saved idea)
   useEffect(() => {
