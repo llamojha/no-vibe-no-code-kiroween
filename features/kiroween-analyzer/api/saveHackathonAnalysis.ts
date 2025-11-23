@@ -13,7 +13,6 @@ export interface SaveHackathonAnalysisParams {
   supportingMaterials?: ProjectSubmission["supportingMaterials"];
   audioBase64?: string;
   ideaId?: string; // Optional: link to existing idea
-  source?: "manual" | "frankenstein"; // Optional: source of the idea
 }
 
 export interface SaveHackathonAnalysisResult {
@@ -93,7 +92,6 @@ export async function saveHackathonAnalysis(
         supportingMaterials: params.supportingMaterials,
         audioBase64: params.audioBase64,
         ideaId: params.ideaId,
-        source: params.source,
       }),
     });
 
