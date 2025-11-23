@@ -176,50 +176,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Save the generated idea to the ideas table (without document)
-    const saveAnalysisToIdeaPanelUseCase =
-      useCaseFactory.createSaveAnalysisToIdeaPanelUseCase();
-
-    if (saveAnalysisToIdeaPanelUseCase && result.idea_description) {
-      try {
-        const saveToIdeaPanelResult =
-          await saveAnalysisToIdeaPanelUseCase.execute({
-            ideaText: result.idea_description,
-            userId: userId,
-            source: "frankenstein",
-            createDocument: false, // Don't create document for frankenstein ideas
-          });
-
-        if (saveToIdeaPanelResult.success) {
-          logger.info(
-            LogCategory.BUSINESS,
-            "Frankenstein idea saved to ideas table",
-            {
-              ideaId: saveToIdeaPanelResult.data.idea.id.value,
-              isNewIdea: saveToIdeaPanelResult.data.isNewIdea,
-            }
-          );
-        } else {
-          // Log error but don't fail the request since idea generation was successful
-          logger.error(
-            LogCategory.BUSINESS,
-            "Failed to save Frankenstein idea to ideas table",
-            {
-              error: saveToIdeaPanelResult.error.message,
-            }
-          );
-        }
-      } catch (error) {
-        // Log error but don't fail the request
-        logger.error(
-          LogCategory.BUSINESS,
-          "Unexpected error saving Frankenstein idea to ideas table",
-          {
-            error: error instanceof Error ? error.message : String(error),
-          }
-        );
-      }
-    }
+    // Note: Frankenstein ideas are saved by the client with full metadata
+    // The client auto-save includes mode, tech1, tech2, and full analysis in notes field
+    // We don't save here to avoid duplicates and to preserve all generation metadata
 
     const deductResult = await deductCreditUseCase.execute({
       userId,
