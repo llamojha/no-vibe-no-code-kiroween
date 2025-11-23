@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       supportingMaterials,
       audioBase64,
       ideaId,
+      source,
     } = body;
 
     if (!projectDescription || !analysis) {
@@ -82,11 +83,14 @@ export async function POST(request: NextRequest) {
 
       idea = ideaResult.data;
     } else {
-      // Create new idea with source='manual'
+      // Create new idea with provided source or default to 'manual'
+      const ideaSource =
+        source === "frankenstein" ? IdeaSource.FRANKENSTEIN : IdeaSource.MANUAL;
+
       idea = Idea.create({
         userId,
         ideaText: projectDescription,
-        source: IdeaSource.MANUAL,
+        source: ideaSource,
       });
 
       const saveIdeaResult = await ideaRepository.save(idea);
@@ -109,7 +113,8 @@ export async function POST(request: NextRequest) {
     // Create document linked to idea. Normalize the hackathon analysis payload so
     // that the fields expected by Document.validateHackathonAnalysisContent live
     // at the top level instead of nested inside `analysis`.
-    const normalizedAnalysisContent = normalizeHackathonDocumentContent(analysis);
+    const normalizedAnalysisContent =
+      normalizeHackathonDocumentContent(analysis);
 
     const documentContent = {
       ...normalizedAnalysisContent,
@@ -173,9 +178,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function normalizeHackathonDocumentContent(
-  content: unknown
-): DocumentContent {
+function normalizeHackathonDocumentContent(content: unknown): DocumentContent {
   let normalized: unknown = content;
 
   if (

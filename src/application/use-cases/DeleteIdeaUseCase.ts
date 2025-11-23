@@ -1,5 +1,8 @@
 import { IIdeaRepository } from "../../domain/repositories/IIdeaRepository";
+<<<<<<< HEAD
 import { IDocumentRepository } from "../../domain/repositories/IDocumentRepository";
+=======
+>>>>>>> 4224bb8 (feat(idea-panel): Implement idea deletion with confirmation dialog)
 import { IdeaId, UserId } from "../../domain/value-objects";
 import { Result } from "../../shared/types/common";
 import {
@@ -18,6 +21,7 @@ export interface DeleteIdeaResult {
 
 /**
  * Use case for deleting an idea and all its associated documents
+<<<<<<< HEAD
  * Ensures user owns the idea before deletion
  */
 export class DeleteIdeaUseCase {
@@ -25,6 +29,13 @@ export class DeleteIdeaUseCase {
     private readonly ideaRepository: IIdeaRepository,
     private readonly documentRepository: IDocumentRepository
   ) {}
+=======
+ * Documents are automatically deleted via ON DELETE CASCADE foreign key constraint
+ * Ensures user owns the idea before deletion
+ */
+export class DeleteIdeaUseCase {
+  constructor(private readonly ideaRepository: IIdeaRepository) {}
+>>>>>>> 4224bb8 (feat(idea-panel): Implement idea deletion with confirmation dialog)
 
   async execute(
     command: DeleteIdeaCommand
@@ -56,6 +67,7 @@ export class DeleteIdeaUseCase {
         };
       }
 
+<<<<<<< HEAD
       // Delete all associated documents first
       const deleteDocsResult = await this.documentRepository.deleteAllByIdeaId(
         command.ideaId
@@ -71,6 +83,9 @@ export class DeleteIdeaUseCase {
       }
 
       // Delete the idea
+=======
+      // Delete the idea (documents will be cascade deleted by database)
+>>>>>>> 4224bb8 (feat(idea-panel): Implement idea deletion with confirmation dialog)
       const deleteIdeaResult = await this.ideaRepository.delete(
         command.ideaId,
         command.userId

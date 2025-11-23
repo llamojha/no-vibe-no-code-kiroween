@@ -27,10 +27,15 @@ export const DeleteIdeaButton: React.FC<DeleteIdeaButtonProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
+<<<<<<< HEAD
+=======
+    console.log("DeleteIdeaButton: Starting delete for ideaId:", ideaId);
+>>>>>>> 4224bb8 (feat(idea-panel): Implement idea deletion with confirmation dialog)
     setIsDeleting(true);
     setError(null);
 
     try {
+<<<<<<< HEAD
       await deleteIdea(ideaId);
 
       // Call success callback if provided
@@ -42,6 +47,27 @@ export const DeleteIdeaButton: React.FC<DeleteIdeaButtonProps> = ({
       }
     } catch (err) {
       console.error("Failed to delete idea:", err);
+=======
+      console.log("DeleteIdeaButton: Calling deleteIdea API...");
+      await deleteIdea(ideaId);
+      console.log("DeleteIdeaButton: Delete successful");
+
+      // Close modal
+      setShowConfirmation(false);
+
+      // Call success callback if provided
+      if (onDeleteSuccess) {
+        console.log("DeleteIdeaButton: Calling onDeleteSuccess callback");
+        onDeleteSuccess();
+      } else {
+        // Default behavior: redirect to dashboard
+        console.log("DeleteIdeaButton: Redirecting to dashboard");
+        router.push("/dashboard");
+        router.refresh(); // Force refresh to update the list
+      }
+    } catch (err) {
+      console.error("DeleteIdeaButton: Failed to delete idea:", err);
+>>>>>>> 4224bb8 (feat(idea-panel): Implement idea deletion with confirmation dialog)
       setError(err instanceof Error ? err.message : "Failed to delete idea");
       setIsDeleting(false);
     }
