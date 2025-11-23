@@ -585,6 +585,9 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
 
       // Auto-save if user is logged in (to preserve credits)
       if (isLoggedIn) {
+        // Set saving state to prevent duplicate saves
+        setIsSaving(true);
+
         try {
           const tech1Item = currentItems.find(
             (i) => i.name === selectedItems[0]
@@ -678,6 +681,8 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
               ? err.message
               : "Failed to save your Frankenstein. Your credits were consumed but the idea was not saved."
           );
+        } finally {
+          setIsSaving(false);
         }
       }
     } catch (err) {
@@ -942,7 +947,8 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       let ideaIdToUse = savedIdeaRecord?.id;
 
                       // Save first if not already saved and user is logged in
-                      if (!isReportSaved && isLoggedIn) {
+                      // Check isSaving to prevent duplicate saves
+                      if (!isReportSaved && isLoggedIn && !isSaving) {
                         const savedId = await handleSaveReport();
                         if (savedId) {
                           ideaIdToUse = savedId;
@@ -1004,7 +1010,8 @@ export const DoctorFrankensteinView: React.FC<DoctorFrankensteinViewProps> = ({
                       let ideaIdToUse = savedIdeaRecord?.id;
 
                       // Save first if not already saved and user is logged in
-                      if (!isReportSaved && isLoggedIn) {
+                      // Check isSaving to prevent duplicate saves
+                      if (!isReportSaved && isLoggedIn && !isSaving) {
                         const savedId = await handleSaveReport();
                         if (savedId) {
                           ideaIdToUse = savedId;
