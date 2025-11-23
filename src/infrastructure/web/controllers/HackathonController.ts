@@ -32,8 +32,6 @@ import {
 } from "@/features/analytics/server-tracking";
 import { IUserRepository } from "@/src/domain/repositories/IUserRepository";
 import { SaveAnalysisToIdeaPanelUseCase } from "@/src/application/use-cases/SaveAnalysisToIdeaPanelUseCase";
-import { logger, LogCategory } from "@/lib/logger";
-import { type DocumentContent } from "@/src/domain/entities";
 
 /**
  * Controller for hackathon analysis-related API endpoints

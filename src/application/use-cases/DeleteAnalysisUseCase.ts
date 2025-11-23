@@ -11,6 +11,7 @@ import {
   BusinessRuleViolationError,
 } from "../../shared/types/errors";
 import { logger, LogCategory } from "@/lib/logger";
+import { Analysis, Document } from "../../domain/entities";
 
 /**
  * Input for deleting an analysis
@@ -57,7 +58,7 @@ export class DeleteAnalysisUseCase {
   ): Promise<Result<DeleteAnalysisOutput, Error>> {
     try {
       // Step 1: Try to find and delete from documents table first (new data)
-      let analysis: any | null = null;
+      let analysis: Analysis | Document | null = null;
       let isLegacyData = false;
       let deletedFromDocuments = false;
 

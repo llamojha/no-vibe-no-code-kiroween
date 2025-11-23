@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       supportingMaterials,
       audioBase64,
       ideaId,
+      source,
     } = body;
 
     if (!projectDescription || !analysis) {
@@ -82,11 +83,14 @@ export async function POST(request: NextRequest) {
 
       idea = ideaResult.data;
     } else {
-      // Create new idea with source='manual'
+      // Create new idea with provided source or default to 'manual'
+      const ideaSource =
+        source === "frankenstein" ? IdeaSource.FRANKENSTEIN : IdeaSource.MANUAL;
+
       idea = Idea.create({
         userId,
         ideaText: projectDescription,
-        source: IdeaSource.MANUAL,
+        source: ideaSource,
       });
 
       const saveIdeaResult = await ideaRepository.save(idea);

@@ -349,6 +349,8 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
               analysis: analysisResult,
               supportingMaterials: submission.supportingMaterials,
               ideaId: ideaId, // Pass ideaId from URL params if available
+              source:
+                sourceFromUrl === "frankenstein" ? "frankenstein" : "manual",
             });
 
           if (!saveError && result) {
@@ -495,6 +497,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         supportingMaterials: submission.supportingMaterials,
         audioBase64: generatedAudio || undefined,
         ideaId: ideaId, // Pass ideaId from URL params if available
+        source: sourceFromUrl === "frankenstein" ? "frankenstein" : "manual",
       });
 
       if (saveError || !result) {
@@ -659,6 +662,7 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
         analysis: newAnalysis,
         supportingMaterials: submission.supportingMaterials,
         ideaId: ideaId, // Pass ideaId from URL params if available
+        source: sourceFromUrl === "frankenstein" ? "frankenstein" : "manual",
       });
 
       if (!saveError && result) {

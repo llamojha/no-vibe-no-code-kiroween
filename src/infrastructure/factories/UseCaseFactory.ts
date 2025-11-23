@@ -31,6 +31,7 @@ import { SaveIdeaMetadataUseCase } from "../../application/use-cases/SaveIdeaMet
 import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUseCase";
 import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
 import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
+import { DeleteIdeaUseCase } from "../../application/use-cases/DeleteIdeaUseCase";
 
 /**
  * Factory for creating use case instances with proper dependency composition
@@ -415,6 +416,20 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as GetUserIdeasUseCase;
+  }
+
+  /**
+   * Create DeleteIdeaUseCase with dependencies
+   */
+  createDeleteIdeaUseCase(): DeleteIdeaUseCase {
+    const cacheKey = "deleteIdeaUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new DeleteIdeaUseCase(this.ideaRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as DeleteIdeaUseCase;
   }
 
   /**

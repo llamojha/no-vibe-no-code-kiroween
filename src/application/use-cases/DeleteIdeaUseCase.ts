@@ -1,8 +1,10 @@
 import { IIdeaRepository } from "../../domain/repositories/IIdeaRepository";
-import { IDocumentRepository } from "../../domain/repositories/IDocumentRepository";
 import { IdeaId, UserId } from "../../domain/value-objects";
 import { Result } from "../../shared/types/common";
-import { NotFoundError, UnauthorizedError } from "../../shared/types/errors";
+import {
+  IdeaNotFoundError,
+  UnauthorizedAccessError,
+} from "../../shared/types/errors";
 
 export interface DeleteIdeaCommand {
   ideaId: IdeaId;
@@ -15,26 +17,11 @@ export interface DeleteIdeaResult {
 
 /**
  * Use case for deleting an idea and all its associated documents
- * Ensures user owns the idea before deletion
- */
-export class DeleteIdeaUseCase {
-  constructor(
-    private readonly ideaRepository: IIdeaRepository,
-    private readonly documentRepository: IDocumentRepository
-  ) { }
-  /**
  * Documents are automatically deleted via ON DELETE CASCADE foreign key constraint
  * Ensures user owns the idea before deletion
  */
 export class DeleteIdeaUseCase {
   constructor(private readonly ideaRepository: IIdeaRepository) {}
- // Ensures user owns the idea before deletion
-
-export class DeleteIdeaUseCase {
-  constructor(
-    private readonly ideaRepository: IIdeaRepository,
-    private readonly documentRepository: IDocumentRepository
-  ) {}
 
   async execute(
     command: DeleteIdeaCommand
@@ -49,7 +36,7 @@ export class DeleteIdeaUseCase {
       if (!ideaResult.success || !ideaResult.data) {
         return {
           success: false,
-          error: new NotFoundError("Idea not found"),
+          error: new IdeaNotFoundError(command.ideaId.value),
         };
       }
 
@@ -59,27 +46,14 @@ export class DeleteIdeaUseCase {
       if (!idea.belongsToUser(command.userId)) {
         return {
           success: false,
-          error: new UnauthorizedError(
-            "You do not have permission to delete this idea"
+          error: new UnauthorizedAccessError(
+            command.userId.value,
+            command.ideaId.value
           ),
         };
       }
 
-      // Delete all associated documents first
-      const deleteDocsResult = await this.documentRepository.deleteAllByIdeaId(
-        command.ideaId
-      );
-
-      if (!deleteDocsResult.success) {
-        return {
-          success: false,
-          error: new Error(
-            `Failed to delete associated documents: ${deleteDocsResult.error?.message}`
-          ),
-        };
-      }
-
-      // Delete the idea
+      // Delete the idea (documents will be cascade deleted by database)
       const deleteIdeaResult = await this.ideaRepository.delete(
         command.ideaId,
         command.userId
