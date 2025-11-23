@@ -12,3 +12,4 @@ export { saveMetadata } from "./saveMetadata";
 export type { SaveMetadataOptions } from "./saveMetadata";
 export { getDocumentsByIdea } from "./getDocumentsByIdea";
 export { getDocumentById } from "./getDocumentById";
+export { deleteIdea } from "./deleteIdea";

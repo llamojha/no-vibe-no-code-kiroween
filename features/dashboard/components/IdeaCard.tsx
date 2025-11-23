@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import type { DashboardIdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
+import DeleteIdeaButton from "@/features/idea-panel/components/DeleteIdeaButton";
 
 interface IdeaCardProps {
   idea: DashboardIdeaDTO;
@@ -185,7 +186,7 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
         </div>
       )}
 
-      {/* Footer with date and manage button */}
+      {/* Footer with date and action buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-slate-800">
         <div className="flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1">
@@ -222,28 +223,39 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
           </span>
         </div>
 
-        {/* View button */}
-        <button
-          onClick={handleManageClick}
-          className="flex items-center justify-center gap-2 px-4 py-2 sm:px-6 sm:py-2.5 text-sm font-semibold uppercase tracking-wider border border-accent text-accent rounded hover:bg-accent/10 transition-colors min-h-[44px] touch-manipulation"
-          aria-label={t("viewIdeaButton") || "View this idea"}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden="true"
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <DeleteIdeaButton
+            ideaId={idea.id}
+            ideaText={idea.ideaText}
+            variant="card"
+            onDeleteSuccess={() => {
+              // Refresh the page to update the list
+              window.location.reload();
+            }}
+          />
+          <button
+            onClick={handleManageClick}
+            className="flex items-center justify-center gap-2 px-4 py-2 sm:px-6 sm:py-2.5 text-sm font-semibold uppercase tracking-wider border border-accent text-accent rounded hover:bg-accent/10 transition-colors min-h-[44px] touch-manipulation"
+            aria-label={t("viewIdeaButton") || "View this idea"}
           >
-            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-            <path
-              fillRule="evenodd"
-              d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span>{t("View")}</span>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+              <path
+                fillRule="evenodd"
+                d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{t("View")}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

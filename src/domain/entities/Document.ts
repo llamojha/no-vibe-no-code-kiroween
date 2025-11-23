@@ -133,17 +133,24 @@ export class Document extends Entity<DocumentId> {
   private validateStartupAnalysisContent(): void {
     this.ensureObjectContent("Startup analysis");
 
-    // Accept both legacy (viability/innovation/market) and idea panel (score/feedback) payloads
+    // Accept multiple formats:
+    // 1. Legacy format (viability/innovation/market)
+    // 2. Idea Panel format (score/feedback)
+    // 3. Original format (finalScore/scoringRubric)
     const hasLegacyFields = this.hasRequiredFields([
       "viability",
       "innovation",
       "market",
     ]);
     const hasIdeaPanelFields = this.hasRequiredFields(["score", "feedback"]);
+    const hasOriginalFields = this.hasRequiredFields([
+      "finalScore",
+      "scoringRubric",
+    ]);
 
-    if (!hasLegacyFields && !hasIdeaPanelFields) {
+    if (!hasLegacyFields && !hasIdeaPanelFields && !hasOriginalFields) {
       throw new InvariantViolationError(
-        "Startup analysis content must include viability/innovation/market or score/feedback fields"
+        "Startup analysis content must include viability/innovation/market, score/feedback, or finalScore/scoringRubric fields"
       );
     }
   }

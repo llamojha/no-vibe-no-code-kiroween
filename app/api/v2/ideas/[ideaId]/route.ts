@@ -50,3 +50,41 @@ export async function GET(
     );
   }
 }
+
+/**
+ * Delete idea and all associated documents
+ * DELETE /api/v2/ideas/[ideaId]
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { ideaId: string } }
+) {
+  try {
+    // Initialize feature flags
+    initFeatureFlags();
+    const isLocalDevMode = isEnabled("LOCAL_DEV_MODE");
+
+    // In local dev mode, mock deletion
+    if (isLocalDevMode) {
+      return NextResponse.json({ message: "Idea deleted successfully (mock)" });
+    }
+
+    // Create fresh Supabase client for this request
+    const supabase = serverSupabase();
+
+    // Create service factory with fresh client
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+
+    // Create controller
+    const controller = serviceFactory.createIdeaPanelController();
+
+    // Delegate to controller
+    return await controller.deleteIdea(request, { params });
+  } catch (error) {
+    console.error("Error in DELETE /api/v2/ideas/[ideaId]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
