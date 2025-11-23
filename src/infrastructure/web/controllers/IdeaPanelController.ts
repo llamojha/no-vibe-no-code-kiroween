@@ -3,6 +3,7 @@ import { GetIdeaWithDocumentsUseCase } from "@/src/application/use-cases/GetIdea
 import { UpdateIdeaStatusUseCase } from "@/src/application/use-cases/UpdateIdeaStatusUseCase";
 import { SaveIdeaMetadataUseCase } from "@/src/application/use-cases/SaveIdeaMetadataUseCase";
 import { GetUserIdeasUseCase } from "@/src/application/use-cases/GetUserIdeasUseCase";
+import { DeleteIdeaUseCase } from "@/src/application/use-cases/DeleteIdeaUseCase";
 import { IdeaId, ProjectStatus, UserId } from "@/src/domain/value-objects";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
@@ -22,7 +23,8 @@ export class IdeaPanelController {
     private readonly getIdeaWithDocumentsUseCase: GetIdeaWithDocumentsUseCase,
     private readonly updateStatusUseCase: UpdateIdeaStatusUseCase,
     private readonly saveMetadataUseCase: SaveIdeaMetadataUseCase,
-    private readonly getUserIdeasUseCase: GetUserIdeasUseCase
+    private readonly getUserIdeasUseCase: GetUserIdeasUseCase,
+    private readonly deleteIdeaUseCase: DeleteIdeaUseCase
   ) {}
 
   /**
@@ -238,6 +240,44 @@ export class IdeaPanelController {
       }
 
       return NextResponse.json({ message: "Metadata saved successfully" });
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  /**
+   * Delete idea and all associated documents
+   * DELETE /api/v2/ideas/[ideaId]
+   */
+  async deleteIdea(
+    request: NextRequest,
+    { params }: { params: { ideaId: string } }
+  ): Promise<NextResponse> {
+    try {
+      // Authenticate request
+      const authResult = await authenticateRequest(request);
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      const userId = UserId.fromString(authResult.userId);
+      const ideaId = IdeaId.fromString(params.ideaId);
+
+      // Execute use case
+      const result = await this.deleteIdeaUseCase.execute({
+        ideaId,
+        userId,
+      });
+
+      if (!result.success) {
+        const statusCode = this.mapErrorToStatus(result.error);
+        return NextResponse.json(
+          { error: result.error?.message || "Failed to delete idea" },
+          { status: statusCode }
+        );
+      }
+
+      return NextResponse.json({ message: "Idea deleted successfully" });
     } catch (error) {
       return handleApiError(error);
     }

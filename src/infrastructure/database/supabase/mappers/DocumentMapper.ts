@@ -48,16 +48,27 @@ export class DocumentMapper {
    * Convert DAO from database to Document domain entity
    */
   toDomain(dao: DocumentDAO): Document {
-    return Document.reconstruct({
-      id: DocumentId.reconstruct(dao.id),
-      ideaId: IdeaId.reconstruct(dao.idea_id),
-      userId: UserId.reconstruct(dao.user_id),
-      documentType: DocumentType.fromString(dao.document_type),
-      title: dao.title,
-      content: this.parseContent(dao.content),
-      createdAt: new Date(dao.created_at || Date.now()),
-      updatedAt: new Date(dao.updated_at || Date.now()),
-    });
+    try {
+      return Document.reconstruct({
+        id: DocumentId.reconstruct(dao.id),
+        ideaId: IdeaId.reconstruct(dao.idea_id),
+        userId: UserId.reconstruct(dao.user_id),
+        documentType: DocumentType.fromString(dao.document_type),
+        title: dao.title,
+        content: this.parseContent(dao.content),
+        createdAt: new Date(dao.created_at || Date.now()),
+        updatedAt: new Date(dao.updated_at || Date.now()),
+      });
+    } catch (error) {
+      // Add context about which idea/document failed
+      const enhancedError = new Error(
+        `Failed to reconstruct document (ID: ${dao.id}, Idea ID: ${
+          dao.idea_id
+        }): ${error instanceof Error ? error.message : String(error)}`
+      );
+      enhancedError.cause = error;
+      throw enhancedError;
+    }
   }
 
   /**

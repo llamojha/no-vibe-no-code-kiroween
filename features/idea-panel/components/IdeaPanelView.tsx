@@ -23,6 +23,7 @@ import ProjectStatusControl from "./ProjectStatusControl";
 import AnalyzeButton from "./AnalyzeButton";
 import NotesSection from "./NotesSection";
 import TagsSection from "./TagsSection";
+import DeleteIdeaButton from "./DeleteIdeaButton";
 
 interface IdeaPanelViewProps {
   ideaId: string;
@@ -254,6 +255,15 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
 
         {/* Tags Section */}
         <TagsSection idea={idea} onSaveTags={handleSaveTags} />
+
+        {/* Delete Button */}
+        <div className="flex justify-center pt-6 border-t border-slate-700">
+          <DeleteIdeaButton
+            ideaId={idea.id}
+            ideaText={idea.ideaText}
+            variant="panel"
+          />
+        </div>
       </div>
     </IdeaPanelLayout>
   );

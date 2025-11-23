@@ -238,56 +238,8 @@ export class HackathonController {
     );
 
     if (analysis?.success) {
-      // Save to new ideas and documents tables for Idea Panel feature
-      if (this.saveAnalysisToIdeaPanelUseCase) {
-        try {
-          // Check if ideaId is provided in the request (for linking to existing idea)
-          const url = new URL(request.url);
-          const existingIdeaId = url.searchParams.get("ideaId");
-          const analysisContent = analysis.data as unknown as DocumentContent;
-
-          const saveToIdeaPanelResult =
-            await this.saveAnalysisToIdeaPanelUseCase.execute({
-              ideaText: submission.description,
-              userId: userId,
-              analysisContent,
-              documentType: "hackathon_analysis",
-              source: "manual",
-              existingIdeaId: existingIdeaId || undefined,
-            });
-
-          if (saveToIdeaPanelResult.success) {
-            logger.info(
-              LogCategory.BUSINESS,
-              "Hackathon analysis saved to idea panel tables",
-              {
-                ideaId: saveToIdeaPanelResult.data.idea.id.value,
-                documentId: saveToIdeaPanelResult.data.document?.id.value,
-                isNewIdea: saveToIdeaPanelResult.data.isNewIdea,
-              }
-            );
-          } else {
-            // Log error but don't fail the request since analysis was successful
-            logger.error(
-              LogCategory.BUSINESS,
-              "Failed to save hackathon analysis to idea panel tables",
-              {
-                error: saveToIdeaPanelResult.error.message,
-              }
-            );
-          }
-        } catch (error) {
-          // Log error but don't fail the request
-          logger.error(
-            LogCategory.BUSINESS,
-            "Unexpected error saving hackathon analysis to idea panel tables",
-            {
-              error: error instanceof Error ? error.message : String(error),
-            }
-          );
-        }
-      }
-
+      // Note: Saving is handled by the frontend via /api/v2/hackathon/save
+      // This endpoint only performs analysis and deducts credits
       await this.recordCreditUsage(userId, AnalysisType.HACKATHON_PROJECT);
     }
     return NextResponse.json(analysis);

@@ -28,6 +28,7 @@ import { AddCreditsUseCase } from "../../application/use-cases/AddCreditsUseCase
 import { GetIdeaWithDocumentsUseCase } from "../../application/use-cases/GetIdeaWithDocumentsUseCase";
 import { UpdateIdeaStatusUseCase } from "../../application/use-cases/UpdateIdeaStatusUseCase";
 import { SaveIdeaMetadataUseCase } from "../../application/use-cases/SaveIdeaMetadataUseCase";
+import { DeleteIdeaUseCase } from "../../application/use-cases/DeleteIdeaUseCase";
 import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUseCase";
 import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
 import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
@@ -415,6 +416,23 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as GetUserIdeasUseCase;
+  }
+
+  /**
+   * Create DeleteIdeaUseCase with dependencies
+   */
+  createDeleteIdeaUseCase(): DeleteIdeaUseCase {
+    const cacheKey = "deleteIdeaUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new DeleteIdeaUseCase(
+        this.ideaRepository,
+        this.documentRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as DeleteIdeaUseCase;
   }
 
   /**
