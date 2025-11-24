@@ -4,6 +4,7 @@ import {
   IdeaId,
   UserId,
   DocumentType,
+  DocumentVersion,
 } from "../../../../domain/value-objects";
 import { DocumentDAO } from "../../types/dao";
 
@@ -17,6 +18,7 @@ export interface DocumentDTO {
   documentType: "startup_analysis" | "hackathon_analysis";
   title: string | null;
   content: DocumentContent;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +41,7 @@ export class DocumentMapper {
         | "hackathon_analysis",
       title: document.title,
       content: document.getContent() as DocumentDAO["content"], // Already returns a deep copy
+      version: document.version.value,
       created_at: document.createdAt.toISOString(),
       updated_at: document.updatedAt.toISOString(),
     };
@@ -56,6 +59,7 @@ export class DocumentMapper {
         documentType: DocumentType.fromString(dao.document_type),
         title: dao.title,
         content: this.parseContent(dao.content),
+        version: DocumentVersion.create(dao.version || 1), // Default to version 1 for existing documents
         createdAt: new Date(dao.created_at || Date.now()),
         updatedAt: new Date(dao.updated_at || Date.now()),
       });
@@ -84,6 +88,7 @@ export class DocumentMapper {
         | "hackathon_analysis",
       title: document.title,
       content: document.getContent(),
+      version: document.version.value,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString(),
     };

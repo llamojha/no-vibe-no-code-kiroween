@@ -297,6 +297,7 @@ export class SaveAnalysisUseCase {
           documentType: existingDoc.documentType,
           title: existingDoc.title,
           content: updatedContent,
+          version: existingDoc.version, // Preserve existing version
           createdAt: existingDoc.createdAt,
           updatedAt: new Date(), // Update timestamp
         });

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up database schema for document versioning
+- [x] 1. Set up database schema for document versioning
 
   - Apply database migration using Supabase MCP
   - Add new document types to CHECK constraint (prd, technical_design, architecture, roadmap)
@@ -10,16 +10,16 @@
   - Verify migration using Supabase MCP
   - _Requirements: All requirements depend on this foundation_
 
-- [ ] 2. Extend domain layer with new value objects and entities
+- [x] 2. Extend domain layer with new value objects and entities
 
-  - [ ] 2.1 Extend DocumentType value object
+  - [x] 2.1 Extend DocumentType value object
 
     - Add PRD, TECHNICAL_DESIGN, ARCHITECTURE, ROADMAP types
     - Add helper methods (isAnalysis, isGeneratedDocument, getDisplayName, getCreditCost, getIcon, getColor)
     - Helper methods MUST delegate to DOCUMENT_TYPE_CONFIGS (single source of truth - no duplication)
     - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
 
-  - [ ] 2.2 Create DocumentVersion value object
+  - [x] 2.2 Create DocumentVersion value object
 
     - Implement validation (must be >= 1)
     - Add create and initial factory methods
@@ -27,27 +27,27 @@
     - Add equals method
     - _Requirements: 11.4, 12.3, 13.4_
 
-  - [ ] 2.3 Extend Document entity with version management
+  - [x] 2.3 Extend Document entity with version management
 
     - Add version field
     - Add updateContent method (returns new document with incremented version)
     - Add getVersion and isLatestVersion methods
     - _Requirements: 11.4, 12.3, 13.4_
 
-  - [ ] 2.4 Write property test for version increment
+  - [x] 2.4 Write property test for version increment
     - **Property 10: Version creation on save**
     - **Validates: Requirements 11.4**
 
-- [ ] 3. Create document configuration system
+- [x] 3. Create document configuration system
 
-  - [ ] 3.1 Create document type configuration
+  - [x] 3.1 Create document type configuration
 
     - Create DocumentTypeConfig interface
     - Define DOCUMENT_TYPE_CONFIGS with all 4 types
     - Include display names, icons, colors, credit costs, prompt templates, dependencies, order
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
 
-  - [ ] 3.2 Create document utility functions
+  - [x] 3.2 Create document utility functions
     - Implement getDocumentDisplayName (delegates to DocumentType.getDisplayName())
     - Implement getDocumentCreditCost (delegates to DocumentType.getCreditCost())
     - Implement getDocumentIcon (delegates to DocumentType.getIcon())
@@ -58,41 +58,41 @@
     - All functions delegate to config or DocumentType methods (no duplication)
     - _Requirements: 1.4, 3.4, 5.4, 7.4, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 4. Create AI prompt templates
+- [x] 4. Create AI prompt templates
 
-  - [ ] 4.1 Create PRD prompt template
+  - [x] 4.1 Create PRD prompt template
 
     - Define PRD_PROMPT_TEMPLATE with sections (Problem Statement, Users, Features, Metrics, Out of Scope)
     - Include placeholders for idea text, analysis scores, analysis feedback
     - _Requirements: 2.1, 17.1, 17.2_
 
-  - [ ] 4.2 Create Technical Design prompt template
+  - [x] 4.2 Create Technical Design prompt template
 
     - Define TECHNICAL_DESIGN_PROMPT_TEMPLATE with sections (Architecture, Tech Stack, Data Models, APIs, Security, Deployment)
     - Include placeholders for idea text and existing PRD
     - _Requirements: 4.1, 17.1, 17.3_
 
-  - [ ] 4.3 Create Architecture prompt template
+  - [x] 4.3 Create Architecture prompt template
 
     - Define ARCHITECTURE_PROMPT_TEMPLATE with sections (System Architecture, Components, Data Flow, Integrations, Scalability)
     - Include placeholders for idea text and existing Technical Design
     - _Requirements: 6.1, 17.1, 17.5_
 
-  - [ ] 4.4 Create Roadmap prompt template
+  - [x] 4.4 Create Roadmap prompt template
     - Define ROADMAP_PROMPT_TEMPLATE with sections (Milestones without timeframes, Prioritization, Dependencies, Resources, Risks)
     - Explicitly instruct AI to avoid specific dates/timeframes - focus on logical ordering and priorities
     - Include placeholders for idea text, existing PRD, and existing Technical Design
     - _Requirements: 8.1, 17.1, 17.4_
 
-- [ ] 5. Implement AI document generator adapter
+- [x] 5. Implement AI document generator adapter
 
-  - [ ] 5.1 Create IAIDocumentGeneratorService interface
+  - [x] 5.1 Create IAIDocumentGeneratorService interface
 
     - Define generateDocument method with documentType and context parameters
     - Define DocumentGenerationContext interface
     - _Requirements: 2.1, 4.1, 6.1, 8.1_
 
-  - [ ] 5.2 Implement GoogleAIDocumentGeneratorAdapter
+  - [x] 5.2 Implement GoogleAIDocumentGeneratorAdapter
 
     - Implement generateDocument method
     - Implement buildPrompt method (selects template based on type)
@@ -100,25 +100,25 @@
     - Handle AI service errors
     - _Requirements: 2.2, 4.2, 6.2, 8.2, 19.1, 19.2_
 
-  - [ ] 5.3 Write property test for prompt construction
+  - [x] 5.3 Write property test for prompt construction
 
     - **Property 15: Idea text in AI prompt**
     - **Validates: Requirements 17.1**
 
-  - [ ] 5.4 Write property test for contextual generation
+  - [x] 5.4 Write property test for contextual generation
     - **Property 16: Contextual document generation**
     - **Validates: Requirements 17.3**
 
-- [ ] 6. Extend infrastructure layer - repository
+- [x] 6. Extend infrastructure layer - repository
 
-  - [ ] 6.1 Extend IDocumentRepository interface
+  - [x] 6.1 Extend IDocumentRepository interface
 
     - Add findByIdeaIdAndType method
     - Add findLatestVersion method
     - Add findAllVersions method
     - _Requirements: 12.1, 12.2, 12.3_
 
-  - [ ] 6.2 Extend SupabaseDocumentRepository implementation
+  - [x] 6.2 Extend SupabaseDocumentRepository implementation
 
     - Implement findByIdeaIdAndType query
     - Implement findLatestVersion query (ORDER BY version DESC LIMIT 1)
@@ -126,7 +126,7 @@
     - Handle version-related database errors
     - _Requirements: 12.1, 12.2, 12.3_
 
-  - [ ] 6.3 Write property test for version queries
+  - [x] 6.3 Write property test for version queries
     - **Property 11: Version history ordering**
     - **Validates: Requirements 12.3**
 

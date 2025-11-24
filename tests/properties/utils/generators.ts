@@ -16,6 +16,7 @@ import { AnalysisId } from "@/src/domain/value-objects/AnalysisId";
 import { UserId } from "@/src/domain/value-objects/UserId";
 import { IdeaId } from "@/src/domain/value-objects/IdeaId";
 import { DocumentId } from "@/src/domain/value-objects/DocumentId";
+import { DocumentVersion } from "@/src/domain/value-objects/DocumentVersion";
 import { Score } from "@/src/domain/value-objects/Score";
 import { Email } from "@/src/domain/value-objects/Email";
 import { Locale } from "@/src/domain/value-objects/Locale";
@@ -182,6 +183,14 @@ export function generateIdeaId(): IdeaId {
  */
 export function generateDocumentId(): DocumentId {
   return DocumentId.generate();
+}
+
+/**
+ * Generate random valid DocumentVersion
+ */
+export function generateDocumentVersion(): DocumentVersion {
+  // Generate versions between 1 and 10 for testing
+  return DocumentVersion.create(faker.number.int({ min: 1, max: 10 }));
 }
 
 /**

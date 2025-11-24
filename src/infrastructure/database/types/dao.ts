@@ -171,9 +171,16 @@ export interface IdeaDAO extends BaseDAO {
 export interface DocumentDAO extends BaseDAO {
   idea_id: string;
   user_id: string;
-  document_type: "startup_analysis" | "hackathon_analysis";
+  document_type:
+    | "startup_analysis"
+    | "hackathon_analysis"
+    | "prd"
+    | "technical_design"
+    | "architecture"
+    | "roadmap";
   title: string | null;
   content: Json;
+  version: number;
   updated_at: string;
 }
 

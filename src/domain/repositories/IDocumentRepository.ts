@@ -134,8 +134,27 @@ export interface IDocumentQueryRepository
 
   /**
    * Find documents by idea and type
+   * Returns all versions ordered by version DESC
    */
   findByIdeaAndType(
+    ideaId: IdeaId,
+    documentType: DocumentType
+  ): Promise<Result<Document[], Error>>;
+
+  /**
+   * Find the latest version of a document by idea and type
+   * Returns the document with the highest version number
+   */
+  findLatestVersion(
+    ideaId: IdeaId,
+    documentType: DocumentType
+  ): Promise<Result<Document | null, Error>>;
+
+  /**
+   * Find all versions of a document by idea and type
+   * Returns all versions ordered by version DESC (newest first)
+   */
+  findAllVersions(
     ideaId: IdeaId,
     documentType: DocumentType
   ): Promise<Result<Document[], Error>>;

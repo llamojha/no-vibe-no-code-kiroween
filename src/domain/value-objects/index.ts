@@ -4,6 +4,7 @@ export { UserId } from "./UserId";
 export { CreditTransactionId } from "./CreditTransactionId";
 export { IdeaId } from "./IdeaId";
 export { DocumentId } from "./DocumentId";
+export { DocumentVersion } from "./DocumentVersion";
 
 // Basic Value Objects
 export { Score } from "./Score";
