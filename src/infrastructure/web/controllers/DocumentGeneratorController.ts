@@ -180,6 +180,7 @@ export class DocumentGeneratorController {
       }
 
       const userId = UserId.fromString(authResult.userId);
+      const documentId = DocumentId.fromString(params.documentId);
       const ideaIdVO = IdeaId.fromString(ideaId);
       const documentTypeVO = DocumentType.fromString(documentType);
 
@@ -192,6 +193,7 @@ export class DocumentGeneratorController {
 
       // Execute use case
       const result = await this.updateDocumentUseCase.execute({
+        documentId,
         ideaId: ideaIdVO,
         documentType: documentTypeVO,
         userId,
@@ -260,6 +262,7 @@ export class DocumentGeneratorController {
       }
 
       const userId = UserId.fromString(authResult.userId);
+      const documentId = DocumentId.fromString(params.documentId);
       const ideaIdVO = IdeaId.fromString(ideaId);
       const documentTypeVO = DocumentType.fromString(documentType);
 
@@ -272,6 +275,7 @@ export class DocumentGeneratorController {
 
       // Execute use case
       const result = await this.regenerateDocumentUseCase.execute({
+        documentId,
         ideaId: ideaIdVO,
         userId,
         documentType: documentTypeVO,
@@ -340,6 +344,7 @@ export class DocumentGeneratorController {
       }
 
       const userId = UserId.fromString(authResult.userId);
+      const documentId = DocumentId.fromString(params.documentId);
       const ideaIdVO = IdeaId.fromString(ideaId);
       const documentTypeVO = DocumentType.fromString(documentType);
 
@@ -352,6 +357,7 @@ export class DocumentGeneratorController {
 
       // Execute use case
       const result = await this.getVersionsUseCase.execute({
+        documentId,
         ideaId: ideaIdVO,
         userId,
         documentType: documentTypeVO,
@@ -428,6 +434,7 @@ export class DocumentGeneratorController {
       }
 
       const userId = UserId.fromString(authResult.userId);
+      const documentId = DocumentId.fromString(params.documentId);
       const ideaIdVO = IdeaId.fromString(ideaId);
       const documentTypeVO = DocumentType.fromString(documentType);
       const versionVO = DocumentVersion.create(versionNumber);
@@ -446,6 +453,7 @@ export class DocumentGeneratorController {
 
       // Execute use case
       const result = await this.restoreVersionUseCase.execute({
+        documentId,
         ideaId: ideaIdVO,
         userId,
         documentType: documentTypeVO,

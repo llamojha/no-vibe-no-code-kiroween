@@ -15,7 +15,7 @@ export { Locale } from "./Locale";
 export { Category } from "./Category";
 export { Criteria } from "./Criteria";
 export { IdeaSource } from "./IdeaSource";
-export { DocumentType } from "./DocumentType";
+export { DocumentType, type DocumentTypeValue } from "./DocumentType";
 export { ProjectStatus } from "./ProjectStatus";
 
 // Enums

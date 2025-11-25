@@ -4,6 +4,7 @@ import {
   UserId,
   DocumentType,
   DocumentVersion,
+  DocumentId,
 } from "../../domain/value-objects";
 import {
   IDocumentRepository,
@@ -21,6 +22,7 @@ import { logger, LogCategory } from "@/lib/logger";
  * Input for restoring a document version
  */
 export interface RestoreDocumentVersionInput {
+  documentId?: DocumentId;
   ideaId: IdeaId;
   userId: UserId;
   documentType: DocumentType;
@@ -99,6 +101,15 @@ export class RestoreDocumentVersionUseCase {
       }
 
       const versions = versionsResult.data;
+
+      if (
+        input.documentId &&
+        !versions.some((doc) => doc.id.equals(input.documentId!))
+      ) {
+        return failure(
+          new DocumentNotFoundError(input.documentId.value)
+        );
+      }
 
       // Find the specific version to restore
       const versionToRestore = versions.find((doc) =>

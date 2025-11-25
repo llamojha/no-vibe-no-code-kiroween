@@ -1,5 +1,10 @@
 import { Document } from "../../domain/entities";
-import { IdeaId, UserId, DocumentType } from "../../domain/value-objects";
+import {
+  IdeaId,
+  UserId,
+  DocumentType,
+  DocumentId,
+} from "../../domain/value-objects";
 import {
   IDocumentRepository,
   IIdeaRepository,
@@ -8,6 +13,7 @@ import { Result, success, failure } from "../../shared/types/common";
 import {
   IdeaNotFoundError,
   UnauthorizedAccessError,
+  DocumentNotFoundError,
 } from "../../shared/types/errors";
 import { logger, LogCategory } from "@/lib/logger";
 
@@ -15,6 +21,7 @@ import { logger, LogCategory } from "@/lib/logger";
  * Input for getting document versions
  */
 export interface GetDocumentVersionsInput {
+  documentId?: DocumentId;
   ideaId: IdeaId;
   userId: UserId;
   documentType: DocumentType;
@@ -91,6 +98,15 @@ export class GetDocumentVersionsUseCase {
 
       // Versions are already sorted by version DESC in the repository
       const versions = versionsResult.data;
+
+      if (
+        input.documentId &&
+        !versions.some((doc) => doc.id.equals(input.documentId!))
+      ) {
+        return failure(
+          new DocumentNotFoundError(input.documentId.value)
+        );
+      }
 
       logger.info(LogCategory.BUSINESS, "Retrieved document versions", {
         ideaId: input.ideaId.value,

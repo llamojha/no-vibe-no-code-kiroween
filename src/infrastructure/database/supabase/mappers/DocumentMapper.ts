@@ -4,6 +4,7 @@ import {
   IdeaId,
   UserId,
   DocumentType,
+  type DocumentTypeValue,
   DocumentVersion,
 } from "../../../../domain/value-objects";
 import { DocumentDAO } from "../../types/dao";
@@ -15,7 +16,7 @@ export interface DocumentDTO {
   id: string;
   ideaId: string;
   userId: string;
-  documentType: "startup_analysis" | "hackathon_analysis";
+  documentType: DocumentTypeValue;
   title: string | null;
   content: DocumentContent;
   version: number;
@@ -36,9 +37,7 @@ export class DocumentMapper {
       id: document.id.value,
       idea_id: document.ideaId.value,
       user_id: document.userId.value,
-      document_type: document.documentType.value as
-        | "startup_analysis"
-        | "hackathon_analysis",
+      document_type: document.documentType.value as DocumentTypeValue,
       title: document.title,
       content: document.getContent() as DocumentDAO["content"], // Already returns a deep copy
       version: document.version.value,
@@ -84,8 +83,7 @@ export class DocumentMapper {
       ideaId: document.ideaId.value,
       userId: document.userId.value,
       documentType: document.documentType.value as
-        | "startup_analysis"
-        | "hackathon_analysis",
+        | DocumentTypeValue,
       title: document.title,
       content: document.getContent(),
       version: document.version.value,

@@ -1,5 +1,10 @@
 import { Document } from "../../domain/entities";
-import { IdeaId, UserId, DocumentType } from "../../domain/value-objects";
+import {
+  IdeaId,
+  UserId,
+  DocumentType,
+  DocumentId,
+} from "../../domain/value-objects";
 import {
   IDocumentRepository,
   IIdeaRepository,
@@ -24,6 +29,7 @@ import { logger, LogCategory } from "@/lib/logger";
  * Input for regenerating a document
  */
 export interface RegenerateDocumentInput {
+  documentId?: DocumentId;
   ideaId: IdeaId;
   userId: UserId;
   documentType: DocumentType;
@@ -119,6 +125,15 @@ export class RegenerateDocumentUseCase {
       }
 
       const currentDocument = currentDocResult.data;
+
+      if (
+        input.documentId &&
+        !currentDocument.id.equals(input.documentId)
+      ) {
+        return failure(
+          new DocumentNotFoundError(input.documentId.value)
+        );
+      }
 
       // Verify user owns the document
       if (!currentDocument.belongsToUser(input.userId)) {

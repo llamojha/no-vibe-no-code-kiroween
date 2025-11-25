@@ -26,11 +26,18 @@ export interface GenerateDocumentOptions {
   documentType: GeneratableDocumentType;
 }
 
+type DocumentIdentifier = {
+  ideaId: string;
+  documentType: GeneratableDocumentType;
+};
+
 /**
  * Options for updating a document
  */
 export interface UpdateDocumentOptions {
   content: string;
+  ideaId: string;
+  documentType: GeneratableDocumentType;
 }
 
 /**
@@ -127,6 +134,8 @@ export async function updateDocument(
     },
     body: JSON.stringify({
       content: options.content,
+      ideaId: options.ideaId,
+      documentType: options.documentType,
     }),
   });
 
@@ -168,13 +177,18 @@ export async function updateDocument(
  * Requirements: 13.1
  */
 export async function regenerateDocument(
-  documentId: string
+  documentId: string,
+  identifiers: DocumentIdentifier
 ): Promise<DocumentDTO> {
   const response = await fetch(`/api/v2/documents/${documentId}/regenerate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      ideaId: identifiers.ideaId,
+      documentType: identifiers.documentType,
+    }),
   });
 
   if (!response.ok) {
@@ -219,14 +233,23 @@ export async function regenerateDocument(
  * Requirements: 12.1
  */
 export async function getDocumentVersions(
-  documentId: string
+  documentId: string,
+  identifiers: DocumentIdentifier
 ): Promise<DocumentDTO[]> {
-  const response = await fetch(`/api/v2/documents/${documentId}/versions`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  const query = new URLSearchParams({
+    ideaId: identifiers.ideaId,
+    documentType: identifiers.documentType,
+  }).toString();
+
+  const response = await fetch(
+    `/api/v2/documents/${documentId}/versions?${query}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -265,7 +288,8 @@ export async function getDocumentVersions(
  */
 export async function restoreDocumentVersion(
   documentId: string,
-  version: number
+  version: number,
+  identifiers: DocumentIdentifier
 ): Promise<DocumentDTO> {
   const response = await fetch(
     `/api/v2/documents/${documentId}/versions/${version}/restore`,
@@ -274,6 +298,10 @@ export async function restoreDocumentVersion(
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        ideaId: identifiers.ideaId,
+        documentType: identifiers.documentType,
+      }),
     }
   );
 

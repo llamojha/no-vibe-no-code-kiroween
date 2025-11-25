@@ -197,7 +197,7 @@ const getColorClasses = (
  */
 export const DocumentProgressIndicator: React.FC<
   DocumentProgressIndicatorProps
-> = ({ documents, className = "" }) => {
+> = ({ ideaId, documents, className = "" }) => {
   const { t } = useLocale();
   const router = useRouter();
 
@@ -278,7 +278,7 @@ export const DocumentProgressIndicator: React.FC<
 
   return (
     <div
-      className={`bg-primary/50 border border-slate-700 rounded-none p-6 ${className}`}
+      className={`bg-gradient-to-br from-purple-900/40 to-black/60 border border-orange-500/30 rounded-none p-6 ${className}`}
       role="region"
       aria-label={t("documentProgressLabel") || "Document generation progress"}
     >

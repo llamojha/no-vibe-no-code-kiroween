@@ -324,7 +324,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 to-orange-950/30 text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
@@ -362,7 +362,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   // Error state (idea not found)
   if (!idea) {
     return (
-      <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 to-orange-950/30 text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-4xl mx-auto">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center max-w-md">
@@ -401,7 +401,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 to-orange-950/30 text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
       {/* Loading overlay during generation */}
       {isGenerating && <LoadingOverlay message={loadingMessage} />}
 
@@ -461,7 +461,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         <main id="main-content" className="space-y-6">
           {/* Idea Context Section */}
           <section
-            className="bg-slate-900/50 border border-slate-700 rounded-lg p-6"
+            className="bg-gradient-to-br from-purple-900/40 to-black/60 border border-orange-500/30 rounded-lg p-6"
             aria-labelledby="idea-context-heading"
           >
             <h2
@@ -493,7 +493,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           {/* Existing Documents Section */}
           {documents.length > 0 && (
             <section
-              className="bg-slate-900/50 border border-slate-700 rounded-lg p-6"
+              className="bg-gradient-to-br from-purple-900/40 to-black/60 border border-orange-500/30 rounded-lg p-6"
               aria-labelledby="existing-docs-heading"
             >
               <h2

@@ -1,5 +1,10 @@
 import { Document, DocumentContent } from "../../domain/entities/Document";
-import { UserId, IdeaId, DocumentType } from "../../domain/value-objects";
+import {
+  UserId,
+  IdeaId,
+  DocumentType,
+  DocumentId,
+} from "../../domain/value-objects";
 import { IDocumentRepository } from "../../domain/repositories";
 import { Result, success, failure } from "../../shared/types/common";
 import {
@@ -12,6 +17,7 @@ import { logger, LogCategory } from "@/lib/logger";
  * Input for updating a document
  */
 export interface UpdateDocumentInput {
+  documentId?: DocumentId;
   ideaId: IdeaId;
   documentType: DocumentType;
   userId: UserId;
@@ -71,6 +77,15 @@ export class UpdateDocumentUseCase {
       }
 
       const currentDocument = documentResult.data;
+
+      if (
+        input.documentId &&
+        !currentDocument.id.equals(input.documentId)
+      ) {
+        return failure(
+          new DocumentNotFoundError(input.documentId.value)
+        );
+      }
 
       // Step 2: Verify user owns the document
       if (!currentDocument.belongsToUser(input.userId)) {
