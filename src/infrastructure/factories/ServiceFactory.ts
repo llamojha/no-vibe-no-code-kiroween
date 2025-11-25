@@ -381,6 +381,8 @@ export class ServiceFactory {
         this.useCaseFactory.createGetDocumentVersionsUseCase();
       const restoreVersionUseCase =
         this.useCaseFactory.createRestoreDocumentVersionUseCase();
+      const getDocumentByIdUseCase =
+        this.useCaseFactory.createGetDocumentByIdUseCase();
       const exportDocumentUseCase =
         this.useCaseFactory.createExportDocumentUseCase();
 
@@ -390,6 +392,7 @@ export class ServiceFactory {
         regenerateDocumentUseCase,
         getVersionsUseCase,
         restoreVersionUseCase,
+        getDocumentByIdUseCase,
         exportDocumentUseCase
       );
 

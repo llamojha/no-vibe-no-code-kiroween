@@ -4,6 +4,7 @@ import { UpdateDocumentUseCase } from "@/src/application/use-cases/UpdateDocumen
 import { RegenerateDocumentUseCase } from "@/src/application/use-cases/RegenerateDocumentUseCase";
 import { GetDocumentVersionsUseCase } from "@/src/application/use-cases/GetDocumentVersionsUseCase";
 import { RestoreDocumentVersionUseCase } from "@/src/application/use-cases/RestoreDocumentVersionUseCase";
+import { GetDocumentByIdUseCase } from "@/src/application/use-cases/GetDocumentByIdUseCase";
 import {
   ExportDocumentUseCase,
   ExportFormat,
@@ -37,8 +38,57 @@ export class DocumentGeneratorController {
     private readonly regenerateDocumentUseCase: RegenerateDocumentUseCase,
     private readonly getVersionsUseCase: GetDocumentVersionsUseCase,
     private readonly restoreVersionUseCase: RestoreDocumentVersionUseCase,
+    private readonly getDocumentByIdUseCase: GetDocumentByIdUseCase,
     private readonly exportDocumentUseCase: ExportDocumentUseCase
   ) {}
+
+  /**
+   * Get a single document by ID
+   * GET /api/v2/documents/[documentId]
+   *
+   * Requirements: 2.1
+   */
+  async getDocument(
+    request: NextRequest,
+    { params }: { params: { documentId: string } }
+  ): Promise<NextResponse> {
+    try {
+      // Check feature flag
+      if (!this.isFeatureEnabled()) {
+        return NextResponse.json(
+          { error: "Document generation feature is disabled" },
+          { status: 403 }
+        );
+      }
+
+      // Authenticate request
+      const authResult = await authenticateRequest(request);
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      const userId = UserId.fromString(authResult.userId);
+      const documentId = DocumentId.fromString(params.documentId);
+
+      const result = await this.getDocumentByIdUseCase.execute({
+        documentId,
+        userId,
+      });
+
+      if (!result.success) {
+        const statusCode = this.mapErrorToStatus(result.error);
+        return NextResponse.json(
+          { error: result.error?.message || "Failed to retrieve document" },
+          { status: statusCode }
+        );
+      }
+
+      const documentDTO = this.documentMapper.toDTO(result.data.document);
+      return NextResponse.json(documentDTO);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
 
   /**
    * Generate a new document using AI

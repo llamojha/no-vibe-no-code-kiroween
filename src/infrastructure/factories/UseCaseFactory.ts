@@ -30,6 +30,7 @@ import { UpdateIdeaStatusUseCase } from "../../application/use-cases/UpdateIdeaS
 import { SaveIdeaMetadataUseCase } from "../../application/use-cases/SaveIdeaMetadataUseCase";
 import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUseCase";
 import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
+import { GetDocumentByIdUseCase } from "../../application/use-cases/GetDocumentByIdUseCase";
 import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
 import { DeleteIdeaUseCase } from "../../application/use-cases/DeleteIdeaUseCase";
 import { GenerateDocumentUseCase } from "../../application/use-cases/GenerateDocumentUseCase";
@@ -462,6 +463,20 @@ export class UseCaseFactory {
   }
 
   /**
+   * Create GetDocumentByIdUseCase with dependencies
+   */
+  createGetDocumentByIdUseCase(): GetDocumentByIdUseCase {
+    const cacheKey = "getDocumentByIdUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new GetDocumentByIdUseCase(this.documentRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GetDocumentByIdUseCase;
+  }
+
+  /**
    * Create SaveAnalysisToIdeaPanelUseCase with dependencies
    */
   createSaveAnalysisToIdeaPanelUseCase(): SaveAnalysisToIdeaPanelUseCase {
@@ -486,7 +501,9 @@ export class UseCaseFactory {
 
     if (!this.useCases.has(cacheKey)) {
       if (!this.aiDocumentGeneratorService) {
-        throw new Error("AI Document Generator Service not initialized");
+        throw new Error(
+          "AI Document Generator Service not initialized. Configure GEMINI_API_KEY or disable document generation."
+        );
       }
       const useCase = new GenerateDocumentUseCase(
         this.documentRepository,
@@ -524,7 +541,9 @@ export class UseCaseFactory {
 
     if (!this.useCases.has(cacheKey)) {
       if (!this.aiDocumentGeneratorService) {
-        throw new Error("AI Document Generator Service not initialized");
+        throw new Error(
+          "AI Document Generator Service not initialized. Configure GEMINI_API_KEY or disable document generation."
+        );
       }
       const useCase = new RegenerateDocumentUseCase(
         this.documentRepository,

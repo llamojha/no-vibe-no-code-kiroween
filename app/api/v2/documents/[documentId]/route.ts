@@ -5,6 +5,29 @@ import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
 export const runtime = "nodejs";
 
 /**
+ * Get a document by ID
+ * GET /api/v2/documents/[documentId]
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { documentId: string } }
+) {
+  try {
+    const supabase = serverSupabase();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const controller = serviceFactory.createDocumentGeneratorController();
+
+    return await controller.getDocument(request, { params });
+  } catch (error) {
+    console.error("Error in GET /api/v2/documents/[documentId]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * Update a document's content
  * PUT /api/v2/documents/[documentId]
  *
