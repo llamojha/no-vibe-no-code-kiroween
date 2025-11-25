@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import {
   DocumentType,
   type DocumentTypeValue,
@@ -42,15 +43,6 @@ export interface DocumentGeneratorProps {
 /**
  * Loading messages for document generation
  */
-const LOADING_MESSAGES = [
-  "Analyzing your idea...",
-  "Gathering context...",
-  "Generating document...",
-  "Crafting content...",
-  "Almost there...",
-  "Finalizing document...",
-];
-
 /**
  * DocumentGenerator component
  * Shared component used by all generator pages (PRD, Technical Design, Architecture, Roadmap)
@@ -100,6 +92,17 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const creditCost = getDocumentCreditCost(documentTypeInstance);
   const displayName = getDocumentDisplayName(documentTypeInstance);
   const hasInsufficientCredits = credits < creditCost;
+  const loadingMessages = useMemo(
+    () => [
+      t("generatorLoadingAnalyzing") || "Analyzing your idea...",
+      t("generatorLoadingContext") || "Gathering context...",
+      t("generatorLoadingGenerating") || "Generating document...",
+      t("generatorLoadingCrafting") || "Crafting content...",
+      t("generatorLoadingAlmost") || "Almost there...",
+      t("generatorLoadingFinalizing") || "Finalizing document...",
+    ],
+    [t]
+  );
 
   // Get existing documents of relevant types for context
   const latestGeneratedDocument = useMemo(() => {
@@ -137,6 +140,36 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       d.documentType === "hackathon_analysis"
   );
 
+  const analysisSummary = useMemo(() => {
+    if (!existingAnalysis || !existingAnalysis.content) return null;
+
+    const content = existingAnalysis.content as Record<string, unknown> | string;
+
+    if (typeof content === "string") {
+      const trimmed = content.trim();
+      return trimmed ? trimmed : null;
+    }
+
+    if (typeof content === "object" && content !== null) {
+      const candidateKeys = [
+        "summary",
+        "detailedSummary",
+        "viabilitySummary",
+        "feedback",
+        "description",
+      ];
+
+      for (const key of candidateKeys) {
+        const value = (content as Record<string, unknown>)[key];
+        if (typeof value === "string" && value.trim()) {
+          return value.trim();
+        }
+      }
+    }
+
+    return null;
+  }, [existingAnalysis]);
+
   // Refresh credits
   const refreshCredits = useCallback(async () => {
     try {
@@ -165,11 +198,11 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         );
       } catch (err) {
         console.error("Failed to load idea:", err);
-        setError(
+        const loadErrorMessage =
           err instanceof Error
             ? err.message
-            : "Failed to load idea. Please try again."
-        );
+            : t("loadIdeaError") || "Failed to load idea. Please try again.";
+        setError(loadErrorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -177,26 +210,26 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
     loadData();
     refreshCredits();
-  }, [ideaId, refreshCredits, documentTypeInstance]);
+  }, [ideaId, refreshCredits, documentTypeInstance, t]);
 
   // Loading message rotation during generation
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
-    if (isGenerating) {
+    if (isGenerating && loadingMessages.length) {
       let currentIndex = 0;
-      setLoadingMessage(LOADING_MESSAGES[currentIndex]);
+      setLoadingMessage(loadingMessages[currentIndex]);
 
       intervalId = setInterval(() => {
-        currentIndex = (currentIndex + 1) % LOADING_MESSAGES.length;
-        setLoadingMessage(LOADING_MESSAGES[currentIndex]);
+        currentIndex = (currentIndex + 1) % loadingMessages.length;
+        setLoadingMessage(loadingMessages[currentIndex]);
       }, 2500);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [isGenerating]);
+  }, [isGenerating, loadingMessages]);
 
   // Show "still working" message after 30 seconds
   useEffect(() => {
@@ -204,14 +237,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       const checkTime = () => {
         const elapsed = Date.now() - generationStartTime;
         if (elapsed > 30000) {
-          setLoadingMessage("Still working on your document...");
+          setLoadingMessage(
+            t("generatorStillWorking") || "Still working on your document..."
+          );
         }
       };
 
       const intervalId = setInterval(checkTime, 5000);
       return () => clearInterval(intervalId);
     }
-  }, [isGenerating, generationStartTime]);
+  }, [isGenerating, generationStartTime, t]);
 
   // Handle generate button click
   const handleGenerate = useCallback(async () => {
@@ -313,10 +348,18 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
       if (errorMessage.includes("Insufficient credits")) {
         setError(
-          `Insufficient credits. You need ${creditCost} credits but only have ${credits}. Please purchase more credits to continue.`
+          t("insufficientCreditsDetailed", {
+            required: creditCost,
+            available: credits,
+          }) ||
+            `Insufficient credits. You need ${creditCost} credits but only have ${credits}. Please purchase more credits to continue.`
         );
       } else {
-        setError(errorMessage);
+        setError(
+          errorMessage ||
+            t("generationFailedFallback") ||
+            "Failed to generate document"
+        );
       }
 
       // Refresh credits in case they were refunded
@@ -335,6 +378,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     documents,
     refreshCredits,
     router,
+    t,
   ]);
 
   // Handle back navigation
@@ -377,7 +421,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 />
               </svg>
               <p className="text-lg text-slate-400 font-mono uppercase tracking-widest">
-                Loading...
+                {t("loading") || "Loading..."}
               </p>
             </div>
           </div>
@@ -409,16 +453,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 />
               </svg>
               <h2 className="text-2xl font-bold text-red-400 mb-2 uppercase tracking-wider">
-                Error
+                {t("errorTitle") || "Error"}
               </h2>
               <p className="text-slate-400 mb-6 font-mono">
-                {error || "Idea not found"}
+                {error || t("ideaNotFound") || "Idea not found"}
               </p>
               <button
                 onClick={() => router.push("/dashboard")}
                 className="px-6 py-3 bg-accent text-white font-bold rounded-none hover:bg-accent/90 transition-colors uppercase tracking-wider"
               >
-                Back to Dashboard
+                {t("backToDashboard") || "Back to Dashboard"}
               </button>
             </div>
           </div>
@@ -437,7 +481,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded"
       >
-        Skip to main content
+        {t("skipToMainContent") || "Skip to main content"}
       </a>
 
       <div className="w-full max-w-4xl mx-auto">
@@ -446,8 +490,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <button
             onClick={handleBack}
             className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-accent transition-colors duration-200"
-            title="Back to Idea Panel"
-            aria-label="Back to Idea Panel"
+            title={t("backToIdeaPanel") || t("back") || "Back"}
+            aria-label={t("backToIdeaPanel") || t("back") || "Back"}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -463,15 +507,20 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               />
             </svg>
             <span className="hidden sm:inline uppercase tracking-wider">
-              Back
+              {t("back") || "Back"}
             </span>
           </button>
 
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <LanguageToggle />
+          </div>
+
           <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">
-            Generate {displayName}
+            {(t("generateLabel") || "Generate") + " " + displayName}
           </h1>
           <p className="mt-2 text-lg text-slate-400">
-            AI-powered document generation for your idea
+            {t("generatorSubtitle") ||
+              "AI-powered document generation for your idea"}
           </p>
         </header>
 
@@ -504,23 +553,30 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               id="idea-context-heading"
               className="text-xl font-bold text-accent mb-4 uppercase tracking-wider"
             >
-              Your Idea
+              {t("ideaSummaryTitle") || "Idea Summary"}
             </h2>
-            <div className="prose prose-invert max-w-none">
-              <p className="text-slate-300 whitespace-pre-wrap">
-                {idea.ideaText}
+            {analysisSummary ? (
+              <div className="prose prose-invert max-w-none">
+                <p className="text-slate-300 whitespace-pre-wrap">
+                  {analysisSummary}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">
+                {t("ideaSummaryEmpty") ||
+                  "No summary yet. Run an analysis to capture a quick overview."}
               </p>
-            </div>
+            )}
 
             {/* Analysis Summary (if available) */}
             {existingAnalysis && (
               <div className="mt-4 pt-4 border-t border-slate-700">
                 <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Analysis Summary
+                  {t("analysisSummaryTitle") || "Analysis Summary"}
                 </h3>
                 <p className="text-sm text-slate-400">
-                  Analysis completed on{" "}
-                  {new Date(existingAnalysis.createdAt).toLocaleDateString()}
+                  {(t("lastUpdatedLabel") || "Last updated") + " "}
+                  {new Date(existingAnalysis.updatedAt).toLocaleString()}
                 </p>
               </div>
             )}
@@ -533,53 +589,63 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               aria-labelledby="existing-docs-heading"
             >
               <h2
-                id="existing-docs-heading"
-                className="text-xl font-bold text-accent mb-4 uppercase tracking-wider"
-              >
-                Existing Documents
-              </h2>
-              <p className="text-sm text-slate-400 mb-4">
-                The AI will use these documents as context for better results.
-              </p>
-              <ul className="space-y-2">
-                {existingPRD && (
-                  <li className="flex items-center gap-2 text-slate-300">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <span>Product Requirements Document</span>
-                    <span className="text-xs text-slate-500">
-                      (v{existingPRD.version || 1})
-                    </span>
-                  </li>
-                )}
-                {existingTechnicalDesign && (
-                  <li className="flex items-center gap-2 text-slate-300">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full" />
-                    <span>Technical Design Document</span>
-                    <span className="text-xs text-slate-500">
-                      (v{existingTechnicalDesign.version || 1})
-                    </span>
-                  </li>
-                )}
-                {existingArchitecture && (
-                  <li className="flex items-center gap-2 text-slate-300">
-                    <span className="w-2 h-2 bg-green-500 rounded-full" />
-                    <span>Architecture Document</span>
-                    <span className="text-xs text-slate-500">
-                      (v{existingArchitecture.version || 1})
-                    </span>
-                  </li>
-                )}
-                {existingAnalysis && (
-                  <li className="flex items-center gap-2 text-slate-300">
-                    <span className="w-2 h-2 bg-orange-500 rounded-full" />
-                    <span>
-                      {existingAnalysis.documentType === "startup_analysis"
-                        ? "Startup Analysis"
-                        : "Hackathon Analysis"}
-                    </span>
-                  </li>
-                )}
-              </ul>
+              id="existing-docs-heading"
+              className="text-xl font-bold text-accent mb-4 uppercase tracking-wider"
+            >
+              {t("existingDocumentsTitle") || "Existing Documents"}
+            </h2>
+            <p className="text-sm text-slate-400 mb-4">
+              {t("existingDocumentsDescription") ||
+                "The AI will use these documents as context for better results."}
+            </p>
+            <ul className="space-y-2">
+              {existingPRD && (
+                <li className="flex items-center gap-2 text-slate-300">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                  <span>
+                    {t("prdDisplayName") ||
+                      getDocumentDisplayName(DocumentType.PRD)}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    (v{existingPRD.version || 1})
+                  </span>
+                </li>
+              )}
+              {existingTechnicalDesign && (
+                <li className="flex items-center gap-2 text-slate-300">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full" />
+                  <span>
+                    {t("technicalDesignDisplayName") ||
+                      getDocumentDisplayName(DocumentType.TECHNICAL_DESIGN)}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    (v{existingTechnicalDesign.version || 1})
+                  </span>
+                </li>
+              )}
+              {existingArchitecture && (
+                <li className="flex items-center gap-2 text-slate-300">
+                  <span className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span>
+                    {t("architectureDisplayName") ||
+                      getDocumentDisplayName(DocumentType.ARCHITECTURE)}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    (v{existingArchitecture.version || 1})
+                  </span>
+                </li>
+              )}
+              {existingAnalysis && (
+                <li className="flex items-center gap-2 text-slate-300">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full" />
+                  <span>
+                    {existingAnalysis.documentType === "startup_analysis"
+                      ? t("startupAnalysisTitle") || "Startup Analysis"
+                      : t("hackathonAnalysisTitle") || "Hackathon Analysis"}
+                  </span>
+                </li>
+              )}
+            </ul>
             </section>
           )}
 
@@ -592,19 +658,23 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               id="credit-cost-heading"
               className="text-xl font-bold text-accent mb-4 uppercase tracking-wider"
             >
-              Generation Cost
+              {t("generationCostTitle") || "Generation Cost"}
             </h2>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-300">
-                  Generating a {displayName} costs:
+                  {t("generationCostDescription", {
+                    documentName: displayName,
+                  }) || `Generating a ${displayName} costs:`}
                 </p>
                 <p className="text-3xl font-bold text-purple-400 mt-2">
                   {creditCost} credits
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-400">Your balance:</p>
+                <p className="text-sm text-slate-400">
+                  {t("yourBalance") || "Your balance:"}
+                </p>
                 <p
                   className={`text-2xl font-bold ${
                     hasInsufficientCredits ? "text-red-400" : "text-green-400"
@@ -618,8 +688,10 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             {hasInsufficientCredits && (
               <div className="mt-4 p-4 bg-red-900/30 border border-red-600 rounded-lg">
                 <p className="text-red-300 text-sm">
-                  You need {creditCost - credits} more credits to generate this
-                  document.
+                  {t("additionalCreditsNeeded", {
+                    amount: creditCost - credits,
+                  }) ||
+                    `You need ${creditCost - credits} more credits to generate this document.`}
                 </p>
                 <button
                   onClick={() => {
@@ -628,7 +700,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   }}
                   className="mt-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-md transition-colors duration-200"
                 >
-                  Get More Credits
+                  {t("getMoreCredits") || "Get More Credits"}
                 </button>
               </div>
             )}
@@ -646,11 +718,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     id="generated-output-heading"
                     className="text-xl font-bold text-green-300 uppercase tracking-wider"
                   >
-                    Latest {displayName}
+                    {t("latestDocumentTitle", {
+                      documentName: displayName,
+                    }) || `Latest ${displayName}`}
                   </h2>
                   <p className="text-sm text-slate-400">
-                    Your newest {displayName.toLowerCase()} is ready. Expand the
-                    card below to review the content.
+                    {t("latestDocumentDescription", {
+                      documentName: displayName.toLowerCase(),
+                    }) ||
+                      `Your newest ${displayName.toLowerCase()} is ready. Expand the card below to review the content.`}
                   </p>
                 </div>
               </div>
@@ -660,7 +736,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 ideaId={ideaId}
                 defaultExpanded
                 showExpandToggle={false}
-                viewLabel="View / Edit"
+                viewLabel={t("viewAndEdit") || "View / Edit"}
               />
             </section>
           )}
@@ -689,7 +765,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </svg>
                 <div className="flex-1">
                   <h3 className="text-red-400 font-semibold mb-1">
-                    Generation Failed
+                    {t("generationFailedTitle") || "Generation Failed"}
                   </h3>
                   <p className="text-red-300 text-sm mb-3">{error}</p>
                   <button
@@ -697,7 +773,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     disabled={hasInsufficientCredits}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium"
                   >
-                    Try Again
+                    {t("tryAgain") || "Try Again"}
                   </button>
                 </div>
               </div>
@@ -743,10 +819,12 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  Generating...
+                  {t("generatingDocument") || "Generating..."}
                 </span>
               ) : (
-                `Generate ${displayName}`
+                t("generateDocumentCta", {
+                  documentName: displayName,
+                }) || `Generate ${displayName}`
               )}
             </button>
           </div>

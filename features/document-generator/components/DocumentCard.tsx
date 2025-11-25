@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { DocumentType } from "@/src/domain/value-objects/DocumentType";
@@ -187,48 +187,6 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     [locale]
   );
 
-  // Get content preview (first 200 characters)
-  const getContentPreview = useCallback((): string => {
-    if (!document.content) return "";
-
-    const content = document.content as Record<string, unknown> | string;
-
-    // Handle string content
-    if (typeof content === "string") {
-      return content.slice(0, 200) + (content.length > 200 ? "..." : "");
-    }
-
-    // Handle object content (e.g., analysis results)
-    if (typeof content === "object" && content !== null) {
-      // Try to get a summary or description field
-      const summary =
-        content.summary || content.description || content.viabilitySummary;
-      if (typeof summary === "string") {
-        return summary.slice(0, 200) + (summary.length > 200 ? "..." : "");
-      }
-      return JSON.stringify(content).slice(0, 200) + "...";
-    }
-
-    return "";
-  }, [document.content]);
-
-  // Get full content for expanded view
-  const getFullContent = useCallback((): string => {
-    if (!document.content) return "";
-
-    const content = document.content as Record<string, unknown> | string;
-
-    if (typeof content === "string") {
-      return content;
-    }
-
-    if (typeof content === "object" && content !== null) {
-      return JSON.stringify(content, null, 2);
-    }
-
-    return "";
-  }, [document.content]);
-
   // Handle edit click
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -275,6 +233,116 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
   // Check if this is a generated document (not analysis)
   const isGeneratedDocument = documentType.isGeneratedDocument();
+
+  const convertMarkdownToHtml = useCallback((markdown: string): string => {
+    let html = markdown
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(
+        /^### (.+)$/gm,
+        '<h3 class="text-lg font-bold text-slate-200 mt-4 mb-2">$1</h3>'
+      )
+      .replace(
+        /^## (.+)$/gm,
+        '<h2 class="text-xl font-bold text-slate-200 mt-6 mb-3">$1</h2>'
+      )
+      .replace(
+        /^# (.+)$/gm,
+        '<h1 class="text-2xl font-bold text-slate-200 mt-8 mb-4">$1</h1>'
+      )
+      .replace(
+        /\*\*(.+?)\*\*/g,
+        '<strong class="font-bold text-slate-200">$1</strong>'
+      )
+      .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
+      .replace(
+        /```(\w*)\n([\s\S]*?)```/g,
+        '<pre class="bg-slate-900 p-4 rounded my-4 overflow-x-auto"><code class="text-sm text-green-400">$2</code></pre>'
+      )
+      .replace(
+        /`([^`]+)`/g,
+        '<code class="bg-slate-800 px-1 py-0.5 rounded text-green-400">$1</code>'
+      )
+      .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+      .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+      .replace(/\n\n+/g, '</p><p class="my-4">')
+      .replace(/\n/g, "<br />");
+
+    return `<p class="my-4">${html}</p>`;
+  }, []);
+
+  const markdownContent = useMemo(() => {
+    if (!document.content) return null;
+
+    const content = document.content as Record<string, unknown> | string;
+
+    if (typeof content === "object" && content !== null) {
+      const markdownValue = (content as Record<string, unknown>)["markdown"];
+      if (typeof markdownValue === "string") {
+        return markdownValue;
+      }
+    }
+
+    if (typeof content === "string" && content.trim()) {
+      return content;
+    }
+
+    return null;
+  }, [document.content]);
+
+  const renderedMarkdown = useMemo(() => {
+    if (!markdownContent) return null;
+    return convertMarkdownToHtml(markdownContent);
+  }, [markdownContent, convertMarkdownToHtml]);
+
+  const contentPreview = useMemo((): string => {
+    if (markdownContent) {
+      const normalized = markdownContent.replace(/\s+/g, " ").trim();
+      return normalized.length > 200
+        ? `${normalized.slice(0, 200)}...`
+        : normalized;
+    }
+
+    if (!document.content) return "";
+
+    const content = document.content as Record<string, unknown> | string;
+
+    if (typeof content === "string") {
+      return content.slice(0, 200) + (content.length > 200 ? "..." : "");
+    }
+
+    if (typeof content === "object" && content !== null) {
+      const summary =
+        content.summary || content.description || content.viabilitySummary;
+      if (typeof summary === "string") {
+        return summary.slice(0, 200) + (summary.length > 200 ? "..." : "");
+      }
+      return JSON.stringify(content).slice(0, 200) + "...";
+    }
+
+    return "";
+  }, [document.content, markdownContent]);
+
+  const fullContent = useMemo((): string => {
+    if (markdownContent) {
+      return markdownContent;
+    }
+
+    if (!document.content) return "";
+
+    const content = document.content as Record<string, unknown> | string;
+
+    if (typeof content === "string") {
+      return content;
+    }
+
+    if (typeof content === "object" && content !== null) {
+      return JSON.stringify(content, null, 2);
+    }
+
+    return "";
+  }, [document.content, markdownContent]);
 
   return (
     <article
@@ -492,7 +560,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
       {!isExpanded && (
         <div className="px-6 pb-4">
           <p className="text-sm text-slate-400 font-mono line-clamp-2">
-            {getContentPreview()}
+            {contentPreview}
           </p>
         </div>
       )}
@@ -504,9 +572,16 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           className="px-6 pb-6 border-t border-slate-800 pt-4 animate-fade-in"
         >
           <div className="bg-slate-900/50 border border-slate-800 p-4 max-h-96 overflow-y-auto">
-            <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
-              {getFullContent()}
-            </pre>
+            {renderedMarkdown ? (
+              <div
+                className="prose prose-invert max-w-none text-slate-200"
+                dangerouslySetInnerHTML={{ __html: renderedMarkdown }}
+              />
+            ) : (
+              <pre className="text-sm text-slate-300 font-mono whitespace-pre-wrap break-words">
+                {fullContent}
+              </pre>
+            )}
           </div>
         </div>
       )}
