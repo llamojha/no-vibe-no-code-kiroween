@@ -8,6 +8,8 @@ import {
   DocumentType,
   type DocumentTypeValue,
 } from "@/src/domain/value-objects/DocumentType";
+import { DocumentCard } from "./DocumentCard";
+import { DocumentProgressIndicator } from "./DocumentProgressIndicator";
 import { getDocumentDisplayName, getDocumentCreditCost } from "@/lib/documents";
 import { generateDocument } from "@/features/idea-panel/api/documentGeneration";
 import { getIdeaWithDocuments } from "@/features/idea-panel/api/getIdeaWithDocuments";
@@ -100,6 +102,28 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const hasInsufficientCredits = credits < creditCost;
 
   // Get existing documents of relevant types for context
+  const latestGeneratedDocument = useMemo(() => {
+    const matchingDocs = documents.filter(
+      (doc) => doc.documentType === documentTypeInstance.value
+    );
+
+    if (matchingDocs.length === 0) return null;
+
+    return matchingDocs.reduce((latest, doc) => {
+      const latestVersion = latest.version ?? 1;
+      const docVersion = doc.version ?? 1;
+
+      if (docVersion !== latestVersion) {
+        return docVersion > latestVersion ? doc : latest;
+      }
+
+      const latestUpdatedAt = new Date(latest.updatedAt).getTime();
+      const docUpdatedAt = new Date(doc.updatedAt).getTime();
+
+      return docUpdatedAt > latestUpdatedAt ? doc : latest;
+    }, matchingDocs[0]);
+  }, [documents, documentTypeInstance.value]);
+
   const existingPRD = documents.find((d) => d.documentType === "prd");
   const existingTechnicalDesign = documents.find(
     (d) => d.documentType === "technical_design"
@@ -242,11 +266,14 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         version: result.version || 1,
       });
 
+      // Update local document list so the generated output is immediately visible
+      setDocuments((prev) => [
+        result,
+        ...prev.filter((doc) => doc.id !== result.id),
+      ]);
+
       // Refresh credits after successful generation
       await refreshCredits();
-
-      // Navigate back to Idea Panel on success
-      router.push(`/idea/${ideaId}`);
     } catch (err) {
       console.error("Document generation failed:", err);
 
@@ -448,6 +475,15 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           </p>
         </header>
 
+        {/* Progress across documents */}
+        <section className="mb-6">
+          <DocumentProgressIndicator
+            ideaId={ideaId}
+            documents={documents}
+            className="bg-primary/40 border border-slate-700"
+          />
+        </section>
+
         {/* Credit Counter */}
         <div className="mb-6">
           <CreditCounter
@@ -597,6 +633,37 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
             )}
           </section>
+
+          {/* Generated Output */}
+          {latestGeneratedDocument && (
+            <section
+              className="bg-gradient-to-br from-green-900/20 via-slate-900/40 to-black/60 border border-green-500/30 rounded-lg p-6"
+              aria-labelledby="generated-output-heading"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                <div>
+                  <h2
+                    id="generated-output-heading"
+                    className="text-xl font-bold text-green-300 uppercase tracking-wider"
+                  >
+                    Latest {displayName}
+                  </h2>
+                  <p className="text-sm text-slate-400">
+                    Your newest {displayName.toLowerCase()} is ready. Expand the
+                    card below to review the content.
+                  </p>
+                </div>
+              </div>
+              <DocumentCard
+                key={`${latestGeneratedDocument.id}-${latestGeneratedDocument.version || latestGeneratedDocument.updatedAt}`}
+                document={latestGeneratedDocument}
+                ideaId={ideaId}
+                defaultExpanded
+                showExpandToggle={false}
+                viewLabel="View / Edit"
+              />
+            </section>
+          )}
 
           {/* Error Message */}
           {error && (

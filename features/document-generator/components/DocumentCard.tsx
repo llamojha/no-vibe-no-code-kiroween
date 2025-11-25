@@ -18,9 +18,13 @@ export interface DocumentCardProps {
   document: DocumentDTO;
   ideaId: string;
   onEdit?: (documentId: string) => void;
+  onView?: (documentId: string) => void;
   onRegenerate?: (documentId: string) => void;
   onViewVersions?: (documentId: string) => void;
   onExport?: (documentId: string) => void;
+  defaultExpanded?: boolean;
+  showExpandToggle?: boolean;
+  viewLabel?: string;
 }
 
 /**
@@ -146,13 +150,17 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
   document,
   ideaId,
   onEdit,
+  onView,
   onRegenerate,
   onViewVersions,
   onExport,
+  defaultExpanded = false,
+  showExpandToggle = true,
+  viewLabel,
 }) => {
   const router = useRouter();
   const { t, locale } = useLocale();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   // Get document type info
   const documentType = DocumentType.fromString(document.documentType);
@@ -228,6 +236,17 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
     }
   }, [document.id, onEdit]);
 
+  // Handle view click (can be used for view + edit)
+  const handleView = useCallback(() => {
+    if (onView) {
+      onView(document.id);
+      return;
+    }
+    if (onEdit) {
+      onEdit(document.id);
+    }
+  }, [document.id, onView, onEdit]);
+
   // Handle regenerate click
   const handleRegenerate = useCallback(() => {
     if (onRegenerate) {
@@ -300,8 +319,32 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
 
         {/* Right side: Action buttons */}
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+          {/* View Button - preferred call to view/edit document */}
+          {(onView || onEdit) && (
+            <button
+              onClick={handleView}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-primary/40 border border-slate-700 text-slate-200 hover:bg-accent/20 hover:text-accent hover:border-accent transition-colors rounded-none uppercase tracking-wider"
+              aria-label={t("viewDocument") || "View document"}
+              data-testid="view-button"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M10 3.5C5 3.5 1.27 7.61 1 10c.27 2.39 4 6.5 9 6.5s8.73-4.11 9-6.5c-.27-2.39-4-6.5-9-6.5zm0 11c-3.46 0-6.65-2.9-7.74-5 1.09-2.1 4.28-5 7.74-5s6.65 2.9 7.74 5c-1.09 2.1-4.28 5-7.74 5z" />
+                <path d="M10 7a3 3 0 110 6 3 3 0 010-6z" />
+              </svg>
+              <span className="hidden sm:inline">
+                {viewLabel || t("viewAndEdit") || "View / Edit"}
+              </span>
+            </button>
+          )}
+
           {/* Edit Button - Only for generated documents */}
-          {isGeneratedDocument && onEdit && (
+          {isGeneratedDocument && onEdit && !onView && (
             <button
               onClick={handleEdit}
               className="flex items-center gap-2 px-3 py-2 text-sm bg-primary/40 border border-slate-700 text-slate-300 hover:bg-secondary/20 hover:text-secondary hover:border-secondary transition-colors rounded-none uppercase tracking-wider"
@@ -408,36 +451,40 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           )}
 
           {/* Expand/Collapse Button */}
-          <button
-            onClick={toggleExpand}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-primary/40 border border-slate-700 text-slate-400 hover:bg-slate-800/50 hover:text-slate-300 hover:border-slate-600 transition-colors rounded-none uppercase tracking-wider"
-            aria-expanded={isExpanded}
-            aria-controls={`document-content-${document.id}`}
-            aria-label={
-              isExpanded ? t("collapse") || "Collapse" : t("expand") || "Expand"
-            }
-          >
-            <span className="hidden sm:inline">
-              {isExpanded
-                ? t("collapse") || "Collapse"
-                : t("expand") || "Expand"}
-            </span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={`h-4 w-4 transition-transform ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
+          {showExpandToggle && (
+            <button
+              onClick={toggleExpand}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-primary/40 border border-slate-700 text-slate-400 hover:bg-slate-800/50 hover:text-slate-300 hover:border-slate-600 transition-colors rounded-none uppercase tracking-wider"
+              aria-expanded={isExpanded}
+              aria-controls={`document-content-${document.id}`}
+              aria-label={
+                isExpanded
+                  ? t("collapse") || "Collapse"
+                  : t("expand") || "Expand"
+              }
             >
-              <path
-                fillRule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
+              <span className="hidden sm:inline">
+                {isExpanded
+                  ? t("collapse") || "Collapse"
+                  : t("expand") || "Expand"}
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-4 w-4 transition-transform ${
+                  isExpanded ? "rotate-180" : ""
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

@@ -35,6 +35,10 @@ import {
   GenerateRoadmapButton,
   DocumentCard,
 } from "@/features/document-generator/components";
+import {
+  exportDocument,
+  downloadExportedDocument,
+} from "@/features/idea-panel/api";
 
 interface IdeaPanelViewProps {
   ideaId: string;
@@ -70,6 +74,8 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
   );
   const [isLoading, setIsLoading] = useState(!initialData);
   const [error, setError] = useState<string | null>(null);
+  const [isExportingAll, setIsExportingAll] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Load data if not provided initially
   useEffect(() => {
@@ -297,10 +303,41 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     // TODO: Implement version history modal
   };
 
-  const handleExportDocument = (documentId: string) => {
-    // Trigger export (to be implemented)
-    console.log("Export document:", documentId);
-    // TODO: Implement document export
+  const handleExportDocument = async (documentId: string) => {
+    try {
+      setExportError(null);
+      const result = await exportDocument(documentId, "markdown");
+      downloadExportedDocument(result);
+    } catch (err) {
+      console.error("Failed to export document:", err);
+      setExportError(
+        err instanceof Error
+          ? err.message
+          : t("exportFailed") || "Failed to export document"
+      );
+    }
+  };
+
+  const handleExportAllDocuments = async () => {
+    if (!documents.length) return;
+    setIsExportingAll(true);
+    setExportError(null);
+
+    try {
+      for (const doc of documents) {
+        const result = await exportDocument(doc.id, "markdown");
+        downloadExportedDocument(result);
+      }
+    } catch (err) {
+      console.error("Failed to export all documents:", err);
+      setExportError(
+        err instanceof Error
+          ? err.message
+          : t("exportFailed") || "Failed to export documents"
+      );
+    } finally {
+      setIsExportingAll(false);
+    }
   };
 
   // Main content
@@ -349,28 +386,68 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
             className="bg-primary/30 border border-slate-700 p-6 animate-fade-in"
             aria-labelledby="generated-documents-heading"
           >
-            <h2
-              id="generated-documents-heading"
-              className="text-xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider mb-6"
-            >
-              {t("generatedDocuments") || "Generated Documents"}{" "}
-              <span className="text-slate-500">
-                ({generatedDocuments.length})
-              </span>
-            </h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-700 pb-2 mb-4">
+              <h2
+                id="generated-documents-heading"
+                className="text-xl font-bold text-slate-200 uppercase tracking-wider"
+              >
+                {t("generatedDocuments") || "Generated Documents"}{" "}
+                <span className="text-slate-500">
+                  ({generatedDocuments.length})
+                </span>
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportAllDocuments}
+                  disabled={isExportingAll}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white text-sm font-semibold uppercase tracking-wider rounded-none transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-4 w-4 ${isExportingAll ? "animate-spin" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 3a1 1 0 011-1h8a1 1 0 01.707.293l4 4A1 1 0 0117 7v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm2 5a1 1 0 011-1h6a1 1 0 110 2H6a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H6a1 1 0 01-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>
+                    {isExportingAll
+                      ? t("exporting") || "Exporting..."
+                      : t("exportAll") || "Export All"}
+                  </span>
+                </button>
+              </div>
+            </div>
             <div className="space-y-4">
               {generatedDocuments.map((doc) => (
                 <DocumentCard
                   key={doc.id}
                   document={doc}
                   ideaId={idea.id}
-                  onEdit={handleEditDocument}
+                  onView={handleEditDocument}
                   onRegenerate={handleRegenerateDocument}
                   onViewVersions={handleViewVersions}
                   onExport={handleExportDocument}
+                  showExpandToggle={false}
+                  viewLabel="View / Edit"
                 />
               ))}
             </div>
+
+            {exportError && (
+              <div
+                className="mt-4 p-3 border border-red-500/60 bg-red-900/30 text-red-200 text-sm rounded-none"
+                role="alert"
+                aria-live="assertive"
+              >
+                {exportError}
+              </div>
+            )}
           </section>
         )}
 
