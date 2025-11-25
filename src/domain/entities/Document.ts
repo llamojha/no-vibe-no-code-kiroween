@@ -6,7 +6,7 @@ import { DocumentType } from "../value-objects/DocumentType";
 import { DocumentVersion } from "../value-objects/DocumentVersion";
 import { InvariantViolationError } from "../../shared/types/errors";
 
-export type DocumentContent = Record<string, unknown>;
+export type DocumentContent = string | Record<string, unknown>;
 
 /**
  * Properties required to create a new document
@@ -141,21 +141,24 @@ export class Document extends Entity<DocumentId> {
    */
   private validateStartupAnalysisContent(): void {
     this.ensureObjectContent("Startup analysis");
+    const content = this._content as Record<string, unknown>;
 
     // Accept multiple formats:
     // 1. Legacy format (viability/innovation/market)
     // 2. Idea Panel format (score/feedback)
     // 3. Original format (finalScore/scoringRubric)
-    const hasLegacyFields = this.hasRequiredFields([
-      "viability",
-      "innovation",
-      "market",
-    ]);
-    const hasIdeaPanelFields = this.hasRequiredFields(["score", "feedback"]);
-    const hasOriginalFields = this.hasRequiredFields([
-      "finalScore",
-      "scoringRubric",
-    ]);
+    const hasLegacyFields = this.hasRequiredFields(
+      ["viability", "innovation", "market"],
+      content
+    );
+    const hasIdeaPanelFields = this.hasRequiredFields(
+      ["score", "feedback"],
+      content
+    );
+    const hasOriginalFields = this.hasRequiredFields(
+      ["finalScore", "scoringRubric"],
+      content
+    );
 
     if (!hasLegacyFields && !hasIdeaPanelFields && !hasOriginalFields) {
       throw new InvariantViolationError(
@@ -169,20 +172,20 @@ export class Document extends Entity<DocumentId> {
    */
   private validateHackathonAnalysisContent(): void {
     this.ensureObjectContent("Hackathon analysis");
+    const content = this._content as Record<string, unknown>;
 
-    const hasLegacyFields = this.hasRequiredFields([
-      "technical",
-      "creativity",
-      "impact",
-    ]);
-    const hasIdeaPanelFields = this.hasRequiredFields([
-      "score",
-      "detailedSummary",
-    ]);
+    const hasLegacyFields = this.hasRequiredFields(
+      ["technical", "creativity", "impact"],
+      content
+    );
+    const hasIdeaPanelFields = this.hasRequiredFields(
+      ["score", "detailedSummary"],
+      content
+    );
     const hasCriteriaAnalysisShape =
-      "criteriaAnalysis" in this._content ||
-      this.hasRequiredFields(["finalScore", "criteriaAnalysis"]);
-    const hasCategoryAnalysisShape = "categoryAnalysis" in this._content;
+      "criteriaAnalysis" in content ||
+      this.hasRequiredFields(["finalScore", "criteriaAnalysis"], content);
+    const hasCategoryAnalysisShape = "categoryAnalysis" in content;
 
     if (
       !hasLegacyFields &&
@@ -346,9 +349,12 @@ export class Document extends Entity<DocumentId> {
   /**
    * Check if content has all required fields
    */
-  private hasRequiredFields(fields: string[]): boolean {
+  private hasRequiredFields(
+    fields: string[],
+    content: Record<string, unknown>
+  ): boolean {
     return fields.every((field) =>
-      Object.prototype.hasOwnProperty.call(this._content, field)
+      Object.prototype.hasOwnProperty.call(content, field)
     );
   }
 }

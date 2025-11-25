@@ -107,8 +107,8 @@ export class DocumentMapper {
       try {
         return JSON.parse(content) as DocumentContent;
       } catch (_error) {
-        // If parsing fails, return as-is wrapped in an object
-        return { raw: content } as DocumentContent;
+        // If parsing fails, return raw markdown string
+        return content as DocumentContent;
       }
     }
 

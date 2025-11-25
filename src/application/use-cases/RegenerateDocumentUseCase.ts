@@ -254,9 +254,7 @@ export class RegenerateDocumentUseCase {
       const generatedContent = generationResult.data;
 
       // Step 8: Create new version (preserving old version)
-      const newDocument = currentDocument.updateContent({
-        markdown: generatedContent,
-      });
+      const newDocument = currentDocument.updateContent(generatedContent);
 
       logger.info(LogCategory.BUSINESS, "Created new document version", {
         oldVersion: currentDocument.version.value,
@@ -370,41 +368,57 @@ export class RegenerateDocumentUseCase {
     const prd = existingDocuments
       .filter((doc) => doc.documentType.equals(DocumentType.PRD))
       .sort((a, b) => b.version.value - a.version.value)[0];
-    if (
-      prd &&
-      typeof prd.content === "object" &&
-      prd.content !== null &&
-      "markdown" in prd.content
-    ) {
-      context.existingPRD = String(prd.content.markdown);
+    if (prd) {
+      const content = prd.content as unknown;
+      if (typeof content === "string") {
+        context.existingPRD = content;
+      } else if (
+        typeof content === "object" &&
+        content !== null &&
+        "markdown" in content
+      ) {
+        context.existingPRD = String(
+          (content as Record<string, unknown>).markdown
+        );
+      }
     }
 
     // Extract existing Technical Design (latest version)
     const technicalDesign = existingDocuments
       .filter((doc) => doc.documentType.equals(DocumentType.TECHNICAL_DESIGN))
       .sort((a, b) => b.version.value - a.version.value)[0];
-    if (
-      technicalDesign &&
-      typeof technicalDesign.content === "object" &&
-      technicalDesign.content !== null &&
-      "markdown" in technicalDesign.content
-    ) {
-      context.existingTechnicalDesign = String(
-        technicalDesign.content.markdown
-      );
+    if (technicalDesign) {
+      const content = technicalDesign.content as unknown;
+      if (typeof content === "string") {
+        context.existingTechnicalDesign = content;
+      } else if (
+        typeof content === "object" &&
+        content !== null &&
+        "markdown" in content
+      ) {
+        context.existingTechnicalDesign = String(
+          (content as Record<string, unknown>).markdown
+        );
+      }
     }
 
     // Extract existing Architecture (latest version)
     const architecture = existingDocuments
       .filter((doc) => doc.documentType.equals(DocumentType.ARCHITECTURE))
       .sort((a, b) => b.version.value - a.version.value)[0];
-    if (
-      architecture &&
-      typeof architecture.content === "object" &&
-      architecture.content !== null &&
-      "markdown" in architecture.content
-    ) {
-      context.existingArchitecture = String(architecture.content.markdown);
+    if (architecture) {
+      const content = architecture.content as unknown;
+      if (typeof content === "string") {
+        context.existingArchitecture = content;
+      } else if (
+        typeof content === "object" &&
+        content !== null &&
+        "markdown" in content
+      ) {
+        context.existingArchitecture = String(
+          (content as Record<string, unknown>).markdown
+        );
+      }
     }
 
     return context;

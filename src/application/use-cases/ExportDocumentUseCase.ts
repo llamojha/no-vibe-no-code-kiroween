@@ -143,7 +143,9 @@ export class ExportDocumentUseCase {
     let markdownContent = "";
 
     // Extract markdown content
-    if (
+    if (typeof content === "string") {
+      markdownContent = content;
+    } else if (
       typeof content === "object" &&
       content !== null &&
       "markdown" in content
