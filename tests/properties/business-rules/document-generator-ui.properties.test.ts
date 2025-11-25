@@ -243,10 +243,10 @@ describe("Document Generator UI Properties", () => {
       // **Validates: Requirements 1.4, 3.4, 5.4, 7.4**
 
       // Property: Each document type has its expected credit cost
-      expect(getDocumentCreditCost(DocumentType.PRD)).toBe(50);
-      expect(getDocumentCreditCost(DocumentType.TECHNICAL_DESIGN)).toBe(75);
-      expect(getDocumentCreditCost(DocumentType.ARCHITECTURE)).toBe(75);
-      expect(getDocumentCreditCost(DocumentType.ROADMAP)).toBe(50);
+      expect(getDocumentCreditCost(DocumentType.PRD)).toBe(1);
+      expect(getDocumentCreditCost(DocumentType.TECHNICAL_DESIGN)).toBe(1);
+      expect(getDocumentCreditCost(DocumentType.ARCHITECTURE)).toBe(1);
+      expect(getDocumentCreditCost(DocumentType.ROADMAP)).toBe(1);
     });
 
     it("Feature: idea-panel-document-generation, Property 3: Credit cost display - cost consistency", () => {

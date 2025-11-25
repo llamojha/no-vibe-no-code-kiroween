@@ -706,39 +706,16 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             )}
           </section>
 
-          {/* Generated Output */}
+          {/* Generated Output - single document view */}
           {latestGeneratedDocument && (
-            <section
-              className="bg-gradient-to-br from-green-900/20 via-slate-900/40 to-black/60 border border-green-500/30 rounded-lg p-6"
-              aria-labelledby="generated-output-heading"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                <div>
-                  <h2
-                    id="generated-output-heading"
-                    className="text-xl font-bold text-green-300 uppercase tracking-wider"
-                  >
-                    {t("latestDocumentTitle", {
-                      documentName: displayName,
-                    }) || `Latest ${displayName}`}
-                  </h2>
-                  <p className="text-sm text-slate-400">
-                    {t("latestDocumentDescription", {
-                      documentName: displayName.toLowerCase(),
-                    }) ||
-                      `Your newest ${displayName.toLowerCase()} is ready. Expand the card below to review the content.`}
-                  </p>
-                </div>
-              </div>
-              <DocumentCard
-                key={`${latestGeneratedDocument.id}-${latestGeneratedDocument.version || latestGeneratedDocument.updatedAt}`}
-                document={latestGeneratedDocument}
-                ideaId={ideaId}
-                defaultExpanded
-                showExpandToggle={false}
-                viewLabel={t("viewAndEdit") || "View / Edit"}
-              />
-            </section>
+            <DocumentCard
+              key={`${latestGeneratedDocument.id}-${latestGeneratedDocument.version || latestGeneratedDocument.updatedAt}`}
+              document={latestGeneratedDocument}
+              ideaId={ideaId}
+              defaultExpanded
+              showExpandToggle={false}
+              viewLabel={t("viewAndEdit") || "View / Edit"}
+            />
           )}
 
           {/* Error Message */}
