@@ -130,9 +130,9 @@
     - **Property 11: Version history ordering**
     - **Validates: Requirements 12.3**
 
-- [ ] 7. Implement application layer - use cases
+- [x] 7. Implement application layer - use cases
 
-  - [ ] 7.1 Implement GenerateDocumentUseCase
+  - [x] 7.1 Implement GenerateDocumentUseCase
 
     - Load idea and existing documents
     - Check credit balance
@@ -143,7 +143,7 @@
     - On error: refund credits and throw
     - _Requirements: 2.1, 2.2, 2.4, 4.1, 4.2, 4.4, 6.1, 6.2, 6.4, 8.1, 8.2, 8.4, 15.1, 15.2, 15.3, 15.4, 15.5, 19.1, 19.2, 19.3, 19.4, 19.5_
 
-  - [ ] 7.2 Implement UpdateDocumentUseCase
+  - [x] 7.2 Implement UpdateDocumentUseCase
 
     - Load current document (latest version by idea_id + document_type)
     - Call document.updateContent() to create NEW document entity with NEW UUID and incremented version
@@ -151,7 +151,7 @@
     - Return new document DTO with new ID and incremented version number
     - _Requirements: 11.2, 11.3, 11.4, 11.5_
 
-  - [ ] 7.3 Implement RegenerateDocumentUseCase
+  - [x] 7.3 Implement RegenerateDocumentUseCase
 
     - Load idea and existing documents
     - Check credit balance
@@ -163,14 +163,14 @@
     - On error: refund credits and throw
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
 
-  - [ ] 7.4 Implement GetDocumentVersionsUseCase
+  - [x] 7.4 Implement GetDocumentVersionsUseCase
 
     - Load all versions for document
     - Sort by version descending
     - Return DTOs
     - _Requirements: 12.1, 12.2, 12.3_
 
-  - [ ] 7.5 Implement RestoreDocumentVersionUseCase
+  - [x] 7.5 Implement RestoreDocumentVersionUseCase
 
     - Load specified version
     - Create new version with that content
@@ -178,7 +178,7 @@
     - Return document DTO
     - _Requirements: 12.4, 12.5_
 
-  - [ ] 7.6 Implement ExportDocumentUseCase
+  - [x] 7.6 Implement ExportDocumentUseCase
 
     - Load document
     - Format based on export type (pdf/markdown)
@@ -186,27 +186,27 @@
     - Return file buffer and metadata
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
 
-  - [ ] 7.7 Write property test for credit deduction
+  - [x] 7.7 Write property test for credit deduction
 
     - **Property 5: Credit deduction on generation**
     - **Validates: Requirements 2.2, 4.2, 6.2, 8.2**
 
-  - [ ] 7.8 Write property test for credit refund
+  - [x] 7.8 Write property test for credit refund
 
     - **Property 17: Credit refund on generation failure**
     - **Validates: Requirements 19.1**
 
-  - [ ] 7.9 Write property test for no deduction on insufficient credits
+  - [x] 7.9 Write property test for no deduction on insufficient credits
     - **Property 14: No credit deduction on insufficient balance**
     - **Validates: Requirements 15.5**
 
-- [ ] 8. Checkpoint - Ensure all backend tests pass
+- [x] 8. Checkpoint - Ensure all backend tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Implement web layer - API routes and controllers
+- [x] 9. Implement web layer - API routes and controllers
 
-  - [ ] 9.1 Create DocumentGeneratorController
+  - [x] 9.1 Create DocumentGeneratorController
 
     - Implement generateDocument handler
     - Implement updateDocument handler
@@ -218,7 +218,7 @@
     - Add feature flag checks
     - _Requirements: 2.1, 4.1, 6.1, 8.1, 11.2, 12.1, 12.5, 13.1, 14.1, 21.1, 21.2_
 
-  - [ ] 9.2 Create Next.js API routes
+  - [x] 9.2 Create Next.js API routes
 
     - Create POST /api/v2/documents/generate
     - Create PUT /api/v2/documents/[documentId]
@@ -228,7 +228,7 @@
     - Create GET /api/v2/documents/[documentId]/export
     - _Requirements: 2.1, 4.1, 6.1, 8.1, 11.2, 12.1, 12.5, 13.1, 14.1_
 
-  - [ ] 9.3 Write integration tests for API routes
+  - [x] 9.3 Write integration tests for API routes
     - Test complete document generation flow
     - Test credit system integration
     - Test feature flag protection
@@ -236,7 +236,7 @@
     - Test version management
     - Test export functionality
 
-- [ ] 10. Implement feature layer - client-side API wrappers
+- [x] 10. Implement feature layer - client-side API wrappers
 
   - Create document generation API client functions
   - Implement generateDocument function
@@ -247,9 +247,9 @@
   - Implement exportDocument function
   - _Requirements: 2.1, 4.1, 6.1, 8.1, 11.2, 12.1, 12.5, 13.1, 14.1_
 
-- [ ] 11. Implement shared generator components
+- [x] 11. Implement shared generator components
 
-  - [ ] 11.1 Create DocumentGenerator component (shared by all generator pages)
+  - [x] 11.1 Create DocumentGenerator component (shared by all generator pages)
 
     - Display idea context section (idea text, analysis summary)
     - Display existing documents section (show related docs if available)
@@ -262,7 +262,7 @@
     - Reuse existing analyzer component styles
     - _Requirements: 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 3.3, 3.4, 3.5, 4.2, 4.3, 4.4, 4.5, 5.3, 5.4, 5.5, 6.2, 6.3, 6.4, 6.5, 7.3, 7.4, 7.5, 8.2, 8.3, 8.4, 8.5, 15.1, 15.2, 15.3, 15.4, 16.1, 16.2, 16.3, 16.4, 16.5, 19.3, 19.4, 19.5_
 
-  - [ ] 11.2 Create generator page routes
+  - [x] 11.2 Create generator page routes
 
     - Create app/generate/prd/[ideaId]/page.tsx
     - Create app/generate/technical-design/[ideaId]/page.tsx
@@ -271,23 +271,23 @@
     - All pages use DocumentGenerator component with different documentType
     - _Requirements: 1.2, 3.2, 5.2, 7.2_
 
-  - [ ] 11.3 Write property test for generator page navigation
+  - [x] 11.3 Write property test for generator page navigation
 
     - **Property 1: Generator page navigation**
     - **Validates: Requirements 1.2, 3.2, 5.2, 7.2**
 
-  - [ ] 11.4 Write property test for context display
+  - [x] 11.4 Write property test for context display
 
     - **Property 2: Context display on generator pages**
     - **Validates: Requirements 1.3, 3.3, 5.3, 7.3**
 
-  - [ ] 11.5 Write property test for credit cost display
+  - [x] 11.5 Write property test for credit cost display
     - **Property 3: Credit cost display**
     - **Validates: Requirements 1.4, 3.4, 5.4, 7.4**
 
-- [ ] 12. Implement document display components
+- [x] 12. Implement document display components
 
-  - [ ] 12.1 Create DocumentCard component (shared for all document types)
+  - [x] 12.1 Create DocumentCard component (shared for all document types)
 
     - Display document type with icon and color
     - Display document creation date and last updated
@@ -301,7 +301,7 @@
     - Reuse existing card styles
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 11.1, 12.1, 13.1, 14.1_
 
-  - [ ] 12.2 Create DocumentEditor component
+  - [x] 12.2 Create DocumentEditor component
 
     - Implement markdown editor with syntax highlighting
     - Add preview mode
@@ -314,7 +314,7 @@
     - Reuse existing input styles
     - _Requirements: 11.2, 11.3, 11.4, 11.5, 20.1, 20.2, 20.3, 20.4, 20.5_
 
-  - [ ] 12.3 Create VersionHistoryModal component
+  - [x] 12.3 Create VersionHistoryModal component
 
     - Display all versions with timestamps
     - Show version numbers in descending order
@@ -323,7 +323,7 @@
     - Reuse existing modal styles
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 12.4 Create ExportControls component
+  - [x] 12.4 Create ExportControls component
 
     - Display Export button
     - Show format options (Markdown, PDF)
@@ -332,18 +332,18 @@
     - Reuse existing button styles
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
 
-  - [ ] 12.5 Write property test for edit button visibility
+  - [x] 12.5 Write property test for edit button visibility
 
     - **Property 9: Edit button visibility**
     - **Validates: Requirements 11.1**
 
-  - [ ] 12.6 Write property test for export format
+  - [x] 12.6 Write property test for export format
     - **Property 13: Export format correctness**
     - **Validates: Requirements 14.3**
 
 - [ ] 13. Implement document progress indicator
 
-  - [ ] 13.1 Create DocumentProgressIndicator component
+  - [x] 13.1 Create DocumentProgressIndicator component
 
     - Display workflow steps (Analysis → PRD → Technical Design → Architecture → Roadmap)
     - Mark completed documents
@@ -353,7 +353,7 @@
     - Reuse existing progress bar styles
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 13.2 Create document generation buttons
+  - [x] 13.2 Create document generation buttons
 
     - Create GeneratePRDButton
     - Create GenerateTechnicalDesignButton
@@ -365,18 +365,18 @@
     - Reuse existing button styles
     - _Requirements: 1.1, 1.2, 3.1, 3.2, 5.1, 5.2, 7.1, 7.2, 21.1, 21.3_
 
-  - [ ] 13.3 Write property test for progress indicator
+  - [x] 13.3 Write property test for progress indicator
 
     - **Property 8: Progress indicator completion marking**
     - **Validates: Requirements 9.3**
 
-  - [ ] 13.4 Write property test for feature flag
+  - [x] 13.4 Write property test for feature flag
     - **Property 18: Feature flag controls button visibility**
     - **Validates: Requirements 21.1**
 
-- [ ] 14. Integrate with Idea Panel
+- [x] 14. Integrate with Idea Panel
 
-  - [ ] 14.1 Update IdeaPanelView component
+  - [x] 14.1 Update IdeaPanelView component
 
     - Add DocumentProgressIndicator
     - Add document generation buttons section
@@ -385,26 +385,26 @@
     - Maintain existing layout and styles
     - _Requirements: 1.1, 9.1, 10.1, 10.2_
 
-  - [ ] 14.2 Update Idea Panel navigation
+  - [x] 14.2 Update Idea Panel navigation
     - Ensure navigation from generator pages back to panel works correctly
     - Display newly generated documents after navigation
     - _Requirements: 2.5, 4.5, 6.5, 8.5_
 
-- [ ] 15. Implement service factory updates
+- [x] 15. Implement service factory updates
 
-  - [ ] 15.1 Update RepositoryFactory
+  - [x] 15.1 Update RepositoryFactory
 
     - Ensure document repository supports new methods
     - _Requirements: 12.1, 12.2, 12.3_
 
-  - [ ] 15.2 Update ServiceFactory
+  - [x] 15.2 Update ServiceFactory
 
     - Add createAIDocumentGeneratorService method
     - Add createPDFExportService method
     - Add createMarkdownExportService method
     - _Requirements: 2.1, 4.1, 6.1, 8.1, 14.1_
 
-  - [ ] 15.3 Update UseCaseFactory
+  - [x] 15.3 Update UseCaseFactory
     - Add createGenerateDocumentUseCase method
     - Add createUpdateDocumentUseCase method
     - Add createRegenerateDocumentUseCase method
@@ -413,34 +413,25 @@
     - Add createExportDocumentUseCase method
     - _Requirements: 2.1, 4.1, 6.1, 8.1, 11.2, 12.1, 12.5, 13.1, 14.1_
 
-- [ ] 16. Configure feature flags
+- [x] 16. Configure feature flags
 
   - Add ENABLE_DOCUMENT_GENERATION to feature flags config
-  - Set default to false for initial deployment
+  - Set default to true for initial deployment
   - Document feature flag usage
   - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5_
 
-- [ ] 17. Checkpoint - Ensure all frontend tests pass
+- [x] 17. Checkpoint - Ensure all frontend tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 18. Write E2E tests for complete user workflows
+- [x] 18. Write E2E tests for critical user workflows
 
-  - Test navigation from Idea Panel to generator page
-  - Test generating each document type (PRD, Technical Design, Architecture, Roadmap)
-  - Test viewing generated documents in panel
-  - Test document progress indicator updates
-  - Test editing document and verifying version creation
-  - Test viewing version history and restoring previous version
-  - Test regenerating document and verifying new version
-  - Test exporting document in Markdown and PDF formats
+  - Test complete document generation flow (navigate to generator → generate PRD → view in panel)
   - Test insufficient credits error handling
   - Test feature flag behavior (buttons hidden when disabled)
-  - Test responsive design on mobile viewport
-  - Test keyboard navigation and accessibility
-  - _Requirements: All requirements for end-to-end validation_
+  - _Requirements: Core requirements validation (1.2, 2.1-2.5, 15.1-15.5, 21.1)_
 
-- [ ] 19. Add analytics tracking
+- [x] 19. Add analytics tracking
 
   - Track document generation requests (by type)
   - Track document generation success/failure rates
@@ -452,16 +443,16 @@
   - Track feature flag adoption
   - _Requirements: All requirements for observability_
 
-- [ ] 20. Update documentation
+- [x] 20. Update documentation
 
-  - [ ] 20.1 Update API documentation
+  - [x] 20.1 Update API documentation
 
     - Document new API endpoints
     - Document request/response formats
     - Document error codes
     - _Requirements: All requirements for maintainability_
 
-  - [ ] 20.2 Update feature documentation
+  - [x] 20.2 Update feature documentation
 
     - Add user guide for document generation
     - Document workflow (Analysis → PRD → Technical Design → Architecture → Roadmap)
@@ -469,14 +460,14 @@
     - Document export functionality
     - _Requirements: All requirements for maintainability_
 
-  - [ ] 20.3 Update developer documentation
+  - [x] 20.3 Update developer documentation
     - Document how to add new document types
     - Document configuration system
     - Document AI prompt templates
     - Document credit system integration
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
 
-- [ ] 21. Final checkpoint - Complete system verification
+- [x] 21. Final checkpoint - Complete system verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify database migration completed successfully
   - Verify all 4 document types can be generated

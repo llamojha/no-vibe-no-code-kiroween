@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "@/features/locale/context/LocaleContext";
+import { isEnabled } from "@/lib/featureFlags";
 import type {
   IdeaDTO,
   DocumentDTO,
@@ -24,6 +25,16 @@ import AnalyzeButton from "./AnalyzeButton";
 import NotesSection from "./NotesSection";
 import TagsSection from "./TagsSection";
 import DeleteIdeaButton from "./DeleteIdeaButton";
+
+// Document generator component imports
+import {
+  DocumentProgressIndicator,
+  GeneratePRDButton,
+  GenerateTechnicalDesignButton,
+  GenerateArchitectureButton,
+  GenerateRoadmapButton,
+  DocumentCard,
+} from "@/features/document-generator/components";
 
 interface IdeaPanelViewProps {
   ideaId: string;
@@ -66,6 +77,22 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
       loadIdeaData();
     }
   }, [ideaId, initialData]);
+
+  // Refresh data when page becomes visible (handles browser back navigation)
+  // This ensures newly generated documents are displayed after navigation
+  // Requirements: 2.5, 4.5, 6.5, 8.5
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && ideaId) {
+        loadIdeaData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [ideaId]);
 
   // Track panel view when data is loaded
   useEffect(() => {
@@ -232,6 +259,50 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     );
   }
 
+  // Check if document generation feature is enabled
+  const isDocumentGenerationEnabled = isEnabled("ENABLE_DOCUMENT_GENERATION");
+
+  // Separate analysis documents from generated documents
+  const analysisDocuments = documents.filter(
+    (doc) =>
+      doc.documentType === "startup_analysis" ||
+      doc.documentType === "hackathon_analysis"
+  );
+  const generatedDocuments = documents.filter(
+    (doc) =>
+      doc.documentType === "prd" ||
+      doc.documentType === "technical_design" ||
+      doc.documentType === "architecture" ||
+      doc.documentType === "roadmap"
+  );
+
+  // Handlers for document actions
+  const handleEditDocument = (documentId: string) => {
+    // Navigate to document editor (to be implemented)
+    console.log("Edit document:", documentId);
+    // TODO: Implement document editing navigation
+  };
+
+  const handleRegenerateDocument = (documentId: string) => {
+    const doc = documents.find((d) => d.id === documentId);
+    if (doc) {
+      // Navigate to generator page for regeneration
+      router.push(`/generate/${doc.documentType.replace("_", "-")}/${ideaId}`);
+    }
+  };
+
+  const handleViewVersions = (documentId: string) => {
+    // Open version history modal (to be implemented)
+    console.log("View versions:", documentId);
+    // TODO: Implement version history modal
+  };
+
+  const handleExportDocument = (documentId: string) => {
+    // Trigger export (to be implemented)
+    console.log("Export document:", documentId);
+    // TODO: Implement document export
+  };
+
   // Main content
   return (
     <IdeaPanelLayout ideaId={ideaId}>
@@ -239,8 +310,72 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         {/* Idea Details Section */}
         <IdeaDetailsSection idea={idea} />
 
-        {/* Documents List Section */}
-        <DocumentsListSection documents={documents} ideaId={idea.id} />
+        {/* Document Progress Indicator - Requirements: 9.1 */}
+        {isDocumentGenerationEnabled && (
+          <DocumentProgressIndicator ideaId={idea.id} documents={documents} />
+        )}
+
+        {/* Document Generation Buttons Section - Requirements: 1.1, 3.1, 5.1, 7.1 */}
+        {isDocumentGenerationEnabled && (
+          <section
+            className="bg-primary/30 border border-slate-700 p-6 animate-fade-in"
+            aria-labelledby="generate-documents-heading"
+          >
+            <h2
+              id="generate-documents-heading"
+              className="text-xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider mb-6"
+            >
+              {t("generateDocuments") || "Generate Documents"}
+            </h2>
+            <p className="text-sm text-slate-400 mb-4 font-mono">
+              {t("generateDocumentsDescription") ||
+                "Create AI-powered project documentation from your idea"}
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <GeneratePRDButton ideaId={idea.id} variant="compact" />
+              <GenerateTechnicalDesignButton
+                ideaId={idea.id}
+                variant="compact"
+              />
+              <GenerateArchitectureButton ideaId={idea.id} variant="compact" />
+              <GenerateRoadmapButton ideaId={idea.id} variant="compact" />
+            </div>
+          </section>
+        )}
+
+        {/* Generated Documents Section - Requirements: 10.1, 10.2 */}
+        {isDocumentGenerationEnabled && generatedDocuments.length > 0 && (
+          <section
+            className="bg-primary/30 border border-slate-700 p-6 animate-fade-in"
+            aria-labelledby="generated-documents-heading"
+          >
+            <h2
+              id="generated-documents-heading"
+              className="text-xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider mb-6"
+            >
+              {t("generatedDocuments") || "Generated Documents"}{" "}
+              <span className="text-slate-500">
+                ({generatedDocuments.length})
+              </span>
+            </h2>
+            <div className="space-y-4">
+              {generatedDocuments.map((doc) => (
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  ideaId={idea.id}
+                  onEdit={handleEditDocument}
+                  onRegenerate={handleRegenerateDocument}
+                  onViewVersions={handleViewVersions}
+                  onExport={handleExportDocument}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Analysis Documents List Section (existing analyses) */}
+        <DocumentsListSection documents={analysisDocuments} ideaId={idea.id} />
 
         {/* Project Status Control */}
         <ProjectStatusControl idea={idea} onStatusUpdate={handleStatusUpdate} />

@@ -7,11 +7,13 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
 ### 🏗️ Arquitectura y Desarrollo
 
 1. **[Architecture Overview](./ARCHITECTURE.md)**
+
    - Visión general de la arquitectura hexagonal
    - Capas del sistema
    - Patrones de diseño
 
 2. **[Developer Guide](./DEVELOPER_GUIDE.md)**
+
    - Guía paso a paso para agregar features
    - Mejores prácticas
    - Ejemplos de código
@@ -21,9 +23,32 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
    - Endpoints disponibles
    - Ejemplos de uso
 
+### 📄 Features y Funcionalidades
+
+4. **[Document Generation Feature Guide](./DOCUMENT_GENERATION_GUIDE.md)** ⭐ NUEVO
+
+   - **¿Qué es?** Generación de documentación profesional con IA
+   - **¿Por qué?** Transforma ideas en documentación ejecutable
+   - **¿Cómo?** PRDs, Diseño Técnico, Arquitectura, Roadmaps
+   - **Incluye:**
+     - Guía de usuario completa
+     - Workflow recomendado
+     - Gestión de versiones
+     - Exportación de documentos
+     - Troubleshooting
+
+5. **[Document Generation Developer Guide](./DOCUMENT_GENERATION_DEVELOPER_GUIDE.md)** ⭐ NUEVO
+   - **Arquitectura** del sistema de generación
+   - **Configuración** de tipos de documentos
+   - **Plantillas de IA** y prompts
+   - **Integración** con sistema de créditos
+   - **Cómo agregar** nuevos tipos de documentos
+   - **Testing** y mejores prácticas
+
 ### 🧪 Testing y Mocks
 
-4. **[Sistema de Mocks](./SISTEMA_MOCKS_DOCUMENTACION.md)** ⭐ NUEVO
+6. **[Sistema de Mocks](./SISTEMA_MOCKS_DOCUMENTACION.md)** ⭐ NUEVO
+
    - **¿Qué es?** Sistema para desarrollar sin gastar créditos de API
    - **¿Por qué?** Ahorra $150-300/mes en desarrollo
    - **¿Cómo?** Respuestas instantáneas desde archivos JSON
@@ -34,7 +59,7 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
      - Guía de uso
      - Troubleshooting
 
-5. **[Guía de Ejecución de Tests](./GUIA_EJECUCION_TESTS.md)** ⭐ NUEVO
+7. **[Guía de Ejecución de Tests](./GUIA_EJECUCION_TESTS.md)** ⭐ NUEVO
    - **Paso a paso** para ejecutar todos los tests
    - **Tests de Integración** con Vitest
    - **Tests E2E** con Playwright
@@ -44,34 +69,38 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
 
 ### 📖 Documentación por Capa
 
-6. **[Domain Layer](../src/domain/README.md)**
+8. **[Domain Layer](../src/domain/README.md)**
+
    - Entidades y value objects
    - Servicios de dominio
    - Reglas de negocio
 
-7. **[Application Layer](../src/application/README.md)**
+9. **[Application Layer](../src/application/README.md)**
+
    - Use cases
    - Handlers
    - DTOs
 
-8. **[Infrastructure Layer](../src/infrastructure/README.md)**
-   - Adaptadores externos
-   - Configuración
-   - Factories
+10. **[Infrastructure Layer](../src/infrastructure/README.md)**
+    - Adaptadores externos
+    - Configuración
+    - Factories
 
 ### 📋 Estándares y Guías
 
-9. **[Hexagonal Architecture Standards](../.kiro/steering/hexagonal-architecture-standards.md)**
-   - Estándares de arquitectura
-   - Patrones obligatorios
-   - Ejemplos de implementación
+11. **[Hexagonal Architecture Standards](../.kiro/steering/hexagonal-architecture-standards.md)**
 
-10. **[Testing Documentation](../tests/README.md)**
+    - Estándares de arquitectura
+    - Patrones obligatorios
+    - Ejemplos de implementación
+
+12. **[Testing Documentation](../tests/README.md)**
+
     - Documentación general de testing
     - Estructura de tests
     - Convenciones
 
-11. **[Mock Mode Guide](../tests/MOCK_MODE_GUIDE.md)**
+13. **[Mock Mode Guide](../tests/MOCK_MODE_GUIDE.md)**
     - Guía técnica del modo mock
     - Configuración avanzada
     - API reference
@@ -83,22 +112,26 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
 ### Para Desarrolladores Nuevos
 
 1. **Leer primero:**
+
    - [Architecture Overview](./ARCHITECTURE.md) - Entender la estructura
    - [Developer Guide](./DEVELOPER_GUIDE.md) - Cómo agregar features
+   - [Document Generation Developer Guide](./DOCUMENT_GENERATION_DEVELOPER_GUIDE.md) - Sistema de generación de documentos
 
 2. **Configurar entorno:**
+
    - [Sistema de Mocks](./SISTEMA_MOCKS_DOCUMENTACION.md) - Desarrollo sin costos
    - [Guía de Tests](./GUIA_EJECUCION_TESTS.md) - Ejecutar tests
 
 3. **Empezar a desarrollar:**
+
    ```bash
    # Activar modo mock
    $env:FF_USE_MOCK_API="true"
    $env:NODE_ENV="test"
-   
+
    # Iniciar servidor
    npm run dev
-   
+
    # Ejecutar tests
    npm run test:e2e
    ```
@@ -106,11 +139,13 @@ Bienvenido a la documentación completa de No Vibe No Code. Aquí encontrarás t
 ### Para Testing
 
 1. **Tests de Integración:**
+
    ```bash
    npm test tests/integration
    ```
 
 2. **Tests E2E:**
+
    ```bash
    npm run test:e2e
    ```
@@ -142,6 +177,11 @@ Ver [Guía de Ejecución de Tests](./GUIA_EJECUCION_TESTS.md) para más detalles
 
 - ✅ [API Documentation](./API.md) - Referencia completa
 - ✅ [Infrastructure Layer](../src/infrastructure/README.md) - Implementación
+
+### Features
+
+- ✅ [Document Generation Feature Guide](./DOCUMENT_GENERATION_GUIDE.md) - Guía de usuario
+- ✅ [Document Generation Developer Guide](./DOCUMENT_GENERATION_DEVELOPER_GUIDE.md) - Guía de desarrollo
 
 ### Arquitectura
 
@@ -176,6 +216,24 @@ Ver [Guía de Ejecución de Tests](./GUIA_EJECUCION_TESTS.md) para más detalles
 3. Implementa siguiendo los patrones
 4. Escribe tests
 5. Documenta cambios
+
+### "Quiero agregar un nuevo tipo de documento"
+
+1. Lee: [Document Generation Developer Guide](./DOCUMENT_GENERATION_DEVELOPER_GUIDE.md)
+2. Sigue la sección "Adding a New Document Type"
+3. Actualiza schema de base de datos
+4. Crea plantilla de IA
+5. Agrega configuración
+6. Crea página de generación
+7. Escribe tests
+
+### "Quiero usar la generación de documentos"
+
+1. Lee: [Document Generation Feature Guide](./DOCUMENT_GENERATION_GUIDE.md)
+2. Navega al Idea Panel
+3. Genera documentos (PRD, Technical Design, etc.)
+4. Edita y gestiona versiones
+5. Exporta a Markdown o PDF
 
 ### "Quiero entender la arquitectura"
 
@@ -237,9 +295,9 @@ Si no encuentras lo que buscas:
 
 ## 📅 Última Actualización
 
-**Fecha**: 9 de Noviembre, 2025  
-**Versión**: 1.0  
-**Documentos Nuevos**: Sistema de Mocks, Guía de Ejecución de Tests
+**Fecha**: 25 de Noviembre, 2025
+**Versión**: 1.1
+**Documentos Nuevos**: Document Generation Feature Guide, Document Generation Developer Guide
 
 ---
 

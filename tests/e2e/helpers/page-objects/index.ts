@@ -8,3 +8,4 @@ export { HackathonPage } from "./HackathonPage";
 export { FrankensteinPage } from "./FrankensteinPage";
 export { DashboardPage } from "./DashboardPage";
 export { IdeaPanelPage } from "./IdeaPanelPage";
+export { DocumentGeneratorPage } from "./DocumentGeneratorPage";

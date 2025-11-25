@@ -32,6 +32,13 @@ import { GetUserIdeasUseCase } from "../../application/use-cases/GetUserIdeasUse
 import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocumentsByIdeaUseCase";
 import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
 import { DeleteIdeaUseCase } from "../../application/use-cases/DeleteIdeaUseCase";
+import { GenerateDocumentUseCase } from "../../application/use-cases/GenerateDocumentUseCase";
+import { UpdateDocumentUseCase } from "../../application/use-cases/UpdateDocumentUseCase";
+import { RegenerateDocumentUseCase } from "../../application/use-cases/RegenerateDocumentUseCase";
+import { GetDocumentVersionsUseCase } from "../../application/use-cases/GetDocumentVersionsUseCase";
+import { RestoreDocumentVersionUseCase } from "../../application/use-cases/RestoreDocumentVersionUseCase";
+import { ExportDocumentUseCase } from "../../application/use-cases/ExportDocumentUseCase";
+import { IAIDocumentGeneratorService } from "../../application/services/IAIDocumentGeneratorService";
 
 /**
  * Factory for creating use case instances with proper dependency composition
@@ -59,7 +66,8 @@ export class UseCaseFactory {
     private readonly notificationService: INotificationService,
     private readonly analysisValidationService: AnalysisValidationService,
     private readonly scoreCalculationService: ScoreCalculationService,
-    private readonly cache: ICache
+    private readonly cache: ICache,
+    private readonly aiDocumentGeneratorService?: IAIDocumentGeneratorService
   ) {
     // Initialize domain services (they have no external dependencies)
     this.hackathonAnalysisService = new HackathonAnalysisService();
@@ -90,7 +98,8 @@ export class UseCaseFactory {
     notificationService: INotificationService,
     analysisValidationService: AnalysisValidationService,
     scoreCalculationService: ScoreCalculationService,
-    cache: ICache
+    cache: ICache,
+    aiDocumentGeneratorService?: IAIDocumentGeneratorService
   ): UseCaseFactory {
     return new UseCaseFactory(
       analysisRepository,
@@ -102,7 +111,8 @@ export class UseCaseFactory {
       notificationService,
       analysisValidationService,
       scoreCalculationService,
-      cache
+      cache,
+      aiDocumentGeneratorService
     );
   }
 
@@ -121,7 +131,8 @@ export class UseCaseFactory {
     notificationService: INotificationService,
     analysisValidationService: AnalysisValidationService,
     scoreCalculationService: ScoreCalculationService,
-    cache: ICache
+    cache: ICache,
+    aiDocumentGeneratorService?: IAIDocumentGeneratorService
   ): UseCaseFactory {
     return UseCaseFactory.create(
       analysisRepository,
@@ -132,7 +143,8 @@ export class UseCaseFactory {
       notificationService,
       analysisValidationService,
       scoreCalculationService,
-      cache
+      cache,
+      aiDocumentGeneratorService
     );
   }
 
@@ -464,6 +476,116 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as SaveAnalysisToIdeaPanelUseCase;
+  }
+
+  /**
+   * Create GenerateDocumentUseCase with dependencies
+   */
+  createGenerateDocumentUseCase(): GenerateDocumentUseCase {
+    const cacheKey = "generateDocumentUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      if (!this.aiDocumentGeneratorService) {
+        throw new Error("AI Document Generator Service not initialized");
+      }
+      const useCase = new GenerateDocumentUseCase(
+        this.documentRepository,
+        this.ideaRepository,
+        this.userRepository,
+        this.creditTransactionRepository,
+        this.aiDocumentGeneratorService,
+        this.creditPolicy
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GenerateDocumentUseCase;
+  }
+
+  /**
+   * Create UpdateDocumentUseCase with dependencies
+   */
+  createUpdateDocumentUseCase(): UpdateDocumentUseCase {
+    const cacheKey = "updateDocumentUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new UpdateDocumentUseCase(this.documentRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as UpdateDocumentUseCase;
+  }
+
+  /**
+   * Create RegenerateDocumentUseCase with dependencies
+   */
+  createRegenerateDocumentUseCase(): RegenerateDocumentUseCase {
+    const cacheKey = "regenerateDocumentUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      if (!this.aiDocumentGeneratorService) {
+        throw new Error("AI Document Generator Service not initialized");
+      }
+      const useCase = new RegenerateDocumentUseCase(
+        this.documentRepository,
+        this.ideaRepository,
+        this.userRepository,
+        this.creditTransactionRepository,
+        this.aiDocumentGeneratorService,
+        this.creditPolicy
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as RegenerateDocumentUseCase;
+  }
+
+  /**
+   * Create GetDocumentVersionsUseCase with dependencies
+   */
+  createGetDocumentVersionsUseCase(): GetDocumentVersionsUseCase {
+    const cacheKey = "getDocumentVersionsUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new GetDocumentVersionsUseCase(
+        this.documentRepository,
+        this.ideaRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as GetDocumentVersionsUseCase;
+  }
+
+  /**
+   * Create RestoreDocumentVersionUseCase with dependencies
+   */
+  createRestoreDocumentVersionUseCase(): RestoreDocumentVersionUseCase {
+    const cacheKey = "restoreDocumentVersionUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new RestoreDocumentVersionUseCase(
+        this.documentRepository,
+        this.ideaRepository
+      );
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as RestoreDocumentVersionUseCase;
+  }
+
+  /**
+   * Create ExportDocumentUseCase with dependencies
+   */
+  createExportDocumentUseCase(): ExportDocumentUseCase {
+    const cacheKey = "exportDocumentUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new ExportDocumentUseCase(this.documentRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as ExportDocumentUseCase;
   }
 
   /**

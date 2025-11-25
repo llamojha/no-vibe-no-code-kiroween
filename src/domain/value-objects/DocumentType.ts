@@ -1,19 +1,19 @@
 import { DOCUMENT_TYPE_CONFIGS } from "../config/documentTypeConfig";
 
+export type DocumentTypeValue =
+  | "startup_analysis"
+  | "hackathon_analysis"
+  | "prd"
+  | "technical_design"
+  | "architecture"
+  | "roadmap";
+
 /**
  * Type of document in the system
  * Supports analysis documents and generated documents (PRD, Technical Design, Architecture, Roadmap)
  */
 export class DocumentType {
-  private constructor(
-    private readonly _value:
-      | "startup_analysis"
-      | "hackathon_analysis"
-      | "prd"
-      | "technical_design"
-      | "architecture"
-      | "roadmap"
-  ) {}
+  private constructor(private readonly _value: DocumentTypeValue) {}
 
   static readonly STARTUP_ANALYSIS = new DocumentType("startup_analysis");
   static readonly HACKATHON_ANALYSIS = new DocumentType("hackathon_analysis");

@@ -527,6 +527,320 @@ Retrieves all documents for a specific idea.
 
 For complete Idea Panel API documentation, including data models, migration details, and SDK examples, see [Idea Panel API Documentation](./IDEA_PANEL_API.md).
 
+## Document Generation Endpoints (v2)
+
+The Document Generation feature enables users to transform analyzed ideas into professional, AI-generated project documentation. Users can generate PRDs, Technical Design Documents, Architecture Documents, and Roadmaps with AI assistance.
+
+**Feature Flag**: `ENABLE_DOCUMENT_GENERATION` (default: true)
+
+**Credit Costs**:
+
+- PRD: 50 credits
+- Technical Design: 75 credits
+- Architecture: 75 credits
+- Roadmap: 50 credits
+
+For complete documentation, see [Document Generation Feature Guide](./DOCUMENT_GENERATION_GUIDE.md).
+
+### POST /api/v2/documents/generate
+
+Generates a new document using AI for a specific idea.
+
+**Authentication**: Required
+
+**Feature Flag**: Requires `ENABLE_DOCUMENT_GENERATION=true`
+
+**Request Body**:
+
+```json
+{
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "documentType": "prd"
+}
+```
+
+**Request Schema**:
+
+- `ideaId` (string, required): UUID of the idea
+- `documentType` (string, required): Type of document to generate ("prd", "technical_design", "architecture", "roadmap")
+
+**Response** (201):
+
+```json
+{
+  "id": "doc-uuid-123",
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "userId": "user-uuid-456",
+  "documentType": "prd",
+  "title": "Product Requirements Document",
+  "content": {
+    "markdown": "# Product Requirements Document\n\n## Problem Statement\n..."
+  },
+  "version": 1,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+**Error Responses**:
+
+- `400` - Invalid document type or missing required fields
+- `403` - Feature flag disabled or insufficient credits
+- `404` - Idea not found
+- `422` - Business rule violation (e.g., insufficient credits)
+- `500` - AI service error (credits are refunded automatically)
+
+**Example cURL**:
+
+```bash
+curl -X POST https://your-domain.com/api/v2/documents/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <jwt_token>" \
+  -d '{
+    "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+    "documentType": "prd"
+  }'
+```
+
+### PUT /api/v2/documents/[documentId]
+
+Updates an existing document's content, creating a new version.
+
+**Authentication**: Required
+
+**Parameters**:
+
+- `documentId` (string): Document ID (UUID format)
+
+**Request Body**:
+
+```json
+{
+  "content": {
+    "markdown": "# Updated Product Requirements Document\n\n## Problem Statement\n..."
+  }
+}
+```
+
+**Response** (200):
+
+```json
+{
+  "id": "doc-uuid-new-version",
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "userId": "user-uuid-456",
+  "documentType": "prd",
+  "title": "Product Requirements Document",
+  "content": {
+    "markdown": "# Updated Product Requirements Document\n..."
+  },
+  "version": 2,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T11:45:00Z"
+}
+```
+
+**Versioning Behavior**:
+
+- Creates a NEW document entity with a NEW UUID
+- Increments version number (e.g., v1 → v2)
+- Preserves previous version as separate database row
+- Returns the new document with new ID and incremented version
+
+**Error Responses**:
+
+- `404` - Document not found
+- `403` - Document belongs to another user
+
+### POST /api/v2/documents/[documentId]/regenerate
+
+Regenerates a document using AI, creating a new version while preserving the previous version.
+
+**Authentication**: Required
+
+**Feature Flag**: Requires `ENABLE_DOCUMENT_GENERATION=true`
+
+**Parameters**:
+
+- `documentId` (string): Document ID (UUID format)
+
+**Response** (201):
+
+```json
+{
+  "id": "doc-uuid-regenerated",
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "userId": "user-uuid-456",
+  "documentType": "prd",
+  "title": "Product Requirements Document",
+  "content": {
+    "markdown": "# Product Requirements Document (Regenerated)\n..."
+  },
+  "version": 3,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T12:15:00Z"
+}
+```
+
+**Credit Behavior**:
+
+- Deducts credits based on document type
+- Refunds credits automatically if AI generation fails
+- Checks credit balance before deduction
+
+**Error Responses**:
+
+- `403` - Insufficient credits or feature flag disabled
+- `404` - Document not found
+- `500` - AI service error (credits refunded)
+
+### GET /api/v2/documents/[documentId]/versions
+
+Retrieves all versions of a document.
+
+**Authentication**: Required
+
+**Parameters**:
+
+- `documentId` (string): Document ID (UUID format)
+
+**Response** (200):
+
+```json
+{
+  "versions": [
+    {
+      "id": "doc-uuid-v3",
+      "version": 3,
+      "content": {
+        "markdown": "# Product Requirements Document (v3)\n..."
+      },
+      "createdAt": "2024-01-15T12:15:00Z",
+      "updatedAt": "2024-01-15T12:15:00Z"
+    },
+    {
+      "id": "doc-uuid-v2",
+      "version": 2,
+      "content": {
+        "markdown": "# Product Requirements Document (v2)\n..."
+      },
+      "createdAt": "2024-01-15T11:45:00Z",
+      "updatedAt": "2024-01-15T11:45:00Z"
+    },
+    {
+      "id": "doc-uuid-v1",
+      "version": 1,
+      "content": {
+        "markdown": "# Product Requirements Document (v1)\n..."
+      },
+      "createdAt": "2024-01-15T10:30:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+**Ordering**: Versions are returned in descending order (newest first)
+
+### POST /api/v2/documents/[documentId]/versions/[version]/restore
+
+Restores a previous version by creating a new version with that content.
+
+**Authentication**: Required
+
+**Parameters**:
+
+- `documentId` (string): Document ID (UUID format)
+- `version` (number): Version number to restore
+
+**Response** (201):
+
+```json
+{
+  "id": "doc-uuid-restored",
+  "ideaId": "123e4567-e89b-12d3-a456-426614174000",
+  "userId": "user-uuid-456",
+  "documentType": "prd",
+  "title": "Product Requirements Document",
+  "content": {
+    "markdown": "# Product Requirements Document (Restored from v1)\n..."
+  },
+  "version": 4,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T13:00:00Z"
+}
+```
+
+**Behavior**:
+
+- Loads content from specified version
+- Creates new version with that content
+- Does not delete any versions (immutable history)
+
+### GET /api/v2/documents/[documentId]/export
+
+Exports a document in the specified format.
+
+**Authentication**: Required
+
+**Parameters**:
+
+- `documentId` (string): Document ID (UUID format)
+
+**Query Parameters**:
+
+- `format` (string, required): Export format ("markdown" or "pdf")
+
+**Response** (200):
+
+For Markdown export:
+
+```
+Content-Type: text/markdown
+Content-Disposition: attachment; filename="prd-{ideaId}.md"
+
+# Product Requirements Document
+...
+```
+
+For PDF export:
+
+```
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="prd-{ideaId}.pdf"
+
+[PDF binary content]
+```
+
+**Export Metadata**:
+
+Both formats include:
+
+- Document title
+- Version number
+- Creation date
+- Last updated date
+
+**Error Responses**:
+
+- `400` - Invalid format parameter
+- `404` - Document not found
+- `500` - Export generation error
+
+**Example cURL**:
+
+```bash
+# Export as Markdown
+curl -X GET "https://your-domain.com/api/v2/documents/doc-uuid-123/export?format=markdown" \
+  -H "Authorization: Bearer <jwt_token>" \
+  -o document.md
+
+# Export as PDF
+curl -X GET "https://your-domain.com/api/v2/documents/doc-uuid-123/export?format=pdf" \
+  -H "Authorization: Bearer <jwt_token>" \
+  -o document.pdf
+```
+
 ## Audio Features
 
 ### POST /api/tts
