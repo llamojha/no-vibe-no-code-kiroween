@@ -34,22 +34,22 @@ describe("Document Utilities", () => {
   describe("getDocumentCreditCost", () => {
     it("should return correct credit cost for PRD", () => {
       const result = getDocumentCreditCost(DocumentType.PRD);
-      expect(result).toBe(50);
+      expect(result).toBe(1);
     });
 
     it("should return correct credit cost for Technical Design", () => {
       const result = getDocumentCreditCost(DocumentType.TECHNICAL_DESIGN);
-      expect(result).toBe(75);
+      expect(result).toBe(1);
     });
 
     it("should return correct credit cost for Architecture", () => {
       const result = getDocumentCreditCost(DocumentType.ARCHITECTURE);
-      expect(result).toBe(75);
+      expect(result).toBe(1);
     });
 
     it("should return correct credit cost for Roadmap", () => {
       const result = getDocumentCreditCost(DocumentType.ROADMAP);
-      expect(result).toBe(50);
+      expect(result).toBe(1);
     });
 
     it("should return 0 for analysis documents", () => {

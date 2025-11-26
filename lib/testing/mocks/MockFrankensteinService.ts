@@ -64,7 +64,7 @@ export class MockFrankensteinService {
     }
 
     // Get base mock response based on scenario
-    const scenario = this.config.defaultScenario;
+    const scenario = this.config.defaultScenario ?? "success";
     
     // Handle error scenarios
     if (scenario !== 'success') {
@@ -94,7 +94,7 @@ export class MockFrankensteinService {
     const duration = Date.now() - startTime;
     this.recordPerformance(duration);
 
-    return customizedResponse.data;
+    return customizedResponse as FrankensteinIdeaResult;
   }
 
   /**
@@ -107,7 +107,8 @@ export class MockFrankensteinService {
    * @returns Promise that resolves after the simulated delay
    */
   private async simulateDelay(): Promise<void> {
-    const { minLatency, maxLatency } = this.config;
+    const minLatency = this.config.minLatency ?? 50;
+    const maxLatency = this.config.maxLatency ?? 150;
     const delay = Math.floor(Math.random() * (maxLatency - minLatency + 1)) + minLatency;
     
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -126,9 +127,11 @@ export class MockFrankensteinService {
   private handleErrorScenario(scenario: TestScenario): never {
     const mockResponse = this.testDataManager.getMockResponse('frankenstein', scenario);
     
-    const errorData = mockResponse.data as { error: string; message: string };
-    const error = new Error(`Mock Frankenstein error (${scenario}): ${errorData.message}`);
-    (error as Error & { code: string }).code = errorData.error;
+    const errorData = mockResponse as unknown as { error?: string; message?: string };
+    const error = new Error(
+      `Mock Frankenstein error (${scenario}): ${errorData.message || "Mock error"}`
+    );
+    (error as Error & { code: string }).code = errorData.error || "MOCK_ERROR";
     
     throw error;
   }
