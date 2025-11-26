@@ -53,7 +53,6 @@ jobs:
 
       - name: Run ${{ matrix.name }}
         run: npm run ${{ matrix.script }}
-        continue-on-error: true
         env:
           CI: true
 
@@ -82,7 +81,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: duration-${{ matrix.script }}-${{ github.run_number }}
+          name: duration-${{ matrix.name }}-${{ github.run_number }}
           path: workflow-duration.json
           retention-days: 30
           if-no-files-found: warn

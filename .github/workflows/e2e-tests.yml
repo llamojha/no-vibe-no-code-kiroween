@@ -405,110 +405,116 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const resultsPath = 'tests/e2e/reports/results.json';
 
             let comment = '## 🧪 E2E Test Results\n\n';
 
-            try {
-              const results = JSON.parse(fs.readFileSync('tests/e2e/reports/results.json', 'utf8'));
-
-              const stats = results.suites.reduce((acc, suite) => {
-                suite.specs.forEach(spec => {
-                  spec.tests.forEach(test => {
-                    if (test.status === 'expected') acc.passed++;
-                    else if (test.status === 'unexpected') acc.failed++;
-                    else if (test.status === 'skipped') acc.skipped++;
-                  });
-                });
-                return acc;
-              }, { passed: 0, failed: 0, skipped: 0 });
-
-              const total = stats.passed + stats.failed + stats.skipped;
-              const duration = (results.stats.duration / 1000).toFixed(2);
-              const passRate = total > 0 ? ((stats.passed / total) * 100).toFixed(1) : 0;
-
-              comment += '### Test Summary\n\n';
-              comment += '| Metric | Value |\n';
-              comment += '|--------|-------|\n';
-              comment += `| Total Tests | ${total} |\n`;
-              comment += `| ✅ Passed | ${stats.passed} |\n`;
-              comment += `| ❌ Failed | ${stats.failed} |\n`;
-              comment += `| ⏭️ Skipped | ${stats.skipped} |\n`;
-              comment += `| 📊 Pass Rate | ${passRate}% |\n`;
-              comment += `| ⏱️ Duration | ${duration}s |\n\n`;
-
-              // Add coverage metrics if available
+            if (!fs.existsSync(resultsPath)) {
+              comment += '⚠️ Test results file not found. Tests may have failed before results were generated.\n\n';
+              comment += `[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            } else {
               try {
-                const coverage = JSON.parse(fs.readFileSync('tests/e2e/reports/coverage.json', 'utf8'));
+                const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
 
-                const coveragePercent = coverage.summary.percentage.toFixed(1);
-                const coverageIcon = coverage.summary.percentage >= 70 ? '✅' :
-                                    coverage.summary.percentage >= 50 ? '⚠️' : '❌';
-                const coverageStatus = coverage.summary.percentage >= 70 ? 'Good' :
-                                      coverage.summary.percentage >= 50 ? 'Fair' : 'Low';
-
-                comment += '### Code Coverage\n\n';
-                comment += '| Metric | Value |\n';
-                comment += '|--------|-------|\n';
-                comment += `| ${coverageIcon} Overall Coverage | ${coveragePercent}% (${coverageStatus}) |\n`;
-                comment += `| 📁 Files Covered | ${coverage.summary.files} |\n`;
-                comment += `| 📝 Code Executed | ${formatBytes(coverage.summary.usedBytes)} |\n`;
-                comment += `| 📦 Total Code | ${formatBytes(coverage.summary.totalBytes)} |\n`;
-                comment += `| 🎯 Threshold | 70% |\n`;
-                comment += `| Status | ${coverage.meetsThresholds ? '✅ Meets threshold' : '⚠️ Below threshold'} |\n\n`;
-
-                // Show top 5 files with lowest coverage
-                const sortedFiles = Object.entries(coverage.files)
-                  .sort((a, b) => a[1].percentage - b[1].percentage)
-                  .slice(0, 5);
-
-                if (sortedFiles.length > 0) {
-                  comment += '<details>\n';
-                  comment += '<summary>📉 Files with Lowest Coverage</summary>\n\n';
-                  comment += '| File | Coverage |\n';
-                  comment += '|------|----------|\n';
-                  sortedFiles.forEach(([file, metrics]) => {
-                    const icon = metrics.percentage >= 70 ? '✅' :
-                                metrics.percentage >= 50 ? '⚠️' : '❌';
-                    comment += `| ${icon} \`${file}\` | ${metrics.percentage.toFixed(1)}% |\n`;
-                  });
-                  comment += '\n</details>\n\n';
-                }
-
-                // Coverage change indicator (if we had previous data)
-                comment += `📊 [View detailed coverage report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n`;
-
-              } catch (coverageError) {
-                comment += '### Code Coverage\n\n';
-                comment += '⚠️ Coverage data not available\n\n';
-              }
-
-              if (stats.failed > 0) {
-                comment += '### ❌ Failed Tests\n\n';
-                results.suites.forEach(suite => {
+                const stats = results.suites.reduce((acc, suite) => {
                   suite.specs.forEach(spec => {
                     spec.tests.forEach(test => {
-                      if (test.status === 'unexpected') {
-                        const error = test.results[0]?.error?.message || 'Unknown error';
-                        comment += `- **${spec.title}**: ${error.split('\n')[0]}\n`;
+                      if (test.status === 'expected') acc.passed++;
+                      else if (test.status === 'unexpected') acc.failed++;
+                      else if (test.status === 'skipped') acc.skipped++;
+                    });
+                  });
+                  return acc;
+                }, { passed: 0, failed: 0, skipped: 0 });
+
+                const total = stats.passed + stats.failed + stats.skipped;
+                const duration = (results.stats.duration / 1000).toFixed(2);
+                const passRate = total > 0 ? ((stats.passed / total) * 100).toFixed(1) : 0;
+
+                comment += '### Test Summary\n\n';
+                comment += '| Metric | Value |\n';
+                comment += '|--------|-------|\n';
+                comment += `| Total Tests | ${total} |\n`;
+                comment += `| ✅ Passed | ${stats.passed} |\n`;
+                comment += `| ❌ Failed | ${stats.failed} |\n`;
+                comment += `| ⏭️ Skipped | ${stats.skipped} |\n`;
+                comment += `| 📊 Pass Rate | ${passRate}% |\n`;
+                comment += `| ⏱️ Duration | ${duration}s |\n\n`;
+
+                // Add coverage metrics if available
+                try {
+                  const coverage = JSON.parse(fs.readFileSync('tests/e2e/reports/coverage.json', 'utf8'));
+
+                  const coveragePercent = coverage.summary.percentage.toFixed(1);
+                  const coverageIcon = coverage.summary.percentage >= 70 ? '✅' :
+                                      coverage.summary.percentage >= 50 ? '⚠️' : '❌';
+                  const coverageStatus = coverage.summary.percentage >= 70 ? 'Good' :
+                                        coverage.summary.percentage >= 50 ? 'Fair' : 'Low';
+
+                  comment += '### Code Coverage\n\n';
+                  comment += '| Metric | Value |\n';
+                  comment += '|--------|-------|\n';
+                  comment += `| ${coverageIcon} Overall Coverage | ${coveragePercent}% (${coverageStatus}) |\n`;
+                  comment += `| 📁 Files Covered | ${coverage.summary.files} |\n`;
+                  comment += `| 📝 Code Executed | ${formatBytes(coverage.summary.usedBytes)} |\n`;
+                  comment += `| 📦 Total Code | ${formatBytes(coverage.summary.totalBytes)} |\n`;
+                  comment += `| 🎯 Threshold | 70% |\n`;
+                  comment += `| Status | ${coverage.meetsThresholds ? '✅ Meets threshold' : '⚠️ Below threshold'} |\n\n`;
+
+                  // Show top 5 files with lowest coverage
+                  const sortedFiles = Object.entries(coverage.files)
+                    .sort((a, b) => a[1].percentage - b[1].percentage)
+                    .slice(0, 5);
+
+                  if (sortedFiles.length > 0) {
+                    comment += '<details>\n';
+                    comment += '<summary>📉 Files with Lowest Coverage</summary>\n\n';
+                    comment += '| File | Coverage |\n';
+                    comment += '|------|----------|\n';
+                    sortedFiles.forEach(([file, metrics]) => {
+                      const icon = metrics.percentage >= 70 ? '✅' :
+                                  metrics.percentage >= 50 ? '⚠️' : '❌';
+                      comment += `| ${icon} \`${file}\` | ${metrics.percentage.toFixed(1)}% |\n`;
+                    });
+                    comment += '\n</details>\n\n';
+                  }
+
+                  // Coverage change indicator (if we had previous data)
+                  comment += `📊 [View detailed coverage report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n\n`;
+
+                } catch (coverageError) {
+                  comment += '### Code Coverage\n\n';
+                  comment += '⚠️ Coverage data not available\n\n';
+                }
+
+                if (stats.failed > 0) {
+                  comment += '### ❌ Failed Tests\n\n';
+                  results.suites.forEach(suite => {
+                    suite.specs.forEach(spec => {
+                      spec.tests.forEach(test => {
+                        if (test.status === 'unexpected') {
+                          const error = test.results[0]?.error?.message || 'Unknown error';
+                          comment += `- **${spec.title}**: ${error.split('\n')[0]}\n`;
+                        }
                       }
                     });
                   });
-                });
-                comment += '\n';
+                  comment += '\n';
+                }
+
+                comment += `\n📦 [View full test report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+
+                if (stats.failed > 0) {
+                  comment += '\n\n⚠️ **Tests failed. Please review the failures before merging.**';
+                } else {
+                  comment += '\n\n✅ **All tests passed!**';
+                }
+
+              } catch (error) {
+                comment += '⚠️ Could not parse test results.\n\n';
+                comment += `Error: ${error.message}\n\n`;
+                comment += `[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
               }
-
-              comment += `\n📦 [View full test report](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
-
-              if (stats.failed > 0) {
-                comment += '\n\n⚠️ **Tests failed. Please review the failures before merging.**';
-              } else {
-                comment += '\n\n✅ **All tests passed!**';
-              }
-
-            } catch (error) {
-              comment += '⚠️ Could not parse test results.\n\n';
-              comment += `Error: ${error.message}\n\n`;
-              comment += `[View workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
             }
 
             // Helper function to format bytes
