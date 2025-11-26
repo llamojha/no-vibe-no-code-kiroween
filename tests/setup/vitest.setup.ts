@@ -1,6 +1,37 @@
 import { beforeEach, afterEach, vi } from "vitest";
 import { EventEmitter } from "events";
 
+// Polyfill ArrayBuffer/SharedArrayBuffer resizable properties for Node < 20
+const abResizable = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  "resizable"
+);
+if (!abResizable) {
+  Object.defineProperty(ArrayBuffer.prototype, "resizable", {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return false;
+    },
+  });
+}
+
+if (typeof SharedArrayBuffer !== "undefined") {
+  const sabGrowable = Object.getOwnPropertyDescriptor(
+    SharedArrayBuffer.prototype,
+    "growable"
+  );
+  if (!sabGrowable) {
+    Object.defineProperty(SharedArrayBuffer.prototype, "growable", {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return false;
+      },
+    });
+  }
+}
+
 // Increase max listeners to prevent warnings during parallel test execution
 EventEmitter.defaultMaxListeners = 20;
 process.setMaxListeners(20);
