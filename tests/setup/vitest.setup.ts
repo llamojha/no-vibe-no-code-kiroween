@@ -33,8 +33,8 @@ if (typeof SharedArrayBuffer !== "undefined") {
 }
 
 // Increase max listeners to prevent warnings during parallel test execution
-EventEmitter.defaultMaxListeners = 20;
-process.setMaxListeners(20);
+EventEmitter.defaultMaxListeners = 50;
+process.setMaxListeners(50);
 
 type CookieRecord = { name: string; value: string };
 
@@ -72,4 +72,6 @@ afterEach(() => {
   // Clear all timers and mocks after each test
   vi.clearAllTimers();
   vi.clearAllMocks();
+  // Clear any unhandledRejection listeners added during tests
+  process.removeAllListeners("unhandledRejection");
 });
