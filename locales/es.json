@@ -416,5 +416,18 @@
   "generatingDocument": "Generando...",
   "generateDocumentCta": "Generar {documentName}",
   "insufficientCreditsDetailed": "Créditos insuficientes. Necesitas {required} créditos pero solo tienes {available}. Por favor compra más créditos para continuar.",
-  "generationFailedFallback": "No se pudo generar el documento"
+  "generationFailedFallback": "No se pudo generar el documento",
+  "regenerateDocument": "Regenerar documento",
+  "confirmRegenerateTitle": "¿Regenerar documento?",
+  "confirmRegenerateBody": "Esto generará una nueva versión y sobrescribirá el documento actual. ¿Quieres continuar?",
+  "roadmapDependenciesTitle": "Dependencias y ruta crítica",
+  "roadmapDependenciesSubtitle": "Edita el gráfico y la ruta crítica abajo, luego regenera solo esta sección.",
+  "regenerateSection": "Regenerar sección",
+  "mermaidGraphLabel": "Gráfico Mermaid",
+  "mermaidHelper": "Edita nodos/enlaces (ej., A-->B). El gráfico se actualiza al cambiar.",
+  "graphPreviewLabel": "Vista previa del gráfico",
+  "criticalPathLabel": "Ruta crítica (un elemento por línea)",
+  "criticalPathHelper": "Enumera los pasos bloqueantes en orden. Cada línea se convierte en un punto.",
+  "missingDocsTitle": "Documentos faltantes",
+  "missingDocsSubtitle": "Genera los próximos documentos con un clic para mantener el flujo."
 }

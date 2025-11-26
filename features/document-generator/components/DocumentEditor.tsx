@@ -75,6 +75,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
 }) => {
   const { t } = useLocale();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [editorHeight, setEditorHeight] = useState<string | undefined>();
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // State
@@ -213,9 +214,27 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         return newHistory;
       });
       setHistoryIndex((prev) => Math.min(prev + 1, 99));
+
+      // Auto-resize after change
+      requestAnimationFrame(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+        textarea.style.height = "auto";
+        textarea.style.height = `${textarea.scrollHeight}px`;
+        setEditorHeight(textarea.style.height);
+      });
     },
     [historyIndex, maxLength]
   );
+
+  // Auto-resize when content or mode changes
+  useEffect(() => {
+    if (!textareaRef.current || isPreviewMode) return;
+    const textarea = textareaRef.current;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    setEditorHeight(textarea.style.height);
+  }, [content, isPreviewMode]);
 
   // Undo
   const handleUndo = useCallback(() => {
@@ -423,7 +442,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+    <div className="flex flex-col bg-slate-900 border border-slate-700 rounded-lg overflow-visible">
       {/* Toolbar */}
       <div
         className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700"
@@ -511,10 +530,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
       )}
 
       {/* Editor/Preview area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         {isPreviewMode ? (
           <div
-            className="h-full p-6 overflow-y-auto text-slate-300"
+            className="p-6 text-slate-300"
             dangerouslySetInnerHTML={{ __html: renderMarkdownPreview }}
             aria-label={t("documentPreview") || "Document preview"}
           />
@@ -526,7 +545,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
             onKeyDown={handleKeyDown}
             disabled={disabled}
             placeholder={placeholder}
-            className="w-full h-full p-6 bg-transparent text-slate-300 font-mono text-sm resize-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full p-6 bg-transparent text-slate-300 font-mono text-sm resize-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ height: editorHeight }}
             aria-label={t("documentEditor") || "Document editor"}
             aria-describedby="editor-help"
             spellCheck="true"

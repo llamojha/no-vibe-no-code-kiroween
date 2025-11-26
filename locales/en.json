@@ -418,5 +418,18 @@
   "generatingDocument": "Generating...",
   "generateDocumentCta": "Generate {documentName}",
   "insufficientCreditsDetailed": "Insufficient credits. You need {required} credits but only have {available}. Please purchase more credits to continue.",
-  "generationFailedFallback": "Failed to generate document"
+  "generationFailedFallback": "Failed to generate document",
+  "regenerateDocument": "Re-generate document",
+  "confirmRegenerateTitle": "Regenerate document?",
+  "confirmRegenerateBody": "This will generate a new version and override the current document. Do you want to continue?",
+  "roadmapDependenciesTitle": "Dependencies & Critical Path",
+  "roadmapDependenciesSubtitle": "Edit the graph and critical path below, then regenerate this section only.",
+  "regenerateSection": "Regenerate Section",
+  "mermaidGraphLabel": "Mermaid Graph",
+  "mermaidHelper": "Edit nodes/edges (e.g., A-->B). Graph updates on change.",
+  "graphPreviewLabel": "Graph Preview",
+  "criticalPathLabel": "Critical Path (one item per line)",
+  "criticalPathHelper": "List the blocking steps in order. Each line becomes a bullet.",
+  "missingDocsTitle": "Missing documents",
+  "missingDocsSubtitle": "Generate the next documents with one click to keep the flow moving."
 }
