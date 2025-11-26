@@ -71,30 +71,13 @@ export class MockFrankensteinService {
       return this.handleErrorScenario(scenario);
     }
 
-    // Get mock response (with variability if enabled)
-    const mockResponse = this.config.enableVariability
-      ? this.testDataManager.getRandomVariant<FrankensteinIdeaResult>('frankenstein', scenario)
-      : this.testDataManager.getMockResponse<FrankensteinIdeaResult>('frankenstein', scenario);
-
-    // Customize response based on input
-    const customizedResponse = this.testDataManager.customizeMockResponse(
-      mockResponse,
-      'frankenstein',
-      {
-        locale: language,
-        input: {
-          elements,
-          mode,
-          language,
-        },
-      }
-    );
+    const mockResponse = this.buildMockResponse(elements, mode, language);
 
     // Record performance
     const duration = Date.now() - startTime;
     this.recordPerformance(duration);
 
-    return customizedResponse as FrankensteinIdeaResult;
+    return mockResponse;
   }
 
   /**
@@ -125,15 +108,64 @@ export class MockFrankensteinService {
    * @throws Error with appropriate message and code
    */
   private handleErrorScenario(scenario: TestScenario): never {
-    const mockResponse = this.testDataManager.getMockResponse('frankenstein', scenario);
-    
-    const errorData = mockResponse as unknown as { error?: string; message?: string };
+    const messages: Record<string, string> = {
+      api_error: "Simulated API error",
+      timeout: "Simulated timeout",
+      rate_limit: "Simulated rate limit",
+    };
+
     const error = new Error(
-      `Mock Frankenstein error (${scenario}): ${errorData.message || "Mock error"}`
+      `Mock Frankenstein error (${scenario}): ${messages[scenario] || "Mock error"}`
     );
-    (error as Error & { code: string }).code = errorData.error || "MOCK_ERROR";
+    (error as Error & { code: string }).code =
+      scenario === "rate_limit" ? "RATE_LIMIT" : "MOCK_ERROR";
     
     throw error;
+  }
+
+  /**
+   * Build a deterministic mock Frankenstein response so tests can assert fields.
+   */
+  private buildMockResponse(
+    elements: FrankensteinElement[],
+    mode: "companies" | "aws",
+    language: "en" | "es"
+  ): FrankensteinIdeaResult {
+    const elementNames = elements.map(e => e.name);
+    const title = `${elementNames.join(" + ")} (${mode} mashup)`;
+    const description = `Generated Frankenstein idea combining ${elementNames.join(
+      ", "
+    )} using ${mode} patterns.`;
+
+    const baseOriginality = Math.min(60 + elements.length * 10, 100);
+    const baseFeasibility = Math.max(50 - elements.length * 2, 40);
+    const baseImpact = Math.min(65 + elements.length * 5, 95);
+
+    return {
+      idea_title: title,
+      idea_description: description,
+      core_concept: "",
+      problem_statement: "",
+      proposed_solution: "",
+      unique_value_proposition: "",
+      target_audience: "",
+      business_model: "",
+      growth_strategy: "",
+      tech_stack_suggestion: "",
+      risks_and_challenges: "",
+      metrics: {
+        originality_score: baseOriginality,
+        feasibility_score: baseFeasibility,
+        impact_score: baseImpact,
+        scalability_score: Math.min(baseFeasibility + 5, 100),
+        wow_factor: Math.min(baseOriginality + 5, 100),
+      },
+      summary: this.testDataManager.getMockResponse<{ summary: string }>(
+        "frankenstein",
+        "success"
+      ).summary ?? "Mock Frankenstein summary",
+      language,
+    };
   }
 
   /**

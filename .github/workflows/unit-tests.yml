@@ -21,8 +21,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: Unit Tests
-            script: test:unit
+          - name: Unit - Domain
+            script: test:unit:domain
+          - name: Unit - Application
+            script: test:unit:application
+          - name: Unit - Infrastructure
+            script: test:unit:infrastructure
+          - name: Unit - Features
+            script: test:unit:features
+          - name: Unit - Lib
+            script: test:unit:lib
           - name: Properties - System
             script: test:properties:system
           - name: Properties - Business
