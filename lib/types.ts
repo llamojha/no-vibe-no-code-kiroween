@@ -134,6 +134,7 @@ export interface HackathonAnalysis
     | "currentMarketTrends"
     | "monetizationStrategies"
   > {
+  delay?: number;
   categoryAnalysis: CategoryAnalysis;
   criteriaAnalysis: CriteriaAnalysis;
   hackathonSpecificAdvice: {

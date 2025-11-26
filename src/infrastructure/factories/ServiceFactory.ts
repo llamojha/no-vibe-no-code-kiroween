@@ -720,6 +720,7 @@ export class ServiceFactory {
 
       // Verify feature flags are properly set
       const mockConfig = this.mockFeatureFlagManager.getMockServiceConfig();
+      const defaultScenario = mockConfig.defaultScenario ?? "success";
       const validScenarios = [
         "success",
         "api_error",
@@ -729,9 +730,9 @@ export class ServiceFactory {
         "partial_response",
       ];
 
-      if (!validScenarios.includes(mockConfig.defaultScenario)) {
+      if (!validScenarios.includes(defaultScenario)) {
         console.warn(
-          `[ServiceFactory] Invalid mock scenario "${mockConfig.defaultScenario}". ` +
+          `[ServiceFactory] Invalid mock scenario "${defaultScenario}". ` +
             `Valid scenarios: ${validScenarios.join(
               ", "
             )}. Using "success" as fallback.`
@@ -741,7 +742,7 @@ export class ServiceFactory {
       // Log mock mode activation (only in non-production)
       if (process.env.NODE_ENV !== "production") {
         console.log("[ServiceFactory] ✅ Mock mode verified and active", {
-          scenario: mockConfig.defaultScenario,
+          scenario: defaultScenario,
           simulateLatency: mockConfig.simulateLatency,
           minLatency: mockConfig.minLatency,
           maxLatency: mockConfig.maxLatency,

@@ -64,37 +64,20 @@ export class MockFrankensteinService {
     }
 
     // Get base mock response based on scenario
-    const scenario = this.config.defaultScenario;
+    const scenario = this.config.defaultScenario ?? "success";
     
     // Handle error scenarios
     if (scenario !== 'success') {
       return this.handleErrorScenario(scenario);
     }
 
-    // Get mock response (with variability if enabled)
-    const mockResponse = this.config.enableVariability
-      ? this.testDataManager.getRandomVariant<FrankensteinIdeaResult>('frankenstein', scenario)
-      : this.testDataManager.getMockResponse<FrankensteinIdeaResult>('frankenstein', scenario);
-
-    // Customize response based on input
-    const customizedResponse = this.testDataManager.customizeMockResponse(
-      mockResponse,
-      'frankenstein',
-      {
-        locale: language,
-        input: {
-          elements,
-          mode,
-          language,
-        },
-      }
-    );
+    const mockResponse = this.buildMockResponse(elements, mode, language);
 
     // Record performance
     const duration = Date.now() - startTime;
     this.recordPerformance(duration);
 
-    return customizedResponse.data;
+    return mockResponse;
   }
 
   /**
@@ -107,7 +90,8 @@ export class MockFrankensteinService {
    * @returns Promise that resolves after the simulated delay
    */
   private async simulateDelay(): Promise<void> {
-    const { minLatency, maxLatency } = this.config;
+    const minLatency = this.config.minLatency ?? 50;
+    const maxLatency = this.config.maxLatency ?? 150;
     const delay = Math.floor(Math.random() * (maxLatency - minLatency + 1)) + minLatency;
     
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -124,13 +108,64 @@ export class MockFrankensteinService {
    * @throws Error with appropriate message and code
    */
   private handleErrorScenario(scenario: TestScenario): never {
-    const mockResponse = this.testDataManager.getMockResponse('frankenstein', scenario);
-    
-    const errorData = mockResponse.data as { error: string; message: string };
-    const error = new Error(`Mock Frankenstein error (${scenario}): ${errorData.message}`);
-    (error as Error & { code: string }).code = errorData.error;
+    const messages: Record<string, string> = {
+      api_error: "Simulated API error",
+      timeout: "Simulated timeout",
+      rate_limit: "Simulated rate limit",
+    };
+
+    const error = new Error(
+      `Mock Frankenstein error (${scenario}): ${messages[scenario] || "Mock error"}`
+    );
+    (error as Error & { code: string }).code =
+      scenario === "rate_limit" ? "RATE_LIMIT" : "MOCK_ERROR";
     
     throw error;
+  }
+
+  /**
+   * Build a deterministic mock Frankenstein response so tests can assert fields.
+   */
+  private buildMockResponse(
+    elements: FrankensteinElement[],
+    mode: "companies" | "aws",
+    language: "en" | "es"
+  ): FrankensteinIdeaResult {
+    const elementNames = elements.map(e => e.name);
+    const title = `${elementNames.join(" + ")} (${mode} mashup)`;
+    const description = `Generated Frankenstein idea combining ${elementNames.join(
+      ", "
+    )} using ${mode} patterns.`;
+
+    const baseOriginality = Math.min(60 + elements.length * 10, 100);
+    const baseFeasibility = Math.max(50 - elements.length * 2, 40);
+    const baseImpact = Math.min(65 + elements.length * 5, 95);
+
+    return {
+      idea_title: title,
+      idea_description: description,
+      core_concept: "",
+      problem_statement: "",
+      proposed_solution: "",
+      unique_value_proposition: "",
+      target_audience: "",
+      business_model: "",
+      growth_strategy: "",
+      tech_stack_suggestion: "",
+      risks_and_challenges: "",
+      metrics: {
+        originality_score: baseOriginality,
+        feasibility_score: baseFeasibility,
+        impact_score: baseImpact,
+        scalability_score: Math.min(baseFeasibility + 5, 100),
+        wow_factor: Math.min(baseOriginality + 5, 100),
+      },
+      summary: this.testDataManager.getMockResponse<{ summary: string }>(
+        "frankenstein",
+        "success"
+      ).summary ?? "Mock Frankenstein summary",
+      language,
+    };
   }
 
   /**

@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Unit & Property Tests
 
 on:
   pull_request:
@@ -13,10 +13,34 @@ permissions:
   checks: write
 
 jobs:
-  unit-tests:
-    name: Vitest Unit Tests with Coverage
+  tests:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Unit - Domain
+            script: test:unit:domain
+          - name: Unit - Application
+            script: test:unit:application
+          - name: Unit - Infrastructure
+            script: test:unit:infrastructure
+          - name: Unit - Features
+            script: test:unit:features
+          - name: Unit - Lib
+            script: test:unit:lib
+          - name: Properties - System
+            script: test:properties:system
+          - name: Properties - Business
+            script: test:properties:business
+          - name: Properties - Data Integrity
+            script: test:properties:data
+          - name: Properties - Domain
+            script: test:properties:domain
+          - name: Properties - Utils
+            script: test:properties:utils
 
     steps:
       - name: Record start time
@@ -35,92 +59,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests with coverage
-        run: npm run test:coverage -- --reporter=json --outputFile=test-results.json
-        continue-on-error: true
+      - name: Run ${{ matrix.name }}
+        run: npm run ${{ matrix.script }}
         env:
           CI: true
-
-      - name: Check coverage threshold
-        id: coverage-check
-        if: always()
-        run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            COVERAGE=$(node -e "
-              const fs = require('fs');
-              const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
-              const pct = summary.total.lines.pct;
-              console.log(pct);
-            ")
-
-            echo "coverage_pct=$COVERAGE" >> $GITHUB_OUTPUT
-
-            echo "### Coverage Report" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- Overall Coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
-            echo "- Threshold: 70%" >> $GITHUB_STEP_SUMMARY
-
-            if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-              echo "::warning::Coverage is below 70% ($COVERAGE%)"
-              echo "- Status: ⚠️ Below threshold" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "✅ Coverage meets threshold"
-              echo "- Status: ✅ Meets threshold" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "⚠️ Coverage summary not found"
-            echo "coverage_pct=0" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Parse test results
-        id: test-check
-        if: always()
-        run: |
-          if [ -f test-results.json ]; then
-            node -e "
-              const fs = require('fs');
-              const results = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
-
-              const numTotal = results.numTotalTests || 0;
-              const numPassed = results.numPassedTests || 0;
-              const numFailed = results.numFailedTests || 0;
-
-              console.log('Total tests:', numTotal);
-              console.log('Passed:', numPassed);
-              console.log('Failed:', numFailed);
-
-              if (numFailed > 0) {
-                console.error('❌ ' + numFailed + ' test(s) failed');
-                process.exit(1);
-              } else {
-                console.log('✅ All tests passed');
-                process.exit(0);
-              }
-            "
-          else
-            echo "❌ Test results file not found"
-            exit 1
-          fi
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports-${{ github.run_number }}
-          path: |
-            coverage/
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: unit-test-results-${{ github.run_number }}
-          path: |
-            test-results.json
-          retention-days: 30
-          if-no-files-found: warn
 
       - name: Calculate workflow duration
         if: always()
@@ -136,20 +78,18 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Total time: ${DURATION_MIN}m ${DURATION_SEC}s" >> $GITHUB_STEP_SUMMARY
 
-          # Log warning if duration exceeds 15 minutes
           if [ $DURATION -gt 900 ]; then
             echo "::warning::Workflow duration exceeded 15 minutes (${DURATION_MIN}m ${DURATION_SEC}s)"
             echo "⚠️ Duration exceeded 15 minute threshold" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Save duration for PR comment
-          echo "{\"workflow\":\"unit-tests\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
+          echo "{\"workflow\":\"${{ matrix.name }}\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
 
       - name: Upload duration metrics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: duration-unit-tests-${{ github.run_number }}
+          name: duration-${{ matrix.name }}-${{ github.run_number }}
           path: workflow-duration.json
           retention-days: 30
           if-no-files-found: warn

@@ -164,13 +164,17 @@ export class HackathonController {
       }
     );
 
-    if (mockResponse.delay && mockResponse.delay > 0) {
+    if ((mockResponse as any).delay && (mockResponse as any).delay > 0) {
       await new Promise((resolve) => setTimeout(resolve, mockResponse.delay));
     }
 
-    const response = NextResponse.json(mockResponse.data, {
-      status: mockResponse.statusCode,
-      headers: mockResponse.headers,
+    const mockBody = (mockResponse as any).data ?? mockResponse;
+    const mockStatus = (mockResponse as any).statusCode ?? 200;
+    const mockHeaders = (mockResponse as any).headers;
+
+    const response = NextResponse.json(mockBody, {
+      status: mockStatus,
+      headers: mockHeaders,
     });
 
     await this.recordCreditUsage(userId, AnalysisType.HACKATHON_PROJECT);

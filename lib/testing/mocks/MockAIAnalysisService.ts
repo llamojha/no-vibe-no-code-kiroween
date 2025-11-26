@@ -103,7 +103,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       );
 
       // Convert mock data to AIAnalysisResult
-      const result = this.convertToAIAnalysisResult(customized.data as Record<string, unknown>);
+      const result = this.convertToAIAnalysisResult(customized as Record<string, unknown>);
 
       const duration = Date.now() - startTime;
 
@@ -124,7 +124,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'analyzeIdea',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -172,7 +172,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       );
 
       // Convert mock data to AIAnalysisResult
-      const result = this.convertToAIAnalysisResult(customized.data as Record<string, unknown>);
+      const result = this.convertToAIAnalysisResult(customized as Record<string, unknown>);
 
       const duration = Date.now() - startTime;
 
@@ -193,7 +193,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'analyzeHackathonProject',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -231,7 +231,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
         : this.testDataManager.getMockResponse('analyzer', scenario);
 
       // Extract suggestions from mock data
-      const data = mockResponse.data as Record<string, unknown>;
+      const data = mockResponse as Record<string, unknown>;
       const suggestions = (data.suggestions as string[]) || [
         'Consider expanding your target market',
         'Strengthen your unique value proposition',
@@ -257,7 +257,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'getImprovementSuggestions',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -345,7 +345,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'compareIdeas',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -421,7 +421,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'recommendHackathonCategory',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -486,7 +486,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       this.logRequest({
         timestamp: new Date(),
         type: 'healthCheck',
-        scenario: this.config.defaultScenario,
+        scenario: this.getScenario(),
         latency: Date.now() - startTime,
         success: false,
         error: (error as Error).message,
@@ -601,7 +601,8 @@ export class MockAIAnalysisService implements IAIAnalysisService {
       return;
     }
 
-    const { minLatency, maxLatency } = this.config;
+    const minLatency = this.config.minLatency ?? 50;
+    const maxLatency = this.config.maxLatency ?? 150;
     const latency = Math.floor(Math.random() * (maxLatency - minLatency + 1)) + minLatency;
     this.lastSimulatedLatency = latency;
 
@@ -625,7 +626,7 @@ export class MockAIAnalysisService implements IAIAnalysisService {
    * @returns The test scenario to use
    */
   private getScenario(): TestScenario {
-    return this.config.defaultScenario;
+    return this.config.defaultScenario ?? "success";
   }
 
   /**
