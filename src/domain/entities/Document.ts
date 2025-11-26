@@ -3,12 +3,13 @@ import { DocumentId } from "../value-objects/DocumentId";
 import { IdeaId } from "../value-objects/IdeaId";
 import { UserId } from "../value-objects/UserId";
 import { DocumentType } from "../value-objects/DocumentType";
+import { DocumentVersion } from "../value-objects/DocumentVersion";
 import { InvariantViolationError } from "../../shared/types/errors";
 
-export type DocumentContent = Record<string, unknown>;
+export type DocumentContent = string | Record<string, unknown>;
 
 /**
- * Properties required to create at
+ * Properties required to create a new document
  */
 export interface CreateDocumentProps {
   ideaId: IdeaId;
@@ -16,6 +17,7 @@ export interface CreateDocumentProps {
   documentType: DocumentType;
   title?: string;
   content: DocumentContent;
+  version?: DocumentVersion; // Optional, defaults to initial version
 }
 
 /**
@@ -28,6 +30,7 @@ export interface ReconstructDocumentProps {
   documentType: DocumentType;
   title: string | null;
   content: DocumentContent;
+  version: DocumentVersion;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,6 +46,7 @@ export class Document extends Entity<DocumentId> {
   private readonly _documentType: DocumentType;
   private _title: string | null;
   private readonly _content: DocumentContent;
+  private readonly _version: DocumentVersion;
   private readonly _createdAt: Date;
   private _updatedAt: Date;
 
@@ -53,6 +57,7 @@ export class Document extends Entity<DocumentId> {
     documentType: DocumentType,
     title: string | null,
     content: DocumentContent,
+    version: DocumentVersion,
     createdAt: Date,
     updatedAt: Date
   ) {
@@ -62,6 +67,7 @@ export class Document extends Entity<DocumentId> {
     this._documentType = documentType;
     this._title = title;
     this._content = content;
+    this._version = version;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
 
@@ -74,6 +80,7 @@ export class Document extends Entity<DocumentId> {
   static create(props: CreateDocumentProps): Document {
     const now = new Date();
     const id = DocumentId.generate();
+    const version = props.version || DocumentVersion.initial();
 
     return new Document(
       id,
@@ -82,6 +89,7 @@ export class Document extends Entity<DocumentId> {
       props.documentType,
       props.title || null,
       props.content,
+      version,
       now,
       now
     );
@@ -98,6 +106,7 @@ export class Document extends Entity<DocumentId> {
       props.documentType,
       props.title,
       props.content,
+      props.version,
       props.createdAt,
       props.updatedAt
     );
@@ -132,21 +141,24 @@ export class Document extends Entity<DocumentId> {
    */
   private validateStartupAnalysisContent(): void {
     this.ensureObjectContent("Startup analysis");
+    const content = this._content as Record<string, unknown>;
 
     // Accept multiple formats:
     // 1. Legacy format (viability/innovation/market)
     // 2. Idea Panel format (score/feedback)
     // 3. Original format (finalScore/scoringRubric)
-    const hasLegacyFields = this.hasRequiredFields([
-      "viability",
-      "innovation",
-      "market",
-    ]);
-    const hasIdeaPanelFields = this.hasRequiredFields(["score", "feedback"]);
-    const hasOriginalFields = this.hasRequiredFields([
-      "finalScore",
-      "scoringRubric",
-    ]);
+    const hasLegacyFields = this.hasRequiredFields(
+      ["viability", "innovation", "market"],
+      content
+    );
+    const hasIdeaPanelFields = this.hasRequiredFields(
+      ["score", "feedback"],
+      content
+    );
+    const hasOriginalFields = this.hasRequiredFields(
+      ["finalScore", "scoringRubric"],
+      content
+    );
 
     if (!hasLegacyFields && !hasIdeaPanelFields && !hasOriginalFields) {
       throw new InvariantViolationError(
@@ -160,20 +172,20 @@ export class Document extends Entity<DocumentId> {
    */
   private validateHackathonAnalysisContent(): void {
     this.ensureObjectContent("Hackathon analysis");
+    const content = this._content as Record<string, unknown>;
 
-    const hasLegacyFields = this.hasRequiredFields([
-      "technical",
-      "creativity",
-      "impact",
-    ]);
-    const hasIdeaPanelFields = this.hasRequiredFields([
-      "score",
-      "detailedSummary",
-    ]);
+    const hasLegacyFields = this.hasRequiredFields(
+      ["technical", "creativity", "impact"],
+      content
+    );
+    const hasIdeaPanelFields = this.hasRequiredFields(
+      ["score", "detailedSummary"],
+      content
+    );
     const hasCriteriaAnalysisShape =
-      "criteriaAnalysis" in this._content ||
-      this.hasRequiredFields(["finalScore", "criteriaAnalysis"]);
-    const hasCategoryAnalysisShape = "categoryAnalysis" in this._content;
+      "criteriaAnalysis" in content ||
+      this.hasRequiredFields(["finalScore", "criteriaAnalysis"], content);
+    const hasCategoryAnalysisShape = "categoryAnalysis" in content;
 
     if (
       !hasLegacyFields &&
@@ -272,6 +284,42 @@ export class Document extends Entity<DocumentId> {
     return new Date(this._updatedAt);
   }
 
+  get version(): DocumentVersion {
+    return this._version;
+  }
+
+  /**
+   * Update the content of the document
+   * Returns a NEW document entity with a NEW ID and incremented version
+   * The old version remains unchanged in the database
+   */
+  updateContent(newContent: DocumentContent): Document {
+    return Document.create({
+      ideaId: this._ideaId,
+      userId: this._userId,
+      documentType: this._documentType,
+      title: this._title || undefined,
+      content: newContent,
+      version: this._version.increment(),
+    });
+  }
+
+  /**
+   * Get the version of this document
+   */
+  getVersion(): DocumentVersion {
+    return this._version;
+  }
+
+  /**
+   * Check if this is the latest version
+   * Note: This method only checks if the version number is the highest known
+   * It requires external context to determine if it's truly the latest
+   */
+  isLatestVersion(latestVersion: DocumentVersion): boolean {
+    return this._version.equals(latestVersion);
+  }
+
   /**
    * Get a summary of the document
    */
@@ -301,9 +349,12 @@ export class Document extends Entity<DocumentId> {
   /**
    * Check if content has all required fields
    */
-  private hasRequiredFields(fields: string[]): boolean {
+  private hasRequiredFields(
+    fields: string[],
+    content: Record<string, unknown>
+  ): boolean {
     return fields.every((field) =>
-      Object.prototype.hasOwnProperty.call(this._content, field)
+      Object.prototype.hasOwnProperty.call(content, field)
     );
   }
 }

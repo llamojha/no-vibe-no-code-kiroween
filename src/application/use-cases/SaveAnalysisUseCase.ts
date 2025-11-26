@@ -86,12 +86,28 @@ export class SaveAnalysisUseCase {
               }
             );
 
-            // Extract analysis from document content
+            // Extract analysis from document content (supports string or object)
             const content = document.getContent();
-            const analysisData = (content.analysis || content) as Record<
-              string,
-              unknown
-            >;
+            let analysisData: Record<string, unknown> = {};
+
+            if (typeof content === "string") {
+              try {
+                analysisData = JSON.parse(content) as Record<string, unknown>;
+              } catch (_err) {
+                analysisData = {};
+              }
+            } else if (content && typeof content === "object") {
+              const contentObj = content as Record<string, unknown>;
+              if (
+                "analysis" in contentObj &&
+                typeof contentObj.analysis === "object" &&
+                contentObj.analysis !== null
+              ) {
+                analysisData = contentObj.analysis as Record<string, unknown>;
+              } else {
+                analysisData = contentObj;
+              }
+            }
 
             // Reconstruct Analysis entity from document content
             analysis = Analysis.reconstruct({
@@ -276,12 +292,32 @@ export class SaveAnalysisUseCase {
 
         const existingDoc = existingDocResult.data;
         const existingContent = existingDoc.getContent();
+        let existingContentObject: Record<string, unknown> = {};
+
+        if (typeof existingContent === "string") {
+          try {
+            existingContentObject = JSON.parse(
+              existingContent
+            ) as Record<string, unknown>;
+          } catch (_err) {
+            existingContentObject = { markdown: existingContent };
+          }
+        } else if (existingContent && typeof existingContent === "object") {
+          existingContentObject = existingContent as Record<string, unknown>;
+        }
+
+        const baseAnalysis =
+          existingContentObject.analysis &&
+          typeof existingContentObject.analysis === "object" &&
+          existingContentObject.analysis !== null
+            ? (existingContentObject.analysis as Record<string, unknown>)
+            : existingContentObject;
 
         // Update the analysis data within the document content
         const updatedContent = {
-          ...existingContent,
+          ...existingContentObject,
           analysis: {
-            ...(existingContent.analysis || existingContent),
+            ...baseAnalysis,
             score: analysis.score.value,
             feedback: analysis.feedback,
             suggestions: analysis.suggestions,
@@ -297,6 +333,7 @@ export class SaveAnalysisUseCase {
           documentType: existingDoc.documentType,
           title: existingDoc.title,
           content: updatedContent,
+          version: existingDoc.version, // Preserve existing version
           createdAt: existingDoc.createdAt,
           updatedAt: new Date(), // Update timestamp
         });

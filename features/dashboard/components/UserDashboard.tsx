@@ -137,7 +137,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   }, [ideas]);
 
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 to-orange-950/30 text-slate-200 p-4 sm:p-6 lg:p-8">
       <header className="max-w-4xl mx-auto flex justify-between items-center mb-8 animate-fade-in">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">

@@ -3,6 +3,7 @@ import { AnalysisController } from "../web/controllers/AnalysisController";
 import { HackathonController } from "../web/controllers/HackathonController";
 import { DashboardController } from "../web/controllers/DashboardController";
 import { IdeaPanelController } from "../web/controllers/IdeaPanelController";
+import { DocumentGeneratorController } from "../web/controllers/DocumentGeneratorController";
 
 // Import handlers
 import {
@@ -44,6 +45,8 @@ import { LocaleAdapter } from "../integration/LocaleAdapter";
 import { TextToSpeechAdapter } from "../external/ai/TextToSpeechAdapter";
 import { TranscriptionAdapter } from "../external/ai/TranscriptionAdapter";
 import { GoogleAIAdapter } from "../external/ai/GoogleAIAdapter";
+import { GoogleAIDocumentGeneratorAdapter } from "../external/ai/GoogleAIDocumentGeneratorAdapter";
+import { IAIDocumentGeneratorService } from "../../application/services/IAIDocumentGeneratorService";
 
 // Import cache
 import { InMemoryCache } from "../cache/InMemoryCache";
@@ -162,6 +165,20 @@ export class ServiceFactory {
     const documentRepository =
       this.repositoryFactory.createDocumentRepository();
 
+    // Create AI Document Generator Service (optional - may fail if API key not configured)
+    let aiDocumentGeneratorService;
+    try {
+      aiDocumentGeneratorService = this.createAIDocumentGeneratorService();
+    } catch (error) {
+      // AI Document Generator Service is optional - log warning but continue
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "[ServiceFactory] AI Document Generator Service not available:",
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    }
+
     this.useCaseFactory = UseCaseFactory.create(
       analysisRepository,
       userRepository,
@@ -172,7 +189,8 @@ export class ServiceFactory {
       notificationService,
       analysisValidationService,
       scoreCalculationService,
-      this.cache
+      this.cache,
+      aiDocumentGeneratorService
     );
   }
 
@@ -339,6 +357,49 @@ export class ServiceFactory {
     }
 
     return this.services.get(cacheKey) as IdeaPanelController;
+  }
+
+  /**
+   * Create DocumentGeneratorController with all dependencies
+   */
+  createDocumentGeneratorController(): DocumentGeneratorController {
+    const cacheKey = "documentGeneratorController";
+
+    if (!this.services.has(cacheKey)) {
+      if (!this.useCaseFactory) {
+        throw new Error("Use case factory not initialized");
+      }
+
+      // Create use cases
+      const generateDocumentUseCase =
+        this.useCaseFactory.createGenerateDocumentUseCase();
+      const updateDocumentUseCase =
+        this.useCaseFactory.createUpdateDocumentUseCase();
+      const regenerateDocumentUseCase =
+        this.useCaseFactory.createRegenerateDocumentUseCase();
+      const getVersionsUseCase =
+        this.useCaseFactory.createGetDocumentVersionsUseCase();
+      const restoreVersionUseCase =
+        this.useCaseFactory.createRestoreDocumentVersionUseCase();
+      const getDocumentByIdUseCase =
+        this.useCaseFactory.createGetDocumentByIdUseCase();
+      const exportDocumentUseCase =
+        this.useCaseFactory.createExportDocumentUseCase();
+
+      const controller = new DocumentGeneratorController(
+        generateDocumentUseCase,
+        updateDocumentUseCase,
+        regenerateDocumentUseCase,
+        getVersionsUseCase,
+        restoreVersionUseCase,
+        getDocumentByIdUseCase,
+        exportDocumentUseCase
+      );
+
+      this.services.set(cacheKey, controller);
+    }
+
+    return this.services.get(cacheKey) as DocumentGeneratorController;
   }
 
   // Private methods to create handlers
@@ -577,6 +638,31 @@ export class ServiceFactory {
     }
 
     return this.services.get(cacheKey) as GoogleAIAdapter;
+  }
+
+  /**
+   * Create AI Document Generator Service
+   *
+   * Creates a GoogleAIDocumentGeneratorAdapter for generating
+   * PRD, Technical Design, Architecture, and Roadmap documents.
+   *
+   * @returns IAIDocumentGeneratorService implementation
+   */
+  createAIDocumentGeneratorService(): IAIDocumentGeneratorService {
+    const cacheKey = "aiDocumentGeneratorService";
+
+    if (!this.services.has(cacheKey)) {
+      const service = GoogleAIDocumentGeneratorAdapter.create();
+      this.services.set(cacheKey, service);
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          "[ServiceFactory] ✅ AI Document Generator Service created"
+        );
+      }
+    }
+
+    return this.services.get(cacheKey) as IAIDocumentGeneratorService;
   }
 
   /**

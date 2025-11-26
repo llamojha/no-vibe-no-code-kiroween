@@ -109,12 +109,18 @@ describe("saveFrankensteinIdea", () => {
       // Verify the insert was called with correct data
       expect(mockSupabase.from).toHaveBeenCalledWith("ideas");
       const insertCall = mockSupabase.from("ideas").insert;
+      const frankensteinMetadata = {
+        mode: "companies",
+        tech1: mockTech1,
+        tech2: mockTech2,
+        analysis: mockAnalysis,
+      };
       expect(insertCall).toHaveBeenCalledWith({
         user_id: mockUser.id,
         idea_text: `${mockAnalysis.ideaName}\n\n${mockAnalysis.description}`,
         source: "frankenstein",
         project_status: "idea",
-        notes: "",
+        notes: JSON.stringify(frankensteinMetadata),
         tags: [],
       });
     });

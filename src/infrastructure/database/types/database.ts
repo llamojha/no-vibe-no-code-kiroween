@@ -175,9 +175,16 @@ export type Database = {
           id: string;
           idea_id: string;
           user_id: string;
-          document_type: "startup_analysis" | "hackathon_analysis";
+          document_type:
+            | "startup_analysis"
+            | "hackathon_analysis"
+            | "prd"
+            | "technical_design"
+            | "architecture"
+            | "roadmap";
           title: string | null;
           content: Json;
+          version: number;
           created_at: string;
           updated_at: string;
         };
@@ -185,9 +192,16 @@ export type Database = {
           id?: string;
           idea_id: string;
           user_id: string;
-          document_type: "startup_analysis" | "hackathon_analysis";
+          document_type:
+            | "startup_analysis"
+            | "hackathon_analysis"
+            | "prd"
+            | "technical_design"
+            | "architecture"
+            | "roadmap";
           title?: string | null;
           content: Json;
+          version?: number;
           created_at?: string | null;
           updated_at?: string | null;
         };
@@ -195,9 +209,16 @@ export type Database = {
           id?: string;
           idea_id?: string;
           user_id?: string;
-          document_type?: "startup_analysis" | "hackathon_analysis";
+          document_type?:
+            | "startup_analysis"
+            | "hackathon_analysis"
+            | "prd"
+            | "technical_design"
+            | "architecture"
+            | "roadmap";
           title?: string | null;
           content?: Json;
+          version?: number;
           created_at?: string | null;
           updated_at?: string | null;
         };

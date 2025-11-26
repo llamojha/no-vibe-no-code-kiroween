@@ -13,3 +13,21 @@ export type { SaveMetadataOptions } from "./saveMetadata";
 export { getDocumentsByIdea } from "./getDocumentsByIdea";
 export { getDocumentById } from "./getDocumentById";
 export { deleteIdea } from "./deleteIdea";
+
+// Document Generation API wrappers
+export {
+  generateDocument,
+  updateDocument,
+  regenerateDocument,
+  getDocumentVersions,
+  restoreDocumentVersion,
+  exportDocument,
+  downloadExportedDocument,
+} from "./documentGeneration";
+export type {
+  GeneratableDocumentType,
+  GenerateDocumentOptions,
+  UpdateDocumentOptions,
+  ExportFormat,
+  ExportResult,
+} from "./documentGeneration";

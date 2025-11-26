@@ -36,7 +36,8 @@ export function validateEnhancedFeatureFlags(): void {
 
     if (
       (flagKey === "ENABLE_CLASSIC_ANALYZER" ||
-        flagKey === "ENABLE_KIROWEEN_ANALYZER") &&
+        flagKey === "ENABLE_KIROWEEN_ANALYZER" ||
+        flagKey === "ENABLE_DOCUMENT_GENERATION") &&
       !flag.exposeToClient
     ) {
       console.warn(

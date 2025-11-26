@@ -4,6 +4,8 @@ import {
   IdeaId,
   UserId,
   DocumentType,
+  type DocumentTypeValue,
+  DocumentVersion,
 } from "../../../../domain/value-objects";
 import { DocumentDAO } from "../../types/dao";
 
@@ -14,9 +16,10 @@ export interface DocumentDTO {
   id: string;
   ideaId: string;
   userId: string;
-  documentType: "startup_analysis" | "hackathon_analysis";
+  documentType: DocumentTypeValue;
   title: string | null;
   content: DocumentContent;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,11 +37,10 @@ export class DocumentMapper {
       id: document.id.value,
       idea_id: document.ideaId.value,
       user_id: document.userId.value,
-      document_type: document.documentType.value as
-        | "startup_analysis"
-        | "hackathon_analysis",
+      document_type: document.documentType.value as DocumentTypeValue,
       title: document.title,
       content: document.getContent() as DocumentDAO["content"], // Already returns a deep copy
+      version: document.version.value,
       created_at: document.createdAt.toISOString(),
       updated_at: document.updatedAt.toISOString(),
     };
@@ -56,6 +58,7 @@ export class DocumentMapper {
         documentType: DocumentType.fromString(dao.document_type),
         title: dao.title,
         content: this.parseContent(dao.content),
+        version: DocumentVersion.create(dao.version || 1), // Default to version 1 for existing documents
         createdAt: new Date(dao.created_at || Date.now()),
         updatedAt: new Date(dao.updated_at || Date.now()),
       });
@@ -80,10 +83,10 @@ export class DocumentMapper {
       ideaId: document.ideaId.value,
       userId: document.userId.value,
       documentType: document.documentType.value as
-        | "startup_analysis"
-        | "hackathon_analysis",
+        | DocumentTypeValue,
       title: document.title,
       content: document.getContent(),
+      version: document.version.value,
       createdAt: document.createdAt.toISOString(),
       updatedAt: document.updatedAt.toISOString(),
     };
@@ -104,8 +107,8 @@ export class DocumentMapper {
       try {
         return JSON.parse(content) as DocumentContent;
       } catch (_error) {
-        // If parsing fails, return as-is wrapped in an object
-        return { raw: content } as DocumentContent;
+        // If parsing fails, return raw markdown string
+        return content as DocumentContent;
       }
     }
 

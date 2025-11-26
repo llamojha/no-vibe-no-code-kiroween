@@ -1,63 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NextJSBootstrap } from "@/src/infrastructure/bootstrap/nextjs";
-import { DocumentId, UserId } from "@/src/domain/value-objects";
+import { serverSupabase } from "@/lib/supabase/server";
+import { ServiceFactory } from "@/src/infrastructure/factories/ServiceFactory";
+
+export const runtime = "nodejs";
 
 /**
+ * Get a document by ID
  * GET /api/v2/documents/[documentId]
- *
- * Retrieves a single document by ID.
- * Used when viewing reports from the idea panel.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { documentId: string } }
 ) {
   try {
-    await NextJSBootstrap.initialize();
-    const serviceFactory = await NextJSBootstrap.getServiceFactory();
-    const documentRepository = serviceFactory
-      .getRepositoryFactory()
-      .createDocumentRepository();
-
-    // Get authenticated user
-    const { serverSupabase } = await import("@/lib/supabase/server");
     const supabase = serverSupabase();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+    const controller = serviceFactory.createDocumentGeneratorController();
 
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Load document
-    const documentId = DocumentId.fromString(params.documentId);
-    const userId = UserId.fromString(user.id);
-    const result = await documentRepository.findById(documentId, userId);
-
-    if (!result.success || !result.data) {
-      return NextResponse.json(
-        { error: "Document not found" },
-        { status: 404 }
-      );
-    }
-
-    // Convert to DTO
-    const { DocumentMapper } = await import(
-      "@/src/infrastructure/database/supabase/mappers/DocumentMapper"
-    );
-    const mapper = new DocumentMapper();
-    const dto = mapper.toDTO(result.data);
-
-    return NextResponse.json(dto);
+    return await controller.getDocument(request, { params });
   } catch (error) {
-    console.error("Failed to load document:", error);
+    console.error("Error in GET /api/v2/documents/[documentId]:", error);
     return NextResponse.json(
-      { error: "Failed to load document. Please try again." },
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Update a document's content
+ * PUT /api/v2/documents/[documentId]
+ *
+ * Requirements: 11.2
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { documentId: string } }
+) {
+  try {
+    // Create fresh Supabase client for this request
+    const supabase = serverSupabase();
+
+    // Create service factory with fresh client
+    const serviceFactory = ServiceFactory.getInstance(supabase);
+
+    // Create controller
+    const controller = serviceFactory.createDocumentGeneratorController();
+
+    // Delegate to controller
+    return await controller.updateDocument(request, { params });
+  } catch (error) {
+    console.error("Error in PUT /api/v2/documents/[documentId]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

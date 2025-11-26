@@ -115,9 +115,14 @@ export async function POST(request: NextRequest) {
     // at the top level instead of nested inside `analysis`.
     const normalizedAnalysisContent =
       normalizeHackathonDocumentContent(analysis);
+    const normalizedAnalysisObject =
+      typeof normalizedAnalysisContent === "object" &&
+      normalizedAnalysisContent !== null
+        ? normalizedAnalysisContent
+        : { raw: normalizedAnalysisContent };
 
     const documentContent = {
-      ...normalizedAnalysisContent,
+      ...normalizedAnalysisObject,
       projectDescription,
       supportingMaterials: supportingMaterials || {},
       audioBase64: audioBase64 || null,

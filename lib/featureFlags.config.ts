@@ -59,5 +59,17 @@ export function initFeatureFlags() {
       default: process.env.FF_CREDIT_SYSTEM?.toLowerCase() !== "false",
       exposeToClient: false,
     }),
+    ENABLE_DOCUMENT_GENERATION: defineBooleanFlag({
+      key: "ENABLE_DOCUMENT_GENERATION",
+      description:
+        "Enable AI-powered document generation (PRD, Technical Design, Architecture, Roadmap)",
+      default:
+        resolveBooleanEnvFlag(process.env.FF_ENABLE_DOCUMENT_GENERATION) ??
+        resolveBooleanEnvFlag(
+          process.env.NEXT_PUBLIC_FF_ENABLE_DOCUMENT_GENERATION
+        ) ??
+        true,
+      exposeToClient: true,
+    }),
   });
 }

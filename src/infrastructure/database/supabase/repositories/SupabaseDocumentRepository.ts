@@ -28,6 +28,14 @@ import { DocumentMapper } from "../mappers/DocumentMapper";
 import { logger, LogCategory } from "@/lib/logger";
 
 /**
+ * Type alias for document row with version field
+ * The version field is added via migration but may not be in the generated types yet
+ */
+type DocumentRow = Database["public"]["Tables"]["documents"]["Row"] & {
+  version: number;
+};
+
+/**
  * Supabase implementation of the Document repository
  * Handles all database operations for Document entities
  */
@@ -81,9 +89,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
         );
       }
 
-      const savedDocument = this.mapper.toDomain(
-        data as Database["public"]["Tables"]["documents"]["Row"]
-      );
+      const savedDocument = this.mapper.toDomain(data as DocumentRow);
 
       logger.info(LogCategory.DATABASE, "Document saved successfully", {
         documentId: savedDocument.id.value,
@@ -316,9 +322,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
         return success(null);
       }
 
-      const document = this.mapper.toDomain(
-        data as Database["public"]["Tables"]["documents"]["Row"]
-      );
+      const document = this.mapper.toDomain(data as DocumentRow);
       return success(document);
     } catch (error) {
       logger.error(LogCategory.DATABASE, "Unexpected error finding document", {
@@ -365,9 +369,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
 
       return success(documents);
@@ -420,9 +422,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
 
       return success(documents);
@@ -540,9 +540,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
 
       return success(documents);
@@ -680,17 +678,152 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
     throw new Error("Method not implemented");
   }
 
+  /**
+   * Find documents by idea and type
+   * Returns all versions ordered by version DESC
+   */
   async findByIdeaAndType(
-    _ideaId: IdeaId,
-    _documentType: DocumentType
+    ideaId: IdeaId,
+    documentType: DocumentType
   ): Promise<Result<Document[], Error>> {
-    // TODO: Implement
-    throw new Error("Method not implemented");
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("*")
+        .eq("idea_id", ideaId.value)
+        .eq(
+          "document_type",
+          documentType.value as Database["public"]["Tables"]["documents"]["Row"]["document_type"]
+        )
+        .order("version", { ascending: false });
+
+      if (error) {
+        logger.error(
+          LogCategory.DATABASE,
+          "Failed to find documents by idea and type",
+          {
+            ideaId: ideaId.value,
+            documentType: documentType.value,
+            error: error.message,
+          }
+        );
+
+        return failure(
+          new DatabaseQueryError(
+            `Failed to find documents: ${error.message}`,
+            error
+          )
+        );
+      }
+
+      const documents = data
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
+        : [];
+
+      return success(documents);
+    } catch (error) {
+      logger.error(
+        LogCategory.DATABASE,
+        "Unexpected error finding documents by idea and type",
+        {
+          ideaId: ideaId.value,
+          documentType: documentType.value,
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
+
+      return failure(
+        error instanceof Error
+          ? error
+          : new DatabaseQueryError("Unexpected error finding documents")
+      );
+    }
   }
 
-  async getDocumentCountsByType(
-    _userId: UserId
-  ): Promise<
+  /**
+   * Find the latest version of a document by idea and type
+   * Returns the document with the highest version number
+   */
+  async findLatestVersion(
+    ideaId: IdeaId,
+    documentType: DocumentType
+  ): Promise<Result<Document | null, Error>> {
+    try {
+      const { data, error } = await this.client
+        .from(this.tableName)
+        .select("*")
+        .eq("idea_id", ideaId.value)
+        .eq(
+          "document_type",
+          documentType.value as Database["public"]["Tables"]["documents"]["Row"]["document_type"]
+        )
+        .order("version", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        // PGRST116 is "not found" error from PostgREST
+        if (error.code === "PGRST116") {
+          return success(null);
+        }
+
+        logger.error(
+          LogCategory.DATABASE,
+          "Failed to find latest version of document",
+          {
+            ideaId: ideaId.value,
+            documentType: documentType.value,
+            error: error.message,
+          }
+        );
+
+        return failure(
+          new DatabaseQueryError(
+            `Failed to find latest version: ${error.message}`,
+            error
+          )
+        );
+      }
+
+      if (!data) {
+        return success(null);
+      }
+
+      const document = this.mapper.toDomain(data as DocumentRow);
+      return success(document);
+    } catch (error) {
+      logger.error(
+        LogCategory.DATABASE,
+        "Unexpected error finding latest version of document",
+        {
+          ideaId: ideaId.value,
+          documentType: documentType.value,
+          error: error instanceof Error ? error.message : String(error),
+        }
+      );
+
+      return failure(
+        error instanceof Error
+          ? error
+          : new DatabaseQueryError("Unexpected error finding latest version")
+      );
+    }
+  }
+
+  /**
+   * Find all versions of a document by idea and type
+   * Returns all versions ordered by version DESC (newest first)
+   */
+  async findAllVersions(
+    ideaId: IdeaId,
+    documentType: DocumentType
+  ): Promise<Result<Document[], Error>> {
+    // This is the same as findByIdeaAndType, but we keep it separate
+    // for semantic clarity and potential future differences
+    return this.findByIdeaAndType(ideaId, documentType);
+  }
+
+  async getDocumentCountsByType(_userId: UserId): Promise<
     Result<
       {
         total: number;
@@ -704,9 +837,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
     throw new Error("Method not implemented");
   }
 
-  async getDocumentCountsByTypeForIdea(
-    _ideaId: IdeaId
-  ): Promise<
+  async getDocumentCountsByTypeForIdea(_ideaId: IdeaId): Promise<
     Result<
       {
         total: number;
@@ -738,9 +869,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
     throw new Error("Method not implemented");
   }
 
-  async getUserDocumentStats(
-    _userId: UserId
-  ): Promise<
+  async getUserDocumentStats(_userId: UserId): Promise<
     Result<
       {
         totalCount: number;
@@ -807,9 +936,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
         );
       }
 
-      const updatedDocument = this.mapper.toDomain(
-        data as Database["public"]["Tables"]["documents"]["Row"]
-      );
+      const updatedDocument = this.mapper.toDomain(data as DocumentRow);
 
       logger.info(LogCategory.DATABASE, "Document updated successfully", {
         documentId: updatedDocument.id.value,
@@ -870,9 +997,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
         );
       }
 
-      const savedDocuments = this.mapper.toDomainBatch(
-        data as Database["public"]["Tables"]["documents"]["Row"][]
-      );
+      const savedDocuments = this.mapper.toDomainBatch(data as DocumentRow[]);
 
       logger.info(LogCategory.DATABASE, "Documents saved successfully", {
         count: savedDocuments.length,
@@ -1072,9 +1197,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
       const totalPages = Math.ceil((count || 0) / params.limit);
 
@@ -1137,9 +1260,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
 
       return success(documents);
@@ -1196,9 +1317,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
 
       return success(documents);
@@ -1262,9 +1381,7 @@ export class SupabaseDocumentRepository implements IDocumentRepository {
       }
 
       const documents = data
-        ? this.mapper.toDomainBatch(
-            data as Database["public"]["Tables"]["documents"]["Row"][]
-          )
+        ? this.mapper.toDomainBatch(data as DocumentRow[])
         : [];
       const totalPages = Math.ceil((count || 0) / params.limit);
 

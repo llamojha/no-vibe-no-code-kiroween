@@ -4,6 +4,7 @@ export { UserId } from "./UserId";
 export { CreditTransactionId } from "./CreditTransactionId";
 export { IdeaId } from "./IdeaId";
 export { DocumentId } from "./DocumentId";
+export { DocumentVersion } from "./DocumentVersion";
 
 // Basic Value Objects
 export { Score } from "./Score";
@@ -14,7 +15,7 @@ export { Locale } from "./Locale";
 export { Category } from "./Category";
 export { Criteria } from "./Criteria";
 export { IdeaSource } from "./IdeaSource";
-export { DocumentType } from "./DocumentType";
+export { DocumentType, type DocumentTypeValue } from "./DocumentType";
 export { ProjectStatus } from "./ProjectStatus";
 
 // Enums

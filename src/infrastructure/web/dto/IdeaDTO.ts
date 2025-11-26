@@ -24,9 +24,16 @@ export interface DocumentDTO {
   id: string;
   ideaId: string;
   userId: string;
-  documentType: "startup_analysis" | "hackathon_analysis";
+  documentType:
+    | "startup_analysis"
+    | "hackathon_analysis"
+    | "prd"
+    | "technical_design"
+    | "architecture"
+    | "roadmap";
   title: string | null;
   content: DocumentContent;
+  version?: number; // Version number for generated documents
   createdAt: string;
   updatedAt: string;
 }
@@ -132,9 +139,16 @@ export const SaveIdeaMetadataSchema = z.object({
  */
 export interface CreateDocumentDTO {
   ideaId: string;
-  documentType: "startup_analysis" | "hackathon_analysis";
+  documentType:
+    | "startup_analysis"
+    | "hackathon_analysis"
+    | "prd"
+    | "technical_design"
+    | "architecture"
+    | "roadmap";
   title?: string;
   content: DocumentContent;
+  version?: number;
 }
 
 /**
@@ -142,12 +156,23 @@ export interface CreateDocumentDTO {
  */
 export const CreateDocumentSchema = z.object({
   ideaId: z.string().min(1, "Idea ID cannot be empty"),
-  documentType: z.enum(["startup_analysis", "hackathon_analysis"], {
-    message:
-      'Document type must be either "startup_analysis" or "hackathon_analysis"',
-  }),
+  documentType: z.enum(
+    [
+      "startup_analysis",
+      "hackathon_analysis",
+      "prd",
+      "technical_design",
+      "architecture",
+      "roadmap",
+    ],
+    {
+      message:
+        'Document type must be one of: "startup_analysis", "hackathon_analysis", "prd", "technical_design", "architecture", "roadmap"',
+    }
+  ),
   title: z.string().max(500, "Title cannot exceed 500 characters").optional(),
   content: z.any(),
+  version: z.number().int().positive().optional(),
 });
 
 /**

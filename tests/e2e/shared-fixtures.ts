@@ -1,15 +1,16 @@
 /**
  * Shared test fixtures for optimized E2E test execution
- * 
+ *
  * Provides reusable browser contexts, page objects, and test utilities
  * to minimize setup/teardown time and improve test performance.
  */
 
-import { test as base, Page, BrowserContext } from '@playwright/test';
-import { AnalyzerPage } from './helpers/page-objects/AnalyzerPage';
-import { HackathonPage } from './helpers/page-objects/HackathonPage';
-import { FrankensteinPage } from './helpers/page-objects/FrankensteinPage';
-import { DashboardPage } from './helpers/page-objects/DashboardPage';
+import { test as base, Page, BrowserContext } from "@playwright/test";
+import { AnalyzerPage } from "./helpers/page-objects/AnalyzerPage";
+import { HackathonPage } from "./helpers/page-objects/HackathonPage";
+import { FrankensteinPage } from "./helpers/page-objects/FrankensteinPage";
+import { DashboardPage } from "./helpers/page-objects/DashboardPage";
+import { DocumentGeneratorPage } from "./helpers/page-objects/DocumentGeneratorPage";
 
 /**
  * Extended test fixtures with page objects and shared context
@@ -23,6 +24,8 @@ type TestFixtures = {
   frankensteinPage: FrankensteinPage;
   /** Dashboard page object */
   dashboardPage: DashboardPage;
+  /** Document generator page object */
+  documentGeneratorPage: DocumentGeneratorPage;
   /** Shared context for faster test execution */
   sharedContext: BrowserContext;
   /** Shared page for faster test execution */
@@ -42,16 +45,19 @@ type WorkerFixtures = {
  */
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   // Worker-scoped context (shared across all tests in the same worker)
-  workerContext: [async ({ browser }, use) => {
-    const context = await browser.newContext({
-      // Optimize context creation
-      viewport: { width: 1280, height: 720 },
-      ignoreHTTPSErrors: true,
-    });
-    
-    await use(context);
-    await context.close();
-  }, { scope: 'worker' }],
+  workerContext: [
+    async ({ browser }, use) => {
+      const context = await browser.newContext({
+        // Optimize context creation
+        viewport: { width: 1280, height: 720 },
+        ignoreHTTPSErrors: true,
+      });
+
+      await use(context);
+      await context.close();
+    },
+    { scope: "worker" },
+  ],
 
   // Shared context (reuses worker context)
   sharedContext: async ({ workerContext }, use) => {
@@ -88,12 +94,18 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     const dashboardPage = new DashboardPage(page);
     await use(dashboardPage);
   },
+
+  // Document generator page object
+  documentGeneratorPage: async ({ page }, use) => {
+    const documentGeneratorPage = new DocumentGeneratorPage(page);
+    await use(documentGeneratorPage);
+  },
 });
 
 /**
  * Export expect from Playwright
  */
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";
 
 /**
  * Performance optimization utilities
@@ -120,11 +132,11 @@ export class TestPerformance {
 
     const duration = Date.now() - startTime;
     this.startTimes.delete(label);
-    
-    if (process.env.E2E_LOG_PERFORMANCE === 'true') {
+
+    if (process.env.E2E_LOG_PERFORMANCE === "true") {
       console.log(`[PERFORMANCE] ${label}: ${duration}ms`);
     }
-    
+
     return duration;
   }
 
@@ -138,7 +150,7 @@ export class TestPerformance {
     this.startTimer(label);
     const result = await operation();
     const duration = this.endTimer(label);
-    
+
     return { result, duration };
   }
 }
@@ -155,7 +167,7 @@ export class TestCleanup {
       localStorage.clear();
       sessionStorage.clear();
     });
-    
+
     const context = page.context();
     await context.clearCookies();
   }
@@ -165,8 +177,8 @@ export class TestCleanup {
    */
   static async resetAppState(page: Page): Promise<void> {
     await this.clearStorage(page);
-    
+
     // Navigate to home page to reset any in-memory state
-    await page.goto('/');
+    await page.goto("/");
   }
 }

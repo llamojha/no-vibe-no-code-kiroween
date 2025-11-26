@@ -17,6 +17,15 @@ export { generateStartupIdeaPrompt } from "./startupIdea";
 export { generateHackathonProjectPrompt } from "./hackathonProject";
 export { generateFrankensteinPrompt } from "./frankenstein";
 
+// Export document generation prompts
+export {
+  generatePRDPrompt,
+  generateTechnicalDesignPrompt,
+  generateArchitecturePrompt,
+  generateRoadmapPrompt,
+  type DocumentGenerationContext,
+} from "./documentGeneration";
+
 // Import for promptGenerators object
 import { generateStartupIdeaPrompt } from "./startupIdea";
 import { generateHackathonProjectPrompt } from "./hackathonProject";

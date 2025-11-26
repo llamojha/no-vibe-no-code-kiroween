@@ -116,13 +116,19 @@ function readEnv(def: AnyDef) {
 
 export function getValue<T = unknown>(key: string): T {
   const def = registry[key.toUpperCase()];
-  if (!def) throw new Error(`Unknown feature flag: ${key}`);
+  if (!def) {
+    console.warn(`Unknown feature flag: ${key}`);
+    return undefined as unknown as T;
+  }
   return readEnv(def) as T;
 }
 
 export function isEnabled(key: string): boolean {
   const def = registry[key.toUpperCase()];
-  if (!def) throw new Error(`Unknown feature flag: ${key}`);
+  if (!def) {
+    console.warn(`Unknown feature flag: ${key}`);
+    return false;
+  }
   const value = readEnv(def);
   if ((def.type ?? "boolean") !== "boolean") {
     // Non-boolean flags are considered enabled if truthy

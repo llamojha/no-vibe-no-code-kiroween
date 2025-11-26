@@ -16,6 +16,10 @@ export interface EnhancedFeatureFlags {
   ENABLE_SHARE_LINKS: FeatureFlagDefinition<boolean>;
   /** Enable mock API mode for testing (never enabled in production) */
   USE_MOCK_API: FeatureFlagDefinition<boolean>;
+  /** Enable credit-based rate limiting system */
+  CREDIT_SYSTEM: FeatureFlagDefinition<boolean>;
+  /** Enable AI-powered document generation (PRD, Technical Design, Architecture, Roadmap) */
+  ENABLE_DOCUMENT_GENERATION: FeatureFlagDefinition<boolean>;
 }
 
 /**
@@ -27,6 +31,8 @@ export const ENHANCED_FEATURE_FLAG_KEYS = {
   LOCAL_DEV_MODE: "LOCAL_DEV_MODE",
   ENABLE_SHARE_LINKS: "ENABLE_SHARE_LINKS",
   USE_MOCK_API: "USE_MOCK_API",
+  CREDIT_SYSTEM: "CREDIT_SYSTEM",
+  ENABLE_DOCUMENT_GENERATION: "ENABLE_DOCUMENT_GENERATION",
 } as const;
 
 /**

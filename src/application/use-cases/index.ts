@@ -25,3 +25,12 @@ export * from "./UpdateIdeaStatusUseCase";
 export * from "./SaveIdeaMetadataUseCase";
 export * from "./GetUserIdeasUseCase";
 export * from "./GetDocumentsByIdeaUseCase";
+export * from "./GetDocumentByIdUseCase";
+
+// Document Generation use cases
+export * from "./GenerateDocumentUseCase";
+export * from "./UpdateDocumentUseCase";
+export * from "./RegenerateDocumentUseCase";
+export * from "./GetDocumentVersionsUseCase";
+export * from "./RestoreDocumentVersionUseCase";
+export * from "./ExportDocumentUseCase";
