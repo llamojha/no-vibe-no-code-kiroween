@@ -571,7 +571,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
           id={`document-content-${document.id}`}
           className="px-6 pb-6 border-t border-slate-800 pt-4 animate-fade-in"
         >
-          <div className="bg-slate-900/50 border border-slate-800 p-4 max-h-96 overflow-y-auto">
+          <div className="bg-slate-900/50 border border-slate-800 p-4">
             {renderedMarkdown ? (
               <div
                 className="prose prose-invert max-w-none text-slate-200"

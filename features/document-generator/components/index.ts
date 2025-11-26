@@ -25,6 +25,11 @@ export {
 } from "./DocumentProgressIndicator";
 
 export {
+  RoadmapDependencyPanel,
+  type RoadmapDependencyPanelProps,
+} from "./RoadmapDependencyPanel";
+
+export {
   GeneratePRDButton,
   GenerateTechnicalDesignButton,
   GenerateArchitectureButton,

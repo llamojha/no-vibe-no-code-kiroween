@@ -32,7 +32,7 @@ export const IdeaPanelLayout: React.FC<IdeaPanelLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-black via-purple-950/30 to-orange-950/30 text-slate-200 p-4 sm:p-6 lg:p-8">
       {/* Skip to main content link for keyboard users */}
       <a
         href="#idea-panel-main"

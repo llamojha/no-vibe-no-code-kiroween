@@ -9,10 +9,12 @@ import {
   DocumentType,
   type DocumentTypeValue,
 } from "@/src/domain/value-objects/DocumentType";
-import { DocumentCard } from "./DocumentCard";
 import { DocumentProgressIndicator } from "./DocumentProgressIndicator";
 import { getDocumentDisplayName, getDocumentCreditCost } from "@/lib/documents";
-import { generateDocument } from "@/features/idea-panel/api/documentGeneration";
+import {
+  generateDocument,
+  updateDocument,
+} from "@/features/idea-panel/api/documentGeneration";
 import { getIdeaWithDocuments } from "@/features/idea-panel/api/getIdeaWithDocuments";
 import { getCreditBalance } from "@/features/shared/api";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
@@ -24,6 +26,8 @@ import {
   trackGeneratorPageView,
   type TrackableDocumentType,
 } from "@/features/document-generator/analytics";
+import { DocumentEditor } from "./DocumentEditor";
+import { RoadmapDependencyPanel } from "./RoadmapDependencyPanel";
 import type {
   IdeaDTO,
   DocumentDTO,
@@ -82,6 +86,8 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [generationStartTime, setGenerationStartTime] = useState<number | null>(
     null
   );
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const documentTypeInstance = useMemo(
     () => DocumentType.fromString(documentType),
@@ -126,6 +132,35 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       return docUpdatedAt > latestUpdatedAt ? doc : latest;
     }, matchingDocs[0]);
   }, [documents, documentTypeInstance.value]);
+
+  const hasGeneratedDocument = Boolean(latestGeneratedDocument);
+
+  const getDocumentContentString = useCallback(
+    (doc: DocumentDTO | null): string => {
+      if (!doc || !doc.content) return "";
+      const content = doc.content as Record<string, unknown> | string;
+
+      if (typeof content === "string") {
+        return content;
+      }
+
+      if (typeof content === "object") {
+        const markdownValue = (content as Record<string, unknown>)["markdown"];
+        if (typeof markdownValue === "string" && markdownValue.trim()) {
+          return markdownValue;
+        }
+        return JSON.stringify(content, null, 2);
+      }
+
+      return "";
+    },
+    []
+  );
+
+  const latestDocumentContent = useMemo(
+    () => getDocumentContentString(latestGeneratedDocument),
+    [getDocumentContentString, latestGeneratedDocument]
+  );
 
   const existingPRD = documents.find((d) => d.documentType === "prd");
   const existingTechnicalDesign = documents.find(
@@ -249,7 +284,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   }, [isGenerating, generationStartTime, t]);
 
   // Handle generate button click
-  const handleGenerate = useCallback(async () => {
+  const runGeneration = useCallback(async () => {
     if (isGenerating) return; // Prevent duplicate requests
 
     const docType = documentTypeInstance.value as TrackableDocumentType;
@@ -380,6 +415,50 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     router,
     t,
   ]);
+
+  const handleGenerate = useCallback(() => {
+    if (isGenerating) return;
+    if (hasGeneratedDocument) {
+      setShowRegenerateConfirm(true);
+      return;
+    }
+    runGeneration();
+  }, [hasGeneratedDocument, isGenerating, runGeneration]);
+
+  const confirmRegenerate = useCallback(() => {
+    setShowRegenerateConfirm(false);
+    runGeneration();
+  }, [runGeneration]);
+
+  const cancelRegenerate = useCallback(() => {
+    setShowRegenerateConfirm(false);
+  }, []);
+
+  const saveDocumentContent = useCallback(
+    async (content: string) => {
+      if (!latestGeneratedDocument) return;
+      setIsSavingEdit(true);
+      try {
+        const updated = await updateDocument(latestGeneratedDocument.id, {
+          content,
+          ideaId,
+          documentType: documentTypeInstance.value as
+            | "prd"
+            | "technical_design"
+            | "architecture"
+            | "roadmap",
+        });
+
+        setDocuments((prev) => [
+          updated,
+          ...prev.filter((doc) => doc.id !== updated.id),
+        ]);
+      } finally {
+        setIsSavingEdit(false);
+      }
+    },
+    [documentTypeInstance.value, ideaId, latestGeneratedDocument]
+  );
 
   // Handle back navigation
   const handleBack = useCallback(() => {
@@ -708,14 +787,53 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
           {/* Generated Output - single document view */}
           {latestGeneratedDocument && (
-            <DocumentCard
-              key={`${latestGeneratedDocument.id}-${latestGeneratedDocument.version || latestGeneratedDocument.updatedAt}`}
-              document={latestGeneratedDocument}
-              ideaId={ideaId}
-              defaultExpanded
-              showExpandToggle={false}
-              viewLabel={t("viewAndEdit") || "View / Edit"}
-            />
+            <section className="bg-gradient-to-br from-purple-900/40 to-black/60 border border-orange-500/30 rounded-lg p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-accent uppercase tracking-wider">
+                    {t("viewAndEdit") || "View / Edit"}
+                  </h2>
+                  <p className="text-sm text-slate-400">
+                    {(t("generatorLatestVersion") || "Latest version") +
+                      " • " +
+                      new Date(
+                        latestGeneratedDocument.updatedAt
+                      ).toLocaleString()}
+                  </p>
+                </div>
+                {latestGeneratedDocument.version && (
+                  <span className="px-3 py-1 text-xs font-semibold text-purple-200 bg-purple-900/50 border border-purple-500/40 rounded">
+                    {t("versionLabel", {
+                      version: latestGeneratedDocument.version,
+                    }) || `v${latestGeneratedDocument.version}`}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <DocumentEditor
+                  initialContent={latestDocumentContent}
+                  onSave={saveDocumentContent}
+                  disabled={isSavingEdit}
+                  documentId={latestGeneratedDocument.id}
+                  documentType={
+                    documentTypeInstance.value as TrackableDocumentType
+                  }
+                  currentVersion={latestGeneratedDocument.version || 1}
+                  placeholder={
+                    t("editDocumentPlaceholder") || "Edit document..."
+                  }
+                />
+
+                {documentTypeInstance.value === "roadmap" && (
+                  <RoadmapDependencyPanel
+                    content={latestDocumentContent}
+                    onSave={saveDocumentContent}
+                    isSaving={isSavingEdit}
+                  />
+                )}
+              </div>
+            </section>
           )}
 
           {/* Error Message */}
@@ -799,14 +917,44 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   {t("generatingDocument") || "Generating..."}
                 </span>
               ) : (
-                t("generateDocumentCta", {
-                  documentName: displayName,
-                }) || `Generate ${displayName}`
+                hasGeneratedDocument
+                  ? t("regenerateDocument") || "Re-generate document"
+                  : t("generateDocumentCta", {
+                      documentName: displayName,
+                    }) || `Generate ${displayName}`
               )}
             </button>
           </div>
         </main>
       </div>
+
+      {showRegenerateConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-lg max-w-lg w-full p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-100 mb-2 uppercase tracking-wider">
+              {t("confirmRegenerateTitle") || "Regenerate document?"}
+            </h3>
+            <p className="text-sm text-slate-300 mb-4">
+              {t("confirmRegenerateBody") ||
+                "This will generate a new version and override the current document. Do you want to continue?"}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelRegenerate}
+                className="px-4 py-2 text-sm text-slate-300 bg-slate-800 border border-slate-700 rounded-md hover:bg-slate-700 transition-colors"
+              >
+                {t("cancel") || "Cancel"}
+              </button>
+              <button
+                onClick={confirmRegenerate}
+                className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                {t("regenerateDocument") || "Re-generate document"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

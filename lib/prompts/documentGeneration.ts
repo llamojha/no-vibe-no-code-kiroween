@@ -522,7 +522,7 @@ export function generateRoadmapPrompt(
   }
 
   return `=== ROLE CONTEXT ===
-You are an expert product strategist with 15+ years of experience creating product roadmaps for successful startups. You excel at breaking down ambitious visions into achievable milestones, balancing user value with technical feasibility, and helping teams maintain focus on what matters most.
+You are an expert product strategist + delivery lead with 15+ years of experience creating product roadmaps for high-growth startups. You are pragmatic, ruthless about prioritization, and translate vision into sequenced, testable steps engineering teams can ship.
 
 Your roadmaps are known for being:
 - Realistic: Grounded in actual team capabilities and constraints
@@ -537,6 +537,8 @@ DO NOT include specific dates, timeframes, or deadlines in this roadmap. Instead
 - Relative priorities (what's most important)
 - Dependencies between features and milestones
 - Resource considerations (team size, skills needed)
+- Avoid any phrasing that implies time (no "Q1", "month", "week", "sprint")
+- Keep language clear and concise—no marketing fluff or filler
 
 The user will determine their own timeline based on their team's velocity and available resources.
 
@@ -560,6 +562,7 @@ For each milestone, include:
 - **Dependencies**: What must be completed before starting this milestone
 - **Risks**: Key risks and mitigation strategies
 - **Team Composition**: Suggested team size and roles needed
+- **Validation**: How to validate learning (experiments, user tests, metrics to check)
 
 Example:
 ### Milestone 1: MVP Launch
@@ -585,6 +588,7 @@ Organize all features across milestones using MoSCoW prioritization:
 - Features absolutely required for the product to work
 - Without these, the product has no value
 - Examples: Core functionality, user authentication, payment processing
+- Tie each "Must Have" to the user problem it solves and the metric it impacts
 
 ### Should Have (Important but not Critical)
 - Features that significantly enhance the product
@@ -619,6 +623,7 @@ List critical path items and potential blockers:
 - **External Dependencies**: Third-party services, partnerships, regulatory approvals
 - **Technical Debt**: Areas that need refactoring before new features
 - **Resource Constraints**: Skills or team members needed
+- Call out any sequencing assumptions that, if wrong, would force a re-plan
 
 ## 4. Resource Considerations
 Provide guidance on team composition and skills needed:
@@ -649,6 +654,7 @@ Identify top 5-7 risks and how to address them:
 - **Probability**: High/Medium/Low
 - **Mitigation**: Specific actions to reduce risk
 - **Contingency**: What to do if risk materializes
+- **Owner**: Role responsible for watching and acting on this risk
 
 Example:
 ### Risk 1: Slow User Adoption
@@ -697,6 +703,7 @@ Outline how to bring the product to market at each milestone:
 - International expansion
 - Enterprise sales (if applicable)
 - Platform and ecosystem development
+- Post-launch: capture learnings and feed them back into milestone reprioritization
 
 === GUIDELINES ===
 1. DO NOT include specific dates or timeframes - focus on logical ordering
@@ -704,9 +711,9 @@ Outline how to bring the product to market at each milestone:
 3. Prioritize ruthlessly - not everything can be "must have"
 4. Consider technical dependencies and constraints
 5. Account for learning and iteration between milestones
-6. Include validation and feedback loops
-7. Address risks proactively
-8. Make trade-offs explicit
+6. Include validation and feedback loops; every milestone should prove or disprove assumptions
+7. Address risks proactively with owners and actions
+8. Make trade-offs explicit and avoid generic advice
 
 === OUTPUT REQUIREMENTS ===
 - Format: Markdown with tables, diagrams, and structured lists
