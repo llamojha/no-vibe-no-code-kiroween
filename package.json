@@ -42,6 +42,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.47.6",
     "jspdf": "^3.0.3",
+    "jszip": "^3.10.1",
     "mermaid": "^10.9.1",
     "next": "^14.2.0",
     "posthog-js": "^1.200.0",

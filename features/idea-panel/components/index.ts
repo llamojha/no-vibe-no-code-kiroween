@@ -12,3 +12,7 @@ export { AnalyzeButton } from "./AnalyzeButton";
 export { NotesSection } from "./NotesSection";
 export { TagsSection } from "./TagsSection";
 export { IdeaPanelView } from "./IdeaPanelView";
+export { ExportToKiroButton } from "./ExportToKiroButton";
+export { ExportOptionsModal } from "./ExportOptionsModal";
+export { PostExportSuccessModal } from "./PostExportSuccessModal";
+export { KiroGettingStartedPanel } from "./KiroGettingStartedPanel";

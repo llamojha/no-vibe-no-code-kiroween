@@ -6,20 +6,20 @@ This implementation plan covers the export functionality that transforms generat
 
 ---
 
-- [ ] 1. Set up project dependencies and infrastructure foundation
+- [x] 1. Set up project dependencies and infrastructure foundation
 
-  - [ ] 1.1 Install JSZip library for ZIP file generation
+  - [x] 1.1 Install JSZip library for ZIP file generation
     - Run `npm install jszip@^3.10.1`
     - Add type definitions if needed
     - _Requirements: 1.2, 11.1_
-  - [ ] 1.2 Create export infrastructure folder structure
+  - [x] 1.2 Create export infrastructure folder structure
     - Create `src/infrastructure/export/` directory
     - Create index.ts for exports
     - _Requirements: 1.2_
 
-- [ ] 2. Implement Document Validation Service
+- [x] 2. Implement Document Validation Service
 
-  - [ ] 2.1 Create DocumentValidator service
+  - [x] 2.1 Create DocumentValidator service
     - Create `src/application/services/DocumentValidator.ts`
     - Implement validation for document existence (PRD, Design, Tech Architecture, Roadmap)
     - Implement validation for non-empty document content
@@ -34,14 +34,14 @@ This implementation plan covers the export functionality that transforms generat
     - Test validation with empty documents
     - _Requirements: 9.1, 9.2, 9.4, 9.5_
 
-- [ ] 3. Implement Document Parsing Infrastructure
+- [x] 3. Implement Document Parsing Infrastructure
 
-  - [ ] 3.1 Create DocumentParser service
+  - [x] 3.1 Create DocumentParser service
     - Create `src/infrastructure/export/DocumentParser.ts`
     - Implement markdown parsing to extract structure (headings, sections, content)
     - Return ParsedDocument with title, sections, and metadata
     - _Requirements: 2.2, 3.2, 4.2, 8.2_
-  - [ ] 3.2 Create RoadmapParser service
+  - [x] 3.2 Create RoadmapParser service
     - Create `src/infrastructure/export/RoadmapParser.ts`
     - Implement roadmap item extraction with descriptions and goals
     - Identify first roadmap item for example spec generation
@@ -57,9 +57,9 @@ This implementation plan covers the export functionality that transforms generat
     - **Property 9: First Roadmap Item Identification**
     - **Validates: Requirements 6.1**
 
-- [ ] 4. Implement Content Extraction Service
+- [x] 4. Implement Content Extraction Service
 
-  - [ ] 4.1 Create ContentExtractor service
+  - [x] 4.1 Create ContentExtractor service
     - Create `src/infrastructure/export/ContentExtractor.ts`
     - Implement extraction from PRD (vision, mission, users, metrics, constraints, value proposition)
     - Implement extraction from Tech Architecture (stack, dependencies, setup, build config)
@@ -76,21 +76,21 @@ This implementation plan covers the export functionality that transforms generat
     - Test handling missing sections gracefully
     - _Requirements: 2.2, 3.2, 4.2_
 
-- [ ] 5. Implement Template Engine
+- [x] 5. Implement Template Engine
 
-  - [ ] 5.1 Create TemplateEngine service
+  - [x] 5.1 Create TemplateEngine service
     - Create `src/infrastructure/export/TemplateEngine.ts`
     - Implement template loading from predefined templates
     - Implement variable substitution with extracted content
     - Handle conditional rendering for optional sections
     - _Requirements: 2.1, 3.1, 4.1, 5.1, 7.1_
-  - [ ] 5.2 Create steering file templates
+  - [x] 5.2 Create steering file templates
     - Create `src/infrastructure/export/templates/product.md.template`
     - Create `src/infrastructure/export/templates/tech.md.template`
     - Create `src/infrastructure/export/templates/architecture.md.template`
     - Create `src/infrastructure/export/templates/spec-generation.md.template` with frontmatter "inclusion: manual"
     - _Requirements: 2.1, 3.1, 4.1, 5.1, 5.2_
-  - [ ] 5.3 Create README and spec templates
+  - [x] 5.3 Create README and spec templates
     - Create `src/infrastructure/export/templates/README.md.template`
     - Create `src/infrastructure/export/templates/example-spec/requirements.md.template`
     - Create `src/infrastructure/export/templates/example-spec/design.md.template`
@@ -109,9 +109,9 @@ This implementation plan covers the export functionality that transforms generat
     - Test handling missing template variables
     - _Requirements: 2.1, 3.1, 4.1, 5.1_
 
-- [ ] 6. Implement File Generator
+- [x] 6. Implement File Generator
 
-  - [ ] 6.1 Create FileGenerator service
+  - [x] 6.1 Create FileGenerator service
     - Create `src/infrastructure/export/FileGenerator.ts`
     - Implement steering file generation (product.md, tech.md, architecture.md, spec-generation.md)
     - Implement example spec generation from first roadmap item
@@ -135,13 +135,13 @@ This implementation plan covers the export functionality that transforms generat
     - Test roadmap copying
     - _Requirements: 2.1, 3.1, 4.1, 5.1, 6.2, 7.1, 8.1_
 
-- [ ] 7. Checkpoint - Ensure all infrastructure tests pass
+- [x] 7. Checkpoint - Ensure all infrastructure tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement Export Packager
+- [x] 8. Implement Export Packager
 
-  - [ ] 8.1 Create ExportPackager service
+  - [x] 8.1 Create ExportPackager service
     - Create `src/infrastructure/export/ExportPackager.ts`
     - Implement ZIP file creation using JSZip with correct folder structure (kiro-setup/steering/, kiro-setup/specs/, kiro-setup/docs/)
     - Implement individual file packaging with folder-prefixed names
@@ -164,9 +164,9 @@ This implementation plan covers the export functionality that transforms generat
     - Test folder structure creation
     - _Requirements: 1.2, 1.4, 11.1, 13.4, 13.5_
 
-- [ ] 9. Implement Export Use Case
+- [x] 9. Implement Export Use Case
 
-  - [ ] 9.1 Create ExportKiroSetupUseCase
+  - [x] 9.1 Create ExportKiroSetupUseCase
     - Create `src/application/use-cases/ExportKiroSetupUseCase.ts`
     - Orchestrate validation, parsing, extraction, generation, and packaging
     - Handle errors and provide user feedback
@@ -181,13 +181,13 @@ This implementation plan covers the export functionality that transforms generat
     - Test error handling for generation failures
     - _Requirements: 1.2, 9.1_
 
-- [ ] 10. Checkpoint - Ensure all application layer tests pass
+- [x] 10. Checkpoint - Ensure all application layer tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement Analytics Tracking
+- [x] 11. Implement Analytics Tracking
 
-  - [ ] 11.1 Add export analytics tracking functions
+  - [x] 11.1 Add export analytics tracking functions
     - Add to `features/idea-panel/analytics/tracking.ts`
     - Implement trackExportInitiated with idea identifier and timestamp
     - Implement trackExportCompleted with package size and generation duration
@@ -198,9 +198,9 @@ This implementation plan covers the export functionality that transforms generat
     - **Property 13: Analytics Event Tracking**
     - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
 
-- [ ] 12. Implement UI Components
+- [x] 12. Implement UI Components
 
-  - [ ] 12.1 Create ExportToKiroButton component
+  - [x] 12.1 Create ExportToKiroButton component
     - Create `features/idea-panel/components/ExportToKiroButton.tsx`
     - Display enabled/disabled state based on document availability
     - Show tooltip with missing documents when disabled
@@ -210,7 +210,7 @@ This implementation plan covers the export functionality that transforms generat
   - [ ]\* 12.2 Write property test for export button state consistency
     - **Property 7: Export Button State Consistency**
     - **Validates: Requirements 1.1, 1.5, 9.3**
-  - [ ] 12.3 Create ExportOptionsModal component
+  - [x] 12.3 Create ExportOptionsModal component
     - Create `features/idea-panel/components/ExportOptionsModal.tsx`
     - Display format selection (ZIP or individual files)
     - Show export progress during generation
@@ -221,36 +221,36 @@ This implementation plan covers the export functionality that transforms generat
     - **Property 15: Modal Display Behavior**
     - **Validates: Requirements 13.1, 13.2, 13.3**
 
-- [ ] 13. Integrate Export Feature into Idea Panel
+- [x] 13. Integrate Export Feature into Idea Panel
 
-  - [ ] 13.1 Update IdeaPanelView to include ExportToKiroButton
+  - [x] 13.1 Update IdeaPanelView to include ExportToKiroButton
     - Import and add ExportToKiroButton component
     - Pass required documents and idea data
     - Position button in Generated Documents section
     - _Requirements: 1.1, 1.5_
-  - [ ] 13.2 Update idea-panel components index
+  - [x] 13.2 Update idea-panel components index
     - Export ExportToKiroButton and ExportOptionsModal from index.ts
     - _Requirements: 1.1_
-  - [ ] 13.3 Wire up export flow with use case
+  - [x] 13.3 Wire up export flow with use case
     - Create API route or client-side handler for export
     - Connect UI components to ExportKiroSetupUseCase
     - Handle download trigger after successful export
     - _Requirements: 1.2, 1.3_
 
-- [ ] 14. Checkpoint - Ensure all UI tests pass
+- [x] 14. Checkpoint - Ensure all UI tests pass
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Final Integration and Documentation
+- [x] 15. Final Integration and Documentation
 
-  - [ ] 15.1 Update infrastructure exports
+  - [x] 15.1 Update infrastructure exports
     - Add export services to `src/infrastructure/index.ts`
     - Add use case to `src/application/use-cases/index.ts`
     - _Requirements: 1.2_
-  - [ ] 15.2 Add factory methods for export services
+  - [x] 15.2 Add factory methods for export services
     - Update `src/infrastructure/factories/ServiceFactory.ts` with export service creation
     - Update `src/infrastructure/factories/UseCaseFactory.ts` with ExportKiroSetupUseCase creation
     - _Requirements: 1.2_
 
-- [ ] 16. Final Checkpoint - Ensure all tests pass
+- [x] 16. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

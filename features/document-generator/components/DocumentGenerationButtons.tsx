@@ -165,7 +165,7 @@ const BaseDocumentGenerationButton: React.FC<
       <button
         onClick={handleClick}
         className={`flex items-center gap-2 px-4 py-2 ${colorClasses.bg} ${colorClasses.hover} text-white font-medium text-sm rounded-none shadow-lg ${colorClasses.shadow} transform hover:scale-105 transition-all duration-300 ease-in-out ${className}`}
-        aria-label={`${label} - ${creditCost} ${t("credits") || "credits"}`}
+        aria-label={`${label} - ${creditCost} ${t("credits")}`}
       >
         {getDocumentTypeIcon(documentType, "h-4 w-4")}
         <span>{label}</span>
@@ -178,13 +178,13 @@ const BaseDocumentGenerationButton: React.FC<
     <button
       onClick={handleClick}
       className={`flex items-center gap-3 px-6 py-3 ${colorClasses.bg} ${colorClasses.hover} text-white font-bold rounded-none shadow-lg ${colorClasses.shadow} transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-wider ${className}`}
-      aria-label={`${label} - ${creditCost} ${t("credits") || "credits"}`}
+      aria-label={`${label} - ${creditCost} ${t("credits")}`}
     >
       {getDocumentTypeIcon(documentType, "h-5 w-5")}
       <div className="flex flex-col items-start">
         <span className="text-sm">{label}</span>
         <span className="text-xs opacity-75 font-mono normal-case">
-          {creditCost} {t("credits") || "credits"}
+          {creditCost} {t("credits")}
         </span>
       </div>
       <svg
@@ -221,7 +221,7 @@ export const GeneratePRDButton: React.FC<DocumentGenerationButtonProps> = (
     <BaseDocumentGenerationButton
       {...props}
       documentType={DocumentType.PRD}
-      label={t("generatePRD") || "Generate PRD"}
+      label={t("generatePRD")}
     />
   );
 };
@@ -243,7 +243,7 @@ export const GenerateTechnicalDesignButton: React.FC<
     <BaseDocumentGenerationButton
       {...props}
       documentType={DocumentType.TECHNICAL_DESIGN}
-      label={t("generateTechnicalDesign") || "Generate Technical Design"}
+      label={t("generateTechnicalDesign")}
     />
   );
 };
@@ -265,7 +265,7 @@ export const GenerateArchitectureButton: React.FC<
     <BaseDocumentGenerationButton
       {...props}
       documentType={DocumentType.ARCHITECTURE}
-      label={t("generateArchitecture") || "Generate Architecture"}
+      label={t("generateArchitecture")}
     />
   );
 };
@@ -287,7 +287,7 @@ export const GenerateRoadmapButton: React.FC<DocumentGenerationButtonProps> = (
     <BaseDocumentGenerationButton
       {...props}
       documentType={DocumentType.ROADMAP}
-      label={t("generateRoadmap") || "Generate Roadmap"}
+      label={t("generateRoadmap")}
     />
   );
 };

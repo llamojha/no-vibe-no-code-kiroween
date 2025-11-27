@@ -172,6 +172,7 @@ Generate a well-structured Technical Design Document in Markdown format with the
 - Explain the overall approach (monolith, microservices, serverless, etc.) and why
 - Include a Mermaid diagram showing major components and their interactions
 - Highlight key architectural decisions and trade-offs
+- Mermaid syntax must be valid for version 10.9.1 (plain \`graph TB/LR\`, alphanumeric node IDs, only \`-->\` or \`---\` links, no HTML, init blocks, or \`click/style\` directives)
 
 Example Mermaid diagram:
 \`\`\`mermaid
@@ -336,6 +337,7 @@ Generate a well-structured Architecture Document in Markdown format with the fol
 - Show data flow and communication patterns
 - Indicate synchronous vs asynchronous interactions
 - Highlight critical paths and dependencies
+- Mermaid syntax must be valid for version 10.9.1 (plain \`graph\`/sequence diagrams, alphanumeric node IDs, \`-->\` or \`---\` edges, no HTML, init blocks, or click/style directives)
 
 Example:
 \`\`\`mermaid
@@ -492,11 +494,11 @@ Generate the Architecture Document now:`;
 }
 
 /**
- * Roadmap Prompt Template
+ * Roadmap Prompt Template (MVP Development-Focused)
  *
- * Generates a comprehensive project roadmap with milestones, prioritization,
- * dependencies, and resource considerations. Focuses on logical ordering
- * rather than specific timeframes.
+ * Generates a development-focused MVP roadmap with spec-ready features,
+ * clear dependencies, and implementation details. Optimized for export
+ * to Kiro workspace setups where features become implementable specs.
  *
  * @param context - Document generation context with idea, PRD, and technical design
  * @returns Formatted prompt for AI generation
@@ -522,205 +524,140 @@ export function generateRoadmapPrompt(
   }
 
   return `=== ROLE CONTEXT ===
-You are an expert product strategist + delivery lead with 15+ years of experience creating product roadmaps for high-growth startups. You are pragmatic, ruthless about prioritization, and translate vision into sequenced, testable steps engineering teams can ship.
+You are an expert technical product manager who specializes in breaking down product ideas into implementable features for development teams. You excel at creating MVP roadmaps that translate directly into development specs.
 
 Your roadmaps are known for being:
-- Realistic: Grounded in actual team capabilities and constraints
-- Flexible: Adaptable to changing market conditions and learnings
-- Value-focused: Prioritize features that deliver maximum user and business value
-- Dependency-aware: Account for technical and business dependencies
-- Risk-conscious: Identify and mitigate key risks early
+- Implementation-ready: Each feature can become a development spec
+- Dependency-aware: Clear build order based on technical dependencies
+- Scope-controlled: Features sized for 1-5 day implementation cycles
+- Testable: Every feature has clear acceptance criteria
 
 === CRITICAL INSTRUCTION ===
-DO NOT include specific dates, timeframes, or deadlines in this roadmap. Instead, focus on:
-- Logical ordering of milestones (what must come before what)
-- Relative priorities (what's most important)
-- Dependencies between features and milestones
-- Resource considerations (team size, skills needed)
-- Avoid any phrasing that implies time (no "Q1", "month", "week", "sprint")
-- Keep language clear and concise—no marketing fluff or filler
+This roadmap will be used to generate development specs. Each feature must be:
+- Self-contained enough to be a single spec
+- Have clear user story and acceptance criteria
+- Include technical implementation hints
+- Specify dependencies on other features
 
-The user will determine their own timeline based on their team's velocity and available resources.
+DO NOT include: dates, timeframes, team sizing, budget, go-to-market strategy, or business metrics.
+FOCUS ON: What to build, in what order, and how to know it's done.
 
 === TASK ===
-Generate a comprehensive Project Roadmap for the following startup idea.
+Generate a development-focused MVP Roadmap for the following startup idea.
 
 IDEA:
 ${ideaText}${contextText}
 
 === OUTPUT FORMAT ===
-Generate a well-structured Roadmap in Markdown format with the following sections:
+Generate a well-structured Project Roadmap in Markdown format with the following sections:
 
-## 1. Milestones
-Define 5-7 major milestones that represent significant product evolution stages.
-For each milestone, include:
+## 1. MVP Overview
+Brief summary (2-3 sentences) of what the MVP delivers and the core user problem it solves.
 
-### Milestone [Number]: [Name]
-- **Goal**: What this milestone achieves for users and the business
-- **Key Features**: 3-5 main features or capabilities delivered
-- **Success Criteria**: How to know this milestone is complete (measurable outcomes)
-- **Dependencies**: What must be completed before starting this milestone
-- **Risks**: Key risks and mitigation strategies
-- **Team Composition**: Suggested team size and roles needed
-- **Validation**: How to validate learning (experiments, user tests, metrics to check)
+## 2. Build Phases
+Organize milestones and features into 3-4 build phases (MoSCoW-based prioritization). Each phase should be shippable and include:
+- Milestones
+- Feature Prioritization (MoSCoW)
+- Dependencies & Blockers
+- Resource Considerations
+- Risk Mitigation Strategies
+- Success Criteria per Milestone
+- Go-to-Market Strategy
+
+### Phase 1: Foundation (Must ship first)
+Core infrastructure and authentication that everything else depends on.
+
+### Phase 2: Core MVP
+The minimum features needed to deliver the core value proposition.
+
+### Phase 3: MVP Complete
+Features that round out the MVP experience.
+
+### Phase 4: Post-MVP Enhancements (Optional)
+Nice-to-have features for after MVP validation.
+
+## 3. Feature Specifications
+For EACH feature, provide a spec-ready breakdown:
+
+### Feature: [Feature Name]
+- **Phase**: [1/2/3/4]
+- **User Story**: As a [user type], I want to [action], so that [benefit]
+- **Acceptance Criteria**:
+  - [ ] Criterion 1 (specific, testable)
+  - [ ] Criterion 2
+  - [ ] Criterion 3
+- **Technical Notes**: Brief implementation guidance (e.g., "Use Supabase Auth with JWT", "Implement as React Server Component")
+- **Dependencies**: [List feature names this depends on, or "None"]
+- **Scope**: [Small: <1 day | Medium: 1-3 days | Large: 3-5 days]
 
 Example:
-### Milestone 1: MVP Launch
-- **Goal**: Validate core value proposition with early adopters
-- **Key Features**:
-  - User authentication and onboarding
-  - Core feature X that solves primary user pain
-  - Basic analytics and feedback collection
-- **Success Criteria**:
-  - 100 active users
-  - 30% weekly retention
-  - Positive feedback from 70% of users
-- **Dependencies**: None (starting point)
-- **Risks**:
-  - Risk: User acquisition challenges
-  - Mitigation: Pre-launch waitlist, targeted outreach to early adopter communities
-- **Team Composition**: 2 engineers, 1 designer, 1 product manager
+### Feature: User Authentication
+- **Phase**: 1
+- **User Story**: As a new user, I want to create an account and log in, so that I can access my personal data securely.
+- **Acceptance Criteria**:
+  - [ ] User can sign up with email and password
+  - [ ] User can log in with existing credentials
+  - [ ] User can log out from any page
+  - [ ] User sees appropriate error messages for invalid credentials
+  - [ ] Session persists across browser refreshes
+- **Technical Notes**: Use Supabase Auth. Implement auth context provider. Store session in cookies for SSR compatibility.
+- **Dependencies**: None (foundation)
+- **Scope**: Medium
 
-## 2. Feature Prioritization (MoSCoW Method)
-Organize all features across milestones using MoSCoW prioritization:
-
-### Must Have (Critical for Success)
-- Features absolutely required for the product to work
-- Without these, the product has no value
-- Examples: Core functionality, user authentication, payment processing
-- Tie each "Must Have" to the user problem it solves and the metric it impacts
-
-### Should Have (Important but not Critical)
-- Features that significantly enhance the product
-- Can be deferred if necessary but should be included soon
-- Examples: Advanced search, notifications, user profiles
-
-### Could Have (Nice to Have)
-- Features that improve user experience but aren't essential
-- Include if time and resources permit
-- Examples: Social sharing, themes, advanced analytics
-
-### Won't Have (Out of Scope for Now)
-- Features explicitly deferred to future versions
-- Explain why they're not included now
-- Examples: Mobile apps (web-first), internationalization, enterprise features
-
-## 3. Dependencies & Blockers
-Create a dependency map showing what needs to happen before what:
+## 4. Dependency Graph
+Show the build order as a dependency graph:
+- Mermaid must be valid for version 10.9.1 (simple \`graph TD/LR\`, alphanumeric IDs, \`-->\`/ \`---\` edges only, no HTML, init blocks, or click/style directives)
 
 \`\`\`mermaid
-graph LR
-    A[User Auth] --> B[Core Feature]
-    A --> C[User Profiles]
-    B --> D[Advanced Features]
-    C --> D
-    B --> E[Analytics]
-    F[Payment Integration] --> G[Subscription Features]
+graph TD
+    A[User Authentication] --> B[User Profile]
+    A --> C[Core Feature X]
+    B --> D[Settings Page]
+    C --> E[Feature Y]
+    C --> F[Feature Z]
+    E --> G[Advanced Feature]
+    F --> G
 \`\`\`
 
-List critical path items and potential blockers:
-- **Critical Path**: Features that block other features
-- **External Dependencies**: Third-party services, partnerships, regulatory approvals
-- **Technical Debt**: Areas that need refactoring before new features
-- **Resource Constraints**: Skills or team members needed
-- Call out any sequencing assumptions that, if wrong, would force a re-plan
+## 5. Critical Path
+List features in recommended build order (respecting dependencies):
 
-## 4. Resource Considerations
-Provide guidance on team composition and skills needed:
+1. **[Feature Name]** - [One-line description] - Phase [X]
+2. **[Feature Name]** - [One-line description] - Phase [X]
+3. ...
 
-### Team Evolution
-- **Milestone 1-2**: Small team (2-3 engineers, 1 designer, 1 PM)
-- **Milestone 3-4**: Growing team (4-5 engineers, 2 designers, 1 PM, 1 QA)
-- **Milestone 5+**: Scaled team (6-8 engineers, 2-3 designers, 2 PMs, 2 QA, 1 DevOps)
+## 6. Out of Scope (Explicitly Deferred)
+List features that are NOT in this MVP and why:
+- **[Feature]**: [Why deferred - e.g., "Adds complexity without validating core hypothesis"]
+- **[Feature]**: [Why deferred]
 
-### Key Skills Required
-- **Engineering**: List specific technical skills (e.g., React, Node.js, PostgreSQL)
-- **Design**: UI/UX, user research, prototyping
-- **Product**: User research, analytics, prioritization
-- **Operations**: DevOps, customer support, community management
+## 7. Technical Risks
+Brief list of technical risks that could affect implementation:
+- **[Risk]**: [Mitigation approach]
+- **[Risk]**: [Mitigation approach]
 
-### Budget Considerations
-- Infrastructure costs by milestone
-- Third-party service costs
-- Hiring and team growth costs
-- Marketing and user acquisition budget
-
-## 5. Risk Mitigation Strategies
-Identify top 5-7 risks and how to address them:
-
-### Risk 1: [Risk Name]
-- **Description**: What could go wrong
-- **Impact**: High/Medium/Low
-- **Probability**: High/Medium/Low
-- **Mitigation**: Specific actions to reduce risk
-- **Contingency**: What to do if risk materializes
-- **Owner**: Role responsible for watching and acting on this risk
-
-Example:
-### Risk 1: Slow User Adoption
-- **Description**: Users don't understand the value proposition or find the product too complex
-- **Impact**: High (threatens product viability)
-- **Probability**: Medium (common for new products)
-- **Mitigation**:
-  - Extensive user testing before launch
-  - Simple, focused MVP
-  - Clear onboarding flow
-  - Early adopter program for feedback
-- **Contingency**: Pivot messaging, simplify features, increase user education content
-
-## 6. Success Criteria per Milestone
-Define measurable success criteria for each milestone:
-
-| Milestone | User Metrics | Business Metrics | Technical Metrics |
-|-----------|-------------|------------------|-------------------|
-| MVP Launch | 100 active users, 30% retention | $0 revenue (validation phase) | 99% uptime, <500ms response time |
-| Feature Complete | 1,000 active users, 40% retention | $5K MRR | 99.5% uptime, <300ms response time |
-| Scale | 10,000 active users, 50% retention | $50K MRR | 99.9% uptime, <200ms response time |
-
-## 7. Go-to-Market Strategy
-Outline how to bring the product to market at each milestone:
-
-### Pre-Launch (Before Milestone 1)
-- Build waitlist and generate interest
-- Identify and engage early adopters
-- Create content and establish thought leadership
-- Set up analytics and feedback mechanisms
-
-### Launch (Milestone 1)
-- Targeted outreach to early adopter communities
-- Product Hunt, Hacker News, relevant forums
-- Press outreach to niche publications
-- Referral program for early users
-
-### Growth (Milestones 2-3)
-- Content marketing and SEO
-- Paid acquisition channels (if unit economics support)
-- Partnerships and integrations
-- Community building
-
-### Scale (Milestones 4+)
-- Expand to new user segments
-- International expansion
-- Enterprise sales (if applicable)
-- Platform and ecosystem development
-- Post-launch: capture learnings and feed them back into milestone reprioritization
+=== FEATURE GUIDELINES ===
+1. Each feature should be implementable as a single development spec
+2. Acceptance criteria must be specific and testable (not vague)
+3. Technical notes should reference the tech stack from the Technical Design
+4. Dependencies must reference other features by exact name
+5. Scope estimates assume a single developer
+6. Phase 1 features should have NO dependencies (they are the foundation)
+7. Aim for 8-15 total features for an MVP (not too granular, not too broad)
 
 === GUIDELINES ===
-1. DO NOT include specific dates or timeframes - focus on logical ordering
-2. Be realistic about what can be achieved with limited resources
-3. Prioritize ruthlessly - not everything can be "must have"
-4. Consider technical dependencies and constraints
-5. Account for learning and iteration between milestones
-6. Include validation and feedback loops; every milestone should prove or disprove assumptions
-7. Address risks proactively with owners and actions
-8. Make trade-offs explicit and avoid generic advice
+1. DO NOT include specific dates or calendars; the user will determine their own timeline based on their team's velocity.
+2. Absolutely NO DATES OR TIMEFRAMES; focus on logical ordering and dependencies.
+3. Keep milestones tightly scoped and implementation-ready.
+4. Call out dependencies and blockers explicitly.
+5. Include resource considerations and risk mitigation strategies per milestone.
 
 === OUTPUT REQUIREMENTS ===
-- Format: Markdown with tables, diagrams, and structured lists
-- Length: Comprehensive but actionable (a working document)
-- Tone: Strategic but practical
-- Style: Use visual elements (tables, diagrams) to communicate priorities and dependencies
-- NO DATES OR TIMEFRAMES: Focus on logical ordering and priorities
+- Format: Markdown with Mermaid dependency graph
+- Tone: Technical and actionable
+- Length: Comprehensive but focused on implementation details
+- Every feature must follow the spec-ready format exactly
+- NO dates, timelines, team sizes, or business strategy
 
-Generate the Project Roadmap now:`;
+Generate the MVP Roadmap now:`;
 }

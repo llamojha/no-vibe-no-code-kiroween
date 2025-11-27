@@ -1,0 +1,14 @@
+# Design - {{featureName}}
+
+## Overview
+
+This document describes the technical design for implementing "{{featureName}}".
+
+## Technical Approach
+
+{{technicalApproach}}
+
+## References
+
+- Tech Architecture: #[[file:docs/tech-architecture.md]]
+- Requirements: #[[file:specs/{{featureName}}/requirements.md]]

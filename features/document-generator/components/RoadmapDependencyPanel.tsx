@@ -87,6 +87,7 @@ export const RoadmapDependencyPanel: React.FC<RoadmapDependencyPanelProps> = ({
   );
   const [renderError, setRenderError] = useState<string | null>(null);
   const graphRef = useRef<HTMLDivElement>(null);
+  const lastGoodSvg = useRef<string | null>(null);
 
   // Render Mermaid graph
   useEffect(() => {
@@ -94,18 +95,21 @@ export const RoadmapDependencyPanel: React.FC<RoadmapDependencyPanelProps> = ({
     const render = async () => {
       if (!graphRef.current) return;
       try {
+        // Parse first so we can fall back to the last valid render on error.
+        mermaid.parse(graphText);
         const { svg } = await mermaid.render(
           `roadmap-graph-${Date.now()}`,
           graphText
         );
         graphRef.current.innerHTML = svg;
+        lastGoodSvg.current = svg;
         setRenderError(null);
       } catch (error) {
         console.error("Mermaid render error", error);
         setRenderError(
           (error as Error).message || "Failed to render dependency graph"
         );
-        graphRef.current.innerHTML = "";
+        graphRef.current.innerHTML = lastGoodSvg.current || "";
       }
     };
     render();
@@ -169,11 +173,12 @@ export const RoadmapDependencyPanel: React.FC<RoadmapDependencyPanelProps> = ({
             {t("graphPreviewLabel") || "Graph Preview"}
           </label>
           <div className="mt-2 min-h-[200px] rounded-md border border-slate-800 bg-slate-950/50 p-3">
-            {renderError ? (
-              <p className="text-sm text-red-400">{renderError}</p>
-            ) : (
-              <div ref={graphRef} />
+            {renderError && (
+              <p className="mb-2 text-sm text-red-400">
+                {renderError} — showing the last valid graph.
+              </p>
             )}
+            <div ref={graphRef} />
           </div>
         </div>
       </div>

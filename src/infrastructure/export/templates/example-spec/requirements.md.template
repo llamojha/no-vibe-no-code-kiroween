@@ -1,0 +1,16 @@
+# Requirements - {{featureName}}
+
+## User Story
+
+{{userStory}}
+
+## Acceptance Criteria
+
+{{#each acceptanceCriteria}}
+{{index}}. {{item}}
+{{/each}}
+
+## References
+
+- PRD: #[[file:docs/PRD.md]]
+- Roadmap: #[[file:docs/roadmap.md]]

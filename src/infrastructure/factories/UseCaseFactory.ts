@@ -39,6 +39,7 @@ import { RegenerateDocumentUseCase } from "../../application/use-cases/Regenerat
 import { GetDocumentVersionsUseCase } from "../../application/use-cases/GetDocumentVersionsUseCase";
 import { RestoreDocumentVersionUseCase } from "../../application/use-cases/RestoreDocumentVersionUseCase";
 import { ExportDocumentUseCase } from "../../application/use-cases/ExportDocumentUseCase";
+import { ExportKiroSetupUseCase } from "../../application/use-cases/ExportKiroSetupUseCase";
 import { IAIDocumentGeneratorService } from "../../application/services/IAIDocumentGeneratorService";
 
 /**
@@ -605,6 +606,27 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as ExportDocumentUseCase;
+  }
+
+  /**
+   * Create ExportKiroSetupUseCase with dependencies
+   *
+   * Creates the use case for exporting a complete Kiro workspace setup
+   * from generated project documentation (PRD, Design, Tech Architecture, Roadmap).
+   *
+   * Requirements: 1.2
+   */
+  createExportKiroSetupUseCase(): ExportKiroSetupUseCase {
+    const cacheKey = "exportKiroSetupUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      // ExportKiroSetupUseCase uses default instances for its dependencies
+      // (DocumentValidator, FileGenerator, ExportPackager) when not provided
+      const useCase = new ExportKiroSetupUseCase();
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as ExportKiroSetupUseCase;
   }
 
   /**
