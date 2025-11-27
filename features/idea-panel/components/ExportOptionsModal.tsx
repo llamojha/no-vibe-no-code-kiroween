@@ -164,7 +164,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       setExportProgress(80);
 
       if (!result.success) {
-        const error = result.error?.message || "Export failed";
+        const error = result.error?.message || t("exportFailed");
 
         setExportState("error");
         setErrorMessage(error);
@@ -183,7 +183,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
 
       const payload = result.data;
       if (!payload.success) {
-        const error = payload.error || "Export failed";
+        const error = payload.error || t("exportFailed");
 
         setExportState("error");
         setErrorMessage(error);
@@ -250,7 +250,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       }, 2000);
     } catch (error) {
       const errorMsg =
-        error instanceof Error ? error.message : "An unexpected error occurred";
+        error instanceof Error ? error.message : t("unexpectedError");
       setExportState("error");
       setErrorMessage(errorMsg);
 
@@ -264,7 +264,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         errorMessage: errorMsg,
       });
     }
-  }, [ideaId, ideaName, documents, selectedFormat, onClose]);
+  }, [ideaId, ideaName, documents, selectedFormat, onClose, t]);
 
   if (!isOpen) {
     return null;
@@ -292,13 +292,13 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
             id="export-modal-title"
             className="text-xl font-bold text-slate-200 uppercase tracking-wider"
           >
-            {t("exportToKiro") || "Export to Kiro"}
+            {t("exportToKiro")}
           </h2>
           {exportState !== "exporting" && (
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-200 transition-colors"
-              aria-label={t("close") || "Close"}
+              aria-label={t("close")}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -324,14 +324,13 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
           {exportState === "idle" && (
             <>
               <p className="text-sm text-slate-400 mb-6 font-mono">
-                {t("exportDescription") ||
-                  "Export your project documentation as a ready-to-use Kiro workspace setup."}
+                {t("exportDescription")}
               </p>
 
               {/* Format Selection */}
               <div className="space-y-3">
                 <label className="text-sm font-bold text-slate-300 uppercase tracking-wider">
-                  {t("selectFormat") || "Select Format"}
+                  {t("selectFormat")}
                 </label>
 
                 {/* ZIP Option */}
@@ -363,11 +362,10 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                     </div>
                     <div>
                       <div className="font-bold text-slate-200">
-                        {t("downloadAsZip") || "Download as ZIP"}
+                        {t("downloadAsZip")}
                       </div>
                       <div className="text-xs text-slate-400 mt-1">
-                        {t("zipDescription") ||
-                          "Single compressed file with all steering files and specs"}
+                        {t("zipDescription")}
                       </div>
                     </div>
                   </div>
@@ -402,12 +400,10 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                     </div>
                     <div>
                       <div className="font-bold text-slate-200">
-                        {t("downloadIndividualFiles") ||
-                          "Download Individual Files"}
+                        {t("downloadIndividualFiles")}
                       </div>
                       <div className="text-xs text-slate-400 mt-1">
-                        {t("individualDescription") ||
-                          "Separate files with folder-prefixed names"}
+                        {t("individualDescription")}
                       </div>
                     </div>
                   </div>
@@ -440,7 +436,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                 />
               </svg>
               <p className="text-lg text-slate-300 font-mono uppercase tracking-wider mb-4">
-                {t("generatingExport") || "Generating export..."}
+                {t("generatingExport")}
               </p>
               {/* Progress bar */}
               <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
@@ -471,11 +467,10 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                 />
               </svg>
               <p className="text-lg text-green-400 font-bold uppercase tracking-wider">
-                {t("exportSuccess") || "Export Complete!"}
+                {t("exportSuccess")}
               </p>
               <p className="text-sm text-slate-400 mt-2">
-                {t("exportSuccessDescription") ||
-                  "Your Kiro setup has been downloaded."}
+                {t("exportSuccessDescription")}
               </p>
             </div>
           )}
@@ -498,7 +493,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                 />
               </svg>
               <p className="text-lg text-red-400 font-bold uppercase tracking-wider mb-2">
-                {t("exportFailed") || "Export Failed"}
+                {t("exportFailed")}
               </p>
               <p className="text-sm text-slate-400 mb-4 font-mono">
                 {errorMessage}
@@ -510,7 +505,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                 }}
                 className="px-4 py-2 bg-slate-700 text-slate-200 font-bold text-sm uppercase tracking-wider hover:bg-slate-600 transition-colors"
               >
-                {t("tryAgain") || "Try Again"}
+                {t("tryAgain")}
               </button>
             </div>
           )}
@@ -523,13 +518,13 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 bg-slate-700 text-slate-200 font-bold text-sm uppercase tracking-wider hover:bg-slate-600 transition-colors"
             >
-              {t("cancel") || "Cancel"}
+              {t("cancel")}
             </button>
             <button
               onClick={handleExport}
               className="px-6 py-2 bg-purple-600 text-white font-bold text-sm uppercase tracking-wider hover:bg-purple-500 transition-colors shadow-lg shadow-purple-600/30"
             >
-              {t("export") || "Export"}
+              {t("export")}
             </button>
           </div>
         )}

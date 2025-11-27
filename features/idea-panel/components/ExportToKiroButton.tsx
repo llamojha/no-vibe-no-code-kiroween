@@ -115,7 +115,7 @@ export const ExportToKiroButton: React.FC<ExportToKiroButtonProps> = ({
   // Get missing documents message for tooltip
   const tooltipMessage = useMemo(() => {
     if (validationResult.isValid) {
-      return t("exportReady") || "Ready to export";
+      return t("exportReady");
     }
 
     const missingNames: string[] = [];
@@ -130,9 +130,7 @@ export const ExportToKiroButton: React.FC<ExportToKiroButtonProps> = ({
       missingNames.push(`${DocumentValidator.getDisplayName(docType)} (empty)`);
     }
 
-    return `${
-      t("missingDocuments") || "Missing documents"
-    }: ${missingNames.join(", ")}`;
+    return `${t("missingDocuments")}: ${missingNames.join(", ")}`;
   }, [validationResult, t]);
 
   const handleClick = () => {
@@ -172,7 +170,7 @@ export const ExportToKiroButton: React.FC<ExportToKiroButtonProps> = ({
           }
         `}
         aria-label={
-          isDisabled ? tooltipMessage : t("exportToKiro") || "Export to Kiro"
+          isDisabled ? tooltipMessage : t("exportToKiro")
         }
         aria-disabled={isDisabled}
       >
@@ -190,7 +188,7 @@ export const ExportToKiroButton: React.FC<ExportToKiroButtonProps> = ({
             clipRule="evenodd"
           />
         </svg>
-        <span>{t("exportToKiro") || "Export to Kiro"}</span>
+        <span>{t("exportToKiro")}</span>
       </button>
 
       {/* Tooltip */}

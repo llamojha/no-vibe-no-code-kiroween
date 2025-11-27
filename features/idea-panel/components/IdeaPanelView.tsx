@@ -448,12 +448,10 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
             <div className="flex flex-wrap gap-3">
               {missingDocumentTypes.map((type) => {
                 const labelMap = {
-                  prd: t("generatePRD") || "Generate PRD",
-                  technical_design:
-                    t("generateTechnicalDesign") || "Generate Tech Design",
-                  architecture:
-                    t("generateArchitecture") || "Generate Architecture",
-                  roadmap: t("generateRoadmap") || "Generate Roadmap",
+                  prd: t("generatePRD"),
+                  technical_design: t("generateTechnicalDesign"),
+                  architecture: t("generateArchitecture"),
+                  roadmap: t("generateRoadmap"),
                 };
                 const isBusy = isQuickGenerating === type;
                 return (
