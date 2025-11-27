@@ -470,5 +470,8 @@
   "gotIt": "¡Entendido!",
   "kiroGettingStarted": "Comenzando con Kiro",
   "kiroGettingStartedSubtitle": "Instrucciones de configuración para tus archivos exportados",
-  "dismissPanel": "Cerrar panel"
+  "dismissPanel": "Cerrar panel",
+  "moveFilesStep": "Mueve los archivos descargados a tu proyecto",
+  "moveFilesDescription": "Mueve los archivos descargados al directorio raíz de tu proyecto, preservando la estructura de carpetas de los nombres de archivo.",
+  "createFoldersStep": "Crea la estructura de carpetas de Kiro"
 }

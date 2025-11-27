@@ -92,6 +92,7 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
   const [hasExportedToKiro, setHasExportedToKiro] = useState(false);
   const [firstFeatureName, setFirstFeatureName] =
     useState<string>("your first feature");
+  const [exportFormat, setExportFormat] = useState<"zip" | "individual">("zip");
   const [showGettingStartedPanel, setShowGettingStartedPanel] = useState(true);
 
   // Define loadIdeaData before useEffects that depend on it
@@ -365,8 +366,12 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     }
   };
 
-  const handleExportSuccess = (featureName: string) => {
+  const handleExportSuccess = (
+    featureName: string,
+    format: "zip" | "individual"
+  ) => {
     setFirstFeatureName(featureName);
+    setExportFormat(format);
     setHasExportedToKiro(true);
     setIsPostExportModalOpen(true);
   };
@@ -647,7 +652,7 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         isOpen={isPostExportModalOpen}
         onClose={() => setIsPostExportModalOpen(false)}
         firstFeatureName={firstFeatureName}
-        exportFormat="zip"
+        exportFormat={exportFormat}
       />
     </IdeaPanelLayout>
   );

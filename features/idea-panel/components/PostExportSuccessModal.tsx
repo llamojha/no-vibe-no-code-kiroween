@@ -145,30 +145,50 @@ export const PostExportSuccessModal: React.FC<PostExportSuccessModalProps> = ({
               "Your project is ready for Kiro. Here's how to get started:"}
           </p>
 
-          {/* Step 1: Extract ZIP */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">
-                1
-              </span>
-              <span className="text-slate-200 font-semibold">
-                {t("extractZipStep") || "Extract ZIP to your project folder"}
-              </span>
+          {/* Step 1: Extract/Move files - different based on format */}
+          {exportFormat === "zip" ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">
+                  1
+                </span>
+                <span className="text-slate-200 font-semibold">
+                  {t("extractZipStep") || "Extract ZIP to your project folder"}
+                </span>
+              </div>
+              <p className="text-slate-400 text-xs ml-8">
+                {t("extractZipDescription") ||
+                  "Unzip the downloaded file into your project's root directory."}
+              </p>
             </div>
-            <p className="text-slate-400 text-xs ml-8">
-              {t("extractZipDescription") ||
-                "Unzip the downloaded file into your project's root directory."}
-            </p>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">
+                  1
+                </span>
+                <span className="text-slate-200 font-semibold">
+                  {t("moveFilesStep") ||
+                    "Move downloaded files to your project"}
+                </span>
+              </div>
+              <p className="text-slate-400 text-xs ml-8">
+                {t("moveFilesDescription") ||
+                  "Move the downloaded files to your project's root directory, preserving the folder structure from the filenames."}
+              </p>
+            </div>
+          )}
 
-          {/* Step 2: Copy files */}
+          {/* Step 2: Setup Kiro config */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-600 text-white text-sm font-bold">
                 2
               </span>
               <span className="text-slate-200 font-semibold">
-                {t("copyFilesStep") || "Copy files to Kiro config"}
+                {exportFormat === "zip"
+                  ? t("copyFilesStep") || "Copy files to Kiro config"
+                  : t("createFoldersStep") || "Create Kiro folder structure"}
               </span>
             </div>
             <div className="ml-8 bg-slate-800/80 border border-slate-700 p-3 rounded font-mono text-xs">

@@ -26,7 +26,10 @@ interface ExportOptionsModalProps {
   /** Available documents for the idea */
   documents: DocumentDTO[];
   /** Callback when export completes successfully */
-  onExportSuccess?: (firstFeatureName: string) => void;
+  onExportSuccess?: (
+    firstFeatureName: string,
+    format: "zip" | "individual"
+  ) => void;
 }
 
 /**
@@ -260,9 +263,9 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         }
       }
 
-      // Call success callback with first feature name
+      // Call success callback with first feature name and format
       if (onExportSuccess) {
-        onExportSuccess(firstFeatureName);
+        onExportSuccess(firstFeatureName, selectedFormat);
       }
 
       // Auto-close after success

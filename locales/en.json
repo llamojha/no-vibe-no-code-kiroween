@@ -472,5 +472,8 @@
   "gotIt": "Got it!",
   "kiroGettingStarted": "Getting Started with Kiro",
   "kiroGettingStartedSubtitle": "Setup instructions for your exported files",
-  "dismissPanel": "Dismiss panel"
+  "dismissPanel": "Dismiss panel",
+  "moveFilesStep": "Move downloaded files to your project",
+  "moveFilesDescription": "Move the downloaded files to your project's root directory, preserving the folder structure from the filenames.",
+  "createFoldersStep": "Create Kiro folder structure"
 }
