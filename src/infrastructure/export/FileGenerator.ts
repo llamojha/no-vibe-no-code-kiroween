@@ -70,7 +70,8 @@ export class FileGenerator {
         input.ideaName,
         extractedContent,
         parsedRoadmap.firstItem,
-        timestamp
+        timestamp,
+        input.documents
       );
 
       return {
@@ -95,7 +96,8 @@ export class FileGenerator {
     ideaName: string,
     content: ExtractedContent,
     firstRoadmapItem: RoadmapItem | null,
-    timestamp: string
+    timestamp: string,
+    sourceDocuments: SourceDocuments
   ): GeneratedFiles {
     // Generate steering files
     const steering = this.generateSteeringFiles(ideaName, content);
@@ -104,7 +106,7 @@ export class FileGenerator {
     const specs = this.generateExampleSpec(ideaName, firstRoadmapItem);
 
     // Generate docs (roadmap copy)
-    const docs = this.generateDocs(content);
+    const docs = this.generateDocs(content, sourceDocuments);
 
     // Generate README
     const readme = this.generateReadme(ideaName, timestamp);
@@ -199,13 +201,18 @@ export class FileGenerator {
   }
 
   /**
-   * Generate docs folder with roadmap copy
+   * Generate docs folder with roadmap and source documents
    * Requirements: 8.1, 8.2, 8.3, 8.4
    */
-  private generateDocs(content: ExtractedContent): GeneratedFiles["docs"] {
-    // Preserve roadmap content exactly as-is
+  private generateDocs(
+    content: ExtractedContent,
+    sourceDocuments: SourceDocuments
+  ): GeneratedFiles["docs"] {
+    // Preserve roadmap and source documents exactly as-is
     return {
       "roadmap.md": content.roadmap.rawContent,
+      "PRD.md": sourceDocuments.prd,
+      "tech-architecture.md": sourceDocuments.techArchitecture,
     };
   }
 
@@ -322,6 +329,8 @@ Refer to the Tech Architecture document for implementation details: ${this.forma
 
     // Docs
     paths.push("docs/roadmap.md");
+    paths.push("docs/PRD.md");
+    paths.push("docs/tech-architecture.md");
 
     // README
     paths.push("README.md");
@@ -402,7 +411,7 @@ Refer to the Tech Architecture document for implementation details: ${this.forma
       count += Object.keys(spec).length;
     }
 
-    // Docs (1)
+    // Docs
     count += Object.keys(files.docs).length;
 
     // README (1)

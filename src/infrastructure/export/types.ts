@@ -125,6 +125,8 @@ export interface GeneratedFiles {
   };
   docs: {
     "roadmap.md": string;
+    "PRD.md": string;
+    "tech-architecture.md": string;
   };
   "README.md": string;
 }

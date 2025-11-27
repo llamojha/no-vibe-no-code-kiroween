@@ -353,6 +353,12 @@ export class ExportPackager {
     if (!("roadmap.md" in files.docs)) {
       issues.push("Missing docs file: roadmap.md");
     }
+    if (!("PRD.md" in files.docs)) {
+      issues.push("Missing docs file: PRD.md");
+    }
+    if (!("tech-architecture.md" in files.docs)) {
+      issues.push("Missing docs file: tech-architecture.md");
+    }
 
     // Check README
     if (!files["README.md"]) {
