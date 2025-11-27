@@ -213,6 +213,7 @@ export class FileGenerator {
       "roadmap.md": content.roadmap.rawContent,
       "PRD.md": sourceDocuments.prd,
       "tech-architecture.md": sourceDocuments.techArchitecture,
+      "design.md": sourceDocuments.design,
     };
   }
 
@@ -331,6 +332,7 @@ Refer to the Tech Architecture document for implementation details: ${this.forma
     paths.push("docs/roadmap.md");
     paths.push("docs/PRD.md");
     paths.push("docs/tech-architecture.md");
+    paths.push("docs/design.md");
 
     // README
     paths.push("README.md");

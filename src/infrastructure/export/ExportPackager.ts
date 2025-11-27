@@ -359,6 +359,9 @@ export class ExportPackager {
     if (!("tech-architecture.md" in files.docs)) {
       issues.push("Missing docs file: tech-architecture.md");
     }
+    if (!("design.md" in files.docs)) {
+      issues.push("Missing docs file: design.md");
+    }
 
     // Check README
     if (!files["README.md"]) {

@@ -570,6 +570,7 @@ This package contains steering files, example specs, and documentation to help y
 - \`roadmap.md\` - Your project roadmap for reference
 - \`PRD.md\` - Product requirements source document
 - \`tech-architecture.md\` - Technical architecture source document
+- \`design.md\` - Design/technical design source document
 
 ## Setup Instructions
 
@@ -591,12 +592,13 @@ cp -r specs/* .kiro/specs/
 \`\`\`
 
 ### Step 4: Copy Documentation
-Copy the roadmap, PRD, and tech architecture docs to your docs directory:
+Copy the roadmap, PRD, tech architecture, and design docs to your docs directory:
 \`\`\`bash
 mkdir -p docs
 cp docs/roadmap.md docs/
 cp docs/PRD.md docs/
 cp docs/tech-architecture.md docs/
+cp docs/design.md docs/
 \`\`\`
 
 ## Example Workflows
