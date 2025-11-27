@@ -172,6 +172,7 @@ Generate a well-structured Technical Design Document in Markdown format with the
 - Explain the overall approach (monolith, microservices, serverless, etc.) and why
 - Include a Mermaid diagram showing major components and their interactions
 - Highlight key architectural decisions and trade-offs
+- Mermaid syntax must be valid for version 10.9.1 (plain \`graph TB/LR\`, alphanumeric node IDs, only \`-->\` or \`---\` links, no HTML, init blocks, or \`click/style\` directives)
 
 Example Mermaid diagram:
 \`\`\`mermaid
@@ -336,6 +337,7 @@ Generate a well-structured Architecture Document in Markdown format with the fol
 - Show data flow and communication patterns
 - Indicate synchronous vs asynchronous interactions
 - Highlight critical paths and dependencies
+- Mermaid syntax must be valid for version 10.9.1 (plain \`graph\`/sequence diagrams, alphanumeric node IDs, \`-->\` or \`---\` edges, no HTML, init blocks, or click/style directives)
 
 Example:
 \`\`\`mermaid
@@ -604,6 +606,7 @@ Example:
 
 ## 4. Dependency Graph
 Show the build order as a dependency graph:
+- Mermaid must be valid for version 10.9.1 (simple \`graph TD/LR\`, alphanumeric IDs, \`-->\`/ \`---\` edges only, no HTML, init blocks, or click/style directives)
 
 \`\`\`mermaid
 graph TD
