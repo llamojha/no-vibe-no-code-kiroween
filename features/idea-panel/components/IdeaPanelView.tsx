@@ -26,6 +26,8 @@ import AnalyzeButton from "./AnalyzeButton";
 import NotesSection from "./NotesSection";
 import TagsSection from "./TagsSection";
 import DeleteIdeaButton from "./DeleteIdeaButton";
+import ExportToKiroButton from "./ExportToKiroButton";
+import ExportOptionsModal from "./ExportOptionsModal";
 
 // Document generator component imports
 import {
@@ -83,6 +85,7 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
   const [quickGenerateError, setQuickGenerateError] = useState<string | null>(
     null
   );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Load data if not provided initially
   useEffect(() => {
@@ -365,7 +368,10 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         ideaId,
         documentType,
       });
-      setDocuments((prev) => [generated, ...prev.filter((d) => d.id !== generated.id)]);
+      setDocuments((prev) => [
+        generated,
+        ...prev.filter((d) => d.id !== generated.id),
+      ]);
     } catch (err) {
       console.error("Quick generate failed:", err);
       setQuickGenerateError(
@@ -517,6 +523,13 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
                 </span>
               </h2>
               <div className="flex items-center gap-2">
+                {/* Export to Kiro Button - Requirements: 1.1, 1.5 */}
+                <ExportToKiroButton
+                  ideaId={idea.id}
+                  ideaName={idea.ideaText.substring(0, 50)}
+                  documents={documents}
+                  onExportClick={() => setIsExportModalOpen(true)}
+                />
                 <button
                   onClick={handleExportAllDocuments}
                   disabled={isExportingAll}
@@ -524,7 +537,9 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`h-4 w-4 ${isExportingAll ? "animate-spin" : ""}`}
+                    className={`h-4 w-4 ${
+                      isExportingAll ? "animate-spin" : ""
+                    }`}
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     aria-hidden="true"
@@ -597,6 +612,15 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
           />
         </div>
       </div>
+
+      {/* Export Options Modal - Requirements: 13.1, 13.2, 13.3 */}
+      <ExportOptionsModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        ideaId={idea.id}
+        ideaName={idea.ideaText.substring(0, 50)}
+        documents={documents}
+      />
     </IdeaPanelLayout>
   );
 };

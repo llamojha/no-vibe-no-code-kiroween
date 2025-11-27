@@ -882,6 +882,22 @@ export class ServiceFactory {
   }
 
   /**
+   * Create ExportKiroSetupUseCase through the use case factory
+   *
+   * Convenience method for creating the Kiro Setup Export use case.
+   * This use case orchestrates the export of a complete Kiro workspace setup
+   * from generated project documentation.
+   *
+   * Requirements: 1.2
+   */
+  createExportKiroSetupUseCase() {
+    if (!this.useCaseFactory) {
+      throw new Error("Use case factory not initialized");
+    }
+    return this.useCaseFactory.createExportKiroSetupUseCase();
+  }
+
+  /**
    * Get diagnostic information about current service configuration
    *
    * This method provides detailed information about:

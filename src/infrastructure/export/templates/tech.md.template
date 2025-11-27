@@ -1,0 +1,33 @@
+# Technology Context - {{ideaName}}
+
+This steering file provides technology context for Kiro to understand the tech stack, dependencies, and development environment.
+
+## Technology Stack
+{{#if stack}}
+{{stack}}
+{{/if}}
+
+## Dependencies
+{{#if dependencies}}
+{{dependencies}}
+{{/if}}
+
+## Framework Versions & Requirements
+{{#if frameworkVersions}}
+{{frameworkVersions}}
+{{/if}}
+
+## Development Environment Setup
+{{#if setupInstructions}}
+{{setupInstructions}}
+{{/if}}
+
+## Build Configuration
+{{#if buildConfig}}
+{{buildConfig}}
+{{/if}}
+
+## Technical Constraints
+{{#if technicalConstraints}}
+{{technicalConstraints}}
+{{/if}}

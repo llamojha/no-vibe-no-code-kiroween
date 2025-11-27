@@ -5,6 +5,9 @@ export {
   trackTagsManagement,
   trackDocumentView,
   trackAnalyzeButtonClick,
+  trackExportInitiated,
+  trackExportCompleted,
+  trackExportFailed,
 } from "./tracking";
 
 export type {
@@ -14,4 +17,8 @@ export type {
   TagsManagementProps,
   DocumentViewProps,
   AnalyzeButtonClickProps,
+  ExportDocumentType,
+  ExportInitiatedProps,
+  ExportCompletedProps,
+  ExportFailedProps,
 } from "./tracking";

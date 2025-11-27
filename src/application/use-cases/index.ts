@@ -34,3 +34,6 @@ export * from "./RegenerateDocumentUseCase";
 export * from "./GetDocumentVersionsUseCase";
 export * from "./RestoreDocumentVersionUseCase";
 export * from "./ExportDocumentUseCase";
+
+// Kiro Setup Export use cases
+export * from "./ExportKiroSetupUseCase";

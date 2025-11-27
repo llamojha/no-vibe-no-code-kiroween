@@ -1,0 +1,28 @@
+# Architecture Context - {{ideaName}}
+
+This steering file provides architectural context for Kiro to follow established patterns and code organization standards.
+
+## Architectural Patterns
+{{#if patterns}}
+{{patterns}}
+{{/if}}
+
+## Layer Responsibilities & Boundaries
+{{#if layerResponsibilities}}
+{{layerResponsibilities}}
+{{/if}}
+
+## Code Organization
+{{#if codeOrganization}}
+{{codeOrganization}}
+{{/if}}
+
+## Naming Conventions
+{{#if namingConventions}}
+{{namingConventions}}
+{{/if}}
+
+## Import Patterns
+{{#if importPatterns}}
+{{importPatterns}}
+{{/if}}
