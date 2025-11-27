@@ -164,13 +164,23 @@ export class HackathonController {
       }
     );
 
-    if ((mockResponse as any).delay && (mockResponse as any).delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, mockResponse.delay));
+    // Type guard for mock response with optional wrapper properties
+    const wrappedResponse = mockResponse as HackathonAnalysis & {
+      delay?: number;
+      data?: HackathonAnalysis;
+      statusCode?: number;
+      headers?: HeadersInit;
+    };
+
+    if (wrappedResponse.delay && wrappedResponse.delay > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, wrappedResponse.delay)
+      );
     }
 
-    const mockBody = (mockResponse as any).data ?? mockResponse;
-    const mockStatus = (mockResponse as any).statusCode ?? 200;
-    const mockHeaders = (mockResponse as any).headers;
+    const mockBody = wrappedResponse.data ?? mockResponse;
+    const mockStatus = wrappedResponse.statusCode ?? 200;
+    const mockHeaders = wrappedResponse.headers;
 
     const response = NextResponse.json(mockBody, {
       status: mockStatus,

@@ -175,12 +175,21 @@ export class TemplateEngine {
    * Create example spec data from a roadmap item
    */
   createExampleSpecFromRoadmapItem(item: RoadmapItem): ExampleSpecData {
+    // Use userStory if available, otherwise fall back to description
+    const userStory =
+      item.userStory || item.description || `Implement ${item.title}`;
+
+    // Use acceptanceCriteria if available, otherwise fall back to goals
+    const acceptanceCriteria = item.acceptanceCriteria?.length
+      ? item.acceptanceCriteria
+      : item.goals;
+
     return {
       featureName: this.slugify(item.title),
-      userStory: item.description,
-      acceptanceCriteria: item.goals,
+      userStory,
+      acceptanceCriteria,
       technicalApproach: this.generateTechnicalApproach(item),
-      tasks: this.generateTasksFromGoals(item.goals),
+      tasks: this.generateTasksFromItem(item),
     };
   }
 
@@ -304,7 +313,10 @@ export class TemplateEngine {
 
     parts.push(`This feature implements "${item.title}".`);
 
-    if (item.description) {
+    // Use technicalNotes if available from the new roadmap format
+    if (item.technicalNotes) {
+      parts.push(`\n\n**Implementation Notes:**\n${item.technicalNotes}`);
+    } else if (item.description) {
       parts.push(`\n\n${item.description}`);
     }
 
@@ -316,6 +328,10 @@ export class TemplateEngine {
       );
     }
 
+    if (item.scope) {
+      parts.push(`\n\n**Estimated Scope:** ${item.scope}`);
+    }
+
     parts.push(
       "\n\nRefer to the Tech Architecture document for implementation details: #[[file:docs/tech-architecture.md]]"
     );
@@ -324,7 +340,37 @@ export class TemplateEngine {
   }
 
   /**
-   * Generate tasks from goals
+   * Generate tasks from roadmap item
+   * Uses acceptance criteria for task breakdown, with scope-aware sizing
+   */
+  private generateTasksFromItem(item: RoadmapItem): string[] {
+    const tasks: string[] = [];
+
+    // Use acceptance criteria as primary source for tasks
+    const criteria = item.acceptanceCriteria?.length
+      ? item.acceptanceCriteria
+      : item.goals;
+
+    criteria.forEach((criterion, index) => {
+      tasks.push(`${index + 1}. ${criterion}`);
+    });
+
+    // Add standard tasks based on scope
+    if (item.scope === "Medium" || item.scope === "Large") {
+      tasks.push(
+        `${tasks.length + 1}. Write unit tests for core functionality`
+      );
+    }
+    if (item.scope === "Large") {
+      tasks.push(`${tasks.length + 1}. Add integration tests`);
+    }
+
+    return tasks;
+  }
+
+  /**
+   * Generate tasks from goals (legacy support)
+   * @deprecated Use generateTasksFromItem instead
    */
   private generateTasksFromGoals(goals: string[]): string[] {
     return goals.map((goal, index) => `${index + 1}. ${goal}`);
@@ -487,21 +533,112 @@ inclusion: manual
 
 # Spec Generation Guide - {{ideaName}}
 
-This steering file helps you generate additional specs from your roadmap items using Kiro.
+Use this guide to generate Kiro specs from your MVP roadmap. Each feature in your roadmap can become a complete spec with requirements, design, and tasks.
 
-## How to Use This Guide
+## Quick Start
 
-1. Reference your roadmap: #[[file:docs/roadmap.md]]
-2. Select a roadmap item you want to implement
-3. Use the prompts below to generate a complete spec
+**To generate a spec, copy this prompt and replace [FEATURE_NAME]:**
 
-## Output Structure
+\`\`\`
+Create a new spec for "[FEATURE_NAME]" based on the roadmap at #[[file:docs/roadmap.md]].
 
-When generating a spec, Kiro will create three files:
+Use the PRD at #[[file:docs/PRD.md]] for product context and the tech architecture at #[[file:docs/tech-architecture.md]] for technical guidance.
 
-- \`requirements.md\` - User stories and acceptance criteria
-- \`design.md\` - Technical design and architecture decisions
-- \`tasks.md\` - Implementation tasks and checklist
+Generate three files in .kiro/specs/[feature-slug]/:
+1. requirements.md - User story and acceptance criteria
+2. design.md - Technical approach and component design
+3. tasks.md - Implementation checklist
+\`\`\`
+
+## Spec Structure
+
+Kiro will create specs with this structure:
+
+\`\`\`
+.kiro/specs/[feature-name]/
+├── requirements.md   # What to build (user story, acceptance criteria)
+├── design.md         # How to build it (technical approach, components)
+└── tasks.md          # Step-by-step implementation checklist
+\`\`\`
+
+## Generating Specs by Phase
+
+Your roadmap is organized into build phases. Generate specs in order:
+
+### Phase 1: Foundation (Start Here)
+These features have no dependencies. Generate and implement them first.
+
+### Phase 2: Core MVP
+These depend on Phase 1. Generate after foundation is complete.
+
+### Phase 3: MVP Complete
+These round out the MVP. Generate after core features work.
+
+### Phase 4: Post-MVP (Optional)
+Nice-to-have features. Generate only after MVP validation.
+
+## Detailed Prompts
+
+### Generate Full Spec (Recommended)
+\`\`\`
+I want to implement "[FEATURE_NAME]" from the roadmap #[[file:docs/roadmap.md]].
+
+Create a complete spec in .kiro/specs/[feature-slug]/ with:
+
+**requirements.md:**
+- User story from the roadmap
+- Acceptance criteria (convert checkboxes to EARS format)
+- References to PRD sections
+
+**design.md:**
+- Technical approach based on #[[file:docs/tech-architecture.md]]
+- Key components and interfaces
+- Data models if needed
+- Error handling strategy
+
+**tasks.md:**
+- Implementation tasks derived from acceptance criteria
+- Each task should be completable in one session
+- Include a checkpoint task at the end
+\`\`\`
+
+### Generate Requirements Only
+\`\`\`
+Generate requirements.md for "[FEATURE_NAME]" based on #[[file:docs/roadmap.md]].
+Include the user story and convert acceptance criteria to EARS format.
+Reference relevant sections from #[[file:docs/PRD.md]].
+\`\`\`
+
+### Generate Design Only
+\`\`\`
+Generate design.md for "[FEATURE_NAME]".
+Use the tech stack from #[[file:docs/tech-architecture.md]].
+Include technical approach, component design, and error handling.
+\`\`\`
+
+### Generate Tasks Only
+\`\`\`
+Generate tasks.md for "[FEATURE_NAME]".
+Break down the acceptance criteria into implementable tasks.
+Each task should be small enough to complete in one session.
+Add a checkpoint task to verify the feature works.
+\`\`\`
+
+## Tips for Better Specs
+
+1. **Generate in order** - Start with Phase 1 features, they have no dependencies
+2. **Review before implementing** - Read through the spec and refine if needed
+3. **Reference existing code** - Once you have code, point Kiro to it for consistency
+4. **Keep tasks small** - If a task feels too big, ask Kiro to break it down
+5. **Update as you learn** - Specs can evolve as you implement
+
+## After Generating a Spec
+
+1. Review the generated files in \`.kiro/specs/[feature-name]/\`
+2. Edit if needed - you know your project best
+3. Open \`tasks.md\` and click "Start task" on the first task
+4. Let Kiro implement incrementally, reviewing each change
+5. Mark tasks complete as you go
 
 ## Example Prompts
 
@@ -550,89 +687,136 @@ Based on the design for "[FEATURE_NAME]", generate a tasks.md file with:
   private getReadmeTemplate(): string {
     return `# Kiro Setup - {{ideaName}}
 
-This package contains steering files, example specs, and documentation to help you start implementing your project with Kiro.
+Your project documentation has been exported and is ready to use with Kiro IDE.
 
 **Generated:** {{timestamp}}
 
-## What's Included
+---
+
+## 🚀 What To Do Next
+
+### Step 1: Set Up Your Project
+
+1. **Create a new project folder** (or use an existing one)
+2. **Extract this package** into your project root
+3. **Copy files to Kiro's config folder:**
+
+\`\`\`bash
+# Create Kiro directories
+mkdir -p .kiro/steering
+mkdir -p .kiro/specs
+mkdir -p docs
+
+# Copy steering files (Kiro will auto-load these)
+cp steering/*.md .kiro/steering/
+
+# Copy documentation for reference
+cp docs/*.md docs/
+\`\`\`
+
+### Step 2: Open in Kiro IDE
+
+1. **Open Kiro IDE** (download from https://kiro.dev if needed)
+2. **Open your project folder** in Kiro
+3. Kiro will automatically detect the steering files
+
+### Step 3: Generate Your First Spec
+
+1. **Open Kiro chat** (Cmd/Ctrl + Shift + I)
+2. **Type \`#spec-generation\`** to include the spec generation guide
+3. **Copy and paste this prompt** (replace [FEATURE_NAME] with your first Phase 1 feature):
+
+\`\`\`
+Create a new spec for "[FEATURE_NAME]" based on the roadmap at #[[file:docs/roadmap.md]].
+
+Use the PRD at #[[file:docs/PRD.md]] for product context and the tech architecture at #[[file:docs/tech-architecture.md]] for technical guidance.
+
+Generate three files in .kiro/specs/[feature-slug]/:
+1. requirements.md - User story and acceptance criteria
+2. design.md - Technical approach and component design
+3. tasks.md - Implementation checklist
+\`\`\`
+
+### Step 4: Implement the Spec
+
+1. **Open the generated tasks.md** in \`.kiro/specs/[feature-name]/\`
+2. **Click "Start task"** on the first task
+3. **Review Kiro's changes** before accepting
+4. **Repeat** for each task until the feature is complete
+
+### Step 5: Continue with Next Feature
+
+1. Check your roadmap for the next feature (respect dependencies!)
+2. Generate a new spec using the prompt above
+3. Implement, review, repeat
+
+---
+
+## 📁 What's Included
 
 ### Steering Files (\`steering/\`)
-- \`product.md\` - Product vision, users, and success metrics
-- \`tech.md\` - Technology stack and development environment
-- \`architecture.md\` - Architectural patterns and code organization
-- \`spec-generation.md\` - Guide for generating additional specs (manual inclusion)
+These provide context to Kiro for all your conversations:
 
-### Example Spec (\`specs/\`)
-- An example feature spec generated from your first roadmap item
-- Includes requirements, design, and tasks files
+| File | Purpose |
+|------|---------|
+| \`product.md\` | Product vision, target users, success metrics |
+| \`tech.md\` | Technology stack, dependencies, setup |
+| \`architecture.md\` | Code patterns, organization, conventions |
+| \`spec-generation.md\` | Guide for generating specs (manual inclusion) |
 
 ### Documentation (\`docs/\`)
-- \`roadmap.md\` - Your project roadmap for reference
-- \`PRD.md\` - Product requirements source document
-- \`tech-architecture.md\` - Technical architecture source document
-- \`design.md\` - Design/technical design source document
+Reference documents for you and Kiro:
 
-## Setup Instructions
+| File | Purpose |
+|------|---------|
+| \`roadmap.md\` | MVP roadmap with all features by phase |
+| \`PRD.md\` | Product requirements document |
+| \`tech-architecture.md\` | Technical architecture details |
+| \`design.md\` | System design document |
 
-### Step 1: Extract Files
-Extract this package to your project root or a dedicated directory.
+---
 
-### Step 2: Copy Steering Files
-Copy the steering files to your Kiro configuration:
-\`\`\`bash
-mkdir -p .kiro/steering
-cp steering/*.md .kiro/steering/
+## 💡 Tips for Success
+
+### Build in Order
+Your roadmap has 4 phases. Build Phase 1 features first — they have no dependencies.
+
+### Review Before Implementing
+Read through generated specs before starting tasks. Edit if something doesn't look right.
+
+### Keep Specs Small
+Each spec should be one feature. If it feels too big, split it.
+
+### Update Steering Files
+As your project evolves, update the steering files with new patterns and conventions.
+
+### Use File References
+Point Kiro to existing code with \`#[[file:path/to/file]]\` for consistency.
+
+---
+
+## 🔗 Quick Reference
+
+**Generate a spec:**
+\`\`\`
+#spec-generation Create a spec for "[FEATURE]" from #[[file:docs/roadmap.md]]
 \`\`\`
 
-### Step 3: Copy Example Spec
-Copy the example spec to your specs directory:
-\`\`\`bash
-mkdir -p .kiro/specs
-cp -r specs/* .kiro/specs/
-\`\`\`
+**Reference your docs:**
+- Roadmap: \`#[[file:docs/roadmap.md]]\`
+- PRD: \`#[[file:docs/PRD.md]]\`
+- Tech: \`#[[file:docs/tech-architecture.md]]\`
 
-### Step 4: Copy Documentation
-Copy the roadmap, PRD, tech architecture, and design docs to your docs directory:
-\`\`\`bash
-mkdir -p docs
-cp docs/roadmap.md docs/
-cp docs/PRD.md docs/
-cp docs/tech-architecture.md docs/
-cp docs/design.md docs/
-\`\`\`
+**Start implementing:**
+Open \`.kiro/specs/[feature]/tasks.md\` → Click "Start task"
 
-## Example Workflows
-
-### Implementing the Example Spec
-1. Open the tasks file in \`.kiro/specs/[feature-name]/tasks.md\`
-2. Click "Start task" on the first task
-3. Let Kiro implement each task incrementally
-4. Review and approve changes before proceeding
-
-### Generating a New Spec
-1. Include the spec-generation steering file in your chat
-2. Reference a roadmap item you want to implement
-3. Follow the prompts to generate requirements, design, and tasks
-4. Review each document before proceeding to the next
-
-### Customizing Steering Files
-1. Edit the steering files to add project-specific context
-2. Add new steering files for additional concerns (e.g., testing, security)
-3. Use frontmatter to control when steering files are included
-
-## Tips for Working with Kiro
-
-1. **Be specific** - The more context you provide, the better Kiro's suggestions
-2. **Review incrementally** - Don't let Kiro run too far ahead without review
-3. **Use file references** - Reference existing code with \`#[[file:path]]\`
-4. **Iterate on specs** - Refine requirements and design before implementation
-5. **Keep steering updated** - Update steering files as your project evolves
+---
 
 ## Need Help?
 
-- Check the spec-generation guide for detailed prompts
-- Reference the example spec for structure and format
-- Update steering files with project-specific context
+- **Kiro Documentation:** https://kiro.dev/docs
+- **Spec Generation Guide:** See \`steering/spec-generation.md\`
+- **Your Roadmap:** See \`docs/roadmap.md\` for feature list and dependencies
 `;
   }
 

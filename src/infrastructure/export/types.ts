@@ -42,6 +42,14 @@ export interface RoadmapItem {
   goals: string[];
   acceptanceCriteria?: string[];
   dependencies?: string[];
+  /** User story in format "As a [user], I want to [action], so that [benefit]" */
+  userStory?: string;
+  /** Technical implementation notes/hints */
+  technicalNotes?: string;
+  /** Estimated scope: Small (<1 day), Medium (1-3 days), Large (3-5 days) */
+  scope?: string;
+  /** Build phase number (1-4) */
+  phase?: number;
 }
 
 /**

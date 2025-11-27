@@ -25,6 +25,8 @@ interface ExportOptionsModalProps {
   ideaName: string;
   /** Available documents for the idea */
   documents: DocumentDTO[];
+  /** Callback when export completes successfully */
+  onExportSuccess?: (firstFeatureName: string) => void;
 }
 
 /**
@@ -105,6 +107,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
   ideaId,
   ideaName,
   documents,
+  onExportSuccess,
 }) => {
   const { t } = useLocale();
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>("zip");
@@ -244,6 +247,24 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         fileCount: payload.files?.length || 1,
       });
 
+      // Extract first feature name from roadmap for the success modal
+      const roadmapContent = exportDocuments.roadmap;
+      let firstFeatureName = "your first feature";
+      if (roadmapContent) {
+        // Try to extract first feature/milestone from roadmap
+        const featureMatch = roadmapContent.match(
+          /(?:##\s*(?:Phase|Sprint|Milestone|Feature)\s*\d*[:\s]*)?([A-Z][^#\n]{5,50})/i
+        );
+        if (featureMatch && featureMatch[1]) {
+          firstFeatureName = featureMatch[1].trim();
+        }
+      }
+
+      // Call success callback with first feature name
+      if (onExportSuccess) {
+        onExportSuccess(firstFeatureName);
+      }
+
       // Auto-close after success
       setTimeout(() => {
         onClose();
@@ -264,7 +285,15 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         errorMessage: errorMsg,
       });
     }
-  }, [ideaId, ideaName, documents, selectedFormat, onClose, t]);
+  }, [
+    ideaId,
+    ideaName,
+    documents,
+    selectedFormat,
+    onClose,
+    onExportSuccess,
+    t,
+  ]);
 
   if (!isOpen) {
     return null;

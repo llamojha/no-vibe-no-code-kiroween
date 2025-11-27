@@ -100,6 +100,12 @@ export class RoadmapParser {
       "table of contents",
       "glossary",
       "appendix",
+      "mvp overview",
+      "build phases",
+      "dependency graph",
+      "critical path",
+      "out of scope",
+      "technical risks",
     ];
 
     if (
@@ -116,9 +122,13 @@ export class RoadmapParser {
       section.subsections
     );
     const dependencies = this.extractDependencies(section.content);
+    const userStory = this.extractUserStory(section.content);
+    const technicalNotes = this.extractTechnicalNotes(section.content);
+    const scope = this.extractScope(section.content);
+    const phase = this.extractPhase(section.content);
 
     // Only return if we have meaningful content
-    if (!title || (!description && goals.length === 0)) {
+    if (!title || (!description && goals.length === 0 && !userStory)) {
       return null;
     }
 
@@ -129,6 +139,10 @@ export class RoadmapParser {
       acceptanceCriteria:
         acceptanceCriteria.length > 0 ? acceptanceCriteria : undefined,
       dependencies: dependencies.length > 0 ? dependencies : undefined,
+      userStory: userStory || undefined,
+      technicalNotes: technicalNotes || undefined,
+      scope: scope || undefined,
+      phase: phase || undefined,
     };
   }
 
@@ -262,6 +276,23 @@ export class RoadmapParser {
   private extractDependencies(content: string): string[] {
     const dependencies: string[] = [];
 
+    // Look for inline dependencies format: **Dependencies**: [List] or "None"
+    const inlineMatch = content.match(
+      /\*\*Dependencies\*\*:\s*\[?([^\]\n]+)\]?/i
+    );
+    if (inlineMatch) {
+      const depsText = inlineMatch[1].trim();
+      if (
+        depsText.toLowerCase() !== "none" &&
+        depsText.toLowerCase() !== "none (foundation)"
+      ) {
+        // Split by comma and clean up
+        const deps = depsText.split(",").map((d) => d.trim());
+        dependencies.push(...deps.filter((d) => d.length > 0));
+      }
+      return dependencies;
+    }
+
     // Look for dependencies section
     const depsSection = this.findSectionInContent(content, [
       "dependencies",
@@ -275,6 +306,78 @@ export class RoadmapParser {
     }
 
     return dependencies;
+  }
+
+  /**
+   * Extract user story from content
+   * Format: "As a [user], I want to [action], so that [benefit]"
+   */
+  private extractUserStory(content: string): string | null {
+    // Look for **User Story**: format
+    const userStoryMatch = content.match(
+      /\*\*User Story\*\*:\s*(.+?)(?=\n\s*-\s*\*\*|\n\n|$)/is
+    );
+    if (userStoryMatch) {
+      return userStoryMatch[1].trim();
+    }
+
+    // Look for "As a" pattern anywhere in content
+    const asAMatch = content.match(/As a[n]?\s+.+?,\s+I want to\s+.+/i);
+    if (asAMatch) {
+      return asAMatch[0].trim();
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract technical notes/implementation hints from content
+   */
+  private extractTechnicalNotes(content: string): string | null {
+    // Look for **Technical Notes**: format
+    const techNotesMatch = content.match(
+      /\*\*Technical Notes\*\*:\s*(.+?)(?=\n\s*-\s*\*\*|\n\n|$)/is
+    );
+    if (techNotesMatch) {
+      return techNotesMatch[1].trim();
+    }
+
+    // Look for **Technical Approach**: format (alternative)
+    const techApproachMatch = content.match(
+      /\*\*Technical Approach\*\*:\s*(.+?)(?=\n\s*-\s*\*\*|\n\n|$)/is
+    );
+    if (techApproachMatch) {
+      return techApproachMatch[1].trim();
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract scope estimate from content
+   * Format: Small (<1 day), Medium (1-3 days), Large (3-5 days)
+   */
+  private extractScope(content: string): string | null {
+    // Look for **Scope**: format
+    const scopeMatch = content.match(/\*\*Scope\*\*:\s*(\w+)/i);
+    if (scopeMatch) {
+      return scopeMatch[1].trim();
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract phase number from content
+   */
+  private extractPhase(content: string): number | null {
+    // Look for **Phase**: format
+    const phaseMatch = content.match(/\*\*Phase\*\*:\s*(\d+)/i);
+    if (phaseMatch) {
+      return parseInt(phaseMatch[1], 10);
+    }
+
+    return null;
   }
 
   /**
@@ -364,6 +467,10 @@ export class RoadmapParser {
             goals: currentItem.goals || [],
             acceptanceCriteria: currentItem.acceptanceCriteria,
             dependencies: currentItem.dependencies,
+            userStory: currentItem.userStory,
+            technicalNotes: currentItem.technicalNotes,
+            scope: currentItem.scope,
+            phase: currentItem.phase,
           });
         }
 
@@ -380,6 +487,29 @@ export class RoadmapParser {
           if (!currentItem.goals) currentItem.goals = [];
           currentItem.goals.push(subItemMatch[1].trim());
         }
+
+        // Extract inline fields from list items
+        const userStoryMatch = trimmed.match(/\*\*User Story\*\*:\s*(.+)/i);
+        if (userStoryMatch) {
+          currentItem.userStory = userStoryMatch[1].trim();
+        }
+
+        const techNotesMatch = trimmed.match(
+          /\*\*Technical Notes\*\*:\s*(.+)/i
+        );
+        if (techNotesMatch) {
+          currentItem.technicalNotes = techNotesMatch[1].trim();
+        }
+
+        const scopeMatch = trimmed.match(/\*\*Scope\*\*:\s*(\w+)/i);
+        if (scopeMatch) {
+          currentItem.scope = scopeMatch[1].trim();
+        }
+
+        const phaseMatch = trimmed.match(/\*\*Phase\*\*:\s*(\d+)/i);
+        if (phaseMatch) {
+          currentItem.phase = parseInt(phaseMatch[1], 10);
+        }
       }
     }
 
@@ -391,6 +521,10 @@ export class RoadmapParser {
         goals: currentItem.goals || [],
         acceptanceCriteria: currentItem.acceptanceCriteria,
         dependencies: currentItem.dependencies,
+        userStory: currentItem.userStory,
+        technicalNotes: currentItem.technicalNotes,
+        scope: currentItem.scope,
+        phase: currentItem.phase,
       });
     }
 

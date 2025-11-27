@@ -791,7 +791,7 @@ export const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
                   <h2 className="text-xl font-bold text-accent uppercase tracking-wider">
-                    {t("viewAndEdit") || "View / Edit"}
+                    {t("viewAndEdit")}
                   </h2>
                   <p className="text-sm text-slate-400">
                     {(t("generatorLatestVersion") || "Latest version") +

@@ -28,6 +28,8 @@ import TagsSection from "./TagsSection";
 import DeleteIdeaButton from "./DeleteIdeaButton";
 import ExportToKiroButton from "./ExportToKiroButton";
 import ExportOptionsModal from "./ExportOptionsModal";
+import PostExportSuccessModal from "./PostExportSuccessModal";
+import KiroGettingStartedPanel from "./KiroGettingStartedPanel";
 
 // Document generator component imports
 import {
@@ -86,45 +88,14 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     null
   );
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isPostExportModalOpen, setIsPostExportModalOpen] = useState(false);
+  const [hasExportedToKiro, setHasExportedToKiro] = useState(false);
+  const [firstFeatureName, setFirstFeatureName] =
+    useState<string>("your first feature");
+  const [showGettingStartedPanel, setShowGettingStartedPanel] = useState(true);
 
-  // Load data if not provided initially
-  useEffect(() => {
-    if (!initialData && ideaId) {
-      loadIdeaData();
-    }
-  }, [ideaId, initialData]);
-
-  // Refresh data when page becomes visible (handles browser back navigation)
-  // This ensures newly generated documents are displayed after navigation
-  // Requirements: 2.5, 4.5, 6.5, 8.5
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && ideaId) {
-        loadIdeaData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [ideaId]);
-
-  // Track panel view when data is loaded
-  useEffect(() => {
-    if (idea && documents) {
-      trackIdeaPanelView({
-        ideaId: idea.id,
-        ideaSource: idea.source,
-        projectStatus: idea.projectStatus,
-        documentCount: documents.length,
-        hasNotes: idea.notes.length > 0,
-        tagCount: idea.tags.length,
-      });
-    }
-  }, [idea, documents]);
-
-  const loadIdeaData = async () => {
+  // Define loadIdeaData before useEffects that depend on it
+  const loadIdeaData = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -142,7 +113,44 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ideaId, t]);
+
+  // Load data if not provided initially
+  useEffect(() => {
+    if (!initialData && ideaId) {
+      loadIdeaData();
+    }
+  }, [ideaId, initialData, loadIdeaData]);
+
+  // Refresh data when page becomes visible (handles browser back navigation)
+  // This ensures newly generated documents are displayed after navigation
+  // Requirements: 2.5, 4.5, 6.5, 8.5
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && ideaId) {
+        loadIdeaData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [ideaId, loadIdeaData]);
+
+  // Track panel view when data is loaded
+  useEffect(() => {
+    if (idea && documents) {
+      trackIdeaPanelView({
+        ideaId: idea.id,
+        ideaSource: idea.source,
+        projectStatus: idea.projectStatus,
+        documentCount: documents.length,
+        hasNotes: idea.notes.length > 0,
+        tagCount: idea.tags.length,
+      });
+    }
+  }, [idea, documents]);
 
   const handleStatusUpdate = async (
     newStatus: IdeaDTO["projectStatus"]
@@ -357,6 +365,12 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     }
   };
 
+  const handleExportSuccess = (featureName: string) => {
+    setFirstFeatureName(featureName);
+    setHasExportedToKiro(true);
+    setIsPostExportModalOpen(true);
+  };
+
   const handleQuickGenerate = async (
     documentType: "prd" | "technical_design" | "architecture" | "roadmap"
   ) => {
@@ -395,6 +409,15 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         {/* Document Progress Indicator - Requirements: 9.1 */}
         {isDocumentGenerationEnabled && (
           <DocumentProgressIndicator ideaId={idea.id} documents={documents} />
+        )}
+
+        {/* Kiro Getting Started Panel - Shows after export */}
+        {hasExportedToKiro && showGettingStartedPanel && (
+          <KiroGettingStartedPanel
+            hasExported={hasExportedToKiro}
+            firstFeatureName={firstFeatureName}
+            onDismiss={() => setShowGettingStartedPanel(false)}
+          />
         )}
 
         {/* Document Generation Buttons Section - Requirements: 1.1, 3.1, 5.1, 7.1 */}
@@ -549,9 +572,7 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
                     />
                   </svg>
                   <span>
-                    {isExportingAll
-                      ? t("exporting") || "Exporting..."
-                      : t("exportAll") || "Export All"}
+                    {isExportingAll ? t("exporting") : t("exportAll")}
                   </span>
                 </button>
               </div>
@@ -618,6 +639,15 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         ideaId={idea.id}
         ideaName={idea.ideaText.substring(0, 50)}
         documents={documents}
+        onExportSuccess={handleExportSuccess}
+      />
+
+      {/* Post-Export Success Modal - Shows next steps after successful export */}
+      <PostExportSuccessModal
+        isOpen={isPostExportModalOpen}
+        onClose={() => setIsPostExportModalOpen(false)}
+        firstFeatureName={firstFeatureName}
+        exportFormat="zip"
       />
     </IdeaPanelLayout>
   );
