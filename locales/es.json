@@ -472,6 +472,9 @@
   "kiroGettingStartedSubtitle": "Instrucciones de configuración para tus archivos exportados",
   "dismissPanel": "Cerrar panel",
   "moveFilesStep": "Mueve los archivos descargados a tu proyecto",
-  "moveFilesDescription": "Mueve los archivos descargados al directorio raíz de tu proyecto, preservando la estructura de carpetas de los nombres de archivo.",
-  "createFoldersStep": "Crea la estructura de carpetas de Kiro"
+  "moveFilesDescription": "Mueve los archivos descargados a tu proyecto, preservando la estructura de carpetas indicada por los nombres de archivo (ej: 'steering--product.md' va a '.kiro/steering/product.md').",
+  "createFoldersStep": "Crea la estructura de carpetas de Kiro",
+  "exportedFiles": "Archivos Exportados",
+  "extractAndCopyStep": "Extrae el ZIP y copia a tu proyecto",
+  "extractZipInstructions": "Extrae el archivo ZIP, luego copia el contenido a tu proyecto:"
 }
