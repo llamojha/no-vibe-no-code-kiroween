@@ -27,6 +27,13 @@ export interface DocumentProgressIndicatorProps {
   ideaId: string;
   documents: DocumentDTO[];
   className?: string;
+  onGenerateAll?: () => Promise<void>;
+  isGeneratingAll?: boolean;
+  generationProgress?: {
+    current: number;
+    total: number;
+    currentDocument: string;
+  };
 }
 
 /**
@@ -117,7 +124,6 @@ const getIconSvg = (iconName: string, className: string = "h-5 w-5") => {
   return icons[iconName] || icons["file-text"];
 };
 
-
 /**
  * Get color classes based on color name
  */
@@ -197,7 +203,14 @@ const getColorClasses = (
  */
 export const DocumentProgressIndicator: React.FC<
   DocumentProgressIndicatorProps
-> = ({ ideaId, documents, className = "" }) => {
+> = ({
+  ideaId,
+  documents,
+  className = "",
+  onGenerateAll,
+  isGeneratingAll = false,
+  generationProgress,
+}) => {
   const { t } = useLocale();
   const router = useRouter();
 
@@ -333,10 +346,20 @@ export const DocumentProgressIndicator: React.FC<
                 type="button"
                 onClick={isClickable ? () => handleStepClick(step) : undefined}
                 disabled={!isClickable}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-none transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent ${colorClasses.container} ${
-                  isClickable ? "cursor-pointer hover:opacity-90" : "cursor-default"
+                className={`flex items-center gap-2 px-4 py-2 border rounded-none transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent ${
+                  colorClasses.container
+                } ${
+                  isClickable
+                    ? "cursor-pointer hover:opacity-90"
+                    : "cursor-default"
                 }`}
-                aria-label={`${step.label}: ${isCompleted ? t("completed") || "completed" : t("pending") || "pending"}${isRecommended ? ` - ${t("recommended") || "recommended"}` : ""}`}
+                aria-label={`${step.label}: ${
+                  isCompleted
+                    ? t("completed") || "completed"
+                    : t("pending") || "pending"
+                }${
+                  isRecommended ? ` - ${t("recommended") || "recommended"}` : ""
+                }`}
                 aria-disabled={!isClickable}
               >
                 {/* Icon */}
@@ -399,8 +422,100 @@ export const DocumentProgressIndicator: React.FC<
         })}
       </div>
 
+      {/* Generate All Documents Button */}
+      {onGenerateAll && recommendedNext && !isGeneratingAll && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={onGenerateAll}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-teal-500 text-slate-900 font-bold uppercase tracking-wider rounded-none border border-accent/50 hover:from-accent/90 hover:to-teal-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+            aria-label={
+              t("generateAllDocuments") || "Generate all missing documents"
+            }
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{t("generateAllDocuments") || "Generate All Documents"}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Generation Progress Overlay */}
+      {isGeneratingAll && generationProgress && (
+        <div className="mt-6 p-4 bg-slate-900/80 border border-accent/30 rounded-none">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-slate-300 uppercase tracking-wider">
+              {t("generatingDocuments") || "Generating documents..."}
+            </span>
+            <span className="text-sm font-mono text-accent">
+              {generationProgress.current}/{generationProgress.total}
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div
+            className="h-3 bg-slate-800 rounded-full mb-3 overflow-hidden"
+            role="progressbar"
+            aria-valuenow={Math.round(
+              (generationProgress.current / generationProgress.total) * 100
+            )}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full bg-gradient-to-r from-accent to-teal-400 transition-all duration-500 ease-out"
+              style={{
+                width: `${
+                  (generationProgress.current / generationProgress.total) * 100
+                }%`,
+              }}
+            />
+          </div>
+
+          {/* Current document being generated */}
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <svg
+              className="h-4 w-4 animate-spin text-accent"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span className="font-mono">
+              {t("generating") || "Generating"}:{" "}
+              {generationProgress.currentDocument}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Recommended next message */}
-      {recommendedNext && (
+      {recommendedNext && !isGeneratingAll && (
         <div className="mt-4 text-center">
           <p className="text-sm text-slate-400 font-mono">
             <span className="text-accent">→</span>{" "}

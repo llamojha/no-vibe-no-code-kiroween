@@ -127,6 +127,14 @@ Generate a well-structured PRD in Markdown format with the following sections:
 - Tone: Professional, clear, actionable
 - Style: Use bullet points, tables, and formatting for readability
 
+=== CRITICAL FORMATTING INSTRUCTIONS ===
+- Start your response DIRECTLY with the document content (beginning with "## 1. Problem Statement")
+- Do NOT include any preamble, introduction, or conversational text before the document
+- Do NOT say things like "Sure, here is the PRD" or "Here's the document you requested"
+- Do NOT wrap the output in markdown code blocks
+- Do NOT include any closing remarks or summary after the document
+- The response should be ONLY the PRD content, nothing else
+
 Generate the PRD now:`;
 }
 
@@ -290,6 +298,14 @@ Auth: None (public endpoint)
 - Length: Comprehensive but focused (enough detail for implementation)
 - Tone: Technical but accessible to developers of varying experience
 - Style: Use code examples, diagrams, and tables for clarity
+
+=== CRITICAL FORMATTING INSTRUCTIONS ===
+- Start your response DIRECTLY with the document content (beginning with "## 1. Architecture Overview")
+- Do NOT include any preamble, introduction, or conversational text before the document
+- Do NOT say things like "Sure, here is the Technical Design" or "Here's the document you requested"
+- Do NOT wrap the output in markdown code blocks
+- Do NOT include any closing remarks or summary after the document
+- The response should be ONLY the Technical Design content, nothing else
 
 Generate the Technical Design Document now:`;
 }
@@ -490,6 +506,14 @@ sequenceDiagram
 - Tone: Technical and precise
 - Style: Heavy use of diagrams, tables, and structured lists
 
+=== CRITICAL FORMATTING INSTRUCTIONS ===
+- Start your response DIRECTLY with the document content (beginning with "## 1. System Architecture Diagram")
+- Do NOT include any preamble, introduction, or conversational text before the document
+- Do NOT say things like "Sure, here is the Architecture Document" or "Here's the document you requested"
+- Do NOT wrap the output in markdown code blocks
+- Do NOT include any closing remarks or summary after the document
+- The response should be ONLY the Architecture Document content, nothing else
+
 Generate the Architecture Document now:`;
 }
 
@@ -658,6 +682,14 @@ Brief list of technical risks that could affect implementation:
 - Length: Comprehensive but focused on implementation details
 - Every feature must follow the spec-ready format exactly
 - NO dates, timelines, team sizes, or business strategy
+
+=== CRITICAL FORMATTING INSTRUCTIONS ===
+- Start your response DIRECTLY with the document content (beginning with "## 1. MVP Overview")
+- Do NOT include any preamble, introduction, or conversational text before the document
+- Do NOT say things like "Sure, here is the Roadmap" or "Here's the document you requested"
+- Do NOT wrap the output in markdown code blocks
+- Do NOT include any closing remarks or summary after the document
+- The response should be ONLY the Roadmap content, nothing else
 
 Generate the MVP Roadmap now:`;
 }

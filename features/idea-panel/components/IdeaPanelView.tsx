@@ -34,10 +34,6 @@ import KiroGettingStartedPanel from "./KiroGettingStartedPanel";
 // Document generator component imports
 import {
   DocumentProgressIndicator,
-  GeneratePRDButton,
-  GenerateTechnicalDesignButton,
-  GenerateArchitectureButton,
-  GenerateRoadmapButton,
   DocumentCard,
 } from "@/features/document-generator/components";
 import {
@@ -94,6 +90,13 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     useState<string>("your first feature");
   const [exportFormat, setExportFormat] = useState<"zip" | "individual">("zip");
   const [showGettingStartedPanel, setShowGettingStartedPanel] = useState(true);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<{
+    current: number;
+    total: number;
+    currentDocument: string;
+  } | null>(null);
+  const [generateAllError, setGenerateAllError] = useState<string | null>(null);
 
   // Define loadIdeaData before useEffects that depend on it
   const loadIdeaData = React.useCallback(async () => {
@@ -404,6 +407,61 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     }
   };
 
+  const handleGenerateAllDocuments = async () => {
+    if (isGeneratingAll || missingDocumentTypes.length === 0) return;
+
+    setIsGeneratingAll(true);
+    setGenerateAllError(null);
+
+    const documentLabels: Record<string, string> = {
+      prd: t("prdStep") || "PRD",
+      technical_design: t("technicalDesignStep") || "Technical Design",
+      architecture: t("architectureStep") || "Architecture",
+      roadmap: t("roadmapStep") || "Roadmap",
+    };
+
+    const total = missingDocumentTypes.length;
+
+    try {
+      for (let i = 0; i < missingDocumentTypes.length; i++) {
+        const docType = missingDocumentTypes[i];
+        setGenerationProgress({
+          current: i,
+          total,
+          currentDocument: documentLabels[docType],
+        });
+
+        const generated = await generateDocument({
+          ideaId,
+          documentType: docType,
+        });
+
+        setDocuments((prev) => [
+          generated,
+          ...prev.filter((d) => d.id !== generated.id),
+        ]);
+      }
+
+      // Final progress update
+      setGenerationProgress({
+        current: total,
+        total,
+        currentDocument: t("complete") || "Complete",
+      });
+    } catch (err) {
+      console.error("Generate all failed:", err);
+      setGenerateAllError(
+        err instanceof Error
+          ? err.message
+          : t("generationFailedFallback") ||
+              "Failed to generate documents. Please try again."
+      );
+    } finally {
+      setIsGeneratingAll(false);
+      setGenerationProgress(null);
+    }
+  };
+
   // Main content
   return (
     <IdeaPanelLayout ideaId={ideaId}>
@@ -413,7 +471,23 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
 
         {/* Document Progress Indicator - Requirements: 9.1 */}
         {isDocumentGenerationEnabled && (
-          <DocumentProgressIndicator ideaId={idea.id} documents={documents} />
+          <>
+            <DocumentProgressIndicator
+              ideaId={idea.id}
+              documents={documents}
+              onGenerateAll={handleGenerateAllDocuments}
+              isGeneratingAll={isGeneratingAll}
+              generationProgress={generationProgress ?? undefined}
+            />
+            {generateAllError && (
+              <div
+                className="p-3 border border-red-500/60 bg-red-900/30 text-red-200 text-sm rounded-md"
+                role="alert"
+              >
+                {generateAllError}
+              </div>
+            )}
+          </>
         )}
 
         {/* Kiro Getting Started Panel - Shows after export */}
@@ -423,34 +497,6 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
             firstFeatureName={firstFeatureName}
             onDismiss={() => setShowGettingStartedPanel(false)}
           />
-        )}
-
-        {/* Document Generation Buttons Section - Requirements: 1.1, 3.1, 5.1, 7.1 */}
-        {isDocumentGenerationEnabled && (
-          <section
-            className="bg-primary/30 border border-slate-700 p-6 animate-fade-in"
-            aria-labelledby="generate-documents-heading"
-          >
-            <h2
-              id="generate-documents-heading"
-              className="text-xl font-bold border-b border-slate-700 pb-2 text-slate-200 uppercase tracking-wider mb-6"
-            >
-              {t("generateDocuments") || "Generate Documents"}
-            </h2>
-            <p className="text-sm text-slate-400 mb-4 font-mono">
-              {t("generateDocumentsDescription") ||
-                "Create AI-powered project documentation from your idea"}
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <GeneratePRDButton ideaId={idea.id} variant="compact" />
-              <GenerateTechnicalDesignButton
-                ideaId={idea.id}
-                variant="compact"
-              />
-              <GenerateArchitectureButton ideaId={idea.id} variant="compact" />
-              <GenerateRoadmapButton ideaId={idea.id} variant="compact" />
-            </div>
-          </section>
         )}
 
         {/* Missing Documents Quick Generate */}
