@@ -422,34 +422,38 @@ export const DocumentProgressIndicator: React.FC<
         })}
       </div>
 
-      {/* Generate All Documents Button */}
-      {onGenerateAll && recommendedNext && !isGeneratingAll && (
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={onGenerateAll}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-teal-500 text-slate-900 font-bold uppercase tracking-wider rounded-none border border-accent/50 hover:from-accent/90 hover:to-teal-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-            aria-label={
-              t("generateAllDocuments") || "Generate all missing documents"
-            }
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
+      {/* Generate All Documents Button - shows when there are missing generated documents */}
+      {onGenerateAll &&
+        !isGeneratingAll &&
+        (!hasPRD || !hasTechnicalDesign || !hasArchitecture || !hasRoadmap) && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={onGenerateAll}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent to-teal-500 text-slate-900 font-bold uppercase tracking-wider rounded-none border border-accent/50 hover:from-accent/90 hover:to-teal-400 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+              aria-label={
+                t("generateAllDocuments") || "Generate all missing documents"
+              }
             >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>{t("generateAllDocuments") || "Generate All Documents"}</span>
-          </button>
-        </div>
-      )}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>
+                {t("generateAllDocuments") || "Generate All Documents"}
+              </span>
+            </button>
+          </div>
+        )}
 
       {/* Generation Progress Overlay */}
       {isGeneratingAll && generationProgress && (
