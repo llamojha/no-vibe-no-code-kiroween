@@ -8,6 +8,116 @@ import type { DocumentDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
 import { ScoreGauge } from "@/features/shared/components/ScoreGauge";
 import { trackDocumentView } from "@/features/idea-panel/analytics/tracking";
 
+/**
+ * Renders markdown text with basic formatting support
+ * Supports: **bold**, *italic*, [links](url), and line breaks
+ */
+const renderMarkdownText = (text: string): React.ReactNode => {
+  // Split by line breaks first
+  const lines = text.split(/\n/);
+
+  return lines.map((line, lineIndex) => {
+    // Process inline formatting within each line
+    const parts: React.ReactNode[] = [];
+    let remaining = line;
+    let keyIndex = 0;
+
+    while (remaining.length > 0) {
+      // Check for markdown link [text](url)
+      const linkMatch = /^(.*?)\[([^\]]+)\]\(([^)]+)\)(.*)$/.exec(remaining);
+      if (linkMatch) {
+        const [, before, linkText, url, after] = linkMatch;
+        if (before) {
+          parts.push(
+            <span key={`${lineIndex}-${keyIndex++}`}>
+              {renderInlineFormatting(before)}
+            </span>
+          );
+        }
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          parts.push(
+            <a
+              key={`${lineIndex}-${keyIndex++}`}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline decoration-accent/50"
+            >
+              {linkText}
+            </a>
+          );
+        } else {
+          parts.push(
+            <span key={`${lineIndex}-${keyIndex++}`}>{linkText}</span>
+          );
+        }
+        remaining = after;
+        continue;
+      }
+
+      // No more links, process remaining text
+      parts.push(
+        <span key={`${lineIndex}-${keyIndex++}`}>
+          {renderInlineFormatting(remaining)}
+        </span>
+      );
+      break;
+    }
+
+    return (
+      <React.Fragment key={lineIndex}>
+        {parts}
+        {lineIndex < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
+};
+
+/**
+ * Renders inline formatting: **bold** and *italic*
+ */
+const renderInlineFormatting = (text: string): React.ReactNode => {
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  while (remaining.length > 0) {
+    // Check for bold **text**
+    const boldMatch = /^(.*?)\*\*([^*]+)\*\*(.*)$/.exec(remaining);
+    if (boldMatch) {
+      const [, before, boldText, after] = boldMatch;
+      if (before) parts.push(before);
+      parts.push(
+        <strong key={keyIndex++} className="font-semibold text-slate-200">
+          {boldText}
+        </strong>
+      );
+      remaining = after;
+      continue;
+    }
+
+    // Check for italic *text*
+    const italicMatch = /^(.*?)\*([^*]+)\*(.*)$/.exec(remaining);
+    if (italicMatch) {
+      const [, before, italicText, after] = italicMatch;
+      if (before) parts.push(before);
+      parts.push(
+        <em key={keyIndex++} className="italic">
+          {italicText}
+        </em>
+      );
+      remaining = after;
+      continue;
+    }
+
+    // No more formatting, add remaining text
+    parts.push(remaining);
+    break;
+  }
+
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+};
+
 interface DocumentsListSectionProps {
   documents: DocumentDTO[];
   ideaId?: string;
@@ -513,9 +623,9 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
                     </h4>
 
                     {viabilitySummary ? (
-                      <p className="text-slate-300 text-sm leading-relaxed font-mono">
-                        {viabilitySummary}
-                      </p>
+                      <div className="text-slate-300 text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                        {renderMarkdownText(viabilitySummary)}
+                      </div>
                     ) : (
                       <p className="text-slate-500 text-sm italic font-mono">
                         {t("noSummaryAvailable") ||

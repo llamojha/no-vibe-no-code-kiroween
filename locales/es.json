@@ -493,5 +493,7 @@
   "kiroweenShortDesc": "Evaluación de hackathon",
   "start": "Comenzar",
   "startIdeaButton": "Comenzar a trabajar en esta idea",
-  "generateAllDocuments": "Generar Todos los Documentos"
+  "generateAllDocuments": "Generar Todos los Documentos",
+  "generatingDocuments": "Generando documentos...",
+  "generating": "Generando"
 }

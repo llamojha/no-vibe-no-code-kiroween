@@ -495,5 +495,7 @@
   "kiroweenShortDesc": "Hackathon project eval",
   "start": "Start",
   "startIdeaButton": "Start working on this idea",
-  "generateAllDocuments": "Generate All Documents"
+  "generateAllDocuments": "Generate All Documents",
+  "generatingDocuments": "Generating documents...",
+  "generating": "Generating"
 }
