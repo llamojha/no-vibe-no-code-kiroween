@@ -77,12 +77,6 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  const [isQuickGenerating, setIsQuickGenerating] = useState<
-    null | "prd" | "technical_design" | "architecture" | "roadmap"
-  >(null);
-  const [quickGenerateError, setQuickGenerateError] = useState<string | null>(
-    null
-  );
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isPostExportModalOpen, setIsPostExportModalOpen] = useState(false);
   const [hasExportedToKiro, setHasExportedToKiro] = useState(false);
@@ -379,34 +373,6 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     setIsPostExportModalOpen(true);
   };
 
-  const handleQuickGenerate = async (
-    documentType: "prd" | "technical_design" | "architecture" | "roadmap"
-  ) => {
-    if (isQuickGenerating) return;
-    setQuickGenerateError(null);
-    setIsQuickGenerating(documentType);
-    try {
-      const generated = await generateDocument({
-        ideaId,
-        documentType,
-      });
-      setDocuments((prev) => [
-        generated,
-        ...prev.filter((d) => d.id !== generated.id),
-      ]);
-    } catch (err) {
-      console.error("Quick generate failed:", err);
-      setQuickGenerateError(
-        err instanceof Error
-          ? err.message
-          : t("generationFailedFallback") ||
-              "Failed to generate document. Please try again."
-      );
-    } finally {
-      setIsQuickGenerating(null);
-    }
-  };
-
   const handleGenerateAllDocuments = async () => {
     if (isGeneratingAll || missingDocumentTypes.length === 0) return;
 
@@ -499,85 +465,6 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
           />
         )}
 
-        {/* Missing Documents Quick Generate */}
-        {isDocumentGenerationEnabled && missingDocumentTypes.length > 0 && (
-          <section
-            className="bg-secondary/10 border border-secondary/40 p-6 animate-fade-in"
-            aria-labelledby="missing-documents-heading"
-          >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-              <div>
-                <h3
-                  id="missing-documents-heading"
-                  className="text-lg font-bold text-secondary uppercase tracking-wider"
-                >
-                  {t("missingDocsTitle") || "Missing documents"}
-                </h3>
-                <p className="text-sm text-slate-300">
-                  {t("missingDocsSubtitle") ||
-                    "Generate the next documents with one click to keep the flow moving."}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {missingDocumentTypes.map((type) => {
-                const labelMap = {
-                  prd: t("generatePRD"),
-                  technical_design: t("generateTechnicalDesign"),
-                  architecture: t("generateArchitecture"),
-                  roadmap: t("generateRoadmap"),
-                };
-                const isBusy = isQuickGenerating === type;
-                return (
-                  <button
-                    key={type}
-                    onClick={() => handleQuickGenerate(type)}
-                    disabled={isBusy}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider rounded-md border transition-colors ${
-                      isBusy
-                        ? "bg-slate-800 border-slate-700 text-slate-400 cursor-not-allowed"
-                        : "bg-secondary/80 border-secondary/50 text-slate-900 hover:bg-secondary hover:border-secondary/80"
-                    }`}
-                  >
-                    {isBusy ? (
-                      <svg
-                        className="h-4 w-4 animate-spin"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                    ) : null}
-                    <span>{labelMap[type]}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {quickGenerateError && (
-              <div
-                className="mt-3 p-3 border border-red-500/60 bg-red-900/30 text-red-200 text-sm rounded-md"
-                role="alert"
-              >
-                {quickGenerateError}
-              </div>
-            )}
-          </section>
-        )}
-
         {/* Generated Documents Section - Requirements: 10.1, 10.2 */}
         {isDocumentGenerationEnabled && generatedDocuments.length > 0 && (
           <section
@@ -659,13 +546,13 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
         {/* Analysis Documents List Section (existing analyses) */}
         <DocumentsListSection documents={analysisDocuments} ideaId={idea.id} />
 
-        {/* Project Status Control */}
-        <ProjectStatusControl idea={idea} onStatusUpdate={handleStatusUpdate} />
-
         {/* Analyze Button */}
         <div className="flex justify-center">
           <AnalyzeButton idea={idea} documentCount={documents.length} />
         </div>
+
+        {/* Project Status Control */}
+        <ProjectStatusControl idea={idea} onStatusUpdate={handleStatusUpdate} />
 
         {/* Notes Section */}
         <NotesSection idea={idea} onSaveNotes={handleSaveNotes} />
