@@ -6,12 +6,13 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import LanguageToggle from "@/features/locale/components/LanguageToggle";
 import IdeaCard from "./IdeaCard";
+import IdeaCreationHub from "./IdeaCreationHub";
 import { getUserIdeas } from "@/features/idea-panel/api";
 import type { DashboardIdeaDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
 import type { UserTier } from "@/lib/types";
 import { trackDashboardView } from "@/features/analytics/tracking";
-import { isEnabled } from "@/lib/featureFlags";
 import { CreditCounter } from "@/features/shared/components/CreditCounter";
+// Note: isEnabled moved to IdeaCreationHub component
 
 type SortOption = "newest" | "oldest" | "az";
 type FilterOption = "all" | "manual" | "frankenstein";
@@ -34,10 +35,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
   const router = useRouter();
   const { t } = useLocale();
   const { signOut } = useAuth();
-
-  // Feature flag evaluations
-  const showClassicAnalyzer = isEnabled("ENABLE_CLASSIC_ANALYZER");
-  const showKiroweenAnalyzer = isEnabled("ENABLE_KIROWEEN_ANALYZER");
 
   const [ideas, setIdeas] = useState<DashboardIdeaDTO[]>(initialIdeas);
   const [filterState, setFilterState] = useState<{
@@ -166,37 +163,10 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
           />
         </div>
 
-        {(showClassicAnalyzer || showKiroweenAnalyzer) && (
-          <div className="mb-12 animate-slide-in-up">
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {showClassicAnalyzer && (
-                <button
-                  data-testid="dashboard-cta-startup"
-                  onClick={() => router.push("/analyzer")}
-                  className="px-8 py-4 bg-teal-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-teal-500/30 hover:bg-teal-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-                >
-                  💡 {t("analyzeStartupIdea")}
-                </button>
-              )}
-              {showKiroweenAnalyzer && (
-                <button
-                  data-testid="dashboard-cta-kiroween"
-                  onClick={() => router.push("/kiroween-analyzer")}
-                  className="px-8 py-4 bg-orange-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-orange-500/30 hover:bg-orange-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-                >
-                  🎃 {t("analyzeKiroweenProject")}
-                </button>
-              )}
-              <button
-                data-testid="dashboard-cta-frankenstein"
-                onClick={() => router.push("/doctor-frankenstein")}
-                className="px-8 py-4 bg-purple-500/80 text-white font-bold text-lg rounded-none shadow-lg shadow-purple-500/30 hover:bg-purple-500 transform hover:scale-105 transition-all duration-300 ease-in-out uppercase tracking-widest"
-              >
-                🧟 Doctor Frankenstein
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Idea Creation Hub - unified entry point */}
+        <div className="mb-12 animate-slide-in-up">
+          <IdeaCreationHub onIdeaCreated={refreshIdeas} />
+        </div>
 
         <div
           className="animate-slide-in-up"

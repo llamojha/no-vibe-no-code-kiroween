@@ -156,6 +156,53 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
     }
   }, [idea, documents]);
 
+  // Auto-generate all documents when ?generate=all is in URL
+  // This enables the "Create & Generate" flow from the dashboard
+  const [hasTriggeredAutoGenerate, setHasTriggeredAutoGenerate] =
+    useState(false);
+
+  // Store a ref to trigger auto-generation
+  const shouldTriggerAutoGenerate = React.useRef(false);
+
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const shouldAutoGenerate = params.get("generate") === "all";
+
+    // Check conditions for auto-generate
+    const isDocGenEnabled = isEnabled("ENABLE_DOCUMENT_GENERATION");
+    const generatedDocsCount = documents.filter(
+      (doc) =>
+        doc.documentType !== "startup_analysis" &&
+        doc.documentType !== "hackathon_analysis"
+    ).length;
+    const hasMissingDocs = generatedDocsCount < 4;
+
+    if (
+      shouldAutoGenerate &&
+      !hasTriggeredAutoGenerate &&
+      !isLoading &&
+      idea &&
+      isDocGenEnabled &&
+      hasMissingDocs &&
+      !isGeneratingAll
+    ) {
+      setHasTriggeredAutoGenerate(true);
+      shouldTriggerAutoGenerate.current = true;
+      // Remove query param from URL without reload
+      window.history.replaceState({}, "", `/idea/${ideaId}`);
+    }
+  }, [
+    idea,
+    documents,
+    isLoading,
+    hasTriggeredAutoGenerate,
+    ideaId,
+    isGeneratingAll,
+  ]);
+
   const handleStatusUpdate = async (
     newStatus: IdeaDTO["projectStatus"]
   ): Promise<void> => {
@@ -461,6 +508,22 @@ export const IdeaPanelView: React.FC<IdeaPanelViewProps> = ({
       setGenerationProgress(null);
     }
   };
+
+  // Effect to trigger auto-generation when coming from dashboard with ?generate=all
+  useEffect(() => {
+    if (
+      shouldTriggerAutoGenerate.current &&
+      !isGeneratingAll &&
+      missingDocumentTypes.length > 0
+    ) {
+      shouldTriggerAutoGenerate.current = false;
+      // Small delay to let UI render first
+      const timer = setTimeout(() => {
+        handleGenerateAllDocuments();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [hasTriggeredAutoGenerate, isGeneratingAll, missingDocumentTypes.length]);
 
   // Main content
   return (
