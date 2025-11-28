@@ -13,6 +13,8 @@ export type { SaveMetadataOptions } from "./saveMetadata";
 export { getDocumentsByIdea } from "./getDocumentsByIdea";
 export { getDocumentById } from "./getDocumentById";
 export { deleteIdea } from "./deleteIdea";
+export { createIdea } from "./createIdea";
+export type { CreateIdeaInput } from "./createIdea";
 
 // Document Generation API wrappers
 export {

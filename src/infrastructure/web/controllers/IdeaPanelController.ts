@@ -4,6 +4,7 @@ import { UpdateIdeaStatusUseCase } from "@/src/application/use-cases/UpdateIdeaS
 import { SaveIdeaMetadataUseCase } from "@/src/application/use-cases/SaveIdeaMetadataUseCase";
 import { GetUserIdeasUseCase } from "@/src/application/use-cases/GetUserIdeasUseCase";
 import { DeleteIdeaUseCase } from "@/src/application/use-cases/DeleteIdeaUseCase";
+import { CreateIdeaUseCase } from "@/src/application/use-cases/CreateIdeaUseCase";
 import { IdeaId, ProjectStatus, UserId } from "@/src/domain/value-objects";
 import { handleApiError } from "../middleware/ErrorMiddleware";
 import { authenticateRequest } from "../middleware/AuthMiddleware";
@@ -24,8 +25,74 @@ export class IdeaPanelController {
     private readonly updateStatusUseCase: UpdateIdeaStatusUseCase,
     private readonly saveMetadataUseCase: SaveIdeaMetadataUseCase,
     private readonly getUserIdeasUseCase: GetUserIdeasUseCase,
-    private readonly deleteIdeaUseCase: DeleteIdeaUseCase
+    private readonly deleteIdeaUseCase: DeleteIdeaUseCase,
+    private readonly createIdeaUseCase?: CreateIdeaUseCase
   ) {}
+
+  /**
+   * Create a new idea
+   * POST /api/v2/ideas
+   */
+  async createIdea(request: NextRequest): Promise<NextResponse> {
+    try {
+      // Authenticate request
+      const authResult = await authenticateRequest(request);
+      if (!authResult.success) {
+        return NextResponse.json({ error: authResult.error }, { status: 401 });
+      }
+
+      // Check if use case is available
+      if (!this.createIdeaUseCase) {
+        return NextResponse.json(
+          { error: "Create idea functionality not available" },
+          { status: 501 }
+        );
+      }
+
+      // Parse request body
+      const body = await request.json();
+      const { ideaText, source } = body;
+
+      // Validate ideaText
+      if (!ideaText || typeof ideaText !== "string") {
+        return NextResponse.json(
+          { error: "ideaText is required and must be a string" },
+          { status: 400 }
+        );
+      }
+
+      // Validate source if provided
+      if (source && !["manual", "frankenstein"].includes(source)) {
+        return NextResponse.json(
+          { error: "source must be 'manual' or 'frankenstein'" },
+          { status: 400 }
+        );
+      }
+
+      const userId = UserId.fromString(authResult.userId);
+
+      // Execute use case
+      const result = await this.createIdeaUseCase.execute({
+        userId,
+        ideaText,
+        source: source || "manual",
+      });
+
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error?.message || "Failed to create idea" },
+          { status: 400 }
+        );
+      }
+
+      // Convert to DTO
+      const ideaDTO = this.ideaMapper.toDTO(result.data.idea);
+
+      return NextResponse.json({ idea: ideaDTO }, { status: 201 });
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
 
   /**
    * Get all ideas for the current user

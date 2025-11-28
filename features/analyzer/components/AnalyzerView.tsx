@@ -210,13 +210,13 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   const showInputForm =
     !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
 
-  // Pre-fill idea from Doctor Frankenstein if provided
+  // Pre-fill idea from URL (Doctor Frankenstein or Idea Panel)
   useEffect(() => {
-    if (ideaFromUrl && sourceFromUrl === "frankenstein" && !savedId) {
+    if (ideaFromUrl && !savedId) {
       // useSearchParams().get() already returns decoded values, no need to decode again
       setIdea(ideaFromUrl);
     }
-  }, [ideaFromUrl, sourceFromUrl, savedId]);
+  }, [ideaFromUrl, savedId]);
 
   // Pre-fill idea from Idea Panel if provided
   useEffect(() => {
@@ -241,8 +241,8 @@ const AnalyzerView: React.FC<AnalyzerViewProps> = ({
   useEffect(() => {
     if (!savedId) {
       setSavedAnalysisRecord(null);
-      // Don't reset if we have an idea from Frankenstein
-      if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
+      // Don't reset if we have an idea from URL (Frankenstein or Idea Panel)
+      if (!ideaFromUrl) {
         setIdea((previous) =>
           previous && previous.length > 0 ? previous : ""
         );

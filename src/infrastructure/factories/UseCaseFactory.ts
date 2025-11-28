@@ -33,6 +33,7 @@ import { GetDocumentsByIdeaUseCase } from "../../application/use-cases/GetDocume
 import { GetDocumentByIdUseCase } from "../../application/use-cases/GetDocumentByIdUseCase";
 import { SaveAnalysisToIdeaPanelUseCase } from "../../application/use-cases/SaveAnalysisToIdeaPanelUseCase";
 import { DeleteIdeaUseCase } from "../../application/use-cases/DeleteIdeaUseCase";
+import { CreateIdeaUseCase } from "../../application/use-cases/CreateIdeaUseCase";
 import { GenerateDocumentUseCase } from "../../application/use-cases/GenerateDocumentUseCase";
 import { UpdateDocumentUseCase } from "../../application/use-cases/UpdateDocumentUseCase";
 import { RegenerateDocumentUseCase } from "../../application/use-cases/RegenerateDocumentUseCase";
@@ -444,6 +445,20 @@ export class UseCaseFactory {
     }
 
     return this.useCases.get(cacheKey) as DeleteIdeaUseCase;
+  }
+
+  /**
+   * Create CreateIdeaUseCase with dependencies
+   */
+  createCreateIdeaUseCase(): CreateIdeaUseCase {
+    const cacheKey = "createIdeaUseCase";
+
+    if (!this.useCases.has(cacheKey)) {
+      const useCase = new CreateIdeaUseCase(this.ideaRepository);
+      this.useCases.set(cacheKey, useCase);
+    }
+
+    return this.useCases.get(cacheKey) as CreateIdeaUseCase;
   }
 
   /**

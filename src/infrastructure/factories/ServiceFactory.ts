@@ -344,13 +344,15 @@ export class ServiceFactory {
       const getUserIdeasUseCase =
         this.useCaseFactory.createGetUserIdeasUseCase();
       const deleteIdeaUseCase = this.useCaseFactory.createDeleteIdeaUseCase();
+      const createIdeaUseCase = this.useCaseFactory.createCreateIdeaUseCase();
 
       const controller = new IdeaPanelController(
         getIdeaWithDocumentsUseCase,
         updateStatusUseCase,
         saveMetadataUseCase,
         getUserIdeasUseCase,
-        deleteIdeaUseCase
+        deleteIdeaUseCase,
+        createIdeaUseCase
       );
 
       this.services.set(cacheKey, controller);

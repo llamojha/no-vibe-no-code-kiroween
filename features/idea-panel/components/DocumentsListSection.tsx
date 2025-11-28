@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import { useLocale } from "@/features/locale/context/LocaleContext";
 import { isEnabled } from "@/lib/featureFlags";
 import type { DocumentDTO } from "@/src/infrastructure/web/dto/IdeaDTO";
@@ -513,9 +514,9 @@ export const DocumentsListSection: React.FC<DocumentsListSectionProps> = ({
                     </h4>
 
                     {viabilitySummary ? (
-                      <p className="text-slate-300 text-sm leading-relaxed font-mono">
-                        {viabilitySummary}
-                      </p>
+                      <div className="text-slate-300 text-sm leading-relaxed prose prose-sm prose-invert max-w-none [&>h1]:text-lg [&>h1]:font-bold [&>h1]:text-slate-200 [&>h1]:mt-4 [&>h1]:mb-2 [&>h2]:text-base [&>h2]:font-semibold [&>h2]:text-slate-200 [&>h2]:mt-3 [&>h2]:mb-2 [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:text-slate-300 [&>h3]:mt-2 [&>h3]:mb-1 [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>pre]:bg-slate-900 [&>pre]:p-3 [&>pre]:rounded [&>pre]:overflow-x-auto [&>pre]:text-xs [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:rounded [&>a]:text-accent [&>a]:hover:underline">
+                        <ReactMarkdown>{viabilitySummary}</ReactMarkdown>
+                      </div>
                     ) : (
                       <p className="text-slate-500 text-sm italic font-mono">
                         {t("noSummaryAvailable") ||
