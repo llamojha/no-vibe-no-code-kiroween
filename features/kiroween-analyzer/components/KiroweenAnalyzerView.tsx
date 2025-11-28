@@ -110,26 +110,26 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     t("spookyLoaderMessage6"),
   ];
 
-  // Pre-fill idea from Doctor Frankenstein if provided
+  // Pre-fill idea from URL (Doctor Frankenstein or Idea Panel)
   useEffect(() => {
-    if (ideaFromUrl && sourceFromUrl === "frankenstein" && !savedId) {
+    if (ideaFromUrl && !savedId) {
       // useSearchParams().get() already returns decoded values, no need to decode again
       setSubmission({
         description: ideaFromUrl,
         supportingMaterials: {},
       });
     }
-  }, [ideaFromUrl, sourceFromUrl, savedId]);
+  }, [ideaFromUrl, savedId]);
 
-  // Pre-fill idea from Idea Panel if provided
+  // Pre-fill idea from server-side prop (fallback for Idea Panel)
   useEffect(() => {
-    if (prefilledIdea && !savedId) {
+    if (prefilledIdea && !savedId && !ideaFromUrl) {
       setSubmission({
         description: prefilledIdea,
         supportingMaterials: {},
       });
     }
-  }, [prefilledIdea, savedId]);
+  }, [prefilledIdea, savedId, ideaFromUrl]);
 
   // State for error handling
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -138,8 +138,8 @@ const KiroweenAnalyzerView: React.FC<KiroweenAnalyzerViewProps> = ({
     if (!savedId) {
       setSavedAnalysisRecord(null);
       setLoadError(null);
-      // Don't reset if we have an idea from Frankenstein
-      if (!ideaFromUrl || sourceFromUrl !== "frankenstein") {
+      // Don't reset if we have an idea from URL (Frankenstein or Idea Panel)
+      if (!ideaFromUrl) {
         setSubmission({
           description: "",
           supportingMaterials: {},
