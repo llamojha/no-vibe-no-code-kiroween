@@ -485,7 +485,7 @@
   "ideaMinLengthError": "Idea must be at least 10 characters.",
   "createIdeaError": "Failed to create idea",
   "creating": "Creating...",
-  "createAndGenerate": "Create & Generate Spec",
+  "createIdea": "Create Idea",
   "orUse": "or use",
   "doctorFrankenstein": "Dr. Frankenstein",
   "frankensteinShortDesc": "Mashup random technologies",
@@ -493,7 +493,7 @@
   "analyzerShortDesc": "Detailed idea analysis",
   "kiroweenAnalyzer": "Kiroween Analyzer",
   "kiroweenShortDesc": "Hackathon project eval",
-  "generateSpec": "Generate Spec",
-  "generateSpecButton": "Generate spec for this idea",
+  "start": "Start",
+  "startIdeaButton": "Start working on this idea",
   "generateAllDocuments": "Generate All Documents"
 }

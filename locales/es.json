@@ -483,7 +483,7 @@
   "ideaMinLengthError": "La idea debe tener al menos 10 caracteres.",
   "createIdeaError": "Error al crear la idea",
   "creating": "Creando...",
-  "createAndGenerate": "Crear y Generar Spec",
+  "createIdea": "Crear Idea",
   "orUse": "o usa",
   "doctorFrankenstein": "Dr. Frankenstein",
   "frankensteinShortDesc": "Combina tecnologías aleatorias",
@@ -491,7 +491,7 @@
   "analyzerShortDesc": "Análisis detallado de ideas",
   "kiroweenAnalyzer": "Analizador Kiroween",
   "kiroweenShortDesc": "Evaluación de hackathon",
-  "generateSpec": "Generar Spec",
-  "generateSpecButton": "Generar spec para esta idea",
+  "start": "Comenzar",
+  "startIdeaButton": "Comenzar a trabajar en esta idea",
   "generateAllDocuments": "Generar Todos los Documentos"
 }

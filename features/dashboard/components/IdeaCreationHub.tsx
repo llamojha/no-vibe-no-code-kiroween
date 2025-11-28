@@ -58,8 +58,8 @@ export const IdeaCreationHub: React.FC<IdeaCreationHubProps> = ({
       try {
         const idea = await createIdea({ ideaText: trimmed, source: "manual" });
         onIdeaCreated?.();
-        // Navigate to idea panel with auto-generate flag
-        router.push(`/idea/${idea.id}?generate=all`);
+        // Navigate to idea panel - user can generate docs from there
+        router.push(`/idea/${idea.id}`);
       } catch (err) {
         console.error("Failed to create idea:", err);
         setError(
@@ -152,9 +152,7 @@ export const IdeaCreationHub: React.FC<IdeaCreationHubProps> = ({
             ) : (
               <>
                 <span aria-hidden="true">✨</span>
-                <span>
-                  {t("createAndGenerate") || "Create & Generate Spec"}
-                </span>
+                <span>{t("createIdea") || "Create Idea"}</span>
               </>
             )}
           </button>

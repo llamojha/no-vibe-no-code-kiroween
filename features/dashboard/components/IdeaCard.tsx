@@ -234,17 +234,15 @@ export const IdeaCard: React.FC<IdeaCardProps> = ({ idea }) => {
               window.location.reload();
             }}
           />
-          {/* Generate Spec button for ideas with no documents */}
+          {/* Start button for ideas with no documents - highlights they need action */}
           {idea.documentCount === 0 && (
             <button
-              onClick={() => router.push(`/idea/${idea.id}?generate=all`)}
+              onClick={() => router.push(`/idea/${idea.id}`)}
               className="flex items-center justify-center gap-2 px-4 py-2 sm:px-6 sm:py-2.5 text-sm font-semibold uppercase tracking-wider bg-accent text-black rounded hover:bg-accent/90 transition-colors min-h-[44px] touch-manipulation"
-              aria-label={
-                t("generateSpecButton") || "Generate spec for this idea"
-              }
+              aria-label={t("startIdeaButton") || "Start working on this idea"}
             >
               <span aria-hidden="true">🚀</span>
-              <span>{t("generateSpec") || "Generate Spec"}</span>
+              <span>{t("start") || "Start"}</span>
             </button>
           )}
           <button
