@@ -12,8 +12,8 @@ describe("CreditPolicy", () => {
   });
 
   describe("getDefaultCredits", () => {
-    it("should return 5 as default credits", () => {
-      expect(creditPolicy.getDefaultCredits()).toBe(5);
+    it("should return 20 as default credits", () => {
+      expect(creditPolicy.getDefaultCredits()).toBe(20);
     });
   });
 

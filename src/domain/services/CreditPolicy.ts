@@ -9,7 +9,7 @@ export class CreditPolicy {
   /**
    * Default number of credits for new users
    */
-  private readonly DEFAULT_CREDITS = 5;
+  private readonly DEFAULT_CREDITS = 20;
 
   /**
    * Cost in credits for performing an analysis
