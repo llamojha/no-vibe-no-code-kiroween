@@ -13,7 +13,7 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://novibenocode.amllamojha.com'),
+  metadataBase: new URL('https://novibenocode.com'),
   title: 'No Vibe No Code',
   description:
     'Turn raw ideas into governed PRDs, roadmaps, and GitHub backlogs with AI-assisted workflows.',
@@ -34,18 +34,18 @@ export const metadata: Metadata = {
     title: 'No Vibe No Code',
     description:
       'Turn raw ideas into governed PRDs, roadmaps, and GitHub backlogs with AI-assisted workflows.',
-    url: 'https://novibenocode.amllamojha.com/',
+    url: 'https://novibenocode.com/',
     siteName: 'No Vibe No Code',
     type: 'website',
     images: [
       {
-        url: 'https://novibenocode.amllamojha.com/screenshots/dashboard-light.png',
+        url: 'https://novibenocode.com/screenshots/dashboard-light.png',
         width: 1920,
         height: 1080,
         alt: 'No Vibe No Code dashboard',
       },
       {
-        url: 'https://novibenocode.amllamojha.com/screenshots/mobile-overview.png',
+        url: 'https://novibenocode.com/screenshots/mobile-overview.png',
         width: 1242,
         height: 2688,
         alt: 'No Vibe No Code mobile overview',
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     title: 'No Vibe No Code',
     description:
       'Turn raw ideas into governed PRDs, roadmaps, and GitHub backlogs with AI-assisted workflows.',
-    images: ['https://novibenocode.amllamojha.com/screenshots/dashboard-light.png'],
+    images: ['https://novibenocode.com/screenshots/dashboard-light.png'],
   },
   icons: {
     icon: [

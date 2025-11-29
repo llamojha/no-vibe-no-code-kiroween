@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://nvnc.amllamojha.com/icons/icon-512x512.png" />
+<img width="1200" height="475" alt="GHBanner" src="https://novibenocode.com/icons/icon-512x512.png" />
 </div>
 
 # No Vibe No Code
