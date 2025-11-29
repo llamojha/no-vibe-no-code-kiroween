@@ -44,7 +44,35 @@ export async function generateFrankensteinIdea(
     jsonText = jsonText.replace(/```\n?/g, "");
   }
 
-  const parsed = JSON.parse(jsonText);
+  const parseJsonResponse = (text: string) => {
+    const candidates: string[] = [];
+
+    const trimmed = text.trim();
+    if (trimmed) {
+      candidates.push(trimmed);
+    }
+
+    // Fallback: grab the first JSON-looking block to handle trailing text
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      candidates.push(trimmed.slice(start, end + 1).trim());
+    }
+
+    for (const candidate of candidates) {
+      try {
+        return JSON.parse(candidate);
+      } catch (parseError) {
+        // Try the next candidate
+      }
+    }
+
+    throw new Error(
+      "Failed to parse Gemini response as JSON. Received response: " + trimmed
+    );
+  };
+
+  const parsed = parseJsonResponse(jsonText);
 
   // Ensure all fields are strings (convert objects to strings if needed)
   const ensureString = (value: unknown): string => {
