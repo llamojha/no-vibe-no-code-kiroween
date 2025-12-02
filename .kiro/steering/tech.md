@@ -91,6 +91,10 @@ npm run test:e2e:ui      # Run E2E tests with UI
 npm run test:e2e:headed  # Run E2E tests in headed mode
 npm run test:e2e:debug   # Debug E2E tests
 
+# Validation
+npm run validate-architecture  # Validate hexagonal architecture
+npm run validate:mocks         # Validate mock response schemas
+
 # Setup
 npm install          # Install dependencies
 npm run playwright:install # Install Playwright browsers
@@ -122,4 +126,4 @@ This project follows **Hexagonal Architecture** (Ports and Adapters pattern):
 
 See `hexagonal-architecture-standards.md` for detailed architectural guidelines.
 
-<!-- Last updated: November 19, 2025 -->
+<!-- Last updated: December 1, 2025 -->

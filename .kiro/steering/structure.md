@@ -270,6 +270,13 @@ Dedicated workspace for managing ideas with status tracking, notes, tags, and mu
 - `idea-panel/api/getDocumentsByIdea.ts` - Fetch documents for idea
 - `idea-panel/analytics/tracking.ts` - Analytics tracking for panel events
 
+#### Document Generator
+
+AI-powered document generation for PRDs, Technical Designs, Architecture Documents, and Roadmaps:
+
+- `document-generator/components/` - Document generation UI components
+- `document-generator/analytics/` - Analytics tracking for document generation events
+
 #### Locale
 
 Internationalization:
@@ -358,6 +365,15 @@ Next.js API routes (HTTP endpoints).
 - `api/v2/ideas/[ideaId]/metadata/route.ts` - PUT /api/v2/ideas/[ideaId]/metadata (save notes/tags)
 - `api/v2/ideas/[ideaId]/documents/route.ts` - GET /api/v2/ideas/[ideaId]/documents (list documents)
 
+#### Document Generation Endpoints
+
+- `api/v2/documents/generate/route.ts` - POST /api/v2/documents/generate (generate document)
+- `api/v2/documents/[documentId]/route.ts` - GET/PUT /api/v2/documents/[documentId] (get/update document)
+
+#### Credit Endpoints
+
+- `api/v2/credits/balance/route.ts` - GET /api/v2/credits/balance (get user credit balance)
+
 #### Utility Endpoints
 
 - `api/health/route.ts` - GET /api/health (health check)
@@ -384,6 +400,13 @@ Next.js page routes (UI pages).
 #### Idea Panel Pages
 
 - `app/idea/[ideaId]/page.tsx` - Idea Panel page (dedicated workspace for managing ideas)
+
+#### Document Generation Pages
+
+- `app/generate/prd/[ideaId]/page.tsx` - PRD generation page
+- `app/generate/technical-design/[ideaId]/page.tsx` - Technical Design generation page
+- `app/generate/architecture/[ideaId]/page.tsx` - Architecture Document generation page
+- `app/generate/roadmap/[ideaId]/page.tsx` - Roadmap generation page
 
 ### Shared Types (`src/shared/`)
 
@@ -517,6 +540,10 @@ Shared utilities for property-based testing:
 
 → `src/domain/services/CreditPolicy.ts` for business rules, `src/application/use-cases/` for credit operations
 
+### "Where do I add document generation logic?"
+
+→ `features/document-generator/` for UI components, `app/generate/` for pages, `app/api/v2/documents/` for API endpoints
+
 ## Hexagonal Architecture Layers
 
 ### Dependency Rules
@@ -561,4 +588,4 @@ Shared utilities for property-based testing:
 - Consistent error handling and response formats
 - Authentication middleware for protected routes
 
-<!-- Last updated: November 19, 2025 -->
+<!-- Last updated: December 1, 2025 -->

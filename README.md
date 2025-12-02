@@ -6,513 +6,184 @@
 
 AI-powered product management platform that transforms raw startup ideas into execution-ready documentation and GitHub backlogs.
 
-This contains everything you need to run your app locally.
+## Core Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1oC2K72G4jrgFUQiuL_s0gfVa-07buTm7
+- **Idea Analysis**: AI-powered startup idea evaluation with detailed scoring and feedback
+- **Hackathon Analyzer**: Specialized evaluation for hackathon projects (Kiroween theme)
+- **Doctor Frankenstein**: AI-powered mashup idea generator combining tech company or AWS service technologies
+- **Idea Panel**: Dedicated workspace for managing ideas with status tracking, notes, tags, and multiple analyses
+- **Document Generation**: AI-generated PRDs, Technical Designs, Architecture Documents, and Roadmaps
+- **Multi-language Support**: Full English and Spanish localization
+- **Credit System**: Usage-based credit system with tier-based limits
+
+## Quick Start
+
+**Prerequisites:** Node.js 18+
+
+```bash
+# Install dependencies
+npm install
+
+# Set environment variables in .env.local
+# Required: GEMINI_API_KEY, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Run development server
+npm run dev
+```
 
 ## Architecture
 
-The application follows **hexagonal architecture** (Ports and Adapters pattern) with clear separation between:
+The application follows **hexagonal architecture** (Ports and Adapters pattern):
 
 - **Domain Layer** (`src/domain/`): Pure business logic with strongly-typed entities and value objects
 - **Application Layer** (`src/application/`): Use cases and application services
 - **Infrastructure Layer** (`src/infrastructure/`): External adapters (database, AI services, web)
-- **Shared Layer** (`src/shared/`): Common utilities and types
+- **Features** (`features/`): UI components and client-side logic
 
-### Documentation
+## Documentation
 
-**Architecture & Development:**
+### Architecture & Development
 
 - **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive architecture documentation
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)**: Step-by-step guide for adding new features
 - **[API Documentation](docs/API.md)**: Complete API reference
 - **[Database Schema](docs/DATABASE_SCHEMA.md)**: Current database schema and query patterns
-- **[Database Consolidation](docs/DATABASE_CONSOLIDATION.md)**: Unified table structure and migration details
-- **[Domain Layer](src/domain/README.md)**: Domain layer documentation
-- **[Application Layer](src/application/README.md)**: Application layer documentation
-- **[Infrastructure Layer](src/infrastructure/README.md)**: Infrastructure layer documentation
 - **[Hexagonal Architecture Standards](.kiro/steering/hexagonal-architecture-standards.md)**: Architecture standards and guidelines
 
-**Idea Panel Feature:**
+### Feature Documentation
 
-The Idea Panel is a dedicated workspace for managing ideas and their associated analyses. It introduces a new data model that separates ideas from documents (analyses), enabling better organization and future extensibility.
+- **[Document Generation Guide](docs/DOCUMENT_GENERATION_GUIDE.md)**: Complete guide for AI-generated documentation
+- **[Idea Panel User Guide](docs/IDEA_PANEL_USER_GUIDE.md)**: User guide for the Idea Panel feature
+- **[Mock System Documentation](docs/SISTEMA_MOCKS_DOCUMENTACION.md)**: Mock system for development without API costs
 
-- **[Idea Panel User Guide](docs/IDEA_PANEL_USER_GUIDE.md)**: Complete user guide for the Idea Panel feature
-- **[Idea Panel API](docs/IDEA_PANEL_API.md)**: API documentation for Idea Panel endpoints
-- **[Idea Panel Migration](docs/IDEA_PANEL_MIGRATION.md)**: Database migration documentation and procedures
-- **[Complete Documents Migration Guide](docs/COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md)**: Migration from `saved_analyses` to new data model
+## Document Generation
 
-**Key Features:**
+Generate professional project documentation from your analyzed ideas:
 
-- Manage ideas in a dedicated full-screen workspace
-- View all analyses (documents) associated with an idea
-- Track project status (idea, in_progress, completed, archived)
-- Add notes and tags for organization
-- Create new analyses directly from the panel
-- Support for manual and Doctor Frankenstein generated ideas
-- Responsive design for mobile and desktop
+| Document Type    | Credit Cost | Purpose                                  |
+| ---------------- | ----------- | ---------------------------------------- |
+| PRD              | 50          | Product requirements and user stories    |
+| Technical Design | 75          | Architecture and implementation planning |
+| Architecture     | 75          | System architecture and infrastructure   |
+| Roadmap          | 50          | Milestones and feature prioritization    |
 
-**Data Model:**
-
-The application uses a new data model that separates ideas from their analyses:
-
-- **`ideas` table**: Stores all ideas with management metadata (status, notes, tags)
-- **`documents` table**: Stores analyses linked to ideas via `idea_id` foreign key
-- **One-to-Many Relationship**: One idea can have multiple documents (analyses)
-- **Backward Compatible**: Legacy `saved_analyses` table remains accessible via fallback logic
-
-**Migration Status:**
-
-✅ **Complete** - All new analyses save to the new data model:
-
-- **Write Operations**: New analyses create idea + document records
-- **Read Operations**: Try `documents` table first, fallback to `saved_analyses` for legacy data
-- **Update/Delete Operations**: Support both new and legacy data
-- **No Breaking Changes**: All existing functionality continues to work
-- **No Data Loss**: Legacy data remains accessible
-
-See [Complete Documents Migration Guide](docs/COMPLETE_DOCUMENTS_MIGRATION_GUIDE.md) for details.
-
-**Testing & Mocks:**
-
-- **[Sistema de Mocks](docs/SISTEMA_MOCKS_DOCUMENTACION.md)**: 🧪 Documentación completa del sistema de mocks para desarrollo sin costos de API
-- **[Guía de Ejecución de Tests](docs/GUIA_EJECUCION_TESTS.md)**: 📝 Paso a paso para ejecutar tests de integración y E2E
-- **[Mock Mode Guide](tests/MOCK_MODE_GUIDE.md)**: Technical guide for mock mode
-- **[Testing README](tests/README.md)**: General testing documentation
-
-## Security
-
-### Critical: Supabase Client Management
-
-⚠️ **NEVER cache Supabase server clients in a static variable or singleton pattern.**
-
-In Next.js server-side operations, each HTTP request has its own cookie store containing user-specific session tokens. Caching the Supabase client globally causes:
-
-- **Session Leaks**: User B can access User A's data and permissions
-- **Stale Tokens**: Refresh tokens don't update when cookies change
-- **Auth Bypass**: Unauthenticated users can inherit authenticated sessions
-
-**Correct Usage:**
-
-```typescript
-// ✅ Server-side: Always create fresh client
-const supabase = SupabaseAdapter.getServerClient(); // New client per request
-
-// ✅ Client-side: Singleton is safe
-const supabase = SupabaseAdapter.getClientClient(); // Browser context is isolated
-```
-
-See [Architecture Documentation](docs/ARCHITECTURE.md#critical-security-supabase-client-management) for detailed explanation and examples.
-
-## Run Locally
-
-**Prerequisites:** Node.js
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-
-## Feature Flags
-
-- Define flags centrally and control them via environment variables.
-- Server-only flags: use `FF_<FLAG_NAME>`.
-- Client-exposed flags: use `NEXT_PUBLIC_FF_<FLAG_NAME>`.
-
-### Enhanced Feature Flags
-
-The application includes several enhanced feature flags for controlling UI elements and development workflows:
-
-#### Button Visibility Flags (Client-Exposed)
-
-- **`ENABLE_CLASSIC_ANALYZER`**: Controls visibility of the classic startup idea analyzer button on the home page
-
-  - Environment variable: `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER`
-  - Default: `true`
-
-- **`ENABLE_KIROWEEN_ANALYZER`**: Controls visibility of the Kiroween hackathon analyzer button on the home page
-  - Environment variable: `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER`
-  - Default: `true`
-
-#### Local Development Mode
-
-- **`LOCAL_DEV_MODE`**: Exposes whether local development mode is active to code via the flag system.
-  - It now derives from `NODE_ENV === 'development'` and does not require a separate env var.
-  - Keep `NODE_ENV=development` locally; set to `production` in deployments.
-
-### Usage
-
-1. Define flags in `lib/featureFlags.config.ts`:
-
-```typescript
-registerFlags({
-  ENABLE_CLASSIC_ANALYZER: defineBooleanFlag({
-    key: "ENABLE_CLASSIC_ANALYZER",
-    description: "Show the classic startup idea analyzer button on home page",
-    default: true,
-    exposeToClient: true,
-  }),
-});
-```
-
-2. Read flags from code:
-
-```typescript
-import { isEnabled, getValue } from "@/lib/featureFlags";
-
-if (isEnabled("ENABLE_CLASSIC_ANALYZER")) {
-  // Show classic analyzer button
-} else {
-  // Hide classic analyzer button
-}
-
-// Non-boolean values (if defined):
-const maxItems = getValue<number>("MAX_ITEMS");
-```
-
-3. Set env vars locally in `.env.local`:
-
-- `NODE_ENV=development`
-- `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER=true` (exposed to client)
-- `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER=true` (exposed to client)
-
-### Local Development Mode
-
-When `NODE_ENV=development` (i.e., `LOCAL_DEV_MODE` resolves to enabled):
-
-- Authentication is bypassed with a mock user
-- Analysis data is stored in browser local storage instead of Supabase
-- Pre-populated mock analysis cards are available for testing
-- Ideal for rapid development and testing without database dependencies
-
-### Notes
-
-- Client-exposed flags are read from `NEXT_PUBLIC_FF_<FLAG>` and become part of the client bundle at build time.
-- Defaults apply when env vars are absent.
-- Flag validation runs automatically in development mode to ensure proper configuration.
+**Recommended Workflow**: Analysis → PRD → Technical Design → Architecture → Roadmap
 
 ## Testing
 
+```bash
+# Unit tests
+npm test                    # Run once
+npm run test:watch          # Watch mode
+npm run test:coverage       # With coverage
+
+# Property tests
+npm run test:properties     # Run property tests
+npm run test:properties:coverage  # With coverage
+
+# E2E tests
+npm run test:e2e            # Run E2E tests
+npm run test:e2e:ui         # Interactive UI mode
+npm run test:e2e:headed     # Headed browser mode
+```
+
 ### Mock Mode
 
-The application includes a comprehensive mock system for development and testing without consuming API credits or requiring internet connectivity.
-
-#### Enabling Mock Mode
-
-Add to your `.env.local`:
+Enable mock mode for development without consuming API credits:
 
 ```bash
-# Enable mock mode
+# .env.local
 FF_USE_MOCK_API=true
-
-# Configure mock behavior
 FF_MOCK_SCENARIO=success
-FF_MOCK_VARIABILITY=false
 FF_SIMULATE_LATENCY=true
-FF_MIN_LATENCY=500
-FF_MAX_LATENCY=2000
-FF_LOG_MOCK_REQUESTS=true
 ```
 
-When mock mode is active, you'll see a "🧪 Mock Mode Active" indicator in the bottom-right corner of the application.
+## Feature Flags
 
-#### Available Mock Scenarios
+Control features via environment variables:
 
-- **`success`** (default): Returns realistic successful responses
-- **`api_error`**: Simulates API failures with 500 status codes
-- **`timeout`**: Simulates request timeouts
-- **`rate_limit`**: Simulates rate limit errors with 429 status codes
-- **`invalid_input`**: Simulates validation errors with 400 status codes
-
-#### Mock Features
-
-- **Predefined Responses**: Realistic mock data for all AI features (Analyzer, Hackathon Analyzer, Doctor Frankenstein)
-- **Response Variants**: Multiple response variations for testing different scenarios
-- **Latency Simulation**: Configurable network delay simulation
-- **Error Scenarios**: Test error handling without triggering real errors
-- **Request Logging**: Track all mock requests for debugging
-
-#### Documentation
-
-- **[Developer Guide](lib/testing/DEVELOPER_GUIDE.md)**: Complete guide to using the mock system
-- **[Mock System Overview](lib/testing/README.md)**: Architecture and implementation details
-- **[Example Files](tests/e2e/examples/)**: Example tests, page objects, and helpers
-
-### E2E Testing
-
-The application uses Playwright for end-to-end testing with comprehensive test coverage.
-
-#### Running E2E Tests
-
-```bash
-# Install Playwright browsers (first time only)
-npx playwright install --with-deps
-
-# Run all E2E tests
-npm run test:e2e
-
-# Run with UI mode (interactive)
-npm run test:e2e -- --ui
-
-# Run in headed mode (see browser)
-npm run test:e2e -- --headed
-
-# Run specific test file
-npm run test:e2e -- analyzer.spec.ts
-
-# Run specific test by name
-npm run test:e2e -- --grep "should analyze idea successfully"
-
-# Run in different browsers
-npm run test:e2e -- --project=firefox
-npm run test:e2e -- --project=webkit
-```
-
-#### Debugging Tests
-
-```bash
-# Run with debug mode
-npm run test:e2e -- --debug
-
-# Run with trace viewer
-npm run test:e2e -- --trace on
-
-# Generate and open HTML report
-npm run test:e2e -- --reporter=html
-npx playwright show-report
-```
-
-#### Test Configuration
-
-Configure test behavior via environment variables:
-
-```bash
-E2E_BASE_URL=http://localhost:3000    # Base URL for tests
-E2E_HEADLESS=true                     # Run in headless mode
-E2E_TIMEOUT=30000                     # Test timeout in ms
-E2E_SCREENSHOT_ON_FAILURE=true        # Capture screenshots on failure
-E2E_VIDEO_ON_FAILURE=false            # Record video on failure
-```
-
-#### Test Coverage
-
-The E2E test suite covers:
-
-- **Analyzer Feature**: Idea analysis, loading states, error handling, multi-language support
-- **Hackathon Analyzer**: Project evaluation, category recommendations, Kiro usage analysis
-- **Doctor Frankenstein**: Idea generation (companies and AWS modes), slot machine animation
-- **Dashboard**: Analysis history, project listings, empty states
-
-#### Test Artifacts
-
-Test artifacts (screenshots, videos, reports) are automatically captured on failure and stored in:
-
-- `tests/e2e/test-results/` - Test execution results
-- `tests/e2e/screenshots/` - Failure screenshots
-- `tests/e2e/videos/` - Failure videos (if enabled)
-- `tests/e2e/reports/` - HTML test reports
-
-### CI/CD Integration
-
-E2E tests run automatically in GitHub Actions on:
-
-- Pull requests to `main` or `develop` branches
-- Pushes to `main` branch
-
-#### Workflow Features
-
-- **Automated Testing**: All E2E tests run in CI environment
-- **Artifact Upload**: Screenshots, videos, and reports uploaded on failure
-- **PR Comments**: Test results automatically posted as PR comments
-- **Merge Blocking**: Failed tests block PR merges
-- **Coverage Reporting**: Test coverage metrics included in reports
-
-#### Viewing CI Results
-
-1. Navigate to the **Actions** tab in GitHub
-2. Select the **E2E Tests** workflow
-3. View test results and download artifacts
-4. Check PR comments for test summaries
-
-### Mock Response Validation
-
-Validate all mock responses against schemas:
-
-```bash
-# Validate all mock responses
-npm run validate:mocks
-
-# This checks:
-# - JSON syntax validity
-# - Schema compliance (Zod validation)
-# - Required fields presence
-# - Data type correctness
-```
-
-### Adding New Mock Responses
-
-1. Add your mock response to the appropriate JSON file in `lib/testing/data/`:
-
-   - `analyzer-mocks.json` - For analyzer responses
-   - `hackathon-mocks.json` - For hackathon analyzer responses
-   - `frankenstein-mocks.json` - For Doctor Frankenstein responses
-
-2. Validate the mock response:
-
-   ```bash
-   npm run validate:mocks
-   ```
-
-3. Test the mock response:
-
-   ```bash
-   # Set the scenario in .env.local
-   FF_MOCK_SCENARIO=your_scenario
-
-   # Restart dev server
-   npm run dev
-   ```
-
-See the [Developer Guide](lib/testing/DEVELOPER_GUIDE.md) for detailed instructions on adding mock responses.
-
-### Environment Variables Reference
-
-#### Mock Mode Configuration
-
-| Variable               | Description                     | Default   | Values                                                           |
-| ---------------------- | ------------------------------- | --------- | ---------------------------------------------------------------- |
-| `FF_USE_MOCK_API`      | Enable/disable mock mode        | `false`   | `true`, `false`                                                  |
-| `FF_MOCK_SCENARIO`     | Default mock scenario           | `success` | `success`, `api_error`, `timeout`, `rate_limit`, `invalid_input` |
-| `FF_MOCK_VARIABILITY`  | Enable random response variants | `false`   | `true`, `false`                                                  |
-| `FF_SIMULATE_LATENCY`  | Simulate network latency        | `false`   | `true`, `false`                                                  |
-| `FF_MIN_LATENCY`       | Minimum latency in ms           | `500`     | Any number                                                       |
-| `FF_MAX_LATENCY`       | Maximum latency in ms           | `2000`    | Any number                                                       |
-| `FF_LOG_MOCK_REQUESTS` | Log all mock requests           | `false`   | `true`, `false`                                                  |
-
-#### E2E Testing Configuration
-
-| Variable                    | Description                    | Default                 | Values          |
-| --------------------------- | ------------------------------ | ----------------------- | --------------- |
-| `E2E_BASE_URL`              | Base URL for E2E tests         | `http://localhost:3000` | Any URL         |
-| `E2E_HEADLESS`              | Run tests in headless mode     | `true`                  | `true`, `false` |
-| `E2E_TIMEOUT`               | Test timeout in ms             | `30000`                 | Any number      |
-| `E2E_SCREENSHOT_ON_FAILURE` | Capture screenshots on failure | `true`                  | `true`, `false` |
-| `E2E_VIDEO_ON_FAILURE`      | Record video on failure        | `false`                 | `true`, `false` |
-
-### Troubleshooting
-
-For common issues and solutions, see the [Developer Guide](lib/testing/DEVELOPER_GUIDE.md#troubleshooting-guide).
-
-Common issues:
-
-- **Mock mode not activating**: Check `FF_USE_MOCK_API` is set to `'true'` and restart dev server
-- **E2E tests failing**: Ensure dev server is running and increase timeout if needed
-- **Slow test execution**: Disable latency simulation with `FF_SIMULATE_LATENCY=false`
-- **Schema validation errors**: Run `npm run validate:mocks` and fix reported issues
+| Flag                                      | Description                   | Default |
+| ----------------------------------------- | ----------------------------- | ------- |
+| `NEXT_PUBLIC_FF_ENABLE_CLASSIC_ANALYZER`  | Classic analyzer visibility   | `true`  |
+| `NEXT_PUBLIC_FF_ENABLE_KIROWEEN_ANALYZER` | Hackathon analyzer visibility | `true`  |
+| `FF_USE_MOCK_API`                         | Enable mock mode              | `false` |
+| `ENABLE_DOCUMENT_GENERATION`              | Document generation feature   | `true`  |
 
 ## CI/CD Pipeline
 
-The project includes a comprehensive automated quality gate for all pull requests, ensuring code quality, test coverage, and accessibility compliance before merging.
+Automated quality checks on every pull request:
 
-### Automated Quality Checks
+- **ESLint**: Code quality and linting
+- **Unit Tests**: Vitest with coverage reporting
+- **E2E Tests**: Playwright browser automation
+- **Lighthouse**: Accessibility audits (90% minimum score)
+- **Property Tests**: Property-based testing validation
 
-Every pull request automatically runs the following checks in parallel:
+## Security
 
-#### 🔍 Code Quality (ESLint)
+⚠️ **Critical**: Never cache Supabase server clients in static variables. Each HTTP request requires a fresh client to prevent session leaks.
 
-- Lints all TypeScript and JavaScript files
-- **Blocks merge** if errors are found
-- Reports warnings without blocking
-- Execution time: ~1-2 minutes
+```typescript
+// ✅ Correct: Fresh client per request
+const supabase = SupabaseAdapter.getServerClient();
 
-#### 🧪 Unit Tests (Vitest)
-
-- Runs all unit tests with coverage reporting
-- **Blocks merge** if any tests fail
-- Requires 70% code coverage (warning if below)
-- Execution time: ~3-5 minutes
-
-#### 🎭 E2E Tests (Playwright)
-
-- Runs end-to-end tests across key user flows
-- **Blocks merge** if any tests fail
-- Captures screenshots/videos on failure
-- Skips when only documentation changes
-- Execution time: ~8-12 minutes
-
-#### ♿ Accessibility (Lighthouse)
-
-- Audits accessibility, best practices, and SEO
-- **Blocks merge** if accessibility score < 90
-- Tests home, analyzer, dashboard, and login pages
-- Skips when only test files change
-- Execution time: ~5-7 minutes
-
-### Workflow Status Badges
-
-![Lint](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/lint.yml/badge.svg)
-![Unit Tests](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/unit-tests.yml/badge.svg)
-![E2E Tests](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/e2e-tests.yml/badge.svg)
-![Lighthouse](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/lighthouse.yml/badge.svg)
-
-### Unified PR Reporting
-
-All check results are automatically posted as a single unified comment on your pull request, including:
-
-- ✅/❌ Status for each check type
-- 📊 Code coverage percentage
-- ♿ Accessibility scores for each page
-- ⏱️ Workflow execution times
-- 🔧 Actionable recommendations for failures
-- 📦 Links to detailed reports and artifacts
-
-### Running Checks Locally
-
-Before pushing your changes, run these checks locally to catch issues early:
-
-```bash
-# Run all checks
-npm run lint              # ESLint code quality
-npm run test:coverage     # Unit tests with coverage
-npm run test:e2e          # E2E tests (requires built app)
-
-# Run E2E tests with built app
-npm run build
-npm start &
-npm run test:e2e
-
-# Run Lighthouse audits
-npm run build
-npm start &
-npx lhci autorun
+// ❌ Wrong: Cached client causes session leaks
+const cachedClient = createClient(); // Don't do this
 ```
 
-### Performance Optimizations
+## Environment Variables
 
-The CI/CD pipeline is optimized for speed:
+```bash
+# Required
+GEMINI_API_KEY=your_gemini_api_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-- **Parallel Execution**: All checks run simultaneously
-- **Smart Caching**: Dependencies and builds are cached
-- **Conditional Execution**: Skips unnecessary checks based on changed files
-- **Total Time**: ~8-12 minutes for typical PRs (vs. 30-40 minutes sequential)
+# Optional - Analytics
+NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
+NEXT_PUBLIC_POSTHOG_HOST=your_posthog_host
 
-### CI/CD Documentation
+# Optional - Mock Mode
+FF_USE_MOCK_API=true
+FF_MOCK_SCENARIO=success
+```
 
-For detailed information about workflows, troubleshooting, and maintenance:
+## Project Structure
 
-- **[Workflow Documentation](.github/workflows/README.md)**: Complete workflow reference
-- **[CI/CD Completion Summary](.kiro/specs/ci-cd-enhancement/COMPLETION_SUMMARY.md)**: Implementation details and metrics
-- **[Lighthouse Configuration](.lighthouserc.json)**: Accessibility audit settings
+```
+src/
+├── domain/           # Business logic (entities, value objects, services)
+├── application/      # Use cases and handlers
+├── infrastructure/   # Database, AI, web adapters
+└── shared/           # Common utilities
 
-### Troubleshooting CI Issues
+features/
+├── analyzer/         # Startup idea analysis
+├── kiroween-analyzer/# Hackathon analysis
+├── doctor-frankenstein/ # Idea mashup generator
+├── idea-panel/       # Idea management workspace
+├── document-generator/ # AI document generation
+├── dashboard/        # User dashboard
+└── auth/             # Authentication
 
-Common CI/CD issues and solutions:
+app/
+├── api/v2/           # API endpoints
+├── generate/         # Document generation pages
+├── idea/             # Idea Panel pages
+└── ...               # Other pages
+```
 
-- **Lint failures**: Run `npm run lint` locally and fix errors before pushing
-- **Test failures**: Run `npm run test:coverage` locally to debug failing tests
-- **E2E failures**: Check screenshots in workflow artifacts for visual debugging
-- **Lighthouse failures**: Review HTML reports in artifacts for specific WCAG violations
-- **Slow workflows**: Check duration metrics in PR comment; investigate if > 15 minutes
+## Contributing
 
-For more troubleshooting guidance, see the [Workflow Documentation](.github/workflows/README.md#troubleshooting).
+1. Follow hexagonal architecture standards
+2. Write tests for new functionality
+3. Run `npm run lint` and `npm test` before committing
+4. Use conventional commit messages
+
+## License
+
+Private - All rights reserved
+
+---
+
+_Last updated: December 1, 2025_

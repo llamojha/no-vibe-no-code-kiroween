@@ -19,8 +19,9 @@
 
 ### Project Management
 
-- **Idea Panel**: Dedicated workspace for managing ideas with status tracking, notes, tags, and multiple analyses. Separates ideas from documents (analyses) for better organization and future extensibility. Foundation for generating execution-ready documentation (PRDs, Technical Design, Roadmaps, Architecture Documents).
-- **Dashboard**: Unified view of all ideas with filtering, search, and management capabilities. Updated to show ideas instead of analyses, with document counts and "Manage" buttons.
+- **Idea Panel**: Dedicated workspace for managing ideas with status tracking, notes, tags, and multiple analyses. Separates ideas from documents (analyses) for better organization and future extensibility.
+- **Document Generation**: AI-generated professional documentation including PRDs, Technical Designs, Architecture Documents, and Roadmaps with version management and export capabilities.
+- **Dashboard**: Unified view of all ideas with filtering, search, and management capabilities. Shows ideas with document counts and "Manage" buttons.
 - **Analysis History**: Track and manage all generated analyses with version history
 
 ### Export & Integration
@@ -71,8 +72,16 @@
 
 ### In Progress
 
-- 🚧 Enhanced export capabilities across all analysis types
-- 🚧 E2E tests for Idea Panel user workflows
+- 🚧 E2E tests for Document Generation workflows
+- 🚧 Enhanced export capabilities across all document types
+
+### Recently Completed
+
+- ✅ Document Generation feature (PRD, Technical Design, Architecture, Roadmap)
+- ✅ Version management for generated documents
+- ✅ Contextual document generation (later documents reference earlier ones)
+- ✅ Export to Markdown and PDF formats
+- ✅ CI/CD pipeline with Lighthouse accessibility audits
 
 ### Next Steps
 
@@ -150,4 +159,4 @@ The product has evolved from a pure "idea-to-backlog" automation tool to a more 
 
 ---
 
-_Last updated: November 19, 2025_
+_Last updated: December 1, 2025_
