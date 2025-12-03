@@ -495,5 +495,12 @@
   "startIdeaButton": "Comenzar a trabajar en esta idea",
   "generateAllDocuments": "Generar Todos los Documentos",
   "generatingDocuments": "Generando documentos...",
-  "generating": "Generando"
+  "generating": "Generando",
+  "usePasswordInstead": "¿Tienes contraseña? Inicia sesión con contraseña",
+  "useMagicLinkInstead": "Usar enlace mágico en su lugar",
+  "passwordLabel": "Contraseña",
+  "passwordPlaceholder": "Ingresa tu contraseña",
+  "signInWithPassword": "Iniciar Sesión",
+  "signingIn": "Iniciando sesión...",
+  "passwordLoginError": "Email o contraseña inválidos. Por favor intenta de nuevo."
 }
