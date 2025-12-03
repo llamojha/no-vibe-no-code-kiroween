@@ -9,6 +9,9 @@ import {
   isLocalDevModeEnabled,
 } from "../utils/localDevCredits";
 import { getUserTierFromDatabase } from "../utils/getUserTier";
+import { isEnabled } from "../../../lib/featureFlags";
+
+const LOCAL_STORAGE_MODE_CREDITS = 9999;
 
 /**
  * Use case for retrieving a user's credit balance
@@ -30,6 +33,11 @@ export class GetCreditBalanceUseCase {
    */
   async execute(userId: UserId): Promise<Result<CreditBalance, Error>> {
     try {
+      // Return high balance in LOCAL_STORAGE_MODE (Open Source Mode)
+      if (this.isLocalStorageMode()) {
+        return success(this.getLocalStorageModeBalance());
+      }
+
       // Check cache first
       const cacheKey = this.getCacheKey(userId);
       const cached = await this.cache.get<CreditBalance>(cacheKey);
@@ -93,5 +101,23 @@ export class GetCreditBalanceUseCase {
 
   private isLocalDevMode(): boolean {
     return isLocalDevModeEnabled();
+  }
+
+  /**
+   * Determine whether the application is running in LOCAL_STORAGE_MODE (Open Source Mode)
+   */
+  private isLocalStorageMode(): boolean {
+    return isEnabled("LOCAL_STORAGE_MODE");
+  }
+
+  /**
+   * Get credit balance for LOCAL_STORAGE_MODE (Open Source Mode)
+   * Always returns high balance with admin tier
+   */
+  private getLocalStorageModeBalance(): CreditBalance {
+    return {
+      credits: LOCAL_STORAGE_MODE_CREDITS,
+      tier: "admin",
+    };
   }
 }

@@ -1,7 +1,7 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id),
   created_at timestamptz default now(),
-  credits integer not null default 20
+  credits integer not null default 3
 );
 
 create table if not exists public.saved_analyses (
@@ -23,7 +23,7 @@ exception
 end $$;
 
 alter table profiles add column if not exists tier public.user_tier not null default 'free';
-alter table profiles add column if not exists credits integer not null default 20;
+alter table profiles add column if not exists credits integer not null default 3;
 
 -- Create credit_transactions table for audit trail
 create table if not exists public.credit_transactions (
@@ -158,9 +158,9 @@ set search_path = public
 as $$
 begin
   -- Insert a default profile for the new auth user.
-  -- `tier` defaults to 'free' and `credits` defaults to 20 via table defaults.
+  -- `tier` defaults to 'free' and `credits` defaults to 3 via table defaults.
   insert into public.profiles (id, credits)
-  values (new.id, 20)
+  values (new.id, 3)
   on conflict (id) do nothing;
   return new;
 end;

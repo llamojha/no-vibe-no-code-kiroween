@@ -20,6 +20,8 @@ export interface EnhancedFeatureFlags {
   CREDIT_SYSTEM: FeatureFlagDefinition<boolean>;
   /** Enable AI-powered document generation (PRD, Technical Design, Architecture, Roadmap) */
   ENABLE_DOCUMENT_GENERATION: FeatureFlagDefinition<boolean>;
+  /** Open source mode - localStorage + simple auth, no Supabase required */
+  LOCAL_STORAGE_MODE: FeatureFlagDefinition<boolean>;
 }
 
 /**
@@ -33,6 +35,7 @@ export const ENHANCED_FEATURE_FLAG_KEYS = {
   USE_MOCK_API: "USE_MOCK_API",
   CREDIT_SYSTEM: "CREDIT_SYSTEM",
   ENABLE_DOCUMENT_GENERATION: "ENABLE_DOCUMENT_GENERATION",
+  LOCAL_STORAGE_MODE: "LOCAL_STORAGE_MODE",
 } as const;
 
 /**

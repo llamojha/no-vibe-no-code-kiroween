@@ -71,5 +71,29 @@ export function initFeatureFlags() {
         true,
       exposeToClient: true,
     }),
+    LOCAL_STORAGE_MODE: defineBooleanFlag({
+      key: "LOCAL_STORAGE_MODE",
+      description:
+        "Open source mode - localStorage + simple auth, no Supabase required",
+      default:
+        resolveBooleanEnvFlag(process.env.FF_LOCAL_STORAGE_MODE) ??
+        resolveBooleanEnvFlag(process.env.NEXT_PUBLIC_FF_LOCAL_STORAGE_MODE) ??
+        false,
+      exposeToClient: true,
+    }),
   });
+}
+
+/**
+ * Get local auth credentials from environment variables
+ * Defaults to kiro/kiro if not specified
+ */
+export function getLocalAuthCredentials(): {
+  username: string;
+  password: string;
+} {
+  return {
+    username: process.env.LOCAL_AUTH_USERNAME || "kiro",
+    password: process.env.LOCAL_AUTH_PASSWORD || "kiro",
+  };
 }

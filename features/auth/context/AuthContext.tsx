@@ -18,6 +18,12 @@ import {
   initializeMockData,
   type LocalDevUser,
 } from "@/lib/mockData";
+import {
+  getAuthState,
+  clearAuthState,
+  createMockSession,
+  type LocalUser,
+} from "@/lib/auth/localAuth";
 
 interface AuthContextValue {
   session: Session | null;
@@ -28,6 +34,11 @@ interface AuthContextValue {
   // Enhanced properties for local dev mode
   isLocalDevMode: boolean;
   localUser: LocalDevUser | null;
+  // Open Source Mode (LOCAL_STORAGE_MODE) properties
+  isLocalStorageMode: boolean;
+  localStorageUser: LocalUser | null;
+  /** Refresh auth state from localStorage (for LOCAL_STORAGE_MODE) */
+  refreshLocalAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -44,6 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Local dev mode state
   const [isLocalDevMode, setIsLocalDevMode] = useState(false);
   const [localUser, setLocalUser] = useState<LocalDevUser | null>(null);
+
+  // Open Source Mode (LOCAL_STORAGE_MODE) state
+  const [isLocalStorageMode, setIsLocalStorageMode] = useState(false);
+  const [localStorageUser, setLocalStorageUser] = useState<LocalUser | null>(
+    null
+  );
 
   const fetchUserTierForId = useCallback(
     async (client: SupabaseClient<Database>, userId: string) => {
@@ -63,7 +80,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
+  // Function to refresh local auth state from localStorage
+  const refreshLocalAuth = useCallback(() => {
+    if (!isEnabled("LOCAL_STORAGE_MODE")) return;
+
+    const authState = getAuthState();
+    if (authState?.isAuthenticated && authState.user) {
+      setLocalStorageUser(authState.user);
+      setTier(authState.user.tier);
+      setSession(createMockSession(authState.user));
+
+      // Identify user in PostHog
+      identifyUser(authState.user.id, {
+        email: authState.user.email,
+        created_at: authState.user.createdAt,
+      });
+    } else {
+      setLocalStorageUser(null);
+      setSession(null);
+      setTier("free");
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Check for LOCAL_STORAGE_MODE on initialization
   useEffect(() => {
+    const localStorageModeEnabled = isEnabled("LOCAL_STORAGE_MODE");
+    setIsLocalStorageMode(localStorageModeEnabled);
+
+    if (localStorageModeEnabled) {
+      // Check for existing auth state in localStorage
+      refreshLocalAuth();
+      console.log("Open Source Mode (LOCAL_STORAGE_MODE) activated");
+      return;
+    }
+  }, [refreshLocalAuth]);
+
+  // Skip Supabase initialization in LOCAL_STORAGE_MODE
+  useEffect(() => {
+    if (isLocalStorageMode) return;
+
     try {
       const client = browserSupabase();
       setSupabaseClient(client);
@@ -73,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(false);
       return;
     }
-  }, []);
+  }, [isLocalStorageMode]);
 
   // Local dev mode detection and initialization
   useEffect(() => {
@@ -141,8 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    // Skip Supabase authentication if in local dev mode
-    if (isLocalDevMode) {
+    // Skip Supabase authentication if in local dev mode or local storage mode
+    if (isLocalDevMode || isLocalStorageMode) {
       return;
     }
 
@@ -197,9 +253,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       active = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserTierForId, supabaseClient, isLocalDevMode]);
+  }, [fetchUserTierForId, supabaseClient, isLocalDevMode, isLocalStorageMode]);
 
   const signOut = useCallback(async () => {
+    if (isLocalStorageMode) {
+      // In LOCAL_STORAGE_MODE, clear auth state from localStorage
+      clearAuthState();
+      setLocalStorageUser(null);
+      setSession(null);
+      setTier("free");
+      console.log("Signed out from Open Source Mode (LOCAL_STORAGE_MODE)");
+      return;
+    }
+
     if (isLocalDevMode) {
       // In local dev mode, reset all local state
       setLocalUser(null);
@@ -215,11 +281,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Error signing out", error);
     }
     setTier("free");
-  }, [supabaseClient, isLocalDevMode]);
+  }, [supabaseClient, isLocalDevMode, isLocalStorageMode]);
 
   useEffect(() => {
-    // Skip profile operations in local dev mode
-    if (isLocalDevMode) return;
+    // Skip profile operations in local dev mode or local storage mode
+    if (isLocalDevMode || isLocalStorageMode) return;
 
     if (!supabaseClient || !session) return;
 
@@ -235,16 +301,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     void upsertProfile();
-  }, [fetchUserTierForId, session, supabaseClient, isLocalDevMode]);
+  }, [fetchUserTierForId, session, supabaseClient, isLocalDevMode, isLocalStorageMode]);
 
   useEffect(() => {
-    // In local dev mode, tier is managed by the mock user
-    if (isLocalDevMode) return;
+    // In local dev mode or local storage mode, tier is managed by the local user
+    if (isLocalDevMode || isLocalStorageMode) return;
 
     if (!session) {
       setTier("free");
     }
-  }, [session, isLocalDevMode]);
+  }, [session, isLocalDevMode, isLocalStorageMode]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -255,6 +321,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       signOut,
       isLocalDevMode,
       localUser,
+      isLocalStorageMode,
+      localStorageUser,
+      refreshLocalAuth,
     }),
     [
       isLoading,
@@ -264,6 +333,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       tier,
       isLocalDevMode,
       localUser,
+      isLocalStorageMode,
+      localStorageUser,
+      refreshLocalAuth,
     ]
   );
 

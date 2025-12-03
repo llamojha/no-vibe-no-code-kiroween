@@ -17,6 +17,15 @@ import { DocumentMapper } from "../database/supabase/mappers/DocumentMapper";
 import { MockAnalysisRepository } from "@/lib/testing/mocks/MockAnalysisRepository";
 import { FeatureFlagManager } from "@/lib/testing/FeatureFlagManager";
 import { createSupabaseServiceClient } from "../config";
+import { isEnabled } from "@/lib/featureFlags";
+import { initFeatureFlags } from "@/lib/featureFlags.config";
+import {
+  LocalStorageAnalysisRepository,
+  LocalStorageUserRepository,
+  LocalStorageIdeaRepository,
+  LocalStorageDocumentRepository,
+  LocalStorageCreditTransactionRepository,
+} from "../database/localStorage";
 
 /**
  * Factory for creating database repository instances
@@ -44,6 +53,8 @@ export class RepositoryFactory {
   private static serviceClientInitFailed = false;
 
   private constructor(private readonly supabaseClient: SupabaseClient) {
+    // Ensure feature flags are initialized before checking LOCAL_STORAGE_MODE
+    initFeatureFlags();
     this.featureFlagManager = new FeatureFlagManager();
     this.serviceSupabaseClient = RepositoryFactory.getServiceSupabaseClient();
   }
@@ -93,14 +104,24 @@ export class RepositoryFactory {
 
   /**
    * Create configured AnalysisRepository instance
-   * Returns MockAnalysisRepository when in mock mode, otherwise SupabaseAnalysisRepository
+   * Returns LocalStorageAnalysisRepository when LOCAL_STORAGE_MODE is enabled,
+   * MockAnalysisRepository when in mock mode, otherwise SupabaseAnalysisRepository
    */
   createAnalysisRepository(): IAnalysisRepository {
     const cacheKey = "analysisRepository";
 
     if (!this.repositories.has(cacheKey)) {
-      // Check if mock mode is enabled
-      if (this.featureFlagManager.isMockModeEnabled()) {
+      // Check if LOCAL_STORAGE_MODE is enabled (Open Source Mode)
+      if (isEnabled("LOCAL_STORAGE_MODE")) {
+        const repository = new LocalStorageAnalysisRepository();
+        this.repositories.set(cacheKey, repository);
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ LocalStorage Analysis Repository created (Open Source Mode)"
+          );
+        }
+      } else if (this.featureFlagManager.isMockModeEnabled()) {
         // Create mock repository for testing
         const mockRepository = new MockAnalysisRepository();
         this.repositories.set(cacheKey, mockRepository);
@@ -131,17 +152,31 @@ export class RepositoryFactory {
 
   /**
    * Create configured UserRepository instance
+   * Returns LocalStorageUserRepository when LOCAL_STORAGE_MODE is enabled,
+   * otherwise SupabaseUserRepository
    */
   createUserRepository(): IUserRepository {
     const cacheKey = "userRepository";
 
     if (!this.repositories.has(cacheKey)) {
-      const mapper = new UserMapper();
-      const repository = new SupabaseUserRepository(
-        this.supabaseClient,
-        mapper
-      );
-      this.repositories.set(cacheKey, repository);
+      // Check if LOCAL_STORAGE_MODE is enabled (Open Source Mode)
+      if (isEnabled("LOCAL_STORAGE_MODE")) {
+        const repository = new LocalStorageUserRepository();
+        this.repositories.set(cacheKey, repository);
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ LocalStorage User Repository created (Open Source Mode)"
+          );
+        }
+      } else {
+        const mapper = new UserMapper();
+        const repository = new SupabaseUserRepository(
+          this.supabaseClient,
+          mapper
+        );
+        this.repositories.set(cacheKey, repository);
+      }
     }
 
     const repository = this.repositories.get(cacheKey);
@@ -153,18 +188,32 @@ export class RepositoryFactory {
 
   /**
    * Create configured CreditTransactionRepository instance
+   * Returns LocalStorageCreditTransactionRepository when LOCAL_STORAGE_MODE is enabled,
+   * otherwise SupabaseCreditTransactionRepository
    */
   createCreditTransactionRepository(): ICreditTransactionRepository {
     const cacheKey = "creditTransactionRepository";
 
     if (!this.repositories.has(cacheKey)) {
-      const mapper = new CreditTransactionMapper();
-      const repository = new SupabaseCreditTransactionRepository(
-        this.supabaseClient,
-        mapper,
-        this.serviceSupabaseClient ?? undefined
-      );
-      this.repositories.set(cacheKey, repository);
+      // Check if LOCAL_STORAGE_MODE is enabled (Open Source Mode)
+      if (isEnabled("LOCAL_STORAGE_MODE")) {
+        const repository = new LocalStorageCreditTransactionRepository();
+        this.repositories.set(cacheKey, repository);
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ LocalStorage CreditTransaction Repository created (Open Source Mode)"
+          );
+        }
+      } else {
+        const mapper = new CreditTransactionMapper();
+        const repository = new SupabaseCreditTransactionRepository(
+          this.supabaseClient,
+          mapper,
+          this.serviceSupabaseClient ?? undefined
+        );
+        this.repositories.set(cacheKey, repository);
+      }
     }
 
     const repository = this.repositories.get(cacheKey);
@@ -176,17 +225,31 @@ export class RepositoryFactory {
 
   /**
    * Create configured IdeaRepository instance
+   * Returns LocalStorageIdeaRepository when LOCAL_STORAGE_MODE is enabled,
+   * otherwise SupabaseIdeaRepository
    */
   createIdeaRepository(): IIdeaRepository {
     const cacheKey = "ideaRepository";
 
     if (!this.repositories.has(cacheKey)) {
-      const mapper = new IdeaMapper();
-      const repository = new SupabaseIdeaRepository(
-        this.supabaseClient,
-        mapper
-      );
-      this.repositories.set(cacheKey, repository);
+      // Check if LOCAL_STORAGE_MODE is enabled (Open Source Mode)
+      if (isEnabled("LOCAL_STORAGE_MODE")) {
+        const repository = new LocalStorageIdeaRepository();
+        this.repositories.set(cacheKey, repository);
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ LocalStorage Idea Repository created (Open Source Mode)"
+          );
+        }
+      } else {
+        const mapper = new IdeaMapper();
+        const repository = new SupabaseIdeaRepository(
+          this.supabaseClient,
+          mapper
+        );
+        this.repositories.set(cacheKey, repository);
+      }
     }
 
     const repository = this.repositories.get(cacheKey);
@@ -198,17 +261,31 @@ export class RepositoryFactory {
 
   /**
    * Create configured DocumentRepository instance
+   * Returns LocalStorageDocumentRepository when LOCAL_STORAGE_MODE is enabled,
+   * otherwise SupabaseDocumentRepository
    */
   createDocumentRepository(): IDocumentRepository {
     const cacheKey = "documentRepository";
 
     if (!this.repositories.has(cacheKey)) {
-      const mapper = new DocumentMapper();
-      const repository = new SupabaseDocumentRepository(
-        this.supabaseClient,
-        mapper
-      );
-      this.repositories.set(cacheKey, repository);
+      // Check if LOCAL_STORAGE_MODE is enabled (Open Source Mode)
+      if (isEnabled("LOCAL_STORAGE_MODE")) {
+        const repository = new LocalStorageDocumentRepository();
+        this.repositories.set(cacheKey, repository);
+
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[RepositoryFactory] ✅ LocalStorage Document Repository created (Open Source Mode)"
+          );
+        }
+      } else {
+        const mapper = new DocumentMapper();
+        const repository = new SupabaseDocumentRepository(
+          this.supabaseClient,
+          mapper
+        );
+        this.repositories.set(cacheKey, repository);
+      }
     }
 
     const repository = this.repositories.get(cacheKey);

@@ -23,6 +23,7 @@ import {
   setLocalDevCredits,
 } from "../utils/localDevCredits";
 import { isCreditSystemEnabled } from "../../infrastructure/config/credits";
+import { isEnabled } from "../../../lib/featureFlags";
 
 /**
  * Use case for deducting credits from a user after successful analysis
@@ -47,6 +48,13 @@ export class DeductCreditUseCase {
    */
   async execute(command: DeductCreditCommand): Promise<Result<void, Error>> {
     try {
+      // Bypass credit enforcement in LOCAL_STORAGE_MODE (Open Source Mode)
+      // Record transaction for audit trail but always succeed
+      if (this.isLocalStorageMode()) {
+        await this.handleLocalStorageModeDeduction(command);
+        return success(undefined);
+      }
+
       if (!isCreditSystemEnabled()) {
         return success(undefined);
       }
@@ -70,9 +78,7 @@ export class DeductCreditUseCase {
       const user = userResult.data;
 
       const deductionAmount =
-        this.creditPolicy.calculateCreditDeduction(
-          command.analysisType
-        ) ?? 1;
+        this.creditPolicy.calculateCreditDeduction(command.analysisType) ?? 1;
 
       if (user.credits < deductionAmount) {
         return failure(new InsufficientCreditsError(command.userId.value));
@@ -155,9 +161,7 @@ export class DeductCreditUseCase {
       command.userId
     );
     const deductionAmount =
-      this.creditPolicy.calculateCreditDeduction(
-        command.analysisType
-      ) ?? 1;
+      this.creditPolicy.calculateCreditDeduction(command.analysisType) ?? 1;
     const updatedCredits = Math.max(0, currentCredits - deductionAmount);
 
     await setLocalDevCredits(this.cache, command.userId, updatedCredits);
@@ -189,5 +193,47 @@ export class DeductCreditUseCase {
 
   private isLocalDevMode(): boolean {
     return isLocalDevModeEnabled();
+  }
+
+  /**
+   * Determine whether the application is running in LOCAL_STORAGE_MODE (Open Source Mode)
+   */
+  private isLocalStorageMode(): boolean {
+    return isEnabled("LOCAL_STORAGE_MODE");
+  }
+
+  /**
+   * Handle credit deduction in LOCAL_STORAGE_MODE (Open Source Mode)
+   * Records transaction for audit trail but always succeeds without enforcing limits
+   */
+  private async handleLocalStorageModeDeduction(
+    command: DeductCreditCommand
+  ): Promise<void> {
+    const deductionAmount =
+      this.creditPolicy.calculateCreditDeduction(command.analysisType) ?? 1;
+
+    // Record transaction for audit trail (stored in localStorage via LocalStorageCreditTransactionRepository)
+    const transaction = CreditTransaction.create({
+      userId: command.userId,
+      amount: -deductionAmount,
+      type: TransactionType.DEDUCT,
+      description: `Analysis: ${command.analysisType} (Open Source Mode)`,
+      metadata: {
+        analysisType: command.analysisType,
+        analysisId: command.analysisId,
+        localStorageMode: true,
+      },
+    });
+
+    const transactionResult =
+      await this.transactionRepository.recordTransaction(transaction);
+
+    if (!transactionResult.success) {
+      // Log error but don't fail the operation in local storage mode
+      console.error(
+        "Failed to record credit transaction in local storage mode:",
+        transactionResult.error
+      );
+    }
   }
 }

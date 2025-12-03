@@ -11,8 +11,10 @@ import {
 } from "../utils/localDevCredits";
 import { isCreditSystemEnabled } from "../../infrastructure/config/credits";
 import { getUserTierFromDatabase } from "../utils/getUserTier";
+import { isEnabled } from "../../../lib/featureFlags";
 
 const UNLIMITED_CREDITS = Number.MAX_SAFE_INTEGER;
+const LOCAL_STORAGE_MODE_CREDITS = 9999;
 
 /**
  * Use case for checking if a user has sufficient credits to perform an analysis
@@ -35,6 +37,11 @@ export class CheckCreditsUseCase {
    */
   async execute(userId: UserId): Promise<Result<CreditCheckResult, Error>> {
     try {
+      // Bypass credit check in LOCAL_STORAGE_MODE (Open Source Mode)
+      if (this.isLocalStorageMode()) {
+        return success(this.getLocalStorageModeResult());
+      }
+
       if (!isCreditSystemEnabled()) {
         return success(this.getUnlimitedCreditResult());
       }
@@ -116,9 +123,28 @@ export class CheckCreditsUseCase {
   }
 
   /**
+   * Get credit result for LOCAL_STORAGE_MODE (Open Source Mode)
+   * Always returns sufficient credits with admin tier
+   */
+  private getLocalStorageModeResult(): CreditCheckResult {
+    return {
+      allowed: true,
+      credits: LOCAL_STORAGE_MODE_CREDITS,
+      tier: "admin",
+    };
+  }
+
+  /**
    * Determine whether the application is running in local dev bypass mode
    */
   private isLocalDevMode(): boolean {
     return isLocalDevModeEnabled();
+  }
+
+  /**
+   * Determine whether the application is running in LOCAL_STORAGE_MODE (Open Source Mode)
+   */
+  private isLocalStorageMode(): boolean {
+    return isEnabled("LOCAL_STORAGE_MODE");
   }
 }

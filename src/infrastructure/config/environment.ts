@@ -1,7 +1,24 @@
 /**
  * Environment configuration using Next.js environment variables
  * Centralizes all configuration management with validation
+ *
+ * Supports two modes:
+ * 1. Normal mode: Requires Supabase for authentication and data persistence
+ * 2. Local Storage Mode (Open Source Mode): Uses localStorage + simple auth, no Supabase required
  */
+
+/**
+ * Check if LOCAL_STORAGE_MODE is enabled
+ * This allows the app to run without Supabase using localStorage for persistence
+ */
+export function isLocalStorageMode(): boolean {
+  const TRUTHY = new Set(["1", "true", "yes", "on", "y", "t"]);
+  const value =
+    process.env.FF_LOCAL_STORAGE_MODE ||
+    process.env.NEXT_PUBLIC_FF_LOCAL_STORAGE_MODE;
+  if (!value) return false;
+  return TRUTHY.has(value.trim().toLowerCase());
+}
 
 export interface DatabaseConfig {
   supabaseUrl: string;
@@ -34,29 +51,58 @@ export interface AppConfig {
 /**
  * Get application configuration with validation
  * Throws error if required environment variables are missing
+ *
+ * In LOCAL_STORAGE_MODE:
+ * - Supabase environment variables are NOT required
+ * - GEMINI_API_KEY is still required for AI functionality
+ *
+ * In normal mode:
+ * - All Supabase and AI environment variables are required
  */
 export function getAppConfig(): AppConfig {
-  // Validate required environment variables
-  const requiredEnvVars = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  const localStorageMode = isLocalStorageMode();
+
+  // Build required env vars based on mode
+  const requiredEnvVars: Record<string, string | undefined> = {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   };
+
+  // Only require Supabase vars when NOT in local storage mode
+  if (!localStorageMode) {
+    requiredEnvVars.NEXT_PUBLIC_SUPABASE_URL =
+      process.env.NEXT_PUBLIC_SUPABASE_URL;
+    requiredEnvVars.NEXT_PUBLIC_SUPABASE_ANON_KEY =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  }
 
   const missingVars = Object.entries(requiredEnvVars)
     .filter(([__key, value]) => !value)
     .map(([key]) => key);
 
   if (missingVars.length > 0) {
+    const modeInfo = localStorageMode
+      ? " (Open Source Mode enabled - Supabase not required)"
+      : "";
     throw new Error(
-      `Missing required environment variables: ${missingVars.join(", ")}`
+      `Missing required environment variables${modeInfo}: ${missingVars.join(
+        ", "
+      )}`
     );
   }
 
+  // In local storage mode, provide placeholder values for Supabase config
+  // These won't be used but prevent null reference errors
+  const supabaseUrl = localStorageMode
+    ? "http://localhost:54321"
+    : process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = localStorageMode
+    ? "local-storage-mode-placeholder-key"
+    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
   return {
     database: {
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseKey,
       supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
     ai: {
@@ -128,17 +174,22 @@ export function isTest(): boolean {
 /**
  * Validate configuration at startup
  * Throws detailed errors for configuration issues
+ *
+ * In LOCAL_STORAGE_MODE, Supabase URL validation is skipped
  */
 export function validateConfiguration(): void {
   try {
     const config = getAppConfig();
+    const localStorageMode = isLocalStorageMode();
 
-    // Validate database configuration
-    if (!config.database.supabaseUrl.startsWith("https://")) {
-      throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid HTTPS URL");
+    // Validate database configuration (only in normal mode)
+    if (!localStorageMode) {
+      if (!config.database.supabaseUrl.startsWith("https://")) {
+        throw new Error("NEXT_PUBLIC_SUPABASE_URL must be a valid HTTPS URL");
+      }
     }
 
-    // Validate AI configuration
+    // Validate AI configuration (required in both modes)
     if (config.ai.timeout < 1000) {
       throw new Error("AI_TIMEOUT must be at least 1000ms");
     }
@@ -147,7 +198,8 @@ export function validateConfiguration(): void {
       throw new Error("AI_MAX_RETRIES must be between 1 and 10");
     }
 
-    console.log("✅ Configuration validation passed");
+    const modeLabel = localStorageMode ? " (Open Source Mode)" : "";
+    console.log(`✅ Configuration validation passed${modeLabel}`);
   } catch (error) {
     console.error("❌ Configuration validation failed:", error);
     throw error;
