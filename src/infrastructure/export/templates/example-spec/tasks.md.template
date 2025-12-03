@@ -1,0 +1,11 @@
+# Implementation Tasks - {{featureName}}
+
+## Tasks
+
+{{#each tasks}}
+- [ ] {{item}}
+{{/each}}
+
+## Checkpoint
+
+- [ ] Ensure all tests pass, ask the user if questions arise.

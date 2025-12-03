@@ -1,0 +1,95 @@
+name: Unit & Property Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  tests:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Unit - Domain
+            script: test:unit:domain
+          - name: Unit - Application
+            script: test:unit:application
+          - name: Unit - Infrastructure
+            script: test:unit:infrastructure
+          - name: Unit - Features
+            script: test:unit:features
+          - name: Unit - Lib
+            script: test:unit:lib
+          - name: Properties - System
+            script: test:properties:system
+          - name: Properties - Business
+            script: test:properties:business
+          - name: Properties - Data Integrity
+            script: test:properties:data
+          - name: Properties - Domain
+            script: test:properties:domain
+          - name: Properties - Utils
+            script: test:properties:utils
+
+    steps:
+      - name: Record start time
+        id: start-time
+        run: echo "start=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.name }}
+        run: npm run ${{ matrix.script }}
+        env:
+          CI: true
+
+      - name: Calculate workflow duration
+        if: always()
+        run: |
+          START_TIME=${{ steps.start-time.outputs.start }}
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          DURATION_MIN=$((DURATION / 60))
+          DURATION_SEC=$((DURATION % 60))
+
+          echo "duration_seconds=$DURATION" >> $GITHUB_OUTPUT
+          echo "### ⏱️ Workflow Duration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total time: ${DURATION_MIN}m ${DURATION_SEC}s" >> $GITHUB_STEP_SUMMARY
+
+          if [ $DURATION -gt 900 ]; then
+            echo "::warning::Workflow duration exceeded 15 minutes (${DURATION_MIN}m ${DURATION_SEC}s)"
+            echo "⚠️ Duration exceeded 15 minute threshold" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "{\"workflow\":\"${{ matrix.name }}\",\"duration_seconds\":$DURATION,\"duration_formatted\":\"${DURATION_MIN}m ${DURATION_SEC}s\"}" > workflow-duration.json
+
+      - name: Upload duration metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duration-${{ matrix.name }}-${{ github.run_number }}
+          path: workflow-duration.json
+          retention-days: 30
+          if-no-files-found: warn

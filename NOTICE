@@ -1,0 +1,31 @@
+No Vibe No Code
+Copyright (C) 2025
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+NETWORK USE NOTICE (AGPL Section 13):
+
+If you modify this program and make it available to users over a network,
+you must provide those users with access to the complete source code of
+your modified version, including all modifications you have made.
+
+This can be done by:
+- Providing a prominent link in the user interface to download the source
+- Making the source available via a public repository
+- Offering the source through other standard means
+
+For more information about AGPL compliance, see:
+https://www.gnu.org/licenses/agpl-3.0.html

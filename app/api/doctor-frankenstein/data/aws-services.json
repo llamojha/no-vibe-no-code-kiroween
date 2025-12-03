@@ -1,0 +1,998 @@
+{
+  "categories": [
+    {
+      "name": "Compute",
+      "items": [
+        {
+          "name": "Amazon EC2",
+          "description": "Resizable virtual servers with 500+ instance types for any workload"
+        },
+        {
+          "name": "Auto Scaling",
+          "description": "Automatically adjust compute capacity based on demand patterns"
+        },
+        {
+          "name": "Elastic Load Balancing",
+          "description": "Distribute traffic across targets with health checks and SSL termination"
+        },
+        {
+          "name": "AWS Lambda",
+          "description": "Run code without servers, pay per millisecond, scale automatically"
+        },
+        {
+          "name": "AWS Fargate",
+          "description": "Serverless containers without managing infrastructure"
+        },
+        {
+          "name": "Amazon ECS",
+          "description": "Docker container orchestration with deep AWS integration"
+        },
+        {
+          "name": "Amazon EKS",
+          "description": "Managed Kubernetes with automatic upgrades and patching"
+        },
+        {
+          "name": "AWS App Runner",
+          "description": "Deploy containerized web apps from source code in minutes"
+        },
+        {
+          "name": "AWS Batch",
+          "description": "Run batch jobs at any scale with automatic resource provisioning"
+        },
+        {
+          "name": "AWS Elastic Beanstalk",
+          "description": "Deploy apps by uploading code, handles infrastructure automatically"
+        },
+        {
+          "name": "Amazon Lightsail",
+          "description": "Simple VPS with predictable pricing for small projects"
+        },
+        {
+          "name": "AWS Outposts Family",
+          "description": "Run AWS infrastructure on-premises with local data processing"
+        },
+        {
+          "name": "AWS Local Zones",
+          "description": "Place compute closer to users in metro areas for single-digit latency"
+        },
+        {
+          "name": "AWS Wavelength",
+          "description": "Deploy apps at 5G edge for ultra-low latency mobile experiences"
+        },
+        {
+          "name": "AWS Nitro Enclaves",
+          "description": "Isolated compute for processing sensitive data with cryptographic attestation"
+        },
+        {
+          "name": "Amazon EC2 Image Builder",
+          "description": "Automate creation, patching, and testing of machine images"
+        },
+        {
+          "name": "AWS ParallelCluster",
+          "description": "Deploy and manage HPC clusters with job schedulers"
+        },
+        {
+          "name": "NICE DCV",
+          "description": "Stream high-performance desktops for graphics-intensive workloads"
+        },
+        {
+          "name": "NICE EnginFrame",
+          "description": "Web portal for submitting and monitoring HPC jobs"
+        },
+        {
+          "name": "AWS Compute Optimizer",
+          "description": "ML-powered recommendations to right-size compute resources"
+        }
+      ]
+    },
+    {
+      "name": "Containers",
+      "items": [
+        {
+          "name": "Amazon ECS",
+          "description": "Native AWS container orchestration with Fargate or EC2 launch types"
+        },
+        {
+          "name": "Amazon EKS",
+          "description": "Certified Kubernetes with AWS integrations and multi-cluster management"
+        },
+        {
+          "name": "AWS Fargate",
+          "description": "Serverless compute engine for containers, no EC2 management"
+        },
+        {
+          "name": "Amazon ECR",
+          "description": "Private container registry with image scanning and replication"
+        },
+        {
+          "name": "AWS App Mesh",
+          "description": "Service mesh for observability and traffic control across services"
+        },
+        {
+          "name": "AWS Proton",
+          "description": "Automated infrastructure and deployment pipelines for container apps"
+        },
+        {
+          "name": "AWS Copilot",
+          "description": "CLI tool to build, release, and operate production-ready containers"
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "items": [
+        {
+          "name": "Amazon S3",
+          "description": "Object storage with 11 9s durability, lifecycle policies, and analytics"
+        },
+        {
+          "name": "Amazon EBS",
+          "description": "Block storage volumes for EC2 with snapshots and encryption"
+        },
+        {
+          "name": "Amazon EFS",
+          "description": "Elastic NFS file system that scales automatically, shared across instances"
+        },
+        {
+          "name": "Amazon FSx Family",
+          "description": "High-performance file systems for Windows, Lustre, NetApp, and OpenZFS"
+        },
+        {
+          "name": "AWS Backup",
+          "description": "Centralized backup across AWS services with compliance reporting"
+        },
+        {
+          "name": "AWS Storage Gateway",
+          "description": "Hybrid storage connecting on-premises apps to cloud storage"
+        },
+        {
+          "name": "AWS Snow Family",
+          "description": "Physical devices to transfer petabytes of data offline"
+        },
+        {
+          "name": "AWS DataSync",
+          "description": "Automated data transfer between on-premises and AWS at 10x speed"
+        },
+        {
+          "name": "AWS Transfer Family",
+          "description": "Fully managed SFTP, FTPS, and FTP for S3 and EFS"
+        },
+        {
+          "name": "AWS Elastic Disaster Recovery",
+          "description": "Continuous replication and fast recovery for applications"
+        }
+      ]
+    },
+    {
+      "name": "Databases",
+      "items": [
+        {
+          "name": "Amazon RDS",
+          "description": "Managed relational databases with automated backups and multi-AZ deployments"
+        },
+        {
+          "name": "Amazon Aurora",
+          "description": "MySQL/PostgreSQL-compatible with 5x performance and global replication"
+        },
+        {
+          "name": "Amazon DynamoDB",
+          "description": "Single-digit millisecond NoSQL with automatic scaling and global tables"
+        },
+        {
+          "name": "Amazon ElastiCache",
+          "description": "In-memory caching for microsecond latency with Redis or Memcached"
+        },
+        {
+          "name": "Amazon MemoryDB for Redis",
+          "description": "Redis-compatible with Multi-AZ durability and microsecond reads"
+        },
+        {
+          "name": "Amazon DocumentDB",
+          "description": "MongoDB-compatible document database with automatic scaling"
+        },
+        {
+          "name": "Amazon Keyspaces",
+          "description": "Serverless Cassandra-compatible database with single-digit millisecond latency"
+        },
+        {
+          "name": "Amazon Neptune",
+          "description": "Graph database for highly connected datasets with SPARQL and Gremlin"
+        },
+        {
+          "name": "Amazon Timestream",
+          "description": "Time series database with automatic tiering and built-in analytics"
+        },
+        {
+          "name": "Amazon QLDB",
+          "description": "Immutable ledger database with cryptographically verifiable transaction log"
+        },
+        {
+          "name": "Amazon Redshift",
+          "description": "Petabyte-scale data warehouse with ML integration and federated queries"
+        },
+        {
+          "name": "AWS Database Migration Service",
+          "description": "Migrate databases with minimal downtime and continuous replication"
+        },
+        {
+          "name": "AWS Glue Data Catalog",
+          "description": "Central metadata repository for data discovery and schema versioning"
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Big Data",
+      "items": [
+        {
+          "name": "Amazon Athena",
+          "description": "Query S3 data with SQL, pay per query, no infrastructure"
+        },
+        {
+          "name": "Amazon Redshift",
+          "description": "Fast data warehouse with ML, materialized views, and data sharing"
+        },
+        {
+          "name": "AWS Glue",
+          "description": "Serverless ETL with visual interface and automatic schema discovery"
+        },
+        {
+          "name": "AWS Lake Formation",
+          "description": "Build secure data lakes with fine-grained access control in days"
+        },
+        {
+          "name": "Amazon EMR",
+          "description": "Big data platform for Spark, Hadoop, Presto with auto-scaling"
+        },
+        {
+          "name": "Amazon Kinesis",
+          "description": "Real-time streaming for video, logs, and clickstreams with SQL analytics"
+        },
+        {
+          "name": "Amazon OpenSearch Service",
+          "description": "Search, analyze, and visualize data with Kibana dashboards"
+        },
+        {
+          "name": "Amazon MSK",
+          "description": "Fully managed Apache Kafka with automatic patching and scaling"
+        },
+        {
+          "name": "AWS Data Exchange",
+          "description": "Find and subscribe to third-party data from 300+ providers"
+        },
+        {
+          "name": "AWS Clean Rooms",
+          "description": "Collaborate on datasets without sharing raw data using privacy-preserving tech"
+        },
+        {
+          "name": "AWS Step Functions",
+          "description": "Visual workflow orchestration with 200+ AWS service integrations"
+        },
+        {
+          "name": "AWS IoT Analytics",
+          "description": "Run analytics on IoT data with built-in time-series functions"
+        },
+        {
+          "name": "Amazon QuickSight",
+          "description": "Serverless BI with ML insights and embedded analytics"
+        }
+      ]
+    },
+    {
+      "name": "Machine Learning & AI",
+      "items": [
+        {
+          "name": "Amazon Bedrock",
+          "description": "Access foundation models from AI21, Anthropic, Stability AI via unified API"
+        },
+        {
+          "name": "Amazon Q",
+          "description": "Generative AI assistant that knows your business data and AWS best practices"
+        },
+        {
+          "name": "Amazon SageMaker",
+          "description": "Build, train, and deploy ML models at scale with notebooks and AutoML"
+        },
+        {
+          "name": "Amazon Comprehend",
+          "description": "Extract insights from text: sentiment, entities, key phrases, language"
+        },
+        {
+          "name": "Amazon Translate",
+          "description": "Neural machine translation for 75+ languages with custom terminology"
+        },
+        {
+          "name": "Amazon Transcribe",
+          "description": "Speech-to-text with speaker identification and custom vocabularies"
+        },
+        {
+          "name": "Amazon Polly",
+          "description": "Text-to-speech with 60+ voices in 30+ languages and SSML support"
+        },
+        {
+          "name": "Amazon Lex",
+          "description": "Build conversational interfaces with automatic speech recognition"
+        },
+        {
+          "name": "Amazon Rekognition",
+          "description": "Detect objects, faces, text, and inappropriate content in images and videos"
+        },
+        {
+          "name": "Amazon Textract",
+          "description": "Extract text, tables, and forms from documents with high accuracy"
+        },
+        {
+          "name": "Amazon Kendra",
+          "description": "Intelligent search powered by ML that understands natural language"
+        },
+        {
+          "name": "Amazon Forecast",
+          "description": "Time-series forecasting using ML with automatic algorithm selection"
+        },
+        {
+          "name": "Amazon Personalize",
+          "description": "Real-time recommendations using same tech as Amazon.com"
+        },
+        {
+          "name": "Amazon Fraud Detector",
+          "description": "Detect online fraud using ML models trained on AWS fraud data"
+        },
+        {
+          "name": "Amazon Titan",
+          "description": "AWS-built foundation models for text generation and embeddings"
+        },
+        {
+          "name": "Amazon HealthLake",
+          "description": "Store, transform, and analyze health data in FHIR format"
+        },
+        {
+          "name": "Amazon Lookout for Equipment",
+          "description": "Detect abnormal equipment behavior using sensor data"
+        },
+        {
+          "name": "Amazon Lookout for Metrics",
+          "description": "Automatically detect anomalies in business metrics"
+        },
+        {
+          "name": "Amazon Lookout for Vision",
+          "description": "Spot product defects using computer vision with few training images"
+        },
+        {
+          "name": "Amazon A2I",
+          "description": "Human review workflows for ML predictions with built-in templates"
+        },
+        {
+          "name": "AWS Inferentia / Trainium",
+          "description": "Custom chips for high-performance, cost-effective ML inference and training"
+        }
+      ]
+    },
+    {
+      "name": "Application Integration & Eventing",
+      "items": [
+        {
+          "name": "Amazon EventBridge",
+          "description": "Serverless event bus connecting AWS services, SaaS apps, and custom apps"
+        },
+        {
+          "name": "Amazon SQS",
+          "description": "Fully managed message queues with at-least-once delivery"
+        },
+        {
+          "name": "Amazon SNS",
+          "description": "Pub/sub messaging for fan-out to millions of subscribers"
+        },
+        {
+          "name": "Amazon MQ",
+          "description": "Managed message broker for ActiveMQ and RabbitMQ migrations"
+        },
+        {
+          "name": "AWS AppConfig",
+          "description": "Deploy feature flags and config changes with validation and rollback"
+        },
+        {
+          "name": "AWS Step Functions",
+          "description": "Coordinate distributed apps with visual workflows and error handling"
+        },
+        {
+          "name": "AWS MWAA",
+          "description": "Managed Apache Airflow for data pipeline orchestration"
+        },
+        {
+          "name": "Amazon AppFlow",
+          "description": "No-code data integration between SaaS apps and AWS services"
+        },
+        {
+          "name": "Amazon SES",
+          "description": "Scalable email sending and receiving with deliverability dashboard"
+        }
+      ]
+    },
+    {
+      "name": "Networking, Edge & Content Delivery",
+      "items": [
+        {
+          "name": "Amazon VPC",
+          "description": "Isolated virtual network with subnets, route tables, and security groups"
+        },
+        {
+          "name": "Amazon Route 53",
+          "description": "Scalable DNS with health checks, traffic routing, and domain registration"
+        },
+        {
+          "name": "Amazon CloudFront",
+          "description": "Global CDN with edge computing, real-time logs, and DDoS protection"
+        },
+        {
+          "name": "AWS Global Accelerator",
+          "description": "Improve global app availability with static IPs and AWS network"
+        },
+        {
+          "name": "AWS Direct Connect",
+          "description": "Dedicated 1-100 Gbps network connection from on-premises to AWS"
+        },
+        {
+          "name": "AWS Site-to-Site VPN",
+          "description": "Encrypted IPsec tunnels between networks"
+        },
+        {
+          "name": "AWS Client VPN",
+          "description": "Managed OpenVPN for secure remote access"
+        },
+        {
+          "name": "AWS Network Firewall",
+          "description": "Managed firewall with intrusion prevention and web filtering"
+        },
+        {
+          "name": "AWS Transit Gateway",
+          "description": "Connect VPCs and on-premises networks through central hub"
+        },
+        {
+          "name": "AWS PrivateLink",
+          "description": "Access services privately without internet gateway or NAT"
+        },
+        {
+          "name": "AWS App Mesh",
+          "description": "Application-level networking for microservices with traffic control"
+        },
+        {
+          "name": "VPC Features",
+          "description": "Elastic IPs, NAT Gateway, Internet Gateway for network connectivity"
+        }
+      ]
+    },
+    {
+      "name": "Security, Identity & Compliance",
+      "items": [
+        {
+          "name": "AWS IAM",
+          "description": "Fine-grained access control with roles, policies, and MFA"
+        },
+        {
+          "name": "AWS IAM Identity Center",
+          "description": "Single sign-on access to AWS accounts and business applications"
+        },
+        {
+          "name": "AWS Organizations",
+          "description": "Centrally manage multiple AWS accounts with consolidated billing"
+        },
+        {
+          "name": "AWS Control Tower",
+          "description": "Set up multi-account environment with guardrails and compliance"
+        },
+        {
+          "name": "AWS KMS",
+          "description": "Create and control encryption keys with audit trail"
+        },
+        {
+          "name": "AWS CloudHSM",
+          "description": "Hardware security modules for regulatory compliance"
+        },
+        {
+          "name": "AWS Certificate Manager",
+          "description": "Provision and manage SSL/TLS certificates automatically"
+        },
+        {
+          "name": "AWS Secrets Manager",
+          "description": "Rotate, manage, and retrieve secrets with automatic rotation"
+        },
+        {
+          "name": "AWS Resource Access Manager",
+          "description": "Share AWS resources across accounts securely"
+        },
+        {
+          "name": "AWS Directory Service",
+          "description": "Managed Active Directory or Simple AD in the cloud"
+        },
+        {
+          "name": "Amazon Cognito",
+          "description": "User sign-up, sign-in, and access control for web and mobile apps"
+        },
+        {
+          "name": "AWS WAF",
+          "description": "Filter malicious web traffic with customizable rules"
+        },
+        {
+          "name": "AWS Shield",
+          "description": "Managed DDoS protection with always-on detection"
+        },
+        {
+          "name": "AWS Firewall Manager",
+          "description": "Centrally configure firewall rules across accounts"
+        },
+        {
+          "name": "Amazon GuardDuty",
+          "description": "Threat detection using ML to analyze logs and network traffic"
+        },
+        {
+          "name": "Amazon Inspector",
+          "description": "Automated vulnerability scanning for EC2 and container images"
+        },
+        {
+          "name": "Amazon Macie",
+          "description": "Discover and protect sensitive data using ML"
+        },
+        {
+          "name": "AWS Security Hub",
+          "description": "Unified security and compliance dashboard across accounts"
+        },
+        {
+          "name": "AWS Audit Manager",
+          "description": "Continuously audit AWS usage for compliance frameworks"
+        },
+        {
+          "name": "Amazon Detective",
+          "description": "Investigate security findings with interactive visualizations"
+        },
+        {
+          "name": "AWS Clean Rooms ML",
+          "description": "Train ML models on combined datasets without exposing raw data"
+        }
+      ]
+    },
+    {
+      "name": "Management, Governance & Operations",
+      "items": [
+        {
+          "name": "AWS CloudFormation",
+          "description": "Model infrastructure as code with templates and drift detection"
+        },
+        {
+          "name": "AWS CDK",
+          "description": "Define infrastructure using familiar programming languages"
+        },
+        {
+          "name": "AWS Cloud Control API",
+          "description": "Unified API to manage AWS and third-party resources"
+        },
+        {
+          "name": "AWS Systems Manager",
+          "description": "Operational hub for patching, configuration, and remote access"
+        },
+        {
+          "name": "AWS Config",
+          "description": "Track resource configurations and compliance over time"
+        },
+        {
+          "name": "AWS CloudTrail",
+          "description": "Log all API calls for auditing and governance"
+        },
+        {
+          "name": "Amazon CloudWatch",
+          "description": "Monitor resources with metrics, logs, alarms, and dashboards"
+        },
+        {
+          "name": "AWS X-Ray",
+          "description": "Trace requests through distributed applications for debugging"
+        },
+        {
+          "name": "AWS Trusted Advisor",
+          "description": "Real-time guidance to optimize cost, performance, and security"
+        },
+        {
+          "name": "AWS License Manager",
+          "description": "Track software licenses and enforce compliance rules"
+        },
+        {
+          "name": "AWS Service Catalog",
+          "description": "Create and manage approved IT service catalogs"
+        },
+        {
+          "name": "AWS Cost Explorer",
+          "description": "Visualize and analyze spending patterns with forecasting"
+        },
+        {
+          "name": "AWS Budgets",
+          "description": "Set custom cost and usage budgets with alerts"
+        },
+        {
+          "name": "AWS Cost and Usage Report",
+          "description": "Most detailed billing data available for analysis"
+        },
+        {
+          "name": "AWS Cost Anomaly Detection",
+          "description": "ML-powered detection of unusual spending patterns"
+        },
+        {
+          "name": "AWS Billing & Cost Management",
+          "description": "View bills, make payments, and manage billing preferences"
+        },
+        {
+          "name": "AWS Health Dashboard",
+          "description": "Personalized view of AWS service health affecting your resources"
+        },
+        {
+          "name": "AWS Well-Architected Tool",
+          "description": "Review workloads against AWS best practices"
+        },
+        {
+          "name": "AWS AppFabric",
+          "description": "Connect SaaS apps for security and productivity insights"
+        },
+        {
+          "name": "AWS Resilience Hub",
+          "description": "Assess and improve application resilience with RTO/RPO tracking"
+        },
+        {
+          "name": "AWS Resource Explorer",
+          "description": "Search and discover resources across regions and accounts"
+        },
+        {
+          "name": "AWS Service Quotas",
+          "description": "View and request increases for service limits"
+        }
+      ]
+    },
+    {
+      "name": "Developer Tools",
+      "items": [
+        {
+          "name": "AWS CodeCommit",
+          "description": "Private Git repositories with encryption and access control"
+        },
+        {
+          "name": "AWS CodeBuild",
+          "description": "Compile code, run tests, and produce deployment packages"
+        },
+        {
+          "name": "AWS CodeDeploy",
+          "description": "Automate deployments to EC2, Lambda, ECS, and on-premises servers"
+        },
+        {
+          "name": "AWS CodePipeline",
+          "description": "Continuous delivery with visual workflow and third-party tools"
+        },
+        {
+          "name": "AWS CodeArtifact",
+          "description": "Secure artifact repository for npm, Maven, PyPI, and NuGet"
+        },
+        {
+          "name": "AWS Cloud9",
+          "description": "Cloud IDE with collaborative editing and terminal access"
+        },
+        {
+          "name": "AWS Fault Injection Service",
+          "description": "Run controlled chaos engineering experiments"
+        },
+        {
+          "name": "AWS Device Farm",
+          "description": "Test mobile apps on real devices in the cloud"
+        },
+        {
+          "name": "AWS Amplify",
+          "description": "Build full-stack web and mobile apps with hosting and CI/CD"
+        },
+        {
+          "name": "AWS AppSync",
+          "description": "Managed GraphQL with real-time subscriptions and offline sync"
+        },
+        {
+          "name": "AWS SAM",
+          "description": "Framework for building serverless applications"
+        }
+      ]
+    },
+    {
+      "name": "Mobile, Frontend & AR/VR",
+      "items": [
+        {
+          "name": "AWS Amplify",
+          "description": "Frontend framework with authentication, storage, and API generation"
+        },
+        {
+          "name": "AWS AppSync",
+          "description": "Real-time GraphQL APIs with offline support and conflict resolution"
+        },
+        {
+          "name": "Amazon Pinpoint",
+          "description": "Multi-channel customer engagement with analytics and A/B testing"
+        },
+        {
+          "name": "Amazon Location Service",
+          "description": "Add maps, geocoding, routing, and geofencing to applications"
+        },
+        {
+          "name": "Amazon IVS",
+          "description": "Low-latency live video streaming with interactive features"
+        },
+        {
+          "name": "Amazon Chime SDK",
+          "description": "Add audio, video, and screen sharing to applications"
+        },
+        {
+          "name": "Amazon Honeycode",
+          "description": "Build mobile and web apps without code using spreadsheet interface"
+        }
+      ]
+    },
+    {
+      "name": "End-User Computing (EUC)",
+      "items": [
+        {
+          "name": "Amazon WorkSpaces Family",
+          "description": "Persistent or non-persistent virtual desktops in the cloud"
+        },
+        {
+          "name": "Amazon AppStream 2.0",
+          "description": "Stream desktop applications to browsers without rewriting code"
+        },
+        {
+          "name": "Amazon WorkDocs",
+          "description": "Secure document collaboration with feedback and version control"
+        },
+        {
+          "name": "Amazon WorkMail",
+          "description": "Business email and calendar with Microsoft Outlook support"
+        },
+        {
+          "name": "Amazon Connect",
+          "description": "Cloud contact center with AI-powered chatbots and analytics"
+        }
+      ]
+    },
+    {
+      "name": "Media Services (AWS Elemental)",
+      "items": [
+        {
+          "name": "AWS Elemental MediaLive",
+          "description": "Encode live video for broadcast and streaming"
+        },
+        {
+          "name": "AWS Elemental MediaConvert",
+          "description": "Convert file-based video for on-demand delivery"
+        },
+        {
+          "name": "AWS Elemental MediaPackage",
+          "description": "Package and protect video for delivery to any device"
+        },
+        {
+          "name": "AWS Elemental MediaConnect",
+          "description": "Transport live video reliably over IP networks"
+        },
+        {
+          "name": "AWS Elemental MediaStore",
+          "description": "Storage optimized for media with low-latency delivery"
+        },
+        {
+          "name": "Amazon Kinesis Video Streams",
+          "description": "Capture, process, and store video streams for analytics and ML"
+        },
+        {
+          "name": "Amazon IVS",
+          "description": "Managed live streaming with sub-3-second latency"
+        }
+      ]
+    },
+    {
+      "name": "Business Applications & Vertical Services",
+      "items": [
+        {
+          "name": "Amazon Connect",
+          "description": "Omnichannel cloud contact center with AI and workforce management"
+        },
+        {
+          "name": "AWS Supply Chain",
+          "description": "Unified supply chain visibility with ML-powered insights"
+        },
+        {
+          "name": "AWS Clean Rooms",
+          "description": "Analyze combined datasets without sharing underlying data"
+        },
+        {
+          "name": "Amazon Omics",
+          "description": "Store, query, and analyze genomic and biological data at scale"
+        },
+        {
+          "name": "Amazon HealthLake",
+          "description": "Transform health data into FHIR format for analytics"
+        },
+        {
+          "name": "AWS Clean Rooms ML",
+          "description": "Collaboratively train ML models without exposing training data"
+        },
+        {
+          "name": "AWS Wickr",
+          "description": "End-to-end encrypted messaging and file sharing"
+        },
+        {
+          "name": "Amazon Q",
+          "description": "Generative AI assistant for business intelligence and development"
+        }
+      ]
+    },
+    {
+      "name": "Migration & Transfer",
+      "items": [
+        {
+          "name": "AWS Migration Hub",
+          "description": "Track migrations across AWS and partner tools"
+        },
+        {
+          "name": "AWS Application Migration Service",
+          "description": "Lift-and-shift applications with minimal downtime"
+        },
+        {
+          "name": "AWS Server Migration Service",
+          "description": "Automate migration of on-premises servers to AWS"
+        },
+        {
+          "name": "AWS Database Migration Service",
+          "description": "Migrate databases with minimal downtime and continuous sync"
+        },
+        {
+          "name": "AWS Application Discovery Service",
+          "description": "Discover on-premises applications and dependencies"
+        },
+        {
+          "name": "AWS Mainframe Modernization",
+          "description": "Migrate and modernize mainframe applications"
+        },
+        {
+          "name": "AWS Snow Family",
+          "description": "Transfer petabytes using ruggedized physical devices"
+        },
+        {
+          "name": "AWS Transfer Family",
+          "description": "Migrate file transfer workflows to fully managed SFTP/FTPS/FTP"
+        },
+        {
+          "name": "AWS DataSync",
+          "description": "Accelerate data transfer between on-premises and AWS"
+        }
+      ]
+    },
+    {
+      "name": "IoT & Robotics",
+      "items": [
+        {
+          "name": "AWS IoT Core",
+          "description": "Connect billions of devices with pub/sub messaging"
+        },
+        {
+          "name": "AWS IoT Device Management",
+          "description": "Register, organize, monitor, and remotely manage IoT devices"
+        },
+        {
+          "name": "AWS IoT Device Defender",
+          "description": "Audit configurations and detect anomalous device behavior"
+        },
+        {
+          "name": "AWS IoT Greengrass",
+          "description": "Run local compute, messaging, and ML inference on edge devices"
+        },
+        {
+          "name": "AWS IoT SiteWise",
+          "description": "Collect, organize, and analyze industrial equipment data"
+        },
+        {
+          "name": "AWS IoT Events",
+          "description": "Detect and respond to events from IoT sensors and applications"
+        },
+        {
+          "name": "AWS IoT Analytics",
+          "description": "Run analytics on IoT data with built-in time-series functions"
+        },
+        {
+          "name": "AWS IoT TwinMaker",
+          "description": "Create digital twins of real-world systems"
+        },
+        {
+          "name": "AWS IoT RoboRunner",
+          "description": "Build applications to manage robot fleets"
+        },
+        {
+          "name": "AWS IoT ExpressLink",
+          "description": "Quickly connect devices using certified connectivity modules"
+        },
+        {
+          "name": "AWS IoT FleetWise",
+          "description": "Collect, transform, and transfer vehicle data to the cloud"
+        },
+        {
+          "name": "AWS RoboMaker",
+          "description": "Develop, test, and deploy robotics applications"
+        },
+        {
+          "name": "Amazon Monitron",
+          "description": "End-to-end equipment monitoring with sensors and ML"
+        },
+        {
+          "name": "AWS Panorama",
+          "description": "Add computer vision to existing cameras at the edge"
+        }
+      ]
+    },
+    {
+      "name": "Blockchain & Ledger",
+      "items": [
+        {
+          "name": "Amazon Managed Blockchain",
+          "description": "Create and manage Hyperledger Fabric and Ethereum networks"
+        },
+        {
+          "name": "Amazon QLDB",
+          "description": "Immutable, cryptographically verifiable transaction log"
+        }
+      ]
+    },
+    {
+      "name": "Quantum Technologies",
+      "items": [
+        {
+          "name": "Amazon Braket",
+          "description": "Explore and experiment with quantum computing algorithms"
+        }
+      ]
+    },
+    {
+      "name": "Game Tech",
+      "items": [
+        {
+          "name": "Amazon GameLift",
+          "description": "Deploy and scale dedicated game servers with matchmaking"
+        },
+        {
+          "name": "Amazon GameSparks",
+          "description": "Managed backend services for game development"
+        },
+        {
+          "name": "AWS for Games",
+          "description": "Purpose-built solutions and guidance for game developers"
+        }
+      ]
+    },
+    {
+      "name": "Customer Engagement & Communications",
+      "items": [
+        {
+          "name": "Amazon Pinpoint",
+          "description": "Engage customers across email, SMS, push, voice, and in-app"
+        },
+        {
+          "name": "Amazon SES",
+          "description": "Send marketing and transactional emails at scale"
+        },
+        {
+          "name": "Amazon Chime SDK",
+          "description": "Build real-time communication apps with audio, video, and chat"
+        },
+        {
+          "name": "Amazon Connect",
+          "description": "AI-powered cloud contact center with omnichannel routing"
+        },
+        {
+          "name": "Amazon IVS",
+          "description": "Build interactive live video experiences with chat"
+        }
+      ]
+    },
+    {
+      "name": "Maps & Location",
+      "items": [
+        {
+          "name": "Amazon Location Service",
+          "description": "Add location features with maps, geocoding, routing, and geofences"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+---
+inclusion: manual
+---
+
+# Spec Generation Guide - {{ideaName}}
+
+This steering file helps you generate additional specs from your roadmap items using Kiro.
+
+## How to Use This Guide
+
+1. Reference your roadmap: #[[file:docs/roadmap.md]]
+2. Select a roadmap item you want to implement
+3. Use the prompts below to generate a complete spec
+
+## Output Structure
+
+When generating a spec, Kiro will create three files:
+
+- `requirements.md` - User stories and acceptance criteria
+- `design.md` - Technical design and architecture decisions
+- `tasks.md` - Implementation tasks and checklist
+
+## Example Prompts
+
+### Generate Requirements
+```
+Based on the roadmap item "[ITEM_NAME]" from #[[file:docs/roadmap.md]],
+generate a requirements.md file with:
+- A clear user story
+- 3-5 acceptance criteria in EARS format
+- References to relevant PRD sections
+```
+
+### Generate Design
+```
+Based on the requirements for "[FEATURE_NAME]" and the tech architecture
+in #[[file:docs/tech-architecture.md]], generate a design.md file with:
+- Technical approach
+- Component design
+- Data models
+- Error handling strategy
+```
+
+### Generate Tasks
+```
+Based on the design for "[FEATURE_NAME]", generate a tasks.md file with:
+- Numbered implementation tasks
+- Sub-tasks where appropriate
+- Test tasks marked as optional
+- Checkpoint tasks for validation
+```
+
+## Tips for Iterating on Specs
+
+1. **Start with requirements** - Get the user story and acceptance criteria right first
+2. **Review before proceeding** - Have Kiro explain the requirements before generating design
+3. **Reference existing code** - Point Kiro to relevant existing implementations
+4. **Keep tasks small** - Each task should be completable in one session
+5. **Include tests** - Property-based tests catch edge cases early

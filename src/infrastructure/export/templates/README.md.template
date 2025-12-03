@@ -1,0 +1,85 @@
+# Kiro Setup - {{ideaName}}
+
+This package contains steering files, example specs, and documentation to help you start implementing your project with Kiro.
+
+**Generated:** {{timestamp}}
+
+## What's Included
+
+### Steering Files (`steering/`)
+- `product.md` - Product vision, users, and success metrics
+- `tech.md` - Technology stack and development environment
+- `architecture.md` - Architectural patterns and code organization
+- `spec-generation.md` - Guide for generating additional specs (manual inclusion)
+
+### Example Spec (`specs/`)
+- An example feature spec generated from your first roadmap item
+- Includes requirements, design, and tasks files
+
+### Documentation (`docs/`)
+- `roadmap.md` - Your project roadmap for reference
+- `PRD.md` - Product requirements source document
+- `tech-architecture.md` - Technical architecture source document
+- `design.md` - Design/technical design source document
+
+## Setup Instructions
+
+### Step 1: Extract Files
+Extract this package to your project root or a dedicated directory.
+
+### Step 2: Copy Steering Files
+Copy the steering files to your Kiro configuration:
+```bash
+mkdir -p .kiro/steering
+cp steering/*.md .kiro/steering/
+```
+
+### Step 3: Copy Example Spec
+Copy the example spec to your specs directory:
+```bash
+mkdir -p .kiro/specs
+cp -r specs/* .kiro/specs/
+```
+
+### Step 4: Copy Documentation
+Copy the roadmap, PRD, tech architecture, and design docs to your docs directory:
+```bash
+mkdir -p docs
+cp docs/roadmap.md docs/
+cp docs/PRD.md docs/
+cp docs/tech-architecture.md docs/
+cp docs/design.md docs/
+```
+
+## Example Workflows
+
+### Implementing the Example Spec
+1. Open the tasks file in `.kiro/specs/[feature-name]/tasks.md`
+2. Click "Start task" on the first task
+3. Let Kiro implement each task incrementally
+4. Review and approve changes before proceeding
+
+### Generating a New Spec
+1. Include the spec-generation steering file in your chat
+2. Reference a roadmap item you want to implement
+3. Follow the prompts to generate requirements, design, and tasks
+4. Review each document before proceeding to the next
+
+### Customizing Steering Files
+1. Edit the steering files to add project-specific context
+2. Add new steering files for additional concerns (e.g., testing, security)
+3. Use frontmatter to control when steering files are included
+
+## Tips for Working with Kiro
+
+1. **Be specific** - The more context you provide, the better Kiro's suggestions
+2. **Review incrementally** - Don't let Kiro run too far ahead without review
+3. **Use file references** - Reference existing code with `#[[file:path]]`
+4. **Iterate on specs** - Refine requirements and design before implementation
+5. **Keep steering updated** - Update steering files as your project evolves
+
+## Need Help?
+
+- Check the spec-generation guide for detailed prompts
+- Reference the example spec for structure and format
+- Update steering files with project-specific context

@@ -1,0 +1,26 @@
+{
+  "name": "No Vibe No Code",
+  "version": "0.0.0",
+  "description": "AI-powered product management platform that transforms raw startup ideas into execution-ready documentation and GitHub backlogs. Features include startup idea analysis, hackathon project evaluation, AI-powered idea generation (Doctor Frankenstein), and comprehensive testing with mock mode support.",
+  "architecture": "hexagonal",
+  "framework": "Next.js 14.2+",
+  "runtime": "Node.js",
+  "language": "TypeScript",
+  "features": [
+    "Startup idea analysis with AI-powered scoring",
+    "Hackathon project evaluation (Kiroween theme)",
+    "AI idea generation (Doctor Frankenstein)",
+    "Multi-language support (English/Spanish)",
+    "User dashboard with analysis history",
+    "Mock mode for development without API costs",
+    "Comprehensive E2E testing with Playwright",
+    "Feature flag system for controlled rollouts"
+  ],
+  "technologies": {
+    "frontend": ["React 18", "Next.js 14.2+", "Tailwind CSS", "Three.js"],
+    "backend": ["Supabase", "Google Gemini AI"],
+    "testing": ["Vitest", "Playwright", "@testing-library/react"],
+    "analytics": ["PostHog"]
+  },
+  "requestFramePermissions": ["microphone"]
+}

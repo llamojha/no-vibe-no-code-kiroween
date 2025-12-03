@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Sync GitHub Issues Status",
+  "description": "Synchronizes GitHub issue status with local spec tasks.md files, updating checkboxes based on issue state",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I need you to synchronize GitHub issue status with local spec files. Follow these steps:\n\n1. List all open GitHub issues from llamojha/no-vibe-no-code-kiroween\n2. Scan all tasks.md files in .kiro/specs/ directories\n3. For each spec that has associated GitHub issues:\n   - Check if the issue is closed on GitHub\n   - Update the corresponding task checkbox in tasks.md to [x] if closed\n   - Update to [ ] if reopened\n4. Show me a summary of changes:\n   - Which tasks were marked as complete\n   - Which tasks were marked as incomplete\n   - Any issues that couldn't be matched to tasks\n5. Ask for confirmation before updating files\n6. Update the tasks.md files with the new status\n7. Provide a summary of all updates made\n\nThis helps keep local specs in sync with GitHub project management.\nRepository: llamojha/no-vibe-no-code-kiroween\n\nContext files to reference:\n- .kiro/specs/"
+  }
+}

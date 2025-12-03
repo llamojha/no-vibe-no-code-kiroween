@@ -1,0 +1,38 @@
+# Product Context - {{ideaName}}
+
+This steering file provides product context for Kiro to understand the product vision, target users, and success metrics.
+
+## Vision
+{{#if vision}}
+{{vision}}
+{{/if}}
+
+## Mission
+{{#if mission}}
+{{mission}}
+{{/if}}
+
+## Target Users
+{{#if targetUsers}}
+{{targetUsers}}
+{{/if}}
+
+## User Personas
+{{#if personas}}
+{{personas}}
+{{/if}}
+
+## Success Metrics & KPIs
+{{#if metrics}}
+{{metrics}}
+{{/if}}
+
+## Constraints
+{{#if constraints}}
+{{constraints}}
+{{/if}}
+
+## Core Value Proposition
+{{#if valueProposition}}
+{{valueProposition}}
+{{/if}}

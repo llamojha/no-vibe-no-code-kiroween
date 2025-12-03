@@ -1,0 +1,422 @@
+{
+  "timestamp": "2025-11-19T19:00:32.967Z",
+  "coverage": {
+    "total": 55,
+    "tested": 55,
+    "percentage": 100,
+    "byCategory": {
+      "Domain Layer": {
+        "total": 15,
+        "tested": 15
+      },
+      "Data Integrity": {
+        "total": 8,
+        "tested": 8
+      },
+      "Business Rules": {
+        "total": 10,
+        "tested": 10
+      },
+      "Security": {
+        "total": 5,
+        "tested": 5
+      },
+      "System": {
+        "total": 14,
+        "tested": 14
+      },
+      "Localization": {
+        "total": 3,
+        "tested": 3
+      }
+    }
+  },
+  "untested": [],
+  "tested": [
+    {
+      "id": "P-DOM-001",
+      "name": "Entity ID Immutability",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/utils/__tests__/coverage-tracker.test.ts"
+    },
+    {
+      "id": "P-DOM-002",
+      "name": "Entity ID Uniqueness",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/utils/__tests__/coverage-tracker.test.ts"
+    },
+    {
+      "id": "P-DOM-003",
+      "name": "Entity ID Format Validity",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/entity-identity.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-004",
+      "name": "Value Object Immutability",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/value-objects.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-005",
+      "name": "Score Bounds Validation",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/value-objects.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-006",
+      "name": "Email Format Validation",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/value-objects.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-007",
+      "name": "Value Object Equality",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/value-objects.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-008",
+      "name": "Analysis Ownership",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/analysis.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-009",
+      "name": "Analysis Score Consistency",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/analysis.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-010",
+      "name": "Hackathon Category Evaluation Completeness",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/analysis.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-011",
+      "name": "Category Fit Score Bounds",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/analysis.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-012",
+      "name": "Credit Non-Negativity",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/credits.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-013",
+      "name": "Credit Deduction Atomicity",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/credits.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-014",
+      "name": "Default Credit Initialization",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/credits.properties.test.ts"
+    },
+    {
+      "id": "P-DOM-015",
+      "name": "Credit Transaction Immutability",
+      "category": "Domain Layer",
+      "implemented": true,
+      "testFile": "tests/properties/domain/credits.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-001",
+      "name": "Entity-DAO Round-Trip Fidelity",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/utils/__tests__/coverage-tracker.test.ts"
+    },
+    {
+      "id": "P-DATA-002",
+      "name": "DAO-Entity Round-Trip Fidelity",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/mappers.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-003",
+      "name": "Null Field Preservation",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/mappers.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-004",
+      "name": "JSONB Structure Consistency",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/mappers.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-005",
+      "name": "Migration Record Count Preservation",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/migration.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-006",
+      "name": "Migration Data Integrity",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/migration.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-007",
+      "name": "Analysis Type Discriminator Correctness",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/migration.properties.test.ts"
+    },
+    {
+      "id": "P-DATA-008",
+      "name": "Unified Table Query Correctness",
+      "category": "Data Integrity",
+      "implemented": true,
+      "testFile": "tests/properties/data-integrity/migration.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-001",
+      "name": "Score Calculation Determinism",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/scoring.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-002",
+      "name": "Criteria Score Aggregation",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/scoring.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-003",
+      "name": "Score Gauge Fill Percentage",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/scoring.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-004",
+      "name": "Score Color Threshold Consistency",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/scoring.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-005",
+      "name": "Credit Cost Consistency",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/rate-limiting.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-006",
+      "name": "Insufficient Credits Rejection",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/rate-limiting.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-007",
+      "name": "Credit Deduction Before Analysis",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/rate-limiting.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-008",
+      "name": "Transaction Recording Completeness",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/rate-limiting.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-009",
+      "name": "Best Match Category Selection",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/categories.properties.test.ts"
+    },
+    {
+      "id": "P-BIZ-010",
+      "name": "Category Explanation Presence",
+      "category": "Business Rules",
+      "implemented": true,
+      "testFile": "tests/properties/business-rules/categories.properties.test.ts"
+    },
+    {
+      "id": "P-SEC-001",
+      "name": "User Verification Before Session",
+      "category": "Security",
+      "implemented": true,
+      "testFile": "tests/properties/security/auth.properties.test.ts"
+    },
+    {
+      "id": "P-SEC-002",
+      "name": "Resource Ownership Enforcement",
+      "category": "Security",
+      "implemented": true,
+      "testFile": "tests/properties/security/auth.properties.test.ts"
+    },
+    {
+      "id": "P-SEC-003",
+      "name": "RLS Policy Enforcement",
+      "category": "Security",
+      "implemented": true,
+      "testFile": "tests/properties/security/auth.properties.test.ts"
+    },
+    {
+      "id": "P-SEC-004",
+      "name": "Token Validation",
+      "category": "Security",
+      "implemented": true,
+      "testFile": "tests/properties/security/auth.properties.test.ts"
+    },
+    {
+      "id": "P-SEC-005",
+      "name": "Authorization Check Before Data Access",
+      "category": "Security",
+      "implemented": true,
+      "testFile": "tests/properties/security/auth.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-001",
+      "name": "Repository Save Idempotency",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/idempotency.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-002",
+      "name": "Query Result Determinism",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/idempotency.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-003",
+      "name": "Mock Response Consistency",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/idempotency.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-004",
+      "name": "Mock Mode Isolation",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/idempotency.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-005",
+      "name": "Cache Expiration",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/caching.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-006",
+      "name": "Cache Invalidation on Update",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/caching.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-007",
+      "name": "Cache Hit Consistency",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/caching.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-008",
+      "name": "Domain Error Propagation",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/error-handling.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-009",
+      "name": "Error Code Consistency",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/error-handling.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-010",
+      "name": "Graceful Degradation",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/error-handling.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-011",
+      "name": "Build Determinism",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/ci-cd.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-012",
+      "name": "Test Isolation",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/ci-cd.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-013",
+      "name": "Parallel Execution Safety",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/ci-cd.properties.test.ts"
+    },
+    {
+      "id": "P-SYS-014",
+      "name": "Artifact Retention",
+      "category": "System",
+      "implemented": true,
+      "testFile": "tests/properties/system/ci-cd.properties.test.ts"
+    },
+    {
+      "id": "P-I18N-001",
+      "name": "Translation Key Coverage",
+      "category": "Localization",
+      "implemented": true,
+      "testFile": "tests/properties/system/localization.properties.test.ts"
+    },
+    {
+      "id": "P-I18N-002",
+      "name": "Language Consistency",
+      "category": "Localization",
+      "implemented": true,
+      "testFile": "tests/properties/system/localization.properties.test.ts"
+    },
+    {
+      "id": "P-I18N-003",
+      "name": "Locale Persistence",
+      "category": "Localization",
+      "implemented": true,
+      "testFile": "tests/properties/system/localization.properties.test.ts"
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+import { PostHog } from "posthog-node";
+import type { UserTier } from "@/lib/types";
+
+/**
+ * Server-side PostHog tracking utilities
+ *
+ * This module provides server-side event capture for API routes and server actions.
+ * Events are flushed aggressively and the shared client is only shut down when the process exits.
+ *
+ * @module server-tracking
+ */
+
+// Singleton instance
+let posthogClient: PostHog | null = null;
+let shutdownHooksRegistered = false;
+let isClientShuttingDown = false;
+
+const processRef =
+  typeof globalThis.process !== "undefined" &&
+  typeof globalThis.process.on === "function"
+    ? (globalThis.process as NodeJS.Process)
+    : undefined;
+
+const registerShutdownHooks = (): void => {
+  if (!processRef || shutdownHooksRegistered) {
+    return;
+  }
+
+  const handleShutdown = (): void => {
+    if (!posthogClient || isClientShuttingDown) {
+      return;
+    }
+
+    isClientShuttingDown = true;
+
+    posthogClient
+      .shutdown()
+      .catch((error) =>
+        console.error("[PostHog Server] Failed to shutdown client:", error)
+      )
+      .finally(() => {
+        posthogClient = null;
+        isClientShuttingDown = false;
+      });
+  };
+
+  processRef.on("beforeExit", () => handleShutdown());
+  processRef.on("SIGINT", handleShutdown);
+  processRef.on("SIGTERM", handleShutdown);
+
+  shutdownHooksRegistered = true;
+};
+
+/**
+ * Get or create PostHog client instance
+ * Configured for immediate event flushing
+ *
+ * @returns PostHog client instance or null if not configured
+ */
+const getPostHogClient = (): PostHog | null => {
+  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  const host =
+    process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com";
+
+  if (!apiKey) {
+    console.warn("[PostHog Server] API key not configured, analytics disabled");
+    return null;
+  }
+
+  if (!posthogClient) {
+    posthogClient = new PostHog(apiKey, {
+      host,
+      flushAt: 1, // Send events immediately
+      flushInterval: 0, // No batching delay
+    });
+
+    registerShutdownHooks();
+  }
+
+  return posthogClient;
+};
+
+/**
+ * Properties for server-side event capture
+ */
+export interface ServerEventProps {
+  distinctId: string;
+  event: string;
+  properties?: Record<string, unknown>;
+  /**
+   * Optional tier information for the user tied to the event.
+   * Helps analyze feature usage by subscription level.
+   */
+  userTier?: UserTier;
+}
+
+/**
+ * Capture a server-side event with the shared PostHog client
+ *
+ * @param props - Event properties including distinctId, event name, and custom properties
+ * @returns Promise that resolves once the event has been queued
+ *
+ * @example
+ * ```typescript
+ * await captureServerEvent({
+ *   distinctId: userId,
+ *   event: 'server_analysis_request',
+ *   properties: { analysis_type: 'startup' }
+ * });
+ * ```
+ */
+export const captureServerEvent = async (
+  props: ServerEventProps
+): Promise<void> => {
+  const client = getPostHogClient();
+  if (!client) return;
+
+  try {
+    client.capture({
+      distinctId: props.distinctId,
+      event: props.event,
+      properties: {
+        ...props.properties,
+        ...(props.userTier ? { user_tier: props.userTier } : {}),
+        timestamp: new Date().toISOString(),
+        source: "server",
+      },
+    });
+  } catch (error) {
+    console.error("[PostHog Server] Failed to capture event:", error);
+  }
+};
+
+/**
+ * Track server-side analysis request
+ *
+ * @param userId - User identifier
+ * @param analysisType - Type of analysis being performed
+ * @param userTier - Optional user tier for segmentation
+ * @returns Promise that resolves when event is captured
+ *
+ * @example
+ * ```typescript
+ * await trackServerAnalysisRequest(user.id, 'startup');
+ * ```
+ */
+export const trackServerAnalysisRequest = async (
+  userId: string,
+  analysisType: "startup" | "kiroween" | "frankenstein",
+  userTier?: UserTier
+): Promise<void> => {
+  await captureServerEvent({
+    distinctId: userId,
+    event: "server_analysis_request",
+    properties: {
+      analysis_type: analysisType,
+    },
+    userTier,
+  });
+};
+
+/**
+ * Track server-side error
+ *
+ * @param userId - User identifier
+ * @param errorType - Type or category of error
+ * @param errorMessage - Error message or description
+ * @param userTier - Optional user tier for segmentation
+ * @returns Promise that resolves when event is captured
+ *
+ * @example
+ * ```typescript
+ * await trackServerError(user.id, 'ai_service_error', 'Failed to generate analysis');
+ * ```
+ */
+export const trackServerError = async (
+  userId: string,
+  errorType: string,
+  errorMessage: string,
+  userTier?: UserTier
+): Promise<void> => {
+  await captureServerEvent({
+    distinctId: userId,
+    event: "server_error",
+    properties: {
+      error_type: errorType,
+      error_message: errorMessage,
+    },
+    userTier,
+  });
+};

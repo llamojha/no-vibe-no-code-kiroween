@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Create GitHub Issues from Spec",
+  "description": "Converts a Kiro spec tasks.md or roadmap document into GitHub issues with proper structure and relationships",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I need you to create GitHub issues from a spec or roadmap. Follow these steps:\n\n1. Ask me which source to use:\n   - TODO.md (backlog items)\n   - ROADMAP.md (project roadmap)\n   - A specific spec's tasks.md file (provide path)\n   - A custom document (provide path)\n2. Ask for my preferences:\n   - Should I create one issue per task or group related tasks?\n   - Do I want parent/sub-issue relationships for milestones?\n   - What labels should be applied? (feature, enhancement, bug, etc.)\n   - Should issues be assigned to me or left unassigned?\n   - Any priority labels or milestones to set?\n3. Parse the tasks/roadmap and show me a preview of what will be created:\n   - List each issue title\n   - Show the proposed structure (parent/child relationships)\n   - Display labels and assignments\n4. Wait for my confirmation before creating issues\n5. Create the issues in the llamojha/no-vibe-no-code-kiroween repository using GitHub MCP tools\n6. For each created issue:\n   - Use clear, descriptive titles\n   - Include detailed descriptions with acceptance criteria\n   - Add appropriate labels\n   - Link to related spec files or documentation\n   - Set up sub-issue relationships if requested\n7. Provide a summary with links to all created issues\n\nRepository: llamojha/no-vibe-no-code-kiroween\nEnsure issue descriptions are clear, actionable, and follow the project's standards.\n\nContext files to reference:\n- TODO.md\n- ROADMAP.md\n- .kiro/specs/\n- .kiro/steering/philosophy.md"
+  }
+}

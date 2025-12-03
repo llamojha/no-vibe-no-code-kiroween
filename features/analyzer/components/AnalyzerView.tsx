@@ -1,0 +1,1079 @@
+"use client";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { Analysis, SavedAnalysisRecord, UserTier } from "@/lib/types";
+import { useLocale } from "@/features/locale/context/LocaleContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { requestAnalysis } from "@/features/analyzer/api/analyzeIdea";
+import {
+  saveAnalysis,
+  updateAnalysisAudio,
+  loadAnalysis,
+  clearAnalysisAudio,
+} from "@/features/analyzer/api/saveAnalysis";
+import IdeaInputForm from "@/features/analyzer/components/IdeaInputForm";
+import AnalysisDisplay from "@/features/analyzer/components/AnalysisDisplay";
+import ErrorMessage from "@/features/analyzer/components/ErrorMessage";
+import LanguageToggle from "@/features/locale/components/LanguageToggle";
+import LoadingOverlay from "@/features/shared/components/LoadingOverlay";
+import {
+  trackReportGeneration,
+  identifyUser,
+  trackIdeaEnhancement,
+  trackAnalysisStarted,
+  trackAnalysisSaved,
+} from "@/features/analytics/tracking";
+import { deriveFivePointScore } from "@/features/dashboard/api/scoreUtils";
+import { capture } from "@/features/analytics/posthogClient";
+import { CreditCounter } from "@/features/shared/components/CreditCounter";
+import { getCreditBalance } from "@/features/shared/api";
+import type { DocumentContent } from "@/src/domain/entities";
+
+type LoaderMessages = [string, string, string, string, string, string];
+
+interface AnalyzerViewProps {
+  initialCredits: number;
+  userTier: UserTier;
+  prefilledIdea?: string;
+  ideaId?: string;
+}
+
+const createEmptyAnalysis = (): Analysis => ({
+  detailedSummary: "",
+  founderQuestions: [],
+  swotAnalysis: {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: [],
+  },
+  currentMarketTrends: [],
+  scoringRubric: [],
+  competitors: [],
+  monetizationStrategies: [],
+  improvementSuggestions: [],
+  nextSteps: [],
+  finalScore: 0,
+  finalScoreExplanation: "",
+  viabilitySummary: "",
+});
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const normalizeDocumentAnalysisContent = (
+  content: DocumentContent
+): Analysis => {
+  const base = createEmptyAnalysis();
+
+  if (!isRecord(content)) {
+    return base;
+  }
+
+  // Some payloads wrap the analysis under an "analysis" key
+  const payload =
+    "analysis" in content && isRecord(content.analysis)
+      ? (content.analysis as DocumentContent)
+      : content;
+
+  const data = payload as Partial<Analysis> &
+    Record<string, unknown> & { feedback?: unknown; score?: unknown };
+
+  const detailedSummary =
+    typeof data.detailedSummary === "string"
+      ? data.detailedSummary
+      : typeof data.feedback === "string"
+      ? data.feedback
+      : base.detailedSummary;
+
+  const swotSource = data.swotAnalysis;
+  const swotAnalysis = isRecord(swotSource)
+    ? {
+        strengths: Array.isArray(swotSource.strengths)
+          ? (swotSource.strengths as string[])
+          : [],
+        weaknesses: Array.isArray(swotSource.weaknesses)
+          ? (swotSource.weaknesses as string[])
+          : [],
+        opportunities: Array.isArray(swotSource.opportunities)
+          ? (swotSource.opportunities as string[])
+          : [],
+        threats: Array.isArray(swotSource.threats)
+          ? (swotSource.threats as string[])
+          : [],
+      }
+    : base.swotAnalysis;
+
+  const finalScore =
+    typeof data.finalScore === "number"
+      ? data.finalScore
+      : deriveFivePointScore({
+          finalScore: null,
+          score: typeof data.score === "number" ? data.score : null,
+        });
+
+  return {
+    ...base,
+    detailedSummary,
+    founderQuestions: Array.isArray(data.founderQuestions)
+      ? (data.founderQuestions as Analysis["founderQuestions"])
+      : base.founderQuestions,
+    swotAnalysis,
+    currentMarketTrends: Array.isArray(data.currentMarketTrends)
+      ? (data.currentMarketTrends as Analysis["currentMarketTrends"])
+      : base.currentMarketTrends,
+    scoringRubric: Array.isArray(data.scoringRubric)
+      ? (data.scoringRubric as Analysis["scoringRubric"])
+      : base.scoringRubric,
+    competitors: Array.isArray(data.competitors)
+      ? (data.competitors as Analysis["competitors"])
+      : base.competitors,
+    monetizationStrategies: Array.isArray(data.monetizationStrategies)
+      ? (data.monetizationStrategies as Analysis["monetizationStrategies"])
+      : base.monetizationStrategies,
+    improvementSuggestions: Array.isArray(data.improvementSuggestions)
+      ? (data.improvementSuggestions as Analysis["improvementSuggestions"])
+      : base.improvementSuggestions,
+    nextSteps: Array.isArray(data.nextSteps)
+      ? (data.nextSteps as Analysis["nextSteps"])
+      : base.nextSteps,
+    finalScore,
+    finalScoreExplanation:
+      typeof data.finalScoreExplanation === "string"
+        ? data.finalScoreExplanation
+        : base.finalScoreExplanation,
+    viabilitySummary:
+      typeof data.viabilitySummary === "string"
+        ? data.viabilitySummary
+        : detailedSummary || base.viabilitySummary,
+  };
+};
+
+const AnalyzerView: React.FC<AnalyzerViewProps> = ({
+  initialCredits,
+  userTier,
+  prefilledIdea,
+  ideaId,
+}) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const savedId = searchParams.get("savedId");
+  const mode = searchParams.get("mode");
+  const ideaFromUrl = searchParams.get("idea");
+  const sourceFromUrl = searchParams.get("source");
+  const frankensteinMode = searchParams.get("mode"); // companies or aws
+  const frankensteinId = searchParams.get("frankensteinId"); // ID of the original Frankenstein
+
+  const { locale, t } = useLocale();
+  const {
+    session,
+    supabase,
+    isLoading: isAuthLoading,
+    isLocalDevMode,
+  } = useAuth();
+
+  const [idea, setIdea] = useState<string>("");
+  const [newAnalysis, setNewAnalysis] = useState<Analysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
+  const [isReportSaved, setIsReportSaved] = useState<boolean>(false);
+  const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
+  const [addedSuggestions, setAddedSuggestions] = useState<number[]>([]);
+  const [savedAnalysisRecord, setSavedAnalysisRecord] =
+    useState<SavedAnalysisRecord | null>(null);
+  const [isFetchingSaved, setIsFetchingSaved] = useState(false);
+  const [credits, setCredits] = useState<number>(initialCredits);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const savedRecordId = savedAnalysisRecord?.id ?? null;
+  const savedRecordAudio = savedAnalysisRecord?.audioBase64 ?? null;
+
+  const ideaInputRef = useRef<HTMLDivElement>(null);
+
+  const refreshCredits = useCallback(async () => {
+    try {
+      const balance = await getCreditBalance();
+      setCredits(balance.credits);
+    } catch (error) {
+      const message = "Failed to refresh credit balance";
+      if (isLocalDevMode) {
+        console.warn(message, error);
+      } else {
+        console.error(message, error);
+      }
+    }
+  }, [isLocalDevMode]);
+
+  const showInputForm =
+    !savedAnalysisRecord || mode === "refine" || newAnalysis !== null;
+
+  // Pre-fill idea from URL (Doctor Frankenstein or Idea Panel)
+  useEffect(() => {
+    if (ideaFromUrl && !savedId) {
+      // useSearchParams().get() already returns decoded values, no need to decode again
+      setIdea(ideaFromUrl);
+    }
+  }, [ideaFromUrl, savedId]);
+
+  // Pre-fill idea from Idea Panel if provided
+  useEffect(() => {
+    if (prefilledIdea && !savedId) {
+      setIdea(prefilledIdea);
+    }
+  }, [prefilledIdea, savedId]);
+
+  useEffect(() => {
+    void refreshCredits();
+  }, [refreshCredits]);
+
+  // Identify user for analytics when session is available
+  useEffect(() => {
+    if (session?.user?.id) {
+      identifyUser(session.user.id, {
+        email: session.user.email,
+      });
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (!savedId) {
+      setSavedAnalysisRecord(null);
+      // Don't reset if we have an idea from URL (Frankenstein or Idea Panel)
+      if (!ideaFromUrl) {
+        setIdea((previous) =>
+          previous && previous.length > 0 ? previous : ""
+        );
+      }
+      setIsReportSaved(false);
+      setGeneratedAudio(null);
+      return;
+    }
+
+    // Wait until auth is initialized before deciding unauthenticated (unless in local dev mode)
+    if (!isLocalDevMode && (!supabase || isAuthLoading)) return;
+
+    if (!isLocalDevMode && !session) {
+      const next = `/analyzer?savedId=${encodeURIComponent(savedId)}${
+        mode ? `&mode=${mode}` : ""
+      }`;
+      router.replace(`/login?next=${encodeURIComponent(next)}`);
+      return;
+    }
+
+    const fetchSavedAnalysis = async () => {
+      setIsFetchingSaved(true);
+      setLoadError(null);
+
+      try {
+        // Try loading from new documents table first
+        let record: SavedAnalysisRecord | null = null;
+        let error: string | null = null;
+
+        try {
+          const { getDocumentById } = await import("@/features/idea-panel/api");
+          const document = await getDocumentById(savedId);
+
+          if (document.documentType === "startup_analysis") {
+            // Convert document to SavedAnalysisRecord format
+            record = {
+              id: document.id,
+              userId: document.userId,
+              idea: "", // Will be in analysis content
+              analysis: normalizeDocumentAnalysisContent(document.content),
+              audioBase64: null,
+              createdAt: document.createdAt,
+              analysisType: "idea",
+            };
+          } else {
+            error = "This document is not a startup analysis";
+          }
+        } catch (docError) {
+          // If document not found in new table, try old saved_analyses table
+          console.log(
+            "Document not found in new table, trying legacy table..."
+          );
+          const legacyResult = await loadAnalysis(savedId);
+          record = legacyResult.data;
+          error = legacyResult.error;
+        }
+
+        if (error || !record) {
+          console.error("Failed to load saved analysis", error);
+          setSavedAnalysisRecord(null);
+          setIdea("");
+          setIsReportSaved(false);
+          setGeneratedAudio(null);
+          setLoadError(
+            error || "Unable to load the report. It may have been removed."
+          );
+          if (
+            error !== "Analysis not found" &&
+            error !== "Document not found"
+          ) {
+            setError(
+              "Unable to load the saved analysis. It may have been removed."
+            );
+          }
+          return;
+        }
+
+        setSavedAnalysisRecord(record);
+        setIdea(record.idea || "");
+        setIsReportSaved(true);
+        setNewAnalysis(null);
+        setAddedSuggestions([]);
+        setGeneratedAudio(record.audioBase64 ?? null);
+        setError(null);
+        setLoadError(null);
+      } catch (err) {
+        console.error("Error fetching saved analysis:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load saved analysis";
+        setError(errorMessage);
+        setLoadError(errorMessage);
+      } finally {
+        setIsFetchingSaved(false);
+      }
+    };
+
+    void fetchSavedAnalysis();
+  }, [
+    mode,
+    router,
+    savedId,
+    session,
+    supabase,
+    isAuthLoading,
+    isLocalDevMode,
+    ideaFromUrl,
+    sourceFromUrl,
+  ]);
+
+  useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    if (isLoading) {
+      const messages: LoaderMessages = [
+        t("loaderMessage1"),
+        t("loaderMessage2"),
+        t("loaderMessage3"),
+        t("loaderMessage4"),
+        t("loaderMessage5"),
+        t("loaderMessage6"),
+      ];
+      let currentIndex = 0;
+      setLoadingMessage(messages[currentIndex]);
+
+      intervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % messages.length;
+        setLoadingMessage(messages[currentIndex]);
+      }, 2500);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isLoading, t]);
+
+  const handleBack = useCallback(() => {
+    if (ideaId) {
+      router.push(`/idea/${ideaId}`);
+    } else {
+      router.push("/dashboard");
+    }
+  }, [router, ideaId]);
+
+  const handleAnalyze = useCallback(async () => {
+    if (!idea.trim()) {
+      setError(t("enterIdeaError"));
+      return;
+    }
+
+    if (generatedAudio) {
+      setGeneratedAudio(null);
+    }
+
+    if (savedRecordId && savedRecordAudio) {
+      const { error: clearError } = await clearAnalysisAudio(savedRecordId);
+      if (clearError) {
+        console.error("Failed to clear saved audio", clearError);
+      } else {
+        setSavedAnalysisRecord((previous) =>
+          previous && previous.id === savedRecordId
+            ? { ...previous, audioBase64: null }
+            : previous
+        );
+      }
+    }
+
+    setIsLoading(true);
+    trackAnalysisStarted({ locale, hasSavedId: Boolean(savedId) });
+    setError(null);
+    setSaveError(null);
+    setNewAnalysis(null);
+    setAddedSuggestions([]);
+    setIsReportSaved(false);
+
+    try {
+      const analysisResult = await requestAnalysis(idea, locale, ideaId);
+      setNewAnalysis(analysisResult);
+      await refreshCredits();
+
+      // Track successful report generation
+      trackReportGeneration({
+        reportType: "startup",
+        ideaLength: idea.length,
+        userId: session?.user?.id,
+      });
+
+      let newlySavedId: string | null = null;
+
+      // Auto-save if user is logged in (to preserve credits)
+      if (session && !isLocalDevMode) {
+        try {
+          const { data: result, error: saveError } = await saveAnalysis({
+            idea,
+            analysis: analysisResult,
+            ideaId, // Pass ideaId if available (from URL params)
+          });
+
+          if (!saveError && result) {
+            newlySavedId = result.documentId;
+            // Create a SavedAnalysisRecord for backward compatibility
+            const record: SavedAnalysisRecord = {
+              id: result.documentId,
+              userId: session.user.id,
+              idea,
+              analysis: analysisResult,
+              audioBase64: null,
+              createdAt: result.createdAt,
+              analysisType: "idea",
+            };
+            setSavedAnalysisRecord(record);
+            setIsReportSaved(true);
+            capture("analysis_auto_saved", {
+              analysis_id: result.documentId,
+              idea_id: result.ideaId,
+              locale,
+            });
+
+            // If this came from a Frankenstein, update it with the validation
+            if (frankensteinId && sourceFromUrl === "frankenstein") {
+              try {
+                const { updateFrankensteinValidation } = await import(
+                  "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+                );
+                const { deriveFivePointScore } = await import(
+                  "@/features/dashboard/api/scoreUtils"
+                );
+
+                const score = deriveFivePointScore(analysisResult);
+
+                console.log("Auto-updating Frankenstein with validation:", {
+                  frankensteinId,
+                  analysisId: result.documentId,
+                  ideaId: result.ideaId,
+                  score,
+                  rawFinalScore: analysisResult.finalScore,
+                });
+
+                await updateFrankensteinValidation(frankensteinId, "analyzer", {
+                  analysisId: result.documentId,
+                  score,
+                });
+              } catch (err) {
+                console.error(
+                  "Failed to update Frankenstein with validation:",
+                  err
+                );
+              }
+            }
+
+            // Update URL with saved ID and ideaId
+            const urlParams = new URLSearchParams();
+            urlParams.set("savedId", result.documentId);
+            urlParams.set("mode", "view");
+            if (result.ideaId) {
+              urlParams.set("ideaId", result.ideaId);
+            }
+            router.replace(`/analyzer?${urlParams.toString()}`);
+          } else {
+            console.error("Auto-save failed:", saveError);
+            setSaveError(
+              saveError ||
+                "Failed to save analysis. Your credits were consumed but the analysis was not saved."
+            );
+          }
+        } catch (err) {
+          console.error("Auto-save error:", err);
+          setSaveError(
+            err instanceof Error
+              ? err.message
+              : "Failed to save analysis. Your credits were consumed but the analysis was not saved."
+          );
+        }
+      } else if (frankensteinId && sourceFromUrl === "frankenstein") {
+        // If not logged in but came from Frankenstein, still update with temp score
+        try {
+          const { updateFrankensteinValidation } = await import(
+            "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+          );
+          const { deriveFivePointScore } = await import(
+            "@/features/dashboard/api/scoreUtils"
+          );
+
+          const score = deriveFivePointScore(analysisResult);
+
+          console.log("Auto-updating Frankenstein with score:", {
+            frankensteinId,
+            score,
+            rawFinalScore: analysisResult.finalScore,
+          });
+
+          await updateFrankensteinValidation(frankensteinId, "analyzer", {
+            analysisId: "temp-" + Date.now(),
+            score,
+          });
+
+          setIsReportSaved(true);
+        } catch (err) {
+          console.error("Failed to update Frankenstein with score:", err);
+        }
+      }
+
+      // Only clean up URL if we had a savedId but didn't just create a new one
+      if (savedId && !newlySavedId) {
+        router.replace("/analyzer");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unknown error occurred during analysis."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    idea,
+    generatedAudio,
+    savedRecordId,
+    savedRecordAudio,
+    locale,
+    savedId,
+    t,
+    refreshCredits,
+    session,
+    isLocalDevMode,
+    frankensteinId,
+    sourceFromUrl,
+    router,
+    ideaId,
+  ]);
+
+  const handleSaveReport = useCallback(async () => {
+    const analysisToSave = newAnalysis ?? savedAnalysisRecord?.analysis;
+    if (!analysisToSave || !idea) return;
+
+    // Check if authentication is required (not in local dev mode)
+    if (!isLocalDevMode && !session) {
+      router.push(`/login?next=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+
+    // Use the new save function that handles both local dev mode and production
+    const { data: result, error: saveError } = await saveAnalysis({
+      idea,
+      analysis: analysisToSave,
+      audioBase64: generatedAudio || undefined,
+      ideaId, // Pass ideaId if available (from URL params)
+    });
+
+    if (saveError || !result) {
+      setError(saveError || "Failed to save your analysis. Please try again.");
+      return;
+    }
+
+    // Create a SavedAnalysisRecord for backward compatibility
+    const record: SavedAnalysisRecord = {
+      id: result.documentId,
+      userId: session?.user.id || "unknown",
+      idea,
+      analysis: analysisToSave,
+      audioBase64: generatedAudio || null,
+      createdAt: result.createdAt,
+      analysisType: "idea",
+    };
+
+    setSavedAnalysisRecord(record);
+    setIsReportSaved(true);
+    setNewAnalysis(null);
+    setAddedSuggestions([]);
+    setGeneratedAudio(generatedAudio || null);
+    trackAnalysisSaved({
+      analysisId: result.documentId,
+      ideaId: result.ideaId,
+      locale,
+    });
+
+    // If this came from a Frankenstein, update it with the validation
+    if (frankensteinId && sourceFromUrl === "frankenstein") {
+      try {
+        const { updateFrankensteinValidation } = await import(
+          "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+        );
+        const { deriveFivePointScore } = await import(
+          "@/features/dashboard/api/scoreUtils"
+        );
+
+        // Use deriveFivePointScore to get the correct 0-5 score
+        const score = deriveFivePointScore(analysisToSave);
+
+        console.log("Updating Frankenstein with validation:", {
+          frankensteinId,
+          analysisId: result.documentId,
+          ideaId: result.ideaId,
+          score,
+          rawFinalScore: analysisToSave.finalScore,
+        });
+
+        await updateFrankensteinValidation(frankensteinId, "analyzer", {
+          analysisId: result.documentId,
+          score,
+        });
+      } catch (err) {
+        console.error("Failed to update Frankenstein with validation:", err);
+        // Don't show error to user, this is a background operation
+      }
+    }
+
+    // Update URL with saved ID and ideaId
+    const urlParams = new URLSearchParams();
+    urlParams.set("savedId", result.documentId);
+    urlParams.set("mode", "view");
+    if (result.ideaId) {
+      urlParams.set("ideaId", result.ideaId);
+    }
+    router.replace(`/analyzer?${urlParams.toString()}`);
+  }, [
+    newAnalysis,
+    savedAnalysisRecord?.analysis,
+    idea,
+    isLocalDevMode,
+    session,
+    generatedAudio,
+    locale,
+    frankensteinId,
+    sourceFromUrl,
+    router,
+    ideaId,
+  ]);
+
+  const handleAudioGenerated = useCallback(
+    async (audioBase64: string) => {
+      setGeneratedAudio(audioBase64);
+
+      if (!savedRecordId) {
+        return;
+      }
+
+      // Use the new update function that handles both local dev mode and production
+      const { error: updateError } = await updateAnalysisAudio({
+        analysisId: savedRecordId,
+        audioBase64: audioBase64,
+      });
+
+      if (updateError) {
+        console.error("Failed to persist audio", updateError);
+        return;
+      }
+
+      setSavedAnalysisRecord((previous) =>
+        previous && previous.id === savedRecordId
+          ? { ...previous, audioBase64: audioBase64 }
+          : previous
+      );
+    },
+    [savedRecordId]
+  );
+
+  const handleRefineSuggestion = useCallback(
+    (suggestionText: string, suggestionTitle: string, index: number) => {
+      const suggestionContent = `— ${suggestionTitle}: ${suggestionText}`;
+      setIdea((prev) => `${prev.trim()}\n\n${suggestionContent}`);
+      setAddedSuggestions((prev) => {
+        const newSuggestions = [...prev, index];
+
+        // Track suggestion addition
+        trackIdeaEnhancement({
+          action: "add_suggestion",
+          analysisType: "startup",
+          suggestionLength: suggestionContent.length,
+        });
+
+        return newSuggestions;
+      });
+      ideaInputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    },
+    []
+  );
+
+  const handleRetrySave = useCallback(async () => {
+    if (!newAnalysis || !session || isLocalDevMode) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const { data: result, error: saveError } = await saveAnalysis({
+        idea,
+        analysis: newAnalysis,
+        ideaId, // Pass ideaId if available (from URL params)
+      });
+
+      if (!saveError && result) {
+        // Create a SavedAnalysisRecord for backward compatibility
+        const record: SavedAnalysisRecord = {
+          id: result.documentId,
+          userId: session.user.id,
+          idea,
+          analysis: newAnalysis,
+          audioBase64: null,
+          createdAt: result.createdAt,
+          analysisType: "idea",
+        };
+
+        setSavedAnalysisRecord(record);
+        setIsReportSaved(true);
+        setSaveError(null);
+        capture("analysis_manually_saved", {
+          analysis_id: result.documentId,
+          idea_id: result.ideaId,
+          locale,
+        });
+
+        // If this came from a Frankenstein, update it with the validation
+        if (frankensteinId && sourceFromUrl === "frankenstein") {
+          try {
+            const { updateFrankensteinValidation } = await import(
+              "@/features/doctor-frankenstein/api/saveFrankensteinIdea"
+            );
+            const { deriveFivePointScore } = await import(
+              "@/features/dashboard/api/scoreUtils"
+            );
+
+            const score = deriveFivePointScore(newAnalysis);
+
+            await updateFrankensteinValidation(frankensteinId, "analyzer", {
+              analysisId: result.documentId,
+              score,
+            });
+          } catch (err) {
+            console.error(
+              "Failed to update Frankenstein with validation:",
+              err
+            );
+          }
+        }
+
+        // Update URL with saved ID and ideaId
+        const urlParams = new URLSearchParams();
+        urlParams.set("savedId", result.documentId);
+        urlParams.set("mode", "view");
+        if (result.ideaId) {
+          urlParams.set("ideaId", result.ideaId);
+        }
+        router.replace(`/analyzer?${urlParams.toString()}`);
+      } else {
+        console.error("Manual save failed:", saveError);
+        setSaveError(saveError || "Failed to save analysis. Please try again.");
+      }
+    } catch (err) {
+      console.error("Manual save error:", err);
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save analysis. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    newAnalysis,
+    session,
+    isLocalDevMode,
+    idea,
+    locale,
+    frankensteinId,
+    sourceFromUrl,
+    router,
+    ideaId,
+  ]);
+
+  const handleStartNewAnalysis = useCallback(() => {
+    setIdea("");
+    setNewAnalysis(null);
+    setSavedAnalysisRecord(null);
+    setIsReportSaved(false);
+    setGeneratedAudio(null);
+    setAddedSuggestions([]);
+    setError(null);
+    setSaveError(null);
+
+    if (savedId) {
+      router.replace("/analyzer");
+    }
+  }, [router, savedId]);
+
+  const analysisToDisplay =
+    newAnalysis ?? savedAnalysisRecord?.analysis ?? null;
+
+  const busy = isLoading || isFetchingSaved;
+  const busyMessage = isLoading ? loadingMessage : t("loading");
+
+  return (
+    <div className="min-h-screen bg-black text-slate-200 flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      {/* Skip to main content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-accent focus:text-white focus:rounded"
+      >
+        {t("skipToMainContent") || "Skip to main content"}
+      </a>
+
+      <div className="w-full max-w-4xl mx-auto">
+        <header className="text-center mb-8 animate-fade-in relative">
+          <button
+            onClick={handleBack}
+            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-slate-400 hover:text-accent transition-colors duration-200"
+            title={t("goToDashboardButton")}
+            aria-label={t("goToDashboardButton")}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="hidden sm:inline uppercase tracking-wider">
+              {t("goToDashboardButton")}
+            </span>
+          </button>
+          <h1 className="text-4xl sm:text-5xl font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">
+            {t("appTitle")}
+          </h1>
+          <p className="mt-2 text-lg text-slate-400">{t("appSubtitle")}</p>
+
+          {/* Load Error Notification */}
+          {loadError && (
+            <div role="alert" aria-live="assertive" className="mt-6">
+              <div className="bg-red-900/30 border border-red-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-red-400 font-semibold mb-1">
+                      {locale === "es"
+                        ? "Error al cargar el reporte"
+                        : "Error Loading Report"}
+                    </h3>
+                    <p className="text-red-300 text-sm mb-3">{loadError}</p>
+                    <button
+                      onClick={() => router.push("/dashboard")}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                    >
+                      {locale === "es"
+                        ? "Volver al Dashboard"
+                        : "Back to Dashboard"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Frankenstein Origin Badge */}
+          {sourceFromUrl === "frankenstein" && !savedId && (
+            <div className="mt-4 space-y-2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-900/50 to-purple-900/50 border border-green-500 rounded-lg">
+                <span className="text-2xl">🧟</span>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-green-400">
+                    {locale === "es"
+                      ? "Remix de Doctor Frankenstein"
+                      : "Remix from Doctor Frankenstein"}
+                  </p>
+                  <p className="text-xs text-green-300">
+                    {frankensteinMode === "aws"
+                      ? locale === "es"
+                        ? "Combinación de AWS Services"
+                        : "AWS Services Combination"
+                      : locale === "es"
+                      ? "Combinación de Tech Companies"
+                      : "Tech Companies Combination"}
+                  </p>
+                </div>
+              </div>
+              {isReportSaved && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 border border-green-600 rounded-lg">
+                  <svg
+                    className="h-5 w-5 text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <p className="text-sm text-green-300">
+                    {locale === "es"
+                      ? "✓ Puntuación guardada en tu Frankenstein"
+                      : "✓ Score saved to your Frankenstein"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <LanguageToggle />
+          </div>
+        </header>
+
+        <main id="main-content" className="w-full">
+          {/* Credit Counter */}
+          <div className="mb-6">
+            <CreditCounter
+              credits={credits}
+              tier={userTier}
+              userEmail={session?.user?.email}
+            />
+          </div>
+
+          {showInputForm && (
+            <div ref={ideaInputRef}>
+              <IdeaInputForm
+                idea={idea}
+                onIdeaChange={setIdea}
+                onAnalyze={handleAnalyze}
+                isLoading={busy}
+                analysisType="startup"
+              />
+            </div>
+          )}
+          {error && (
+            <div role="alert" aria-live="assertive">
+              <ErrorMessage message={error} />
+            </div>
+          )}
+          {saveError && (
+            <div role="alert" aria-live="assertive" className="mb-6">
+              <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-yellow-400 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-yellow-400 font-semibold mb-1">
+                      {t("saveFailedTitle") || "Save Failed"}
+                    </h3>
+                    <p className="text-yellow-200 text-sm mb-3">{saveError}</p>
+                    <button
+                      onClick={handleRetrySave}
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 disabled:cursor-not-allowed text-white rounded font-semibold text-sm transition-colors"
+                    >
+                      {isSaving
+                        ? t("saving") || "Saving..."
+                        : t("retrySave") || "Retry Save"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {busy && <LoadingOverlay message={busyMessage} />}
+          {analysisToDisplay && !busy && (
+            <div className={showInputForm ? "mt-8" : ""}>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={handleStartNewAnalysis}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold uppercase tracking-wider border border-accent text-accent rounded hover:bg-accent/10 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.5 4a.5.5 0 01.5-.5h4a.5.5 0 010 1H6.207l1.647 1.646a.5.5 0 01-.708.708L4.146 4.854A.5.5 0 014 4.5V4zm11 12a.5.5 0 01-.5.5h-4a.5.5 0 010-1h2.793l-1.647-1.646a.5.5 0 11.708-.708l3 2.999a.5.5 0 01.146.355V16zM4 12.5a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>{t("generateNewIdea") || "Generate New Idea"}</span>
+                </button>
+              </div>
+              <AnalysisDisplay
+                analysis={analysisToDisplay}
+                onSave={handleSaveReport}
+                isSaved={isReportSaved}
+                savedAudioBase64={generatedAudio}
+                onAudioGenerated={handleAudioGenerated}
+                onGoToDashboard={handleBack}
+                ideaId={ideaId}
+                onRefineSuggestion={
+                  showInputForm ? handleRefineSuggestion : undefined
+                }
+                addedSuggestions={addedSuggestions}
+              />
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AnalyzerView;

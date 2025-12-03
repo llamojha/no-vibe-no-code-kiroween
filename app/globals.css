@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-black text-slate-200;
+  font-family: "Rajdhani", sans-serif;
+}
+
+/* Halloween-themed utilities */
+.spooky-glow {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor,
+    0 0 30px currentColor;
+}
+
+.spooky-border {
+  border-image: linear-gradient(45deg, #ff6b35, #8b5cf6, #10b981, #ff6b35) 1;
+}
+
+.halloween-gradient {
+  background: linear-gradient(
+    135deg,
+    #1a0a1a 0%,
+    #2d1b69 25%,
+    #8b5cf6 50%,
+    #ff6b35 75%,
+    #1a0a1a 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Accessibility improvements for Halloween theme */
+.halloween-focus:focus {
+  outline: 2px solid #ff6b35;
+  outline-offset: 2px;
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ghost-hover {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spooky-float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-15px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes color-shift {
+  0% {
+    color: #4ade80; /* green-400 */
+  }
+  25% {
+    color: #60a5fa; /* blue-400 */
+  }
+  50% {
+    color: #a78bfa; /* purple-400 */
+  }
+  75% {
+    color: #fbbf24; /* yellow-400 */
+  }
+  100% {
+    color: #4ade80; /* green-400 */
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.6s ease-out;
+}
+
+.animate-ghost-hover {
+  animation: ghost-hover 3s ease-in-out infinite;
+}
+
+.animate-spooky-float {
+  animation: spooky-float 4s ease-in-out infinite;
+}
+
+.animate-color-shift {
+  animation: color-shift 3s ease-in-out infinite;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .halloween-text {
+    color: #ffffff !important;
+  }
+
+  .halloween-border {
+    border-color: #ffffff !important;
+  }
+}

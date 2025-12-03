@@ -1,0 +1,77 @@
+import { beforeEach, afterEach, vi } from "vitest";
+import { EventEmitter } from "events";
+
+// Polyfill ArrayBuffer/SharedArrayBuffer resizable properties for Node < 20
+const abResizable = Object.getOwnPropertyDescriptor(
+  ArrayBuffer.prototype,
+  "resizable"
+);
+if (!abResizable) {
+  Object.defineProperty(ArrayBuffer.prototype, "resizable", {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return false;
+    },
+  });
+}
+
+if (typeof SharedArrayBuffer !== "undefined") {
+  const sabGrowable = Object.getOwnPropertyDescriptor(
+    SharedArrayBuffer.prototype,
+    "growable"
+  );
+  if (!sabGrowable) {
+    Object.defineProperty(SharedArrayBuffer.prototype, "growable", {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return false;
+      },
+    });
+  }
+}
+
+// Increase max listeners to prevent warnings during parallel test execution
+EventEmitter.defaultMaxListeners = 50;
+process.setMaxListeners(50);
+
+type CookieRecord = { name: string; value: string };
+
+const cookieStore = new Map<string, string>();
+
+const createCookieApi = () => ({
+  get: (name: string): CookieRecord | undefined => {
+    if (!cookieStore.has(name)) {
+      return undefined;
+    }
+    return { name, value: cookieStore.get(name)! };
+  },
+  getAll: (): CookieRecord[] =>
+    Array.from(cookieStore.entries()).map(([name, value]) => ({ name, value })),
+  set: (name: string, value: string | { value: string }) => {
+    const val = typeof value === "string" ? value : value?.value ?? "";
+    cookieStore.set(name, val);
+  },
+  delete: (name: string) => {
+    cookieStore.delete(name);
+  },
+  has: (name: string) => cookieStore.has(name),
+  clear: () => cookieStore.clear(),
+});
+
+vi.mock("next/headers", () => ({
+  cookies: createCookieApi,
+}));
+
+beforeEach(() => {
+  cookieStore.clear();
+});
+
+afterEach(() => {
+  // Clear all timers and mocks after each test
+  vi.clearAllTimers();
+  vi.clearAllMocks();
+  // Clear any unhandledRejection listeners added during tests
+  process.removeAllListeners("unhandledRejection");
+});
