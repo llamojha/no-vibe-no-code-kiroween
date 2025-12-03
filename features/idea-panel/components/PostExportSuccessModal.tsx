@@ -19,32 +19,36 @@ interface PostExportSuccessModalProps {
 
 /**
  * File tree structure for the exported files
+ * Note: These paths reflect the actual ZIP structure (kiro-setup/...)
  */
 const EXPORTED_FILES = [
-  { path: ".kiro/steering/product.md", description: "Product vision & users" },
-  { path: ".kiro/steering/tech.md", description: "Technology stack" },
   {
-    path: ".kiro/steering/architecture.md",
+    path: "kiro-setup/steering/product.md",
+    description: "Product vision & users",
+  },
+  { path: "kiro-setup/steering/tech.md", description: "Technology stack" },
+  {
+    path: "kiro-setup/steering/architecture.md",
     description: "Architecture patterns",
   },
   {
-    path: ".kiro/steering/spec-generation.md",
+    path: "kiro-setup/steering/spec-generation.md",
     description: "Spec generation guide",
   },
   {
-    path: ".kiro/specs/example-feature/requirements.md",
+    path: "kiro-setup/specs/example-feature/requirements.md",
     description: "Example requirements",
   },
   {
-    path: ".kiro/specs/example-feature/design.md",
+    path: "kiro-setup/specs/example-feature/design.md",
     description: "Example design",
   },
   {
-    path: ".kiro/specs/example-feature/tasks.md",
+    path: "kiro-setup/specs/example-feature/tasks.md",
     description: "Example tasks",
   },
-  { path: ".kiro/docs/roadmap.md", description: "Project roadmap" },
-  { path: "README.md", description: "Setup instructions" },
+  { path: "kiro-setup/docs/roadmap.md", description: "Project roadmap" },
+  { path: "kiro-setup/README.md", description: "Setup instructions" },
 ];
 
 /**
@@ -247,10 +251,17 @@ export const PostExportSuccessModal: React.FC<PostExportSuccessModalProps> = ({
                     <div className="text-slate-500 mb-1"># Extract the ZIP</div>
                     <div className="text-green-400">unzip kiro-setup-*.zip</div>
                     <div className="text-slate-500 mt-2 mb-1">
-                      # Copy files to your project
+                      # Copy steering and specs to .kiro folder
+                    </div>
+                    <div className="text-green-400">mkdir -p .kiro</div>
+                    <div className="text-green-400">
+                      cp -r kiro-setup/steering kiro-setup/specs .kiro/
+                    </div>
+                    <div className="text-slate-500 mt-2 mb-1">
+                      # Copy docs and README
                     </div>
                     <div className="text-green-400">
-                      cp -r kiro-setup/.kiro .
+                      cp -r kiro-setup/docs .
                     </div>
                     <div className="text-green-400">
                       cp kiro-setup/README.md ./KIRO_SETUP.md

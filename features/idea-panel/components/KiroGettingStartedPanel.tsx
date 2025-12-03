@@ -50,7 +50,7 @@ export const KiroGettingStartedPanel: React.FC<
   }
 
   const setupCommand =
-    "unzip kiro-setup-*.zip -d .kiro && mv .kiro/kiro-setup/* .kiro/ && rm -rf .kiro/kiro-setup";
+    "unzip kiro-setup-*.zip && mkdir -p .kiro && cp -r kiro-setup/steering kiro-setup/specs .kiro/ && cp -r kiro-setup/docs . && cp kiro-setup/README.md ./KIRO_SETUP.md";
   const kiroPrompt = `#spec-generation Create a spec for "${firstFeatureName}" based on the roadmap in #[[file:docs/roadmap.md]]`;
 
   return (
