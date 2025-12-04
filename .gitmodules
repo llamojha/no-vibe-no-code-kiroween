@@ -1,0 +1,3 @@
+[submodule "examples/spooky-snippets"]
+	path = examples/spooky-snippets
+	url = https://github.com/llamojha/spooky-snippets-kiroween.git

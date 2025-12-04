@@ -178,6 +178,25 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 This mode stores all data in browser localStorage - perfect for testing and personal use.
 
+## Example Project
+
+Check out **[Spooky Snippets Studio](examples/spooky-snippets/)** — a complete example project built using No Vibe No Code's document generation workflow.
+
+This Halloween-themed WebGL gallery demonstrates:
+
+- **Generated Documentation** ([`examples/spooky-snippets/docs/`](examples/spooky-snippets/docs/))
+
+  - [PRD](examples/spooky-snippets/docs/PRD.md) — Product requirements and user stories
+  - [Technical Design](examples/spooky-snippets/docs/design.md) — Architecture and implementation planning
+  - [Tech Architecture](examples/spooky-snippets/docs/tech-architecture.md) — System architecture details
+  - [Roadmap](examples/spooky-snippets/docs/roadmap.md) — Milestones and feature prioritization
+
+- **Kiro Setup** ([`examples/spooky-snippets/.kiro/`](examples/spooky-snippets/.kiro/))
+  - Specs and steering files used during development
+  - Reusable patterns for your own projects
+
+The project went from idea → analysis → documentation → working code using the No Vibe No Code workflow.
+
 ## Architecture
 
 The application follows **hexagonal architecture** (Ports and Adapters pattern):
