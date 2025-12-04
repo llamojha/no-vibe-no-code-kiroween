@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ESNext"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,33 +15,15 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@/domain": [
-        "./src/domain"
-      ],
-      "@/domain/*": [
-        "./src/domain/*"
-      ],
-      "@/application": [
-        "./src/application"
-      ],
-      "@/application/*": [
-        "./src/application/*"
-      ],
-      "@/infrastructure": [
-        "./src/infrastructure"
-      ],
-      "@/infrastructure/*": [
-        "./src/infrastructure/*"
-      ],
-      "@/shared": [
-        "./src/shared"
-      ],
-      "@/shared/*": [
-        "./src/shared/*"
-      ]
+      "@/*": ["./*"],
+      "@/domain": ["./src/domain"],
+      "@/domain/*": ["./src/domain/*"],
+      "@/application": ["./src/application"],
+      "@/application/*": ["./src/application/*"],
+      "@/infrastructure": ["./src/infrastructure"],
+      "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/shared": ["./src/shared"],
+      "@/shared/*": ["./src/shared/*"]
     },
     "plugins": [
       {
@@ -53,13 +31,6 @@
       }
     ]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "examples"]
 }

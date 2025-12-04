@@ -1,8 +1,6 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "next/typescript"
-  ],
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "ignorePatterns": ["examples/**"],
   "rules": {
     "@typescript-eslint/no-unused-vars": [
       "warn",
@@ -16,7 +14,12 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**/*.{ts,tsx}", "vitest.config.ts"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/__tests__/**/*.{ts,tsx}",
+        "vitest.config.ts"
+      ],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-unused-vars": "off"
