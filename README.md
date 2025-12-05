@@ -443,16 +443,12 @@ See [open issues](https://github.com/amllamojha/no-vibe-no-code-kiroween/issues)
 
 ### Get Help & Connect
 
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/amllamojha/no-vibe-no-code-kiroween/discussions) - Ask questions, share ideas
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/amllamojha/no-vibe-no-code-kiroween/issues) - Report bugs or request features
 - 📧 **Email**: support@novibenocode.com - Direct support
-- 🐦 **Twitter**: [@novibenocode](https://twitter.com/novibenocode) - Updates and announcements
+- 🐦 **Twitter**: [@amllamojha](https://twitter.com/amllamojha) - Updates and announcements
 
 ### Support the Project
 
 - ⭐ **Star this repo** - Helps others discover the project
-- 🐛 **Report bugs** - Help us improve quality
-- 💡 **Suggest features** - Share your ideas
 - 📝 **Improve docs** - Make it easier for others
 - 🔀 **Submit PRs** - Contribute code
 
@@ -466,8 +462,6 @@ Built with amazing open source tools:
 - [Vitest](https://vitest.dev/) - Testing framework
 - [Playwright](https://playwright.dev/) - E2E testing
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
-
-Special thanks to all [contributors](https://github.com/amllamojha/no-vibe-no-code-kiroween/graphs/contributors) who help make this project better!
 
 ## License
 
@@ -492,6 +486,6 @@ For more information, visit: https://www.gnu.org/licenses/agpl-3.0.html
 
 [Website](https://novibenocode.com) • [Documentation](docs/) • [Contributing](CONTRIBUTING.md)
 
-_Last updated: December 3, 2025_
+_Last updated: December 5, 2025_
 
 </div>
